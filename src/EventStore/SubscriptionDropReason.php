@@ -36,8 +36,8 @@ final class SubscriptionDropReason
     public const EventHandlerException = 8;
     public const MaxSubscribersReached = 9;
     public const PersistentSubscriptionDeleted = 10;
-    public const Unknown = 11;
-    public const NotFound = 12;
+    public const Unknown = 100;
+    public const NotFound = 11;
 
     private $name;
     private $value;

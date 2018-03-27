@@ -1,5 +1,6 @@
 namespace Prooph\EventStore;
 
+data StreamPosition = Start | End deriving (Enum) with (Start:0, End:-1);
 data ConditionalWriteStatus = Succeeded | VersionMismatch | StreamDeleted deriving (Enum);
 data EventReadStatus = Success | NotFound | NoStream | StreamDeleted deriving (Enum);
 data PersistentSubscriptionNakEventAction = Unknown | Park | Retry | Skip | Stop deriving (Enum);
@@ -31,4 +32,4 @@ data SubscriptionDropReason = UserInitiated
         PersistentSubscriptionDeleted:10,
         Unknown:100,
         NotFound:11
-        );
+    );
