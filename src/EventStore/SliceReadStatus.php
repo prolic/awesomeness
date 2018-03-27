@@ -7,48 +7,79 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
-abstract class SliceReadStatus
+final class SliceReadStatus
 {
     public const OPTIONS = [
-        SliceReadStatus\Success::VALUE => SliceReadStatus\Success::class,
-        SliceReadStatus\StreamNotFound::VALUE => SliceReadStatus\StreamNotFound::class,
-        SliceReadStatus\StreamDeleted::VALUE => SliceReadStatus\StreamDeleted::class,
+        'Success' => 0,
+        'StreamNotFound' => 1,
+        'StreamDeleted' => 2,
     ];
 
-    final public function __construct()
-    {
-        $valid = false;
+    public const Success = 0;
+    public const StreamNotFound = 1;
+    public const StreamDeleted = 2;
 
-        foreach (self::OPTIONS as $value) {
-            if ($this instanceof $value) {
-                $valid = true;
-                break;
+    private $name;
+    private $value;
+
+    private function __construct(string $name)
+    {
+        $this->name = $name;
+        $this->value = self::OPTIONS[$name];
+    }
+
+    public static function Success(): self
+    {
+        return new self('Success');
+    }
+
+    public static function StreamNotFound(): self
+    {
+        return new self('StreamNotFound');
+    }
+
+    public static function StreamDeleted(): self
+    {
+        return new self('StreamDeleted');
+    }
+
+    public static function byName(string $value): self
+    {
+        if (! isset(self::OPTIONS[$value])) {
+            throw new \InvalidArgumentException('Unknown enum name given');
+        }
+
+        return self::{$value}();
+    }
+
+    public static function byValue($value): self
+    {
+        foreach (self::OPTIONS as $name => $v) {
+            if ($v === $value) {
+                return self::{$name}();
             }
         }
 
-        if (! $valid) {
-            $self = get_class($this);
-            throw new \LogicException("Invalid SliceReadStatus '$self' given");
-        }
-    }
-
-    public static function fromString(string $value): self
-    {
-        if (! isset(self::OPTIONS[$value])) {
-            throw new \InvalidArgumentException('Unknown enum value given');
-        }
-
-        $class = self::OPTIONS[$value];
-
-        return new $class();
+        throw new \InvalidArgumentException('Unknown enum value given');
     }
 
     public function equals(SliceReadStatus $other): bool
     {
-        return get_class($this) === get_class($other);
+        return get_class($this) === get_class($other) && $this->value === $other->value;
     }
 
-    abstract public function toString(): string;
+    public function name(): string
+    {
+        return $this->name;
+    }
 
-    abstract public function __toString(): string;
+    public function value()
+    {
+        return $this->value;
+    }
+
+    public function __toString(): string
+    {
+        return $this->name;
+    }
 }

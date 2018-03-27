@@ -7,50 +7,93 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\Messages;
 
-abstract class SubscriptionDropReason
+final class SubscriptionDropReason
 {
     public const OPTIONS = [
-        SubscriptionDropReason\Unsubscribed::VALUE => SubscriptionDropReason\Unsubscribed::class,
-        SubscriptionDropReason\AccessDenied::VALUE => SubscriptionDropReason\AccessDenied::class,
-        SubscriptionDropReason\NotFound::VALUE => SubscriptionDropReason\NotFound::class,
-        SubscriptionDropReason\PersistentSubscriptionDeleted::VALUE => SubscriptionDropReason\PersistentSubscriptionDeleted::class,
-        SubscriptionDropReason\SubscriberMaxCountReached::VALUE => SubscriptionDropReason\SubscriberMaxCountReached::class,
+        'Unsubscribed' => 0,
+        'AccessDenied' => 1,
+        'NotFound' => 2,
+        'PersistentSubscriptionDeleted' => 3,
+        'SubscriberMaxCountReached' => 4,
     ];
 
-    final public function __construct()
-    {
-        $valid = false;
+    public const Unsubscribed = 0;
+    public const AccessDenied = 1;
+    public const NotFound = 2;
+    public const PersistentSubscriptionDeleted = 3;
+    public const SubscriberMaxCountReached = 4;
 
-        foreach (self::OPTIONS as $value) {
-            if ($this instanceof $value) {
-                $valid = true;
-                break;
+    private $name;
+    private $value;
+
+    private function __construct(string $name)
+    {
+        $this->name = $name;
+        $this->value = self::OPTIONS[$name];
+    }
+
+    public static function Unsubscribed(): self
+    {
+        return new self('Unsubscribed');
+    }
+
+    public static function AccessDenied(): self
+    {
+        return new self('AccessDenied');
+    }
+
+    public static function NotFound(): self
+    {
+        return new self('NotFound');
+    }
+
+    public static function PersistentSubscriptionDeleted(): self
+    {
+        return new self('PersistentSubscriptionDeleted');
+    }
+
+    public static function SubscriberMaxCountReached(): self
+    {
+        return new self('SubscriberMaxCountReached');
+    }
+
+    public static function byName(string $value): self
+    {
+        if (! isset(self::OPTIONS[$value])) {
+            throw new \InvalidArgumentException('Unknown enum name given');
+        }
+
+        return self::{$value}();
+    }
+
+    public static function byValue($value): self
+    {
+        foreach (self::OPTIONS as $name => $v) {
+            if ($v === $value) {
+                return self::{$name}();
             }
         }
 
-        if (! $valid) {
-            $self = get_class($this);
-            throw new \LogicException("Invalid SubscriptionDropReason '$self' given");
-        }
-    }
-
-    public static function fromString(string $value): self
-    {
-        if (! isset(self::OPTIONS[$value])) {
-            throw new \InvalidArgumentException('Unknown enum value given');
-        }
-
-        $class = self::OPTIONS[$value];
-
-        return new $class();
+        throw new \InvalidArgumentException('Unknown enum value given');
     }
 
     public function equals(SubscriptionDropReason $other): bool
     {
-        return get_class($this) === get_class($other);
+        return get_class($this) === get_class($other) && $this->value === $other->value;
     }
 
-    abstract public function toString(): string;
+    public function name(): string
+    {
+        return $this->name;
+    }
 
-    abstract public function __toString(): string;
+    public function value()
+    {
+        return $this->value;
+    }
+
+    public function __toString(): string
+    {
+        return $this->name;
+    }
 }

@@ -7,48 +7,79 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\Messages;
 
-abstract class ScavengeResult
+final class ScavengeResult
 {
     public const OPTIONS = [
-        ScavengeResult\Success::VALUE => ScavengeResult\Success::class,
-        ScavengeResult\InProgress::VALUE => ScavengeResult\InProgress::class,
-        ScavengeResult\Failed::VALUE => ScavengeResult\Failed::class,
+        'Success' => 0,
+        'InProgress' => 1,
+        'Failed' => 2,
     ];
 
-    final public function __construct()
-    {
-        $valid = false;
+    public const Success = 0;
+    public const InProgress = 1;
+    public const Failed = 2;
 
-        foreach (self::OPTIONS as $value) {
-            if ($this instanceof $value) {
-                $valid = true;
-                break;
+    private $name;
+    private $value;
+
+    private function __construct(string $name)
+    {
+        $this->name = $name;
+        $this->value = self::OPTIONS[$name];
+    }
+
+    public static function Success(): self
+    {
+        return new self('Success');
+    }
+
+    public static function InProgress(): self
+    {
+        return new self('InProgress');
+    }
+
+    public static function Failed(): self
+    {
+        return new self('Failed');
+    }
+
+    public static function byName(string $value): self
+    {
+        if (! isset(self::OPTIONS[$value])) {
+            throw new \InvalidArgumentException('Unknown enum name given');
+        }
+
+        return self::{$value}();
+    }
+
+    public static function byValue($value): self
+    {
+        foreach (self::OPTIONS as $name => $v) {
+            if ($v === $value) {
+                return self::{$name}();
             }
         }
 
-        if (! $valid) {
-            $self = get_class($this);
-            throw new \LogicException("Invalid ScavengeResult '$self' given");
-        }
-    }
-
-    public static function fromString(string $value): self
-    {
-        if (! isset(self::OPTIONS[$value])) {
-            throw new \InvalidArgumentException('Unknown enum value given');
-        }
-
-        $class = self::OPTIONS[$value];
-
-        return new $class();
+        throw new \InvalidArgumentException('Unknown enum value given');
     }
 
     public function equals(ScavengeResult $other): bool
     {
-        return get_class($this) === get_class($other);
+        return get_class($this) === get_class($other) && $this->value === $other->value;
     }
 
-    abstract public function toString(): string;
+    public function name(): string
+    {
+        return $this->name;
+    }
 
-    abstract public function __toString(): string;
+    public function value()
+    {
+        return $this->value;
+    }
+
+    public function __toString(): string
+    {
+        return $this->name;
+    }
 }

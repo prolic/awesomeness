@@ -7,49 +7,86 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\Internal;
 
-abstract class PersistentSubscriptionUpdateStatus
+final class PersistentSubscriptionUpdateStatus
 {
     public const OPTIONS = [
-        PersistentSubscriptionUpdateStatus\Success::VALUE => PersistentSubscriptionUpdateStatus\Success::class,
-        PersistentSubscriptionUpdateStatus\NotFound::VALUE => PersistentSubscriptionUpdateStatus\NotFound::class,
-        PersistentSubscriptionUpdateStatus\Failure::VALUE => PersistentSubscriptionUpdateStatus\Failure::class,
-        PersistentSubscriptionUpdateStatus\AccessDenied::VALUE => PersistentSubscriptionUpdateStatus\AccessDenied::class,
+        'Success' => 0,
+        'NotFound' => 1,
+        'Failure' => 2,
+        'AccessDenied' => 3,
     ];
 
-    final public function __construct()
-    {
-        $valid = false;
+    public const Success = 0;
+    public const NotFound = 1;
+    public const Failure = 2;
+    public const AccessDenied = 3;
 
-        foreach (self::OPTIONS as $value) {
-            if ($this instanceof $value) {
-                $valid = true;
-                break;
+    private $name;
+    private $value;
+
+    private function __construct(string $name)
+    {
+        $this->name = $name;
+        $this->value = self::OPTIONS[$name];
+    }
+
+    public static function Success(): self
+    {
+        return new self('Success');
+    }
+
+    public static function NotFound(): self
+    {
+        return new self('NotFound');
+    }
+
+    public static function Failure(): self
+    {
+        return new self('Failure');
+    }
+
+    public static function AccessDenied(): self
+    {
+        return new self('AccessDenied');
+    }
+
+    public static function byName(string $value): self
+    {
+        if (! isset(self::OPTIONS[$value])) {
+            throw new \InvalidArgumentException('Unknown enum name given');
+        }
+
+        return self::{$value}();
+    }
+
+    public static function byValue($value): self
+    {
+        foreach (self::OPTIONS as $name => $v) {
+            if ($v === $value) {
+                return self::{$name}();
             }
         }
 
-        if (! $valid) {
-            $self = get_class($this);
-            throw new \LogicException("Invalid PersistentSubscriptionUpdateStatus '$self' given");
-        }
-    }
-
-    public static function fromString(string $value): self
-    {
-        if (! isset(self::OPTIONS[$value])) {
-            throw new \InvalidArgumentException('Unknown enum value given');
-        }
-
-        $class = self::OPTIONS[$value];
-
-        return new $class();
+        throw new \InvalidArgumentException('Unknown enum value given');
     }
 
     public function equals(PersistentSubscriptionUpdateStatus $other): bool
     {
-        return get_class($this) === get_class($other);
+        return get_class($this) === get_class($other) && $this->value === $other->value;
     }
 
-    abstract public function toString(): string;
+    public function name(): string
+    {
+        return $this->name;
+    }
 
-    abstract public function __toString(): string;
+    public function value()
+    {
+        return $this->value;
+    }
+
+    public function __toString(): string
+    {
+        return $this->name;
+    }
 }

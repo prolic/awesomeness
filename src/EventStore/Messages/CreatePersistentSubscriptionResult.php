@@ -7,49 +7,86 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\Messages;
 
-abstract class CreatePersistentSubscriptionResult
+final class CreatePersistentSubscriptionResult
 {
     public const OPTIONS = [
-        CreatePersistentSubscriptionResult\Success::VALUE => CreatePersistentSubscriptionResult\Success::class,
-        CreatePersistentSubscriptionResult\AlreadyExists::VALUE => CreatePersistentSubscriptionResult\AlreadyExists::class,
-        CreatePersistentSubscriptionResult\Fail::VALUE => CreatePersistentSubscriptionResult\Fail::class,
-        CreatePersistentSubscriptionResult\AccessDenied::VALUE => CreatePersistentSubscriptionResult\AccessDenied::class,
+        'Success' => 0,
+        'AlreadyExists' => 1,
+        'Fail' => 2,
+        'AccessDenied' => 3,
     ];
 
-    final public function __construct()
-    {
-        $valid = false;
+    public const Success = 0;
+    public const AlreadyExists = 1;
+    public const Fail = 2;
+    public const AccessDenied = 3;
 
-        foreach (self::OPTIONS as $value) {
-            if ($this instanceof $value) {
-                $valid = true;
-                break;
+    private $name;
+    private $value;
+
+    private function __construct(string $name)
+    {
+        $this->name = $name;
+        $this->value = self::OPTIONS[$name];
+    }
+
+    public static function Success(): self
+    {
+        return new self('Success');
+    }
+
+    public static function AlreadyExists(): self
+    {
+        return new self('AlreadyExists');
+    }
+
+    public static function Fail(): self
+    {
+        return new self('Fail');
+    }
+
+    public static function AccessDenied(): self
+    {
+        return new self('AccessDenied');
+    }
+
+    public static function byName(string $value): self
+    {
+        if (! isset(self::OPTIONS[$value])) {
+            throw new \InvalidArgumentException('Unknown enum name given');
+        }
+
+        return self::{$value}();
+    }
+
+    public static function byValue($value): self
+    {
+        foreach (self::OPTIONS as $name => $v) {
+            if ($v === $value) {
+                return self::{$name}();
             }
         }
 
-        if (! $valid) {
-            $self = get_class($this);
-            throw new \LogicException("Invalid CreatePersistentSubscriptionResult '$self' given");
-        }
-    }
-
-    public static function fromString(string $value): self
-    {
-        if (! isset(self::OPTIONS[$value])) {
-            throw new \InvalidArgumentException('Unknown enum value given');
-        }
-
-        $class = self::OPTIONS[$value];
-
-        return new $class();
+        throw new \InvalidArgumentException('Unknown enum value given');
     }
 
     public function equals(CreatePersistentSubscriptionResult $other): bool
     {
-        return get_class($this) === get_class($other);
+        return get_class($this) === get_class($other) && $this->value === $other->value;
     }
 
-    abstract public function toString(): string;
+    public function name(): string
+    {
+        return $this->name;
+    }
 
-    abstract public function __toString(): string;
+    public function value()
+    {
+        return $this->value;
+    }
+
+    public function __toString(): string
+    {
+        return $this->name;
+    }
 }

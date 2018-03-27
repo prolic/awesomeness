@@ -7,58 +7,149 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
-abstract class SubscriptionDropReason
+final class SubscriptionDropReason
 {
     public const OPTIONS = [
-        SubscriptionDropReason\UserInitiated::VALUE => SubscriptionDropReason\UserInitiated::class,
-        SubscriptionDropReason\NotAuthenticated::VALUE => SubscriptionDropReason\NotAuthenticated::class,
-        SubscriptionDropReason\AccessDenied::VALUE => SubscriptionDropReason\AccessDenied::class,
-        SubscriptionDropReason\SubscribingError::VALUE => SubscriptionDropReason\SubscribingError::class,
-        SubscriptionDropReason\ServerError::VALUE => SubscriptionDropReason\ServerError::class,
-        SubscriptionDropReason\ConnectionClosed::VALUE => SubscriptionDropReason\ConnectionClosed::class,
-        SubscriptionDropReason\CatchUpError::VALUE => SubscriptionDropReason\CatchUpError::class,
-        SubscriptionDropReason\ProcessingQueueOverflow::VALUE => SubscriptionDropReason\ProcessingQueueOverflow::class,
-        SubscriptionDropReason\EventHandlerException::VALUE => SubscriptionDropReason\EventHandlerException::class,
-        SubscriptionDropReason\MaxSubscribersReached::VALUE => SubscriptionDropReason\MaxSubscribersReached::class,
-        SubscriptionDropReason\PersistentSubscriptionDeleted::VALUE => SubscriptionDropReason\PersistentSubscriptionDeleted::class,
-        SubscriptionDropReason\Unknown::VALUE => SubscriptionDropReason\Unknown::class,
-        SubscriptionDropReason\NotFound::VALUE => SubscriptionDropReason\NotFound::class,
+        'UserInitiated' => 0,
+        'NotAuthenticated' => 1,
+        'AccessDenied' => 2,
+        'SubscribingError' => 3,
+        'ServerError' => 4,
+        'ConnectionClosed' => 5,
+        'CatchUpError' => 6,
+        'ProcessingQueueOverflow' => 7,
+        'EventHandlerException' => 8,
+        'MaxSubscribersReached' => 9,
+        'PersistentSubscriptionDeleted' => 10,
+        'Unknown' => 100,
+        'NotFound' => 11,
     ];
 
-    final public function __construct()
-    {
-        $valid = false;
+    public const UserInitiated = 0;
+    public const NotAuthenticated = 1;
+    public const AccessDenied = 2;
+    public const SubscribingError = 3;
+    public const ServerError = 4;
+    public const ConnectionClosed = 5;
+    public const CatchUpError = 6;
+    public const ProcessingQueueOverflow = 7;
+    public const EventHandlerException = 8;
+    public const MaxSubscribersReached = 9;
+    public const PersistentSubscriptionDeleted = 10;
+    public const Unknown = 11;
+    public const NotFound = 12;
 
-        foreach (self::OPTIONS as $value) {
-            if ($this instanceof $value) {
-                $valid = true;
-                break;
+    private $name;
+    private $value;
+
+    private function __construct(string $name)
+    {
+        $this->name = $name;
+        $this->value = self::OPTIONS[$name];
+    }
+
+    public static function UserInitiated(): self
+    {
+        return new self('UserInitiated');
+    }
+
+    public static function NotAuthenticated(): self
+    {
+        return new self('NotAuthenticated');
+    }
+
+    public static function AccessDenied(): self
+    {
+        return new self('AccessDenied');
+    }
+
+    public static function SubscribingError(): self
+    {
+        return new self('SubscribingError');
+    }
+
+    public static function ServerError(): self
+    {
+        return new self('ServerError');
+    }
+
+    public static function ConnectionClosed(): self
+    {
+        return new self('ConnectionClosed');
+    }
+
+    public static function CatchUpError(): self
+    {
+        return new self('CatchUpError');
+    }
+
+    public static function ProcessingQueueOverflow(): self
+    {
+        return new self('ProcessingQueueOverflow');
+    }
+
+    public static function EventHandlerException(): self
+    {
+        return new self('EventHandlerException');
+    }
+
+    public static function MaxSubscribersReached(): self
+    {
+        return new self('MaxSubscribersReached');
+    }
+
+    public static function PersistentSubscriptionDeleted(): self
+    {
+        return new self('PersistentSubscriptionDeleted');
+    }
+
+    public static function Unknown(): self
+    {
+        return new self('Unknown');
+    }
+
+    public static function NotFound(): self
+    {
+        return new self('NotFound');
+    }
+
+    public static function byName(string $value): self
+    {
+        if (! isset(self::OPTIONS[$value])) {
+            throw new \InvalidArgumentException('Unknown enum name given');
+        }
+
+        return self::{$value}();
+    }
+
+    public static function byValue($value): self
+    {
+        foreach (self::OPTIONS as $name => $v) {
+            if ($v === $value) {
+                return self::{$name}();
             }
         }
 
-        if (! $valid) {
-            $self = get_class($this);
-            throw new \LogicException("Invalid SubscriptionDropReason '$self' given");
-        }
-    }
-
-    public static function fromString(string $value): self
-    {
-        if (! isset(self::OPTIONS[$value])) {
-            throw new \InvalidArgumentException('Unknown enum value given');
-        }
-
-        $class = self::OPTIONS[$value];
-
-        return new $class();
+        throw new \InvalidArgumentException('Unknown enum value given');
     }
 
     public function equals(SubscriptionDropReason $other): bool
     {
-        return get_class($this) === get_class($other);
+        return get_class($this) === get_class($other) && $this->value === $other->value;
     }
 
-    abstract public function toString(): string;
+    public function name(): string
+    {
+        return $this->name;
+    }
 
-    abstract public function __toString(): string;
+    public function value()
+    {
+        return $this->value;
+    }
+
+    public function __toString(): string
+    {
+        return $this->name;
+    }
 }

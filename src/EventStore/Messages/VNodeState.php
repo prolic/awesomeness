@@ -7,56 +7,135 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\Messages;
 
-abstract class VNodeState
+final class VNodeState
 {
     public const OPTIONS = [
-        VNodeState\Initializing::VALUE => VNodeState\Initializing::class,
-        VNodeState\Unknown::VALUE => VNodeState\Unknown::class,
-        VNodeState\PreReplica::VALUE => VNodeState\PreReplica::class,
-        VNodeState\CatchingUp::VALUE => VNodeState\CatchingUp::class,
-        VNodeState\Cloned::VALUE => VNodeState\Cloned::class,
-        VNodeState\Slave::VALUE => VNodeState\Slave::class,
-        VNodeState\PreMaster::VALUE => VNodeState\PreMaster::class,
-        VNodeState\Master::VALUE => VNodeState\Master::class,
-        VNodeState\Manager::VALUE => VNodeState\Manager::class,
-        VNodeState\ShuttingDown::VALUE => VNodeState\ShuttingDown::class,
-        VNodeState\Shutdown::VALUE => VNodeState\Shutdown::class,
+        'Initializing' => 0,
+        'Unknown' => 1,
+        'PreReplica' => 2,
+        'CatchingUp' => 3,
+        'Cloned' => 4,
+        'Slave' => 5,
+        'PreMaster' => 6,
+        'Master' => 7,
+        'Manager' => 8,
+        'ShuttingDown' => 9,
+        'Shutdown' => 10,
     ];
 
-    final public function __construct()
-    {
-        $valid = false;
+    public const Initializing = 0;
+    public const Unknown = 1;
+    public const PreReplica = 2;
+    public const CatchingUp = 3;
+    public const Cloned = 4;
+    public const Slave = 5;
+    public const PreMaster = 6;
+    public const Master = 7;
+    public const Manager = 8;
+    public const ShuttingDown = 9;
+    public const Shutdown = 10;
 
-        foreach (self::OPTIONS as $value) {
-            if ($this instanceof $value) {
-                $valid = true;
-                break;
+    private $name;
+    private $value;
+
+    private function __construct(string $name)
+    {
+        $this->name = $name;
+        $this->value = self::OPTIONS[$name];
+    }
+
+    public static function Initializing(): self
+    {
+        return new self('Initializing');
+    }
+
+    public static function Unknown(): self
+    {
+        return new self('Unknown');
+    }
+
+    public static function PreReplica(): self
+    {
+        return new self('PreReplica');
+    }
+
+    public static function CatchingUp(): self
+    {
+        return new self('CatchingUp');
+    }
+
+    public static function Cloned(): self
+    {
+        return new self('Cloned');
+    }
+
+    public static function Slave(): self
+    {
+        return new self('Slave');
+    }
+
+    public static function PreMaster(): self
+    {
+        return new self('PreMaster');
+    }
+
+    public static function Master(): self
+    {
+        return new self('Master');
+    }
+
+    public static function Manager(): self
+    {
+        return new self('Manager');
+    }
+
+    public static function ShuttingDown(): self
+    {
+        return new self('ShuttingDown');
+    }
+
+    public static function Shutdown(): self
+    {
+        return new self('Shutdown');
+    }
+
+    public static function byName(string $value): self
+    {
+        if (! isset(self::OPTIONS[$value])) {
+            throw new \InvalidArgumentException('Unknown enum name given');
+        }
+
+        return self::{$value}();
+    }
+
+    public static function byValue($value): self
+    {
+        foreach (self::OPTIONS as $name => $v) {
+            if ($v === $value) {
+                return self::{$name}();
             }
         }
 
-        if (! $valid) {
-            $self = get_class($this);
-            throw new \LogicException("Invalid VNodeState '$self' given");
-        }
-    }
-
-    public static function fromString(string $value): self
-    {
-        if (! isset(self::OPTIONS[$value])) {
-            throw new \InvalidArgumentException('Unknown enum value given');
-        }
-
-        $class = self::OPTIONS[$value];
-
-        return new $class();
+        throw new \InvalidArgumentException('Unknown enum value given');
     }
 
     public function equals(VNodeState $other): bool
     {
-        return get_class($this) === get_class($other);
+        return get_class($this) === get_class($other) && $this->value === $other->value;
     }
 
-    abstract public function toString(): string;
+    public function name(): string
+    {
+        return $this->name;
+    }
 
-    abstract public function __toString(): string;
+    public function value()
+    {
+        return $this->value;
+    }
+
+    public function __toString(): string
+    {
+        return $this->name;
+    }
 }

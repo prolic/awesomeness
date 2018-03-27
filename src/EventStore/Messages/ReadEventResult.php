@@ -7,51 +7,100 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\Messages;
 
-abstract class ReadEventResult
+final class ReadEventResult
 {
     public const OPTIONS = [
-        ReadEventResult\Success::VALUE => ReadEventResult\Success::class,
-        ReadEventResult\NotFound::VALUE => ReadEventResult\NotFound::class,
-        ReadEventResult\NoStream::VALUE => ReadEventResult\NoStream::class,
-        ReadEventResult\StreamDeleted::VALUE => ReadEventResult\StreamDeleted::class,
-        ReadEventResult\Error::VALUE => ReadEventResult\Error::class,
-        ReadEventResult\AccessDenied::VALUE => ReadEventResult\AccessDenied::class,
+        'Success' => 0,
+        'NotFound' => 1,
+        'NoStream' => 2,
+        'StreamDeleted' => 3,
+        'Error' => 4,
+        'AccessDenied' => 5,
     ];
 
-    final public function __construct()
-    {
-        $valid = false;
+    public const Success = 0;
+    public const NotFound = 1;
+    public const NoStream = 2;
+    public const StreamDeleted = 3;
+    public const Error = 4;
+    public const AccessDenied = 5;
 
-        foreach (self::OPTIONS as $value) {
-            if ($this instanceof $value) {
-                $valid = true;
-                break;
+    private $name;
+    private $value;
+
+    private function __construct(string $name)
+    {
+        $this->name = $name;
+        $this->value = self::OPTIONS[$name];
+    }
+
+    public static function Success(): self
+    {
+        return new self('Success');
+    }
+
+    public static function NotFound(): self
+    {
+        return new self('NotFound');
+    }
+
+    public static function NoStream(): self
+    {
+        return new self('NoStream');
+    }
+
+    public static function StreamDeleted(): self
+    {
+        return new self('StreamDeleted');
+    }
+
+    public static function Error(): self
+    {
+        return new self('Error');
+    }
+
+    public static function AccessDenied(): self
+    {
+        return new self('AccessDenied');
+    }
+
+    public static function byName(string $value): self
+    {
+        if (! isset(self::OPTIONS[$value])) {
+            throw new \InvalidArgumentException('Unknown enum name given');
+        }
+
+        return self::{$value}();
+    }
+
+    public static function byValue($value): self
+    {
+        foreach (self::OPTIONS as $name => $v) {
+            if ($v === $value) {
+                return self::{$name}();
             }
         }
 
-        if (! $valid) {
-            $self = get_class($this);
-            throw new \LogicException("Invalid ReadEventResult '$self' given");
-        }
-    }
-
-    public static function fromString(string $value): self
-    {
-        if (! isset(self::OPTIONS[$value])) {
-            throw new \InvalidArgumentException('Unknown enum value given');
-        }
-
-        $class = self::OPTIONS[$value];
-
-        return new $class();
+        throw new \InvalidArgumentException('Unknown enum value given');
     }
 
     public function equals(ReadEventResult $other): bool
     {
-        return get_class($this) === get_class($other);
+        return get_class($this) === get_class($other) && $this->value === $other->value;
     }
 
-    abstract public function toString(): string;
+    public function name(): string
+    {
+        return $this->name;
+    }
 
-    abstract public function __toString(): string;
+    public function value()
+    {
+        return $this->value;
+    }
+
+    public function __toString(): string
+    {
+        return $this->name;
+    }
 }
