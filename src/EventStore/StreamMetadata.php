@@ -1,6 +1,6 @@
 <?php
 
-declare (strict_types=1);
+declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
@@ -50,8 +50,7 @@ final class StreamMetadata
         ?\DateInterval $cacheControl,
         StreamAcl $acl,
         array $customMetadata = []
-    )
-    {
+    ) {
         if (null !== $maxCount && $maxCount <= 0) {
             throw new \InvalidArgumentException('maxCount should be positive value');
         }

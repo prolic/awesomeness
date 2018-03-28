@@ -1,6 +1,6 @@
 <?php
 
-declare (strict_types=1);
+declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
@@ -84,6 +84,6 @@ final class Position
 
     public function notEquals(Position $position): bool
     {
-        return !$this->equals($position);
+        return ! $this->equals($position);
     }
 }
