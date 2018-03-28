@@ -12,3 +12,30 @@ data EventRecord = EventRecord {
     string $metadata,
     ?int $created,
     ?int $createdEpoch };
+data ResolvedEvent = ResolvedEvent { EventRecord $event, EventRecord $link, int $commitPosition, int $preparePosition };
+data NewEvent = NewEvent { string $eventId, string $eventType, int $dataContentType, int $metadataContentType, string $data, string $metadata };
+data ResolvedIndexedEvent = ResolvedIndexedEvent { EventRecord $event, EventRecord $link };
+data WriteEvents = WriteEvents { string $eventStreamId, int $expectedVersion, NewEvent[] $events, bool $requireMaster };
+data WriteEventsCompleted = WriteEventsCompleted {
+    OperationResult $result,
+    string $message,
+    int $firstEventNumber,
+    int $lastEventNumber,
+    ?int $preparePosition,
+    ?int $commitPosition,
+    ?int $currentVersion };
+data DeleteStream = DeleteStream { string $eventStreamId, int $expectedVersion, bool $requireMaster, ?bool $hardDelete };
+data DeleteStreamCompleted = DeleteStreamCompleted { OperationResult $result, string $message, ?int $preparePosition, ?int $commitPosition };
+data TransactionStart = TransactionStart { string $eventStreamId, int $expectedVersion, bool $requireMaster };
+data TransactionStartCompleted = TransactionStartCompleted { int $transactionId, OperationResult $result, string $message };
+data TransactionWrite = TransactionWrite { int $transactionId, NewEvent[] $events, bool $requireMaster };
+data TransactionWriteCompleted = TransactionWriteCompleted { int $transactionId, OperationResult $result, string $message };
+data TransactionCommit = TransactionCommit { int $transactionId, bool $requireMaster };
+data TransactionCommitCompleted = TransactionCommitCompleted {
+    int $transactionId,
+    OperationResult $result,
+    string $message,
+    int $firstEventNumber,
+    int $lastEventNumber,
+    ?int $preparePosition,
+    ?int $commitPosition };
