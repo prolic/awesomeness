@@ -6,3 +6,4 @@ data UserCredentials = UserCredentials { string $username, string $password } wh
     | empty($password) => 'Password cannot be empty';
 data RawStreamMetadataResult = RawStreamMetadataResult { string $stream, bool $isStreamDeleted, int $metastreamVersion, string $streamMetadata } where
     | empty($stream) => 'Stream cannot be empty';
+data ResolvedIndexedEvent = ResolvedIndexedEvent { Messages\EventRecord $event, ?Messages\EventRecord $link };

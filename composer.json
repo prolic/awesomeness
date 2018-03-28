@@ -16,12 +16,13 @@
   ],
   "prefer-stable": true,
   "require": {
-    "php": "^7.1"
+    "php": "^7.1",
+    "ramsey/uuid": "^3.7.3"
   },
   "require-dev": {
     "malukenho/docheader": "^0.1.4",
     "phpspec/prophecy": "^1.7",
-    "phpunit/phpunit": "^6.0",
+    "phpunit/phpunit": "^6.5",
     "prooph/php-cs-fixer-config": "^0.2.1",
     "prolic/fpp": "dev-master",
     "psr/container": "^1.0",

@@ -17,7 +17,7 @@ final class EventRecord
     private $created;
     private $createdEpoch;
 
-    public function __construct(string $eventStreamId, int $eventNumber, string $eventId, string $eventType, int $dataContentType, int $metadataContentType, string $data, string $metadata, ?int $created, ?int $createdEpoch)
+    public function __construct(string $eventStreamId, int $eventNumber, string $eventId, string $eventType, int $dataContentType, int $metadataContentType, string $data, string $metadata, ?string $created, ?int $createdEpoch)
     {
         $this->eventStreamId = $eventStreamId;
         $this->eventNumber = $eventNumber;
@@ -71,7 +71,7 @@ final class EventRecord
         return $this->metadata;
     }
 
-    public function created(): ?int
+    public function created(): ?string
     {
         return $this->created;
     }

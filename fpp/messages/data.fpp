@@ -10,11 +10,9 @@ data EventRecord = EventRecord {
     int $metadataContentType,
     string $data,
     string $metadata,
-    ?int $created,
+    ?string $created,
     ?int $createdEpoch };
-data ResolvedEvent = ResolvedEvent { EventRecord $event, EventRecord $link, int $commitPosition, int $preparePosition };
 data NewEvent = NewEvent { string $eventId, string $eventType, int $dataContentType, int $metadataContentType, string $data, string $metadata };
-data ResolvedIndexedEvent = ResolvedIndexedEvent { EventRecord $event, EventRecord $link };
 data WriteEvents = WriteEvents { string $eventStreamId, int $expectedVersion, NewEvent[] $events, bool $requireMaster };
 data WriteEventsCompleted = WriteEventsCompleted {
     OperationResult $result,
