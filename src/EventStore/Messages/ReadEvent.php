@@ -5,19 +5,22 @@ declare(strict_types=1);
 namespace Prooph\EventStore\Messages;
 
 /** @internal */
-class TransactionStart
+class ReadEvent
 {
     /** @var string */
     private $eventStreamId;
     /** @var int */
-    private $expectedVersion;
+    private $eventNumber;
+    /** @var bool */
+    private $resolveLinkTos;
     /** @var bool */
     private $requireMaster;
 
-    public function __construct(string $eventStreamId, int $expectedVersion, bool $requireMaster)
+    public function __construct(string $eventStreamId, int $eventNumber, bool $resolveLinkTos, bool $requireMaster)
     {
         $this->eventStreamId = $eventStreamId;
-        $this->expectedVersion = $expectedVersion;
+        $this->eventNumber = $eventNumber;
+        $this->resolveLinkTos = $resolveLinkTos;
         $this->requireMaster = $requireMaster;
     }
 
@@ -26,9 +29,14 @@ class TransactionStart
         return $this->eventStreamId;
     }
 
-    public function expectedVersion(): int
+    public function eventNumber(): int
     {
-        return $this->expectedVersion;
+        return $this->eventNumber;
+    }
+
+    public function resolveLinkTos(): bool
+    {
+        return $this->resolveLinkTos;
     }
 
     public function requireMaster(): bool

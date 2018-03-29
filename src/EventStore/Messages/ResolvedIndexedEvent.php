@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\Messages;
 
+/** @internal */
 class ResolvedIndexedEvent
 {
     private $event;

@@ -5,31 +5,36 @@ declare(strict_types=1);
 namespace Prooph\EventStore\Messages;
 
 /** @internal */
-class ReadAllEvents
+class ReadStreamEvents
 {
-    private $commitPosition;
-    private $preparePosition;
+    /** @var string */
+    private $eventStreamId;
+    /** @var int */
+    private $fromEventNumber;
+    /** @var int */
     private $maxCount;
+    /** @var bool */
     private $resolveLinkTos;
+    /** @var bool */
     private $requireMaster;
 
-    public function __construct(int $commitPosition, int $preparePosition, int $maxCount, bool $resolveLinkTos, bool $requireMaster)
+    public function __construct(string $eventStreamId, int $fromEventNumber, int $maxCount, bool $resolveLinkTos, bool $requireMaster)
     {
-        $this->commitPosition = $commitPosition;
-        $this->preparePosition = $preparePosition;
+        $this->eventStreamId = $eventStreamId;
+        $this->fromEventNumber = $fromEventNumber;
         $this->maxCount = $maxCount;
         $this->resolveLinkTos = $resolveLinkTos;
         $this->requireMaster = $requireMaster;
     }
 
-    public function commitPosition(): int
+    public function eventStreamId(): string
     {
-        return $this->commitPosition;
+        return $this->eventStreamId;
     }
 
-    public function preparePosition(): int
+    public function fromEventNumber(): int
     {
-        return $this->preparePosition;
+        return $this->fromEventNumber;
     }
 
     public function maxCount(): int

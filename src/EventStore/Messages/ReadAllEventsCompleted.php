@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Prooph\EventStore\Messages;
 
 /** @internal */
-class ReadAllEvents
+class ReadAllEventsCompleted
 {
     private $commitPosition;
     private $preparePosition;
