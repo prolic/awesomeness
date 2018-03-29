@@ -84,7 +84,7 @@ CODE;
     }
 }
 
-$customReplace = function(
+$customReplace = function (
     string $template,
     Definition $definition,
     ?Constructor $constructor,

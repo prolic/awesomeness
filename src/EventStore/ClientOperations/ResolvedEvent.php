@@ -11,7 +11,10 @@ use Prooph\EventStore\RecordedEvent;
 interface ResolvedEvent
 {
     public function originalStreamId(): string;
+
     public function originalEventNumber(): int;
+
     public function originalEvent(): RecordedEvent;
+
     public function originalPosition(): ?Position;
 }
