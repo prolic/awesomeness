@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\Internal;
 
+/** @internal */
 final class PersistentSubscriptionUpdateStatus
 {
     public const OPTIONS = [

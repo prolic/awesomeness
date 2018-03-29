@@ -6,5 +6,5 @@ namespace Prooph\EventStore;
 
 final class ApiConstants
 {
-    public const MaxReadSize = Consts::MaxReadSize;
+    public const MaxReadSize = Internal\Consts::MaxReadSize;
 }

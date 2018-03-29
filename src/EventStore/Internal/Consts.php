@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Prooph\EventStore;
+namespace Prooph\EventStore\Internal;
 
 /** @internal */
 final class Consts
