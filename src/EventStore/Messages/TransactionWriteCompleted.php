@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\Messages;
 
-final class TransactionWriteCompleted
+class TransactionWriteCompleted
 {
+    /** @var int */
     private $transactionId;
+    /** @var OperationResult */
     private $result;
+    /** @var string */
     private $message;
 
     public function __construct(int $transactionId, OperationResult $result, string $message)

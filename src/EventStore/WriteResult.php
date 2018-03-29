@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
-final class WriteResult
+class WriteResult
 {
     /** @var int */
     private $nextExpectedVersion;

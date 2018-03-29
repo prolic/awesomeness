@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
-final class SystemSettings
+class SystemSettings
 {
     /**
      * Default access control list for new user streams.

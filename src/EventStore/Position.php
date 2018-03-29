@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
-final class Position
+class Position
 {
     /** @var Position */
     private $start;

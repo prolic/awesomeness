@@ -4,14 +4,21 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\Messages;
 
-final class TransactionCommitCompleted
+class TransactionCommitCompleted
 {
+    /** @var int */
     private $transactionId;
+    /** @var OperationResult */
     private $result;
+    /** @var string */
     private $message;
+    /** @var int */
     private $firstEventNumber;
+    /** @var int */
     private $lastEventNumber;
+    /** @var int|null */
     private $preparePosition;
+    /** @var int|null */
     private $commitPosition;
 
     public function __construct(int $transactionId, OperationResult $result, string $message, int $firstEventNumber, int $lastEventNumber, ?int $preparePosition, ?int $commitPosition)

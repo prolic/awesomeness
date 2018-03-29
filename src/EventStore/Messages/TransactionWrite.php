@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\Messages;
 
-final class TransactionWrite
+class TransactionWrite
 {
+    /** @var int */
     private $transactionId;
+    /** @var NewEvent[] */
     private $events;
+    /** @var bool */
     private $requireMaster;
 
     public function __construct(int $transactionId, array $events, bool $requireMaster)
@@ -15,7 +18,7 @@ final class TransactionWrite
         $this->transactionId = $transactionId;
 
         foreach ($events as $__value) {
-            if (! $__value instanceof \Prooph\EventStore\Messages\NewEvent) {
+            if (! $__value instanceof NewEvent) {
                 throw new \InvalidArgumentException('events expected an array of Prooph\EventStore\Messages\NewEvent');
             }
             $this->events[] = $__value;

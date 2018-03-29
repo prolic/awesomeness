@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\Messages;
 
-final class EventRecord
+class EventRecord
 {
     private $eventStreamId;
     private $eventNumber;

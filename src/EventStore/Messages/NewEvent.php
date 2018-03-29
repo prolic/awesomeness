@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\Messages;
 
-final class NewEvent
+class NewEvent
 {
     private $eventId;
     private $eventType;

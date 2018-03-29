@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
-final class DeleteResult
+class DeleteResult
 {
     /** @var Position */
     private $logPosition;

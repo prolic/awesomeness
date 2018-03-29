@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\Messages;
 
-final class WriteEvents
+class WriteEvents
 {
+    /** @var string */
     private $eventStreamId;
+    /** @var int */
     private $expectedVersion;
+    /** @var NewEvent[] */
     private $events;
+    /** @var bool */
     private $requireMaster;
 
     public function __construct(string $eventStreamId, int $expectedVersion, array $events, bool $requireMaster)
@@ -17,7 +21,7 @@ final class WriteEvents
         $this->expectedVersion = $expectedVersion;
 
         foreach ($events as $__value) {
-            if (! $__value instanceof \Prooph\EventStore\Messages\NewEvent) {
+            if (! $__value instanceof NewEvent) {
                 throw new \InvalidArgumentException('events expected an array of Prooph\EventStore\Messages\NewEvent');
             }
             $this->events[] = $__value;

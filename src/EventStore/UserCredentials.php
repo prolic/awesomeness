@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
-final class UserCredentials
+class UserCredentials
 {
+    /** @var string */
     private $username;
+    /** @var string */
     private $password;
 
     public function __construct(string $username, string $password)

@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\Messages;
 
-final class TransactionStart
+class TransactionStart
 {
+    /** @var string */
     private $eventStreamId;
+    /** @var int */
     private $expectedVersion;
+    /** @var bool */
     private $requireMaster;
 
     public function __construct(string $eventStreamId, int $expectedVersion, bool $requireMaster)

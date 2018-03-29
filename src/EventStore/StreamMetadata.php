@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
-final class StreamMetadata
+class StreamMetadata
 {
     /**
      * The maximum number of events allowed in the stream.

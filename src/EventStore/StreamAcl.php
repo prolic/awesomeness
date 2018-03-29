@@ -6,7 +6,7 @@ namespace Prooph\EventStore;
 
 use Webmozart\Assert\Assert;
 
-final class StreamAcl
+class StreamAcl
 {
     /**
      * Roles and users permitted to read the stream
