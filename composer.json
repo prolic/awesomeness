@@ -17,12 +17,16 @@
   "prefer-stable": true,
   "require": {
     "php": "^7.1",
+    "php-http/httplug": "^1.1.0",
+    "psr/log": "^1.0.2",
     "ramsey/uuid": "^3.7.3"
   },
   "require-dev": {
     "malukenho/docheader": "^0.1.4",
-    "phpspec/prophecy": "^1.7",
+    "php-http/curl-client": "^1.7.1",
+    "php-http/message-factory": "^1.0.2",
     "phpunit/phpunit": "^6.5",
+    "phpspec/prophecy": "^1.7",
     "prooph/php-cs-fixer-config": "^0.2.1",
     "prolic/fpp": "dev-master",
     "psr/container": "^1.0",
