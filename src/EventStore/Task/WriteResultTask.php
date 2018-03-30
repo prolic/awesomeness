@@ -9,11 +9,9 @@ use Prooph\EventStore\WriteResult;
 
 class WriteResultTask extends BaseTask
 {
-    public function result(bool $wait = false): ?WriteResult
+    public function result(): WriteResult
     {
-        if ($wait) {
-            $this->promise->wait(false);
-        }
+        $this->promise->wait(false);
 
         return $this->result;
     }

@@ -9,11 +9,9 @@ use Prooph\EventStore\Task as BaseTask;
 
 class EventReadResultTask extends BaseTask
 {
-    public function result(bool $wait = false): ?EventReadResult
+    public function result(): EventReadResult
     {
-        if ($wait) {
-            $this->promise->wait(false);
-        }
+        $this->promise->wait(false);
 
         return $this->result;
     }

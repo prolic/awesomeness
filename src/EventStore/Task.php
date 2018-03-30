@@ -26,6 +26,11 @@ class Task
         );
     }
 
+    public function wait(): void
+    {
+        $this->promise->wait(false);
+    }
+
     public function isPending(): bool
     {
         return $this->promise->getState() === Promise::PENDING;

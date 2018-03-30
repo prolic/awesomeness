@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Prooph\GregEventStore\Internal;
 
+use Http\Client\HttpAsyncClient;
+use Http\Promise\FulfilledPromise;
 use Prooph\EventStore\ConnectionSettings;
 use Prooph\EventStore\EventData;
 use Prooph\EventStore\EventStoreConnection;
@@ -24,15 +26,18 @@ use Prooph\EventStore\Task\WriteResultTask;
 use Prooph\EventStore\UserCredentials;
 use Ramsey\Uuid\Uuid;
 
-class EventStoreNodeConnection implements EventStoreConnection, EventStoreTransactionConnection
+class HttpEventStoreNodeConnection implements EventStoreConnection, EventStoreTransactionConnection
 {
+    /** @var HttpAsyncClient */
+    private $asyncClient;
     /** @var string */
     private $connectionName;
     /** @var ConnectionSettings */
     private $settings;
 
-    public function __construct(ConnectionSettings $settings, ?string $connectionName)
+    public function __construct(HttpAsyncClient $asyncClient, ConnectionSettings $settings, ?string $connectionName)
     {
+        $this->asyncClient = $asyncClient;
         $this->settings = $settings;
         $this->connectionName = $connectionName ?? sprintf('ES-%s', Uuid::uuid4()->toString());
     }
@@ -44,12 +49,12 @@ class EventStoreNodeConnection implements EventStoreConnection, EventStoreTransa
 
     public function connectAsync(): Task
     {
-        // TODO: Implement connectAsync() method.
+        return new Task(new FulfilledPromise(null));
     }
 
     public function close(): void
     {
-        // TODO: Implement close() method.
+        // do nothing
     }
 
     public function deleteStreamAsync(

@@ -9,11 +9,9 @@ use Prooph\EventStore\Task as BaseTask;
 
 class AllEventsSliceTask extends BaseTask
 {
-    public function result(bool $wait = false): ?AllEventsSlice
+    public function result(): AllEventsSlice
     {
-        if ($wait) {
-            $this->promise->wait(false);
-        }
+        $this->promise->wait(false);
 
         return $this->result;
     }

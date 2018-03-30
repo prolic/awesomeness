@@ -9,11 +9,9 @@ use Prooph\EventStore\Task as BaseTask;
 
 class StreamEventsSliceTask extends BaseTask
 {
-    public function result(bool $wait = false): ?StreamEventsSlice
+    public function result(): StreamEventsSlice
     {
-        if ($wait) {
-            $this->promise->wait(false);
-        }
+        $this->promise->wait(false);
 
         return $this->result;
     }

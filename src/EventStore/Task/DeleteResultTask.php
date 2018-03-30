@@ -9,11 +9,9 @@ use Prooph\EventStore\Task as BaseTask;
 
 class DeleteResultTask extends BaseTask
 {
-    public function result(bool $wait = false): ?DeleteResult
+    public function result(): DeleteResult
     {
-        if ($wait) {
-            $this->promise->wait(false);
-        }
+        $this->promise->wait(false);
 
         return $this->result;
     }
