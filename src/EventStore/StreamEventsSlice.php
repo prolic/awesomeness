@@ -29,7 +29,7 @@ class StreamEventsSlice
         string $stream,
         int $fromEventNumber,
         ReadDirection $readDirection,
-        array $events,
+        iterable $events,
         int $nextEventNumber,
         int $lastEventNumber,
         bool $isEndOfStream

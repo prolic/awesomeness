@@ -16,7 +16,7 @@ class AllEventsSlice
     private $events = [];
 
     /** @internal */
-    public function __construct(ReadDirection $readDirection, Position $fromPosition, Position $nextPosition, array $events)
+    public function __construct(ReadDirection $readDirection, Position $fromPosition, Position $nextPosition, iterable $events)
     {
         $this->readDirection = $readDirection;
         $this->fromPosition = $fromPosition;

@@ -25,7 +25,7 @@ class ReadStreamEventsCompleted
     public function __construct(
         int $commitPosition,
         int $preparePosition,
-        array $events,
+        iterable $events,
         int $nextCommitPosition,
         int $nextPreparePosition,
         ?ReadAllResult $result,

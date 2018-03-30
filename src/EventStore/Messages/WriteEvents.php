@@ -16,7 +16,7 @@ class WriteEvents
     /** @var bool */
     private $requireMaster;
 
-    public function __construct(string $eventStreamId, int $expectedVersion, array $events, bool $requireMaster)
+    public function __construct(string $eventStreamId, int $expectedVersion, iterable $events, bool $requireMaster)
     {
         $this->eventStreamId = $eventStreamId;
         $this->expectedVersion = $expectedVersion;
