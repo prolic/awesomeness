@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
-class RawStreamMetadataResult
+class StreamMetadataResult
 {
     private $stream;
     private $isStreamDeleted;
