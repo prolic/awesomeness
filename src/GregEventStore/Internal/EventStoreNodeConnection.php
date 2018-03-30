@@ -55,10 +55,9 @@ class EventStoreNodeConnection implements EventStoreConnection, EventStoreTransa
     public function deleteStreamAsync(
         string $stream,
         int $expectedVersion,
-        bool $hardDelete = true,
+        bool $hardDelete,
         ?UserCredentials $userCredentials
-    ): DeleteResultTask
-    {
+    ): DeleteResultTask {
         // TODO: Implement deleteStreamAsync() method.
     }
 
@@ -74,8 +73,7 @@ class EventStoreNodeConnection implements EventStoreConnection, EventStoreTransa
         int $expectedVersion,
         ?UserCredentials $userCredentials,
         iterable $events
-    ): WriteResultTask
-    {
+    ): WriteResultTask {
         // TODO: Implement appendToStreamAsync() method.
     }
 
@@ -91,8 +89,7 @@ class EventStoreNodeConnection implements EventStoreConnection, EventStoreTransa
         int $expectedVersion,
         ?UserCredentials $userCredentials,
         iterable $events
-    ): ConditionalWriteResultTask
-    {
+    ): ConditionalWriteResultTask {
         // TODO: Implement conditionalAppendToStreamAsync() method.
     }
 
@@ -100,8 +97,7 @@ class EventStoreNodeConnection implements EventStoreConnection, EventStoreTransa
         string $stream,
         int $expectedVersion,
         ?UserCredentials $userCredentials
-    ): EventStoreTransactionTask
-    {
+    ): EventStoreTransactionTask {
         // TODO: Implement startTransactionAsync() method.
     }
 
@@ -115,8 +111,7 @@ class EventStoreNodeConnection implements EventStoreConnection, EventStoreTransa
         int $eventNumber,
         bool $resultLinkTos,
         ?UserCredentials $userCredentials
-    ): EventReadResultTask
-    {
+    ): EventReadResultTask {
         // TODO: Implement readEventAsync() method.
     }
 
@@ -126,8 +121,7 @@ class EventStoreNodeConnection implements EventStoreConnection, EventStoreTransa
         int $count,
         bool $resolveLinkTos,
         ?UserCredentials $userCredentials
-    ): StreamEventsSliceTask
-    {
+    ): StreamEventsSliceTask {
         // TODO: Implement readStreamEventsForwardAsync() method.
     }
 
@@ -137,8 +131,7 @@ class EventStoreNodeConnection implements EventStoreConnection, EventStoreTransa
         int $count,
         bool $resolveLinkTos,
         ?UserCredentials $userCredentials
-    ): StreamEventsSliceTask
-    {
+    ): StreamEventsSliceTask {
         // TODO: Implement readStreamEventsBackwardAsync() method.
     }
 
@@ -147,8 +140,7 @@ class EventStoreNodeConnection implements EventStoreConnection, EventStoreTransa
         int $maxCount,
         bool $resolveLinkTos,
         ?UserCredentials $userCredentials
-    ): AllEventsSliceTask
-    {
+    ): AllEventsSliceTask {
         // TODO: Implement readAllEventsForwardAsync() method.
     }
 
@@ -157,8 +149,7 @@ class EventStoreNodeConnection implements EventStoreConnection, EventStoreTransa
         int $maxCount,
         bool $resolveLinkTos,
         ?UserCredentials $userCredentials
-    ): AllEventsSliceTask
-    {
+    ): AllEventsSliceTask {
         // TODO: Implement readAllEventsBackwardAsync() method.
     }
 
@@ -167,8 +158,7 @@ class EventStoreNodeConnection implements EventStoreConnection, EventStoreTransa
         int $expectedMetastreamVersion,
         StreamMetadata $metadata,
         ?UserCredentials $userCredentials
-    ): WriteResultTask
-    {
+    ): WriteResultTask {
         // TODO: Implement setStreamMetadataAsync() method.
     }
 
@@ -191,16 +181,14 @@ class EventStoreNodeConnection implements EventStoreConnection, EventStoreTransa
         EventStoreTransaction $transaction,
         iterable $events,
         ?UserCredentials $userCredentials
-    ): Task
-    {
+    ): Task {
         // TODO: Implement transactionalWriteAsync() method.
     }
 
     public function commitTransactionAsync(
         EventStoreTransaction $transaction,
         ?UserCredentials $userCredentials
-    ): Task\WriteResultTask
-    {
+    ): Task\WriteResultTask {
         // TODO: Implement commitTransactionAsync() method.
     }
 }

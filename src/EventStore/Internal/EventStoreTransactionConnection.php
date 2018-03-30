@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 namespace Prooph\EventStore\Internal;
+
 use Prooph\EventStore\EventStoreTransaction;
 use Prooph\EventStore\Task;
 use Prooph\EventStore\UserCredentials;
