@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
-final class IpEndPoint
+class IpEndPoint
 {
     private $host;
     private $port;

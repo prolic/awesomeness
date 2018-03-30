@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
-final class GossipSeed
+class GossipSeed
 {
     private $endPoint;
     private $hostHeader;

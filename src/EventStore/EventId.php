@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
-final class EventId
+class EventId
 {
     private $uuid;
 

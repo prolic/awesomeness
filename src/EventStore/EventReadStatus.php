@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
-final class EventReadStatus
+class EventReadStatus
 {
     public const OPTIONS = [
         'Success' => 0,

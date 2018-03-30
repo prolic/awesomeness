@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Prooph\EventStore\Messages;
 
 /** @internal */
-final class VNodeState
+class VNodeState
 {
     public const OPTIONS = [
         'Initializing' => 0,

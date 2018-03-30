@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
-final class SubscriptionDropReason
+class SubscriptionDropReason
 {
     public const OPTIONS = [
         'UserInitiated' => 0,

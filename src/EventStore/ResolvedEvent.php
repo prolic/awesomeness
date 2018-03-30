@@ -6,7 +6,7 @@ namespace Prooph\EventStore;
 
 use Prooph\EventStore\Messages\ClientOperations\ResolvedEvent as ResolvedEventInterface;
 
-final class ResolvedEvent implements ResolvedEventInterface
+class ResolvedEvent implements ResolvedEventInterface
 {
     private $event;
     private $link;

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Prooph\EventStore\Internal;
 
 /** @internal */
-final class Consts
+class Consts
 {
     public const DefaultMaxQueueSize = 5000;
     public const DefaultMaxConcurrentItems = 5000;

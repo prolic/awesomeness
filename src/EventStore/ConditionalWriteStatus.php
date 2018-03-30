@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
-final class ConditionalWriteStatus
+class ConditionalWriteStatus
 {
     public const OPTIONS = [
         'Succeeded' => 0,

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Prooph\EventStore\Messages;
 
 /** @internal */
-final class SubscriptionDropReason
+class SubscriptionDropReason
 {
     public const OPTIONS = [
         'Unsubscribed' => 0,

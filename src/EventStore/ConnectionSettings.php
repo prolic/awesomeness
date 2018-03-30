@@ -8,7 +8,7 @@ use Prooph\EventStore\Internal\Consts;
 use Psr\Log\LoggerInterface as Logger;
 use Psr\Log\NullLogger;
 
-final class ConnectionSettings
+class ConnectionSettings
 {
     private $logger;
     private $verboseLogging;

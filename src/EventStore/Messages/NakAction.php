@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Prooph\EventStore\Messages;
 
 /** @internal */
-final class NakAction
+class NakAction
 {
     public const OPTIONS = [
         'Unknown' => 0,

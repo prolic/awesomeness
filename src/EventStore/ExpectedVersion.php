@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
-final class ExpectedVersion
+class ExpectedVersion
 {
     // This write should not conflict with anything and should always succeed.
     public const Any = -2;

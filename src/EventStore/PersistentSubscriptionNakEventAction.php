@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
-final class PersistentSubscriptionNakEventAction
+class PersistentSubscriptionNakEventAction
 {
     public const OPTIONS = [
         'Unknown' => 0,

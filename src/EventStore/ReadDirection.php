@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
-final class ReadDirection
+class ReadDirection
 {
     public const OPTIONS = [
         'Forward' => 0,
