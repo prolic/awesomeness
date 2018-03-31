@@ -9,13 +9,16 @@ use Http\Promise\Promise;
 /** @internal */
 class Task
 {
+    /** @var Promise */
     protected $promise;
-    protected $result;
+    /** @var callable|null */
+    protected $callback;
 
     /** @internal */
-    public function __construct(Promise $promise)
+    public function __construct(Promise $promise, callable $callback = null)
     {
         $this->promise = $promise;
+        $this->callback = $callback;
     }
 
     public function wait(): void

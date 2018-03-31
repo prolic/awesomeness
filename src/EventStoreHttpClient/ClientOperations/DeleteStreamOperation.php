@@ -11,7 +11,6 @@ use Prooph\EventStore\DeleteResult;
 use Prooph\EventStore\Task\DeleteResultTask;
 use Prooph\EventStore\UserCredentials;
 use Prooph\EventStoreHttpClient\Http\RequestMethod;
-use Prooph\EventStoreHttpClient\Internal\EventStorePromise;
 use Psr\Http\Message\ResponseInterface;
 
 /** @internal */
@@ -32,7 +31,7 @@ class DeleteStreamOperation extends Operation
         bool $hardDelete,
         ?UserCredentials $userCredentials
     ) {
-        parent::__construct($asyncClient, $requestFactory, $uriFactory, $baseUri);
+        parent::__construct($asyncClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
 
         $this->stream = $stream;
         $this->hardDelete = $hardDelete;
@@ -53,9 +52,9 @@ class DeleteStreamOperation extends Operation
             $headers
         );
 
-        $httpPromise = $this->sendAsyncRequest($request);
+        $promise = $this->sendAsyncRequest($request);
 
-        $promise = new EventStorePromise($httpPromise, function (ResponseInterface $response): DeleteResult {
+        return new DeleteResultTask($promise, function (ResponseInterface $response): DeleteResult {
             switch ($response->getStatusCode()) {
                 case 401:
                     return DeleteResult::accessDenied();
@@ -66,7 +65,5 @@ class DeleteStreamOperation extends Operation
                     throw new \UnexpectedValueException('Unexpected status code ' . $response->getStatusCode() . ' returned');
             }
         });
-
-        return new DeleteResultTask($promise);
     }
 }

@@ -9,12 +9,11 @@ use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
 use Prooph\EventStore\EventReadResult;
 use Prooph\EventStore\EventReadStatus;
-use Prooph\EventStore\Internal\DateTimeFacotry;
+use Prooph\EventStore\Internal\DateTimeFactory;
 use Prooph\EventStore\RecordedEvent;
 use Prooph\EventStore\Task\EventReadResultTask;
 use Prooph\EventStore\UserCredentials;
 use Prooph\EventStoreHttpClient\Http\RequestMethod;
-use Prooph\EventStoreHttpClient\Internal\EventStorePromise;
 use Psr\Http\Message\ResponseInterface;
 
 /** @internal */
@@ -53,9 +52,9 @@ class ReadEventOperation extends Operation
             $headers
         );
 
-        $httpPromise = $this->sendAsyncRequest($request);
+        $promise = $this->sendAsyncRequest($request);
 
-        $promise = new EventStorePromise($httpPromise, function (ResponseInterface $response): EventReadResult {
+        return new EventReadResultTask($promise, function (ResponseInterface $response): EventReadResult {
             switch ($response->getStatusCode()) {
                 case 401:
                     return new EventReadResult(EventReadStatus::accessDenied(), $this->stream, $this->eventNumber, null);
@@ -72,7 +71,7 @@ class ReadEventOperation extends Operation
                         $json['data'],
                         $json['metadata'],
                         $json['isJson'],
-                        DateTimeFacotry::create($json['updated'])
+                        DateTimeFactory::create($json['updated'])
                     );
 
                     return new EventReadResult(EventReadStatus::success(), $this->stream, $this->eventNumber, $event);
@@ -80,7 +79,5 @@ class ReadEventOperation extends Operation
                     throw new \UnexpectedValueException('Unexpected status code ' . $response->getStatusCode() . ' returned');
             }
         });
-
-        return new EventReadResultTask($promise);
     }
 }

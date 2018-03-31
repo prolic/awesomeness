@@ -12,6 +12,9 @@ class DeleteResultTask extends BaseTask
 {
     public function result(): DeleteResult
     {
-        return $this->promise->wait();
+        $callback = $this->callback;
+        $response = $this->promise->wait();
+
+        return $callback($response);
     }
 }
