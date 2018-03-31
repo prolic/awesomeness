@@ -10,6 +10,7 @@ class DeleteStreamCompleted
     private $result;
     private $message;
 
+    /** @internal */
     public function __construct(OperationResult $result, string $message)
     {
         $this->result = $result;

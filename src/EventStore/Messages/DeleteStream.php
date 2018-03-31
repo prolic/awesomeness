@@ -12,6 +12,7 @@ class DeleteStream
     /** @var bool */
     private $hardDelete;
 
+    /** @internal */
     public function __construct(string $eventStreamId, bool $hardDelete = false)
     {
         $this->eventStreamId = $eventStreamId;

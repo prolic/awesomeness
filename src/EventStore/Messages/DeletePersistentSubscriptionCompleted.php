@@ -12,6 +12,7 @@ class DeletePersistentSubscriptionCompleted
     /** @var string|null */
     private $reason;
 
+    /** @internal */
     public function __construct(DeletePersistentSubscriptionResult $result, ?string $reason)
     {
         $this->result = $result;
