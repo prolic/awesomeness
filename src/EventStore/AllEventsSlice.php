@@ -12,8 +12,8 @@ class AllEventsSlice
     private $fromPosition;
     /** @var Position */
     private $nextPosition;
-    /** @var Messages\ResolvedEvent[] */
-    private $events = [];
+    /** @var RecordedEvent[] */
+    private $events;
 
     /** @internal */
     public function __construct(ReadDirection $readDirection, Position $fromPosition, Position $nextPosition, iterable $events)
@@ -21,10 +21,30 @@ class AllEventsSlice
         $this->readDirection = $readDirection;
         $this->fromPosition = $fromPosition;
         $this->nextPosition = $nextPosition;
+        $this->events = $events;
+    }
 
-        foreach ($events as $event) {
-            $this->events[] = ResolvedEvent::fromResolvedEvent($event);
-        }
+    public function readDirection(): ReadDirection
+    {
+        return $this->readDirection;
+    }
+
+    public function fromPosition(): Position
+    {
+        return $this->fromPosition;
+    }
+
+    public function nextPosition(): Position
+    {
+        return $this->nextPosition;
+    }
+
+    /**
+     * @return RecordedEvent[]
+     */
+    public function getEvents(): iterable
+    {
+        return $this->events;
     }
 
     public function isEndOfStream(): bool

@@ -8,7 +8,6 @@ use Prooph\EventStore\Task\AllEventsSliceTask;
 use Prooph\EventStore\Task\ConditionalWriteResultTask;
 use Prooph\EventStore\Task\DeleteResultTask;
 use Prooph\EventStore\Task\EventReadResultTask;
-use Prooph\EventStore\Task\EventStoreTransactionTask;
 use Prooph\EventStore\Task\StreamEventsSliceTask;
 use Prooph\EventStore\Task\StreamMetadataResultTask;
 use Prooph\EventStore\Task\WriteResultTask;
@@ -48,18 +47,9 @@ interface EventStoreConnection
         iterable $events
     ): ConditionalWriteResultTask;
 
-    public function startTransactionAsync(
-        string $stream,
-        int $expectedVersion,
-        ?UserCredentials $userCredentials
-    ): EventStoreTransactionTask;
-
-    public function continueTransaction(int $transactionId, ?UserCredentials $userCredentials): EventStoreTransaction;
-
     public function readEventAsync(
         string $stream,
         int $eventNumber,
-        bool $resultLinkTos,
         ?UserCredentials $userCredentials
     ): EventReadResultTask;
 

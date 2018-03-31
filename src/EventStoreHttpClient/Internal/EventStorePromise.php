@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Prooph\EventStore\Internal;
+namespace Prooph\EventStoreHttpClient\Internal;
 
 use Http\Client\Exception as HttplugException;
 use Http\Promise\Promise;
@@ -64,7 +64,7 @@ final class EventStorePromise implements Promise
         $this->promise->wait(false);
 
         if ($unwrap) {
-            if ($this->getState() == self::REJECTED) {
+            if ($this->getState() === self::REJECTED) {
                 throw $this->exception;
             }
 

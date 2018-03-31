@@ -8,29 +8,19 @@ use Http\Client\HttpAsyncClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
 use Prooph\EventStore\DeleteResult;
-use Prooph\EventStore\Internal\EventStorePromise;
 use Prooph\EventStore\Task\DeleteResultTask;
 use Prooph\EventStore\UserCredentials;
 use Prooph\EventStoreHttpClient\Http\RequestMethod;
+use Prooph\EventStoreHttpClient\Internal\EventStorePromise;
 use Psr\Http\Message\ResponseInterface;
 
 /** @internal */
 class DeleteStreamOperation extends Operation
 {
-    /** @var HttpAsyncClient */
-    private $asyncClient;
-    /** @var RequestFactory */
-    private $requestFactory;
-    /** @var UriFactory */
-    private $uriFactory;
-    /** @var string */
-    private $baseUri;
     /** @var string */
     private $stream;
     /** @var bool */
     private $hardDelete;
-    /** @var UserCredentials|null */
-    private $userCredentials;
 
     /** @internal */
     public function __construct(
@@ -42,10 +32,8 @@ class DeleteStreamOperation extends Operation
         bool $hardDelete,
         ?UserCredentials $userCredentials
     ) {
-        $this->asyncClient = $asyncClient;
-        $this->requestFactory = $requestFactory;
-        $this->uriFactory = $uriFactory;
-        $this->baseUri = $baseUri;
+        parent::__construct($asyncClient, $requestFactory, $uriFactory, $baseUri);
+
         $this->stream = $stream;
         $this->hardDelete = $hardDelete;
         $this->userCredentials = $userCredentials;
@@ -64,9 +52,8 @@ class DeleteStreamOperation extends Operation
             $this->uriFactory->createUri($this->baseUri . '/streams/' . urlencode($this->stream)),
             $headers
         );
-        $request = $this->authenticate($request, $this->userCredentials);
 
-        $httpPromise = $this->asyncClient->sendAsyncRequest($request);
+        $httpPromise = $this->sendAsyncRequest($request);
 
         $promise = new EventStorePromise($httpPromise, function (ResponseInterface $response): DeleteResult {
             switch ($response->getStatusCode()) {

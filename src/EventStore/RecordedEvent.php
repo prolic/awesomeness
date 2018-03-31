@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
+use DateTimeImmutable;
+
 class RecordedEvent
 {
     private $eventStreamId;
@@ -14,11 +16,18 @@ class RecordedEvent
     private $metadata;
     private $isJson;
     private $created;
-    private $createdEpoch;
 
     /** @internal */
-    public function __construct(string $eventStreamId, EventId $eventId, int $eventNumber, string $eventType, string $data, string $metadata, bool $isJson, string $created, int $createdEpoch)
-    {
+    public function __construct(
+        string $eventStreamId,
+        EventId $eventId,
+        int $eventNumber,
+        string $eventType,
+        string $data,
+        string $metadata,
+        bool $isJson,
+        DateTimeImmutable $created
+    ) {
         $this->eventStreamId = $eventStreamId;
         $this->eventId = $eventId;
         $this->eventNumber = $eventNumber;
@@ -27,23 +36,6 @@ class RecordedEvent
         $this->metadata = $metadata;
         $this->isJson = $isJson;
         $this->created = $created;
-        $this->createdEpoch = $createdEpoch;
-    }
-
-    /** @internal */
-    public static function fromRecordedEvent(Messages\EventRecord $systemRecord): RecordedEvent
-    {
-        return new self(
-            $systemRecord->eventStreamId(),
-            EventId::fromString($systemRecord->eventId()),
-            $systemRecord->eventNumber(),
-            $systemRecord->eventType(),
-            $systemRecord->data(),
-            $systemRecord->metadata(),
-            $systemRecord->dataContentType() === 1,
-            $systemRecord->created(),
-            $systemRecord->createdEpoch()
-        );
     }
 
     public function eventStreamId(): string
@@ -81,13 +73,8 @@ class RecordedEvent
         return $this->isJson;
     }
 
-    public function created(): string
+    public function created(): DateTimeImmutable
     {
         return $this->created;
-    }
-
-    public function createdEpoch(): int
-    {
-        return $this->createdEpoch;
     }
 }

@@ -5,14 +5,11 @@ declare(strict_types=1);
 namespace Prooph\EventStoreHttpClient;
 
 use Http\Client\HttpAsyncClient;
-use Http\Message\Authentication\BasicAuth;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
 use Http\Promise\FulfilledPromise;
 use Prooph\EventStore\EventData;
 use Prooph\EventStore\EventStoreConnection;
-use Prooph\EventStore\EventStoreTransaction;
-use Prooph\EventStore\Internal\EventStoreTransactionConnection;
 use Prooph\EventStore\Position;
 use Prooph\EventStore\StreamMetadata;
 use Prooph\EventStore\SystemSettings;
@@ -21,16 +18,15 @@ use Prooph\EventStore\Task\AllEventsSliceTask;
 use Prooph\EventStore\Task\ConditionalWriteResultTask;
 use Prooph\EventStore\Task\DeleteResultTask;
 use Prooph\EventStore\Task\EventReadResultTask;
-use Prooph\EventStore\Task\EventStoreTransactionTask;
 use Prooph\EventStore\Task\StreamEventsSliceTask;
 use Prooph\EventStore\Task\StreamMetadataResultTask;
 use Prooph\EventStore\Task\WriteResultTask;
 use Prooph\EventStore\UserCredentials;
 use Prooph\EventStoreHttpClient\ClientOperations\DeleteStreamOperation;
-use Psr\Http\Message\UriInterface as Uri;
+use Prooph\EventStoreHttpClient\ClientOperations\ReadEventOperation;
 use Ramsey\Uuid\Uuid;
 
-class EventStoreHttpConnection implements EventStoreConnection, EventStoreTransactionConnection
+class EventStoreHttpConnection implements EventStoreConnection
 {
     /** @var HttpAsyncClient */
     private $asyncClient;
@@ -114,13 +110,6 @@ class EventStoreHttpConnection implements EventStoreConnection, EventStoreTransa
         // TODO: Implement appendToStreamAsync() method.
     }
 
-    /**
-     * @param string $stream
-     * @param int $expectedVersion
-     * @param null|UserCredentials $userCredentials
-     * @param EventData[] $events
-     * @return ConditionalWriteResultTask
-     */
     public function conditionalAppendToStreamAsync(
         string $stream,
         int $expectedVersion,
@@ -130,26 +119,22 @@ class EventStoreHttpConnection implements EventStoreConnection, EventStoreTransa
         // TODO: Implement conditionalAppendToStreamAsync() method.
     }
 
-    public function startTransactionAsync(
-        string $stream,
-        int $expectedVersion,
-        ?UserCredentials $userCredentials
-    ): EventStoreTransactionTask {
-        // TODO: Implement startTransactionAsync() method.
-    }
-
-    public function continueTransaction(int $transactionId, ?UserCredentials $userCredentials): EventStoreTransaction
-    {
-        // TODO: Implement continueTransaction() method.
-    }
-
     public function readEventAsync(
         string $stream,
         int $eventNumber,
-        bool $resultLinkTos,
         ?UserCredentials $userCredentials
     ): EventReadResultTask {
-        // TODO: Implement readEventAsync() method.
+        $operation = new ReadEventOperation(
+            $this->asyncClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->baseUri,
+            $stream,
+            $eventNumber,
+            $userCredentials
+        );
+
+        return $operation->task();
     }
 
     public function readStreamEventsForwardAsync(
@@ -207,25 +192,5 @@ class EventStoreHttpConnection implements EventStoreConnection, EventStoreTransa
     public function setSystemSettingsAsync(SystemSettings $settings, ?UserCredentials $userCredentials): Task
     {
         // TODO: Implement setSystemSettingsAsync() method.
-    }
-
-    public function settings(): ConnectionSettings
-    {
-        return $this->settings;
-    }
-
-    public function transactionalWriteAsync(
-        EventStoreTransaction $transaction,
-        iterable $events,
-        ?UserCredentials $userCredentials
-    ): Task {
-        // TODO: Implement transactionalWriteAsync() method.
-    }
-
-    public function commitTransactionAsync(
-        EventStoreTransaction $transaction,
-        ?UserCredentials $userCredentials
-    ): Task\WriteResultTask {
-        // TODO: Implement commitTransactionAsync() method.
     }
 }

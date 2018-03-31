@@ -14,7 +14,7 @@ class StreamEventsSlice
     private $fromEventNumber;
     /** @var ReadDirection */
     private $readDirection;
-    /** @var ResolvedEvent[] */
+    /** @var RecordedEvent[] */
     private $events;
     /** @var int */
     private $nextEventNumber;
@@ -34,18 +34,11 @@ class StreamEventsSlice
         int $lastEventNumber,
         bool $isEndOfStream
     ) {
-        foreach ($events as $event) {
-            if (! $event instanceof Messages\ResolvedIndexedEvent) {
-                throw new \InvalidArgumentException('Expected an array of ' . Messages\ResolvedIndexedEvent::class);
-            }
-
-            $this->events[] = ResolvedEvent::fromResolvedIndexedEvent($event);
-        }
-
         $this->status = $status;
         $this->stream = $stream;
         $this->fromEventNumber = $fromEventNumber;
         $this->readDirection = $readDirection;
+        $this->events = $events;
         $this->nextEventNumber = $nextEventNumber;
         $this->lastEventNumber = $lastEventNumber;
         $this->isEndOfStream = $isEndOfStream;
@@ -72,9 +65,9 @@ class StreamEventsSlice
     }
 
     /**
-     * @return ResolvedEvent[]
+     * @return RecordedEvent[]
      */
-    public function events(): array
+    public function events(): iterable
     {
         return $this->events;
     }

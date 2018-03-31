@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
+/** @internal */
 class EventReadResult
 {
     /** @var EventReadStatus */
@@ -15,15 +16,16 @@ class EventReadResult
     /** @var int */
     private $eventNumber;
 
-    /** @var ResolvedEvent|null */
+    /** @var RecordedEvent|null */
     private $event;
 
-    public function __construct(EventReadStatus $status, string $stream, int $eventNumber, ?ResolvedIndexedEvent $event)
+    /** @internal */
+    public function __construct(EventReadStatus $status, string $stream, int $eventNumber, ?RecordedEvent $event)
     {
         $this->status = $status;
         $this->stream = $stream;
         $this->eventNumber = $eventNumber;
-        $this->event = $status->equals(EventReadStatus::success()) ? ResolvedEvent::fromResolvedIndexedEvent($event) : null;
+        $this->event = $event;
     }
 
     public function status(): EventReadStatus
@@ -41,7 +43,7 @@ class EventReadResult
         return $this->eventNumber;
     }
 
-    public function event(): ?ResolvedEvent
+    public function event(): ?RecordedEvent
     {
         return $this->event;
     }
