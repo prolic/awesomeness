@@ -2,11 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Prooph\GregEventStore\Internal;
+namespace Prooph\EventStoreHttpClient;
 
 use Http\Client\HttpAsyncClient;
 use Http\Promise\FulfilledPromise;
-use Prooph\EventStore\ConnectionSettings;
 use Prooph\EventStore\EventData;
 use Prooph\EventStore\EventStoreConnection;
 use Prooph\EventStore\EventStoreTransaction;
@@ -26,7 +25,7 @@ use Prooph\EventStore\Task\WriteResultTask;
 use Prooph\EventStore\UserCredentials;
 use Ramsey\Uuid\Uuid;
 
-class HttpEventStoreNodeConnection implements EventStoreConnection, EventStoreTransactionConnection
+class EventStoreHttpConnection implements EventStoreConnection, EventStoreTransactionConnection
 {
     /** @var HttpAsyncClient */
     private $asyncClient;
@@ -35,10 +34,10 @@ class HttpEventStoreNodeConnection implements EventStoreConnection, EventStoreTr
     /** @var ConnectionSettings */
     private $settings;
 
-    public function __construct(HttpAsyncClient $asyncClient, ConnectionSettings $settings, ?string $connectionName)
+    public function __construct(HttpAsyncClient $asyncClient, ConnectionSettings $settings = null, string $connectionName = null)
     {
         $this->asyncClient = $asyncClient;
-        $this->settings = $settings;
+        $this->settings = $settings ?? ConnectionSettings::default();
         $this->connectionName = $connectionName ?? sprintf('ES-%s', Uuid::uuid4()->toString());
     }
 

@@ -107,6 +107,4 @@ interface EventStoreConnection
 
     // @todo subscriptions
     // @todo event handlers
-
-    public function settings(): ConnectionSettings;
 }
