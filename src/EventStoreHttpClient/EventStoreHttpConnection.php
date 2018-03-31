@@ -131,7 +131,7 @@ class EventStoreHttpConnection implements EventStoreConnection
             $this->baseUri,
             $stream,
             $eventNumber,
-            $userCredentials
+            $userCredentials ?? $this->settings->defaultUserCredentials()
         );
 
         return $operation->task();
