@@ -7,6 +7,7 @@ namespace Prooph\EventStore\Task;
 use Prooph\EventStore\StreamMetadataResult;
 use Prooph\EventStore\Task as BaseTask;
 
+/** @internal  */
 class StreamMetadataResultTask extends BaseTask
 {
     public function result(): StreamMetadataResult

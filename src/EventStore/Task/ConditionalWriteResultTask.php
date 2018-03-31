@@ -7,6 +7,7 @@ namespace Prooph\EventStore\Task;
 use Prooph\EventStore\ConditionalWriteResult;
 use Prooph\EventStore\Task as BaseTask;
 
+/** @internal  */
 class ConditionalWriteResultTask extends BaseTask
 {
     public function result(): ConditionalWriteResult

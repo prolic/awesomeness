@@ -7,6 +7,7 @@ namespace Prooph\EventStore\Task;
 use Prooph\EventStore\Task as BaseTask;
 use Prooph\EventStore\WriteResult;
 
+/** @internal  */
 class WriteResultTask extends BaseTask
 {
     public function result(): WriteResult

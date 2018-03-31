@@ -7,6 +7,7 @@ namespace Prooph\EventStore\Task;
 use Prooph\EventStore\AllEventsSlice;
 use Prooph\EventStore\Task as BaseTask;
 
+/** @internal  */
 class AllEventsSliceTask extends BaseTask
 {
     public function result(): AllEventsSlice
