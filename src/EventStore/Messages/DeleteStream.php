@@ -7,16 +7,14 @@ namespace Prooph\EventStore\Messages;
 /** @internal */
 class DeleteStream
 {
+    /** @var string */
     private $eventStreamId;
-    private $expectedVersion;
-    private $requireMaster;
+    /** @var bool */
     private $hardDelete;
 
-    public function __construct(string $eventStreamId, int $expectedVersion, bool $requireMaster, ?bool $hardDelete)
+    public function __construct(string $eventStreamId, bool $hardDelete = false)
     {
         $this->eventStreamId = $eventStreamId;
-        $this->expectedVersion = $expectedVersion;
-        $this->requireMaster = $requireMaster;
         $this->hardDelete = $hardDelete;
     }
 
@@ -25,17 +23,7 @@ class DeleteStream
         return $this->eventStreamId;
     }
 
-    public function expectedVersion(): int
-    {
-        return $this->expectedVersion;
-    }
-
-    public function requireMaster(): bool
-    {
-        return $this->requireMaster;
-    }
-
-    public function hardDelete(): ?bool
+    public function hardDelete(): bool
     {
         return $this->hardDelete;
     }

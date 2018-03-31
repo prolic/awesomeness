@@ -11,8 +11,6 @@ class DeleteResultTask extends BaseTask
 {
     public function result(): DeleteResult
     {
-        $this->promise->wait(false);
-
-        return $this->result;
+        return $this->promise->wait();
     }
 }

@@ -11,8 +11,6 @@ class EventReadResultTask extends BaseTask
 {
     public function result(): EventReadResult
     {
-        $this->promise->wait(false);
-
-        return $this->result;
+        return $this->promise->wait();
     }
 }

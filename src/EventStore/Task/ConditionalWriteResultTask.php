@@ -11,8 +11,6 @@ class ConditionalWriteResultTask extends BaseTask
 {
     public function result(): ConditionalWriteResult
     {
-        $this->promise->wait(false);
-
-        return $this->result;
+        return $this->promise->wait();
     }
 }

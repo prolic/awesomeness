@@ -14,6 +14,7 @@ class TransactionWriteCompleted
     /** @var string */
     private $message;
 
+    /** @internal */
     public function __construct(int $transactionId, OperationResult $result, string $message)
     {
         $this->transactionId = $transactionId;

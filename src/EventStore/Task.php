@@ -6,6 +6,7 @@ namespace Prooph\EventStore;
 
 use Http\Promise\Promise;
 
+/** @internal */
 class Task
 {
     protected $promise;
@@ -15,15 +16,6 @@ class Task
     public function __construct(Promise $promise)
     {
         $this->promise = $promise;
-
-        $promise->then(
-            function ($result): void {
-                $this->result = $result;
-            },
-            function ($result): void {
-                $this->result = $result;
-            }
-        );
     }
 
     public function wait(): void

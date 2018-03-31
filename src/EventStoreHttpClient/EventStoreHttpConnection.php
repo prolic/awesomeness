@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Prooph\EventStoreHttpClient;
 
 use Http\Client\HttpAsyncClient;
+use Http\Message\Authentication\BasicAuth;
+use Http\Message\RequestFactory;
+use Http\Message\UriFactory;
 use Http\Promise\FulfilledPromise;
 use Prooph\EventStore\EventData;
 use Prooph\EventStore\EventStoreConnection;
@@ -23,22 +26,43 @@ use Prooph\EventStore\Task\StreamEventsSliceTask;
 use Prooph\EventStore\Task\StreamMetadataResultTask;
 use Prooph\EventStore\Task\WriteResultTask;
 use Prooph\EventStore\UserCredentials;
+use Prooph\EventStoreHttpClient\ClientOperations\DeleteStreamOperation;
+use Psr\Http\Message\UriInterface as Uri;
 use Ramsey\Uuid\Uuid;
 
 class EventStoreHttpConnection implements EventStoreConnection, EventStoreTransactionConnection
 {
     /** @var HttpAsyncClient */
     private $asyncClient;
+    /** @var RequestFactory */
+    private $requestFactory;
+    /** @var UriFactory */
+    private $uriFactory;
     /** @var string */
     private $connectionName;
     /** @var ConnectionSettings */
     private $settings;
+    /** @var string */
+    private $baseUri;
 
-    public function __construct(HttpAsyncClient $asyncClient, ConnectionSettings $settings = null, string $connectionName = null)
-    {
+    public function __construct(
+        HttpAsyncClient $asyncClient,
+        RequestFactory $requestFactory,
+        UriFactory $uriFactory,
+        ConnectionSettings $settings = null,
+        string $connectionName = null
+    ) {
         $this->asyncClient = $asyncClient;
+        $this->requestFactory = $requestFactory;
+        $this->uriFactory = $uriFactory;
         $this->settings = $settings ?? ConnectionSettings::default();
         $this->connectionName = $connectionName ?? sprintf('ES-%s', Uuid::uuid4()->toString());
+        $this->baseUri = sprintf(
+            '%s://%s:%s',
+            $this->settings->useSslConnection() ? 'https' : 'http',
+            $this->settings->endPoint()->host(),
+            $this->settings->endPoint()->port()
+        );
     }
 
     public function connectionName(): string
@@ -58,11 +82,20 @@ class EventStoreHttpConnection implements EventStoreConnection, EventStoreTransa
 
     public function deleteStreamAsync(
         string $stream,
-        int $expectedVersion,
         bool $hardDelete,
-        ?UserCredentials $userCredentials
+        UserCredentials $userCredentials = null
     ): DeleteResultTask {
-        // TODO: Implement deleteStreamAsync() method.
+        $operation = new DeleteStreamOperation(
+            $this->asyncClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->baseUri,
+            $stream,
+            $hardDelete,
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
+
+        return $operation->task();
     }
 
     /**

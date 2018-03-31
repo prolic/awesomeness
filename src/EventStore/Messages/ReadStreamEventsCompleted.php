@@ -22,6 +22,7 @@ class ReadStreamEventsCompleted
     /** @var string|null */
     private $error;
 
+    /** @internal */
     public function __construct(
         int $commitPosition,
         int $preparePosition,

@@ -14,6 +14,7 @@ class TransactionStart
     /** @var bool */
     private $requireMaster;
 
+    /** @internal */
     public function __construct(string $eventStreamId, int $expectedVersion, bool $requireMaster)
     {
         $this->eventStreamId = $eventStreamId;

@@ -14,6 +14,7 @@ class NewEvent
     private $data;
     private $metadata;
 
+    /** @internal */
     public function __construct(string $eventId, string $eventType, int $dataContentType, int $metadataContentType, string $data, string $metadata)
     {
         $this->eventId = $eventId;

@@ -22,6 +22,7 @@ class WriteEventsCompleted
     /** @var int|null */
     private $currentVersion;
 
+    /** @internal */
     public function __construct(OperationResult $result, string $message, int $firstEventNumber, int $lastEventNumber, ?int $preparePosition, ?int $commitPosition, ?int $currentVersion)
     {
         $this->result = $result;

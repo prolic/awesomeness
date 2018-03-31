@@ -16,6 +16,7 @@ class RecordedEvent
     private $created;
     private $createdEpoch;
 
+    /** @internal */
     public function __construct(string $eventStreamId, EventId $eventId, int $eventNumber, string $eventType, string $data, string $metadata, bool $isJson, string $created, int $createdEpoch)
     {
         $this->eventStreamId = $eventStreamId;

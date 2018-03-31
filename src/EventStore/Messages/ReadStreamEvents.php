@@ -18,6 +18,7 @@ class ReadStreamEvents
     /** @var bool */
     private $requireMaster;
 
+    /** @internal */
     public function __construct(string $eventStreamId, int $fromEventNumber, int $maxCount, bool $resolveLinkTos, bool $requireMaster)
     {
         $this->eventStreamId = $eventStreamId;

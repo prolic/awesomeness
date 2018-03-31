@@ -11,8 +11,6 @@ class StreamEventsSliceTask extends BaseTask
 {
     public function result(): StreamEventsSlice
     {
-        $this->promise->wait(false);
-
-        return $this->result;
+        return $this->promise->wait();
     }
 }

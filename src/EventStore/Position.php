@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
+/** @todo delete this?? */
 class Position
 {
     /** @var Position */

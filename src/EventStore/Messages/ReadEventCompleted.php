@@ -14,6 +14,7 @@ class ReadEventCompleted
     /** @var string|null */
     private $error;
 
+    /** @internal */
     public function __construct(ReadEventResult $result, ResolvedIndexedEvent $event, ?string $error)
     {
         $this->result = $result;

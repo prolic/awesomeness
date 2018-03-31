@@ -16,6 +16,7 @@ class ReadEvent
     /** @var bool */
     private $requireMaster;
 
+    /** @internal */
     public function __construct(string $eventStreamId, int $eventNumber, bool $resolveLinkTos, bool $requireMaster)
     {
         $this->eventStreamId = $eventStreamId;

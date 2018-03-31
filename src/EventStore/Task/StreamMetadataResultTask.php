@@ -11,8 +11,6 @@ class StreamMetadataResultTask extends BaseTask
 {
     public function result(): StreamMetadataResult
     {
-        $this->promise->wait(false);
-
-        return $this->result;
+        return $this->promise->wait();
     }
 }

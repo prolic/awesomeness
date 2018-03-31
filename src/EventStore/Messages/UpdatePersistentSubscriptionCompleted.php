@@ -12,6 +12,7 @@ class UpdatePersistentSubscriptionCompleted
     /** @var string|null */
     private $reason;
 
+    /** @internal */
     public function __construct(UpdatePersistentSubscriptionResult $result, ?string $reason)
     {
         $this->result = $result;

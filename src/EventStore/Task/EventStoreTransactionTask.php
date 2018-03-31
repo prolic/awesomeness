@@ -11,8 +11,6 @@ class EventStoreTransactionTask extends BaseTask
 {
     public function result(): EventStoreTransaction
     {
-        $this->promise->wait(false);
-
-        return $this->result;
+        return $this->promise->wait();
     }
 }

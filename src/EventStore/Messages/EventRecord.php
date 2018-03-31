@@ -18,6 +18,7 @@ class EventRecord
     private $created;
     private $createdEpoch;
 
+    /** @internal */
     public function __construct(string $eventStreamId, int $eventNumber, string $eventId, string $eventType, int $dataContentType, int $metadataContentType, string $data, string $metadata, ?string $created, ?int $createdEpoch)
     {
         $this->eventStreamId = $eventStreamId;

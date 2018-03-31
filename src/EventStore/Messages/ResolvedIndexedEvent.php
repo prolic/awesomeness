@@ -10,6 +10,7 @@ class ResolvedIndexedEvent
     private $event;
     private $link;
 
+    /** @internal */
     public function __construct(EventRecord $event, EventRecord $link)
     {
         $this->event = $event;

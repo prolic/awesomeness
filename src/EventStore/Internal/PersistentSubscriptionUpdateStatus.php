@@ -70,7 +70,7 @@ class PersistentSubscriptionUpdateStatus
 
     public function equals(PersistentSubscriptionUpdateStatus $other): bool
     {
-        return get_class($this) === get_class($other) && $this->value === $other->value;
+        return get_class($this) === get_class($other) && $this->name === $other->name;
     }
 
     public function name(): string

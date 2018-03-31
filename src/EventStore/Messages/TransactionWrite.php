@@ -14,6 +14,7 @@ class TransactionWrite
     /** @var bool */
     private $requireMaster;
 
+    /** @internal */
     public function __construct(int $transactionId, iterable $events, bool $requireMaster)
     {
         $this->transactionId = $transactionId;

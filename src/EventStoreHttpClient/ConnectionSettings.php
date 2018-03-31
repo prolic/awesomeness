@@ -6,8 +6,6 @@ namespace Prooph\EventStoreHttpClient;
 
 use Prooph\EventStore\IpEndPoint;
 use Prooph\EventStore\UserCredentials;
-use Psr\Log\LoggerInterface as Logger;
-use Psr\Log\NullLogger;
 
 class ConnectionSettings
 {
@@ -17,10 +15,6 @@ class ConnectionSettings
     private $useSslConnection;
     /** @var bool */
     private $validateServer;
-    /** @var Logger */
-    private $logger;
-    /** @var bool */
-    private $verboseLogging;
     /** @var UserCredentials|null */
     private $defaultUserCredentials;
 
@@ -30,8 +24,6 @@ class ConnectionSettings
             new IpEndPoint('localhost', 2113),
             false,
             false,
-            new NullLogger(),
-            false,
             null
         );
     }
@@ -40,21 +32,12 @@ class ConnectionSettings
         IpEndPoint $endpoint,
         bool $useSslConnection,
         bool $validateServer,
-        Logger $logger,
-        bool $verboseLogging,
         UserCredentials $defaultUserCredentials = null
     ) {
         $this->endPoint = $endpoint;
         $this->useSslConnection = $useSslConnection;
         $this->validateServer = $validateServer;
-        $this->logger = $logger;
-        $this->verboseLogging = $verboseLogging;
         $this->defaultUserCredentials = $defaultUserCredentials;
-    }
-
-    public function verboseLogging(): bool
-    {
-        return $this->verboseLogging;
     }
 
     public function defaultUserCredentials(): ?UserCredentials

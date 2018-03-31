@@ -10,6 +10,7 @@ class TransactionCommit
     private $transactionId;
     private $requireMaster;
 
+    /** @internal */
     public function __construct(int $transactionId, bool $requireMaster)
     {
         $this->transactionId = $transactionId;

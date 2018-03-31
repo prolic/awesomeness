@@ -23,9 +23,8 @@ interface EventStoreConnection
 
     public function deleteStreamAsync(
         string $stream,
-        int $expectedVersion,
         bool $hardDelete,
-        ?UserCredentials $userCredentials
+        UserCredentials $userCredentials = null
     ): DeleteResultTask;
 
     /**

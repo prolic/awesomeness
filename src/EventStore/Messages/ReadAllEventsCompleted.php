@@ -13,6 +13,7 @@ class ReadAllEventsCompleted
     private $resolveLinkTos;
     private $requireMaster;
 
+    /** @internal */
     public function __construct(int $commitPosition, int $preparePosition, int $maxCount, bool $resolveLinkTos, bool $requireMaster)
     {
         $this->commitPosition = $commitPosition;

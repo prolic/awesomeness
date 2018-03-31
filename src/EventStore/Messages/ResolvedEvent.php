@@ -12,6 +12,7 @@ class ResolvedEvent
     private $commitPosition;
     private $preparePosition;
 
+    /** @internal */
     public function __construct(EventRecord $event, EventRecord $link, int $commitPosition, int $preparePosition)
     {
         $this->event = $event;

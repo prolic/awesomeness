@@ -6,16 +6,70 @@ namespace Prooph\EventStore;
 
 class DeleteResult
 {
-    /** @var Position */
-    private $logPosition;
+    public const OPTIONS = [
+        'Success' => 0,
+        'AccessDenied' => 1,
+    ];
 
-    public function __construct(Position $logPosition)
+    public const Success = 0;
+    public const AccessDenied = 1;
+
+    private $name;
+    private $value;
+
+    private function __construct(string $name)
     {
-        $this->logPosition = $logPosition;
+        $this->name = $name;
+        $this->value = self::OPTIONS[$name];
     }
 
-    public function logPosition(): Position
+    public static function success(): self
     {
-        return $this->logPosition;
+        return new self('Success');
+    }
+
+    public static function accessDenied(): self
+    {
+        return new self('AccessDenied');
+    }
+
+    public static function byName(string $value): self
+    {
+        if (! isset(self::OPTIONS[$value])) {
+            throw new \InvalidArgumentException('Unknown enum name given');
+        }
+
+        return self::{$value}();
+    }
+
+    public static function byValue($value): self
+    {
+        foreach (self::OPTIONS as $name => $v) {
+            if ($v === $value) {
+                return self::{$name}();
+            }
+        }
+
+        throw new \InvalidArgumentException('Unknown enum value given');
+    }
+
+    public function equals(DeleteResult $other): bool
+    {
+        return get_class($this) === get_class($other) && $this->name === $other->name;
+    }
+
+    public function name(): string
+    {
+        return $this->name;
+    }
+
+    public function value()
+    {
+        return $this->value;
+    }
+
+    public function __toString(): string
+    {
+        return $this->name;
     }
 }
