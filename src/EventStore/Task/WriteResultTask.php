@@ -12,6 +12,9 @@ class WriteResultTask extends BaseTask
 {
     public function result(): WriteResult
     {
-        return $this->promise->wait();
+        $callback = $this->callback;
+        $response = $this->promise->wait();
+
+        return $callback($response);
     }
 }

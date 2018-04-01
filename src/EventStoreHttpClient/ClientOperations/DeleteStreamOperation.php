@@ -8,6 +8,7 @@ use Http\Client\HttpAsyncClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
 use Prooph\EventStore\DeleteResult;
+use Prooph\EventStore\Exception\AccessDeniedException;
 use Prooph\EventStore\Task\DeleteResultTask;
 use Prooph\EventStore\UserCredentials;
 use Prooph\EventStoreHttpClient\Http\RequestMethod;
@@ -35,7 +36,6 @@ class DeleteStreamOperation extends Operation
 
         $this->stream = $stream;
         $this->hardDelete = $hardDelete;
-        $this->userCredentials = $userCredentials;
     }
 
     public function task(): DeleteResultTask
@@ -57,7 +57,7 @@ class DeleteStreamOperation extends Operation
         return new DeleteResultTask($promise, function (ResponseInterface $response): DeleteResult {
             switch ($response->getStatusCode()) {
                 case 401:
-                    return DeleteResult::accessDenied();
+                    throw new AccessDeniedException();
                 case 204:
                 case 410:
                     return DeleteResult::success();

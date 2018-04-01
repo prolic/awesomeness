@@ -8,11 +8,9 @@ class DeleteResult
 {
     public const OPTIONS = [
         'Success' => 0,
-        'AccessDenied' => 1,
     ];
 
     public const Success = 0;
-    public const AccessDenied = 1;
 
     private $name;
     private $value;
@@ -26,11 +24,6 @@ class DeleteResult
     public static function success(): self
     {
         return new self('Success');
-    }
-
-    public static function accessDenied(): self
-    {
-        return new self('AccessDenied');
     }
 
     public static function byName(string $value): self

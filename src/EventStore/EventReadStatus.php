@@ -11,14 +11,12 @@ class EventReadStatus
         'NotFound' => 1,
         'NoStream' => 2,
         'StreamDeleted' => 3,
-        'AccessDenied' => 4,
     ];
 
     public const Success = 0;
     public const NotFound = 1;
     public const NoStream = 2;
     public const StreamDeleted = 3;
-    public const AccessDenied = 4;
 
     private $name;
     private $value;
@@ -47,11 +45,6 @@ class EventReadStatus
     public static function streamDeleted(): self
     {
         return new self('StreamDeleted');
-    }
-
-    public static function accessDenied(): self
-    {
-        return new self('AccessDenied');
     }
 
     public static function byName(string $value): self

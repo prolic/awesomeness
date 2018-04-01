@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Prooph\EventStore\Task;
 
 use Prooph\EventStore\EventReadResult;
-use Prooph\EventStore\EventReadStatus;
-use Prooph\EventStore\RecordedEvent;
 use Prooph\EventStore\Task as BaseTask;
 
 /** @internal  */

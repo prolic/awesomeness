@@ -8,22 +8,14 @@ class WriteResult
 {
     /** @var int */
     private $nextExpectedVersion;
-    /** @var Position */
-    private $logPosition;
 
-    public function __construct(int $nextExpectedVersion, Position $logPosition)
+    public function __construct(int $nextExpectedVersion)
     {
         $this->nextExpectedVersion = $nextExpectedVersion;
-        $this->logPosition = $logPosition;
     }
 
     public function nextExpectedVersion(): int
     {
         return $this->nextExpectedVersion;
-    }
-
-    public function logPosition(): Position
-    {
-        return $this->logPosition;
     }
 }
