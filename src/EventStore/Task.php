@@ -22,7 +22,9 @@ class Task
     public function __construct($promise, callable $callback = null)
     {
         $this->promise = $promise;
-        $this->callback = $callback;
+        $this->callback = $callback ?? function () {
+            return null;
+        };
     }
 
     /**

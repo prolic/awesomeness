@@ -79,15 +79,25 @@ class ReadEventOperation extends Operation
                         return new EventReadResult(EventReadStatus::notFound(), $this->stream, $this->eventNumber, null);
                     }
 
+                    $data = $json['data'] ?? '';
+
+                    if (is_array($data)) {
+                        $data = json_encode($data);
+                    }
+
+                    $metadata = $json['metadata'] ?? '';
+
+                    if (is_array($metadata)) {
+                        $metadata = json_encode($metadata);
+                    }
+
                     $event = new RecordedEvent(
                         $json['id'],
                         EventId::fromString($json['eventId']),
                         $json['eventNumber'],
                         $json['eventType'],
-                        is_array($json['data']) ? json_encode($json['data']) : $json['data'],
-                        is_array($json['metadata'])
-                            ? json_encode($json['metadata'])
-                            : $json['metadata'] ?? '',
+                        $data,
+                        $metadata,
                         $json['isJson'],
                         DateTimeFactory::create($json['updated'])
                     );

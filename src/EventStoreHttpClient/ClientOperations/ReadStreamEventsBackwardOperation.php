@@ -104,15 +104,25 @@ class ReadStreamEventsBackwardOperation extends Operation
                     $events = [];
                     $lastEventNumber = 0;
                     foreach ($json['entries'] as $entry) {
+                        $data = $json['data'] ?? '';
+
+                        if (is_array($data)) {
+                            $data = json_encode($data);
+                        }
+
+                        $metadata = $json['metadata'] ?? '';
+
+                        if (is_array($metadata)) {
+                            $metadata = json_encode($metadata);
+                        }
+
                         $events[] = new RecordedEvent(
                             $entry['id'],
                             $entry['eventId'],
                             $entry['eventNumber'],
                             $entry['eventType'],
-                            is_array($entry['data']) ? json_encode($entry['data']) : $entry['data'],
-                            is_array($entry['metadata'])
-                                ? json_encode($entry['metadata'])
-                                : $entry['metadata'] ?? '',
+                            $data,
+                            $metadata,
                             $entry['isJson'],
                             DateTimeFactory::create($entry['updated'])
                         );
