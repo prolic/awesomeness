@@ -15,7 +15,6 @@ use Prooph\EventStore\StreamMetadata;
 use Prooph\EventStore\SystemSettings;
 use Prooph\EventStore\Task;
 use Prooph\EventStore\Task\AllEventsSliceTask;
-use Prooph\EventStore\Task\ConditionalWriteResultTask;
 use Prooph\EventStore\Task\DeleteResultTask;
 use Prooph\EventStore\Task\EventReadResultTask;
 use Prooph\EventStore\Task\StreamEventsSliceTask;
@@ -120,15 +119,6 @@ class EventStoreHttpConnection implements EventStoreConnection
         );
 
         return $operation->task();
-    }
-
-    public function conditionalAppendToStreamAsync(
-        string $stream,
-        int $expectedVersion,
-        ?UserCredentials $userCredentials,
-        iterable $events
-    ): ConditionalWriteResultTask {
-        // TODO: Implement conditionalAppendToStreamAsync() method.
     }
 
     public function readEventAsync(

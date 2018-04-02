@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Prooph\EventStore;
 
 use Prooph\EventStore\Task\AllEventsSliceTask;
-use Prooph\EventStore\Task\ConditionalWriteResultTask;
 use Prooph\EventStore\Task\DeleteResultTask;
 use Prooph\EventStore\Task\EventReadResultTask;
 use Prooph\EventStore\Task\StreamEventsSliceTask;
@@ -39,13 +38,6 @@ interface EventStoreConnection
         ?UserCredentials $userCredentials,
         iterable $events
     ): WriteResultTask;
-
-    public function conditionalAppendToStreamAsync(
-        string $stream,
-        int $expectedVersion,
-        ?UserCredentials $userCredentials,
-        iterable $events
-    ): ConditionalWriteResultTask;
 
     public function readEventAsync(
         string $stream,
