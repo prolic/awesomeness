@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
-class EventData
+final class EventData
 {
     /** @var EventId */
     private $eventId;
