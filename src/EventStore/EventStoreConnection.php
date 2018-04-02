@@ -35,14 +35,14 @@ interface EventStoreConnection
     public function appendToStreamAsync(
         string $stream,
         int $expectedVersion,
-        ?UserCredentials $userCredentials,
-        iterable $events
+        iterable $events,
+        UserCredentials $userCredentials = null
     ): WriteResultTask;
 
     public function readEventAsync(
         string $stream,
         int $eventNumber,
-        ?UserCredentials $userCredentials
+        UserCredentials $userCredentials = null
     ): EventReadResultTask;
 
     public function readStreamEventsForwardAsync(
@@ -50,7 +50,7 @@ interface EventStoreConnection
         int $start,
         int $count,
         bool $resolveLinkTos,
-        ?UserCredentials $userCredentials
+        UserCredentials $userCredentials = null
     ): StreamEventsSliceTask;
 
     public function readStreamEventsBackwardAsync(
@@ -58,33 +58,33 @@ interface EventStoreConnection
         int $start,
         int $count,
         bool $resolveLinkTos,
-        ?UserCredentials $userCredentials
+        UserCredentials $userCredentials = null
     ): StreamEventsSliceTask;
 
     public function readAllEventsForwardAsync(
         Position $position,
         int $maxCount,
         bool $resolveLinkTos,
-        ?UserCredentials $userCredentials
+        UserCredentials $userCredentials = null
     ): AllEventsSliceTask;
 
     public function readAllEventsBackwardAsync(
         Position $position,
         int $maxCount,
         bool $resolveLinkTos,
-        ?UserCredentials $userCredentials
+        UserCredentials $userCredentials = null
     ): AllEventsSliceTask;
 
     public function setStreamMetadataAsync(
         string $stream,
         int $expectedMetastreamVersion,
         StreamMetadata $metadata,
-        ?UserCredentials $userCredentials
+        UserCredentials $userCredentials = null
     ): WriteResultTask;
 
-    public function getStreamMetadataAsync(string $stream, ?UserCredentials $userCredentials): StreamMetadataResultTask;
+    public function getStreamMetadataAsync(string $stream, UserCredentials $userCredentials = null): StreamMetadataResultTask;
 
-    public function setSystemSettingsAsync(SystemSettings $settings, ?UserCredentials $userCredentials): Task;
+    public function setSystemSettingsAsync(SystemSettings $settings, UserCredentials $userCredentials = null): Task;
 
     // @todo subscriptions
     // @todo event handlers

@@ -109,8 +109,10 @@ class ReadStreamEventsBackwardOperation extends Operation
                             $entry['eventId'],
                             $entry['eventNumber'],
                             $entry['eventType'],
-                            $entry['data'] ?? '',
-                            $entry['metadata'] ?? '',
+                            is_array($entry['data']) ? json_encode($entry['data']) : $entry['data'],
+                            is_array($entry['metadata'])
+                                ? json_encode($entry['metadata'])
+                                : $entry['metadata'] ?? '',
                             $entry['isJson'],
                             DateTimeFactory::create($entry['updated'])
                         );

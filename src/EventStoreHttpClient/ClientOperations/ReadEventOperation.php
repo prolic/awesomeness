@@ -7,6 +7,7 @@ namespace Prooph\EventStoreHttpClient\ClientOperations;
 use Http\Client\HttpAsyncClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
+use Prooph\EventStore\EventId;
 use Prooph\EventStore\EventReadResult;
 use Prooph\EventStore\EventReadStatus;
 use Prooph\EventStore\Exception\AccessDenied;
@@ -47,11 +48,19 @@ class ReadEventOperation extends Operation
             'Accept' => 'application/vnd.eventstore.atom+json',
         ];
 
-        $request = $this->requestFactory->createRequest(
-            RequestMethod::Get,
-            $this->uriFactory->createUri($this->baseUri . '/streams/' . urlencode($this->stream) . '/' . $this->eventNumber . '?embed=body'),
-            $headers
-        );
+        if (-1 === $this->eventNumber) {
+            $request = $this->requestFactory->createRequest(
+                RequestMethod::Get,
+                $this->uriFactory->createUri($this->baseUri . '/streams/' . urlencode($this->stream) . '/head?embed=body'),
+                $headers
+            );
+        } else {
+            $request = $this->requestFactory->createRequest(
+                RequestMethod::Get,
+                $this->uriFactory->createUri($this->baseUri . '/streams/' . urlencode($this->stream) . '/' . $this->eventNumber . '?embed=body'),
+                $headers
+            );
+        }
 
         $promise = $this->sendAsyncRequest($request);
 
@@ -66,13 +75,19 @@ class ReadEventOperation extends Operation
                 case 200:
                     $json = json_decode($response->getBody()->getContents(), true);
 
+                    if (empty($json)) {
+                        return new EventReadResult(EventReadStatus::notFound(), $this->stream, $this->eventNumber, null);
+                    }
+
                     $event = new RecordedEvent(
                         $json['id'],
-                        $json['eventId'],
+                        EventId::fromString($json['eventId']),
                         $json['eventNumber'],
                         $json['eventType'],
-                        $json['data'],
-                        $json['metadata'],
+                        is_array($json['data']) ? json_encode($json['data']) : $json['data'],
+                        is_array($json['metadata'])
+                            ? json_encode($json['metadata'])
+                            : $json['metadata'] ?? '',
                         $json['isJson'],
                         DateTimeFactory::create($json['updated'])
                     );

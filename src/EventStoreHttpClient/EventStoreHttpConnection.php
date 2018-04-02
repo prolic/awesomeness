@@ -12,10 +12,13 @@ use Prooph\EventStore\Common\SystemEventTypes;
 use Prooph\EventStore\Common\SystemStreams;
 use Prooph\EventStore\EventData;
 use Prooph\EventStore\EventId;
+use Prooph\EventStore\EventReadResult;
+use Prooph\EventStore\EventReadStatus;
 use Prooph\EventStore\EventStoreConnection;
 use Prooph\EventStore\Internal\Consts;
 use Prooph\EventStore\Position;
 use Prooph\EventStore\StreamMetadata;
+use Prooph\EventStore\StreamMetadataResult;
 use Prooph\EventStore\SystemSettings;
 use Prooph\EventStore\Task;
 use Prooph\EventStore\Task\AllEventsSliceTask;
@@ -114,8 +117,8 @@ class EventStoreHttpConnection implements EventStoreConnection
     public function appendToStreamAsync(
         string $stream,
         int $expectedVersion,
-        ?UserCredentials $userCredentials,
-        iterable $events
+        iterable $events,
+        UserCredentials $userCredentials = null
     ): WriteResultTask {
         if (empty($stream)) {
             throw new \InvalidArgumentException('Stream cannot be empty');
@@ -138,8 +141,11 @@ class EventStoreHttpConnection implements EventStoreConnection
     public function readEventAsync(
         string $stream,
         int $eventNumber,
-        ?UserCredentials $userCredentials
+        UserCredentials $userCredentials = null
     ): EventReadResultTask {
+        if ($eventNumber <  -1) {
+            throw new \InvalidArgumentException('EventNumber cannot be smaller then -1');
+        }
         if (empty($stream)) {
             throw new \InvalidArgumentException('Stream cannot be empty');
         }
@@ -162,7 +168,7 @@ class EventStoreHttpConnection implements EventStoreConnection
         int $start,
         int $count,
         bool $resolveLinkTos,
-        ?UserCredentials $userCredentials
+        UserCredentials $userCredentials = null
     ): StreamEventsSliceTask {
         if (empty($stream)) {
             throw new \InvalidArgumentException('Stream cannot be empty');
@@ -198,7 +204,7 @@ class EventStoreHttpConnection implements EventStoreConnection
         int $start,
         int $count,
         bool $resolveLinkTos,
-        ?UserCredentials $userCredentials
+        UserCredentials $userCredentials = null
     ): StreamEventsSliceTask {
         if (empty($stream)) {
             throw new \InvalidArgumentException('Stream cannot be empty');
@@ -229,7 +235,7 @@ class EventStoreHttpConnection implements EventStoreConnection
         Position $position,
         int $maxCount,
         bool $resolveLinkTos,
-        ?UserCredentials $userCredentials
+        UserCredentials $userCredentials = null
     ): AllEventsSliceTask {
         throw new \BadMethodCallException('Not yet implemented');
     }
@@ -238,7 +244,7 @@ class EventStoreHttpConnection implements EventStoreConnection
         Position $position,
         int $maxCount,
         bool $resolveLinkTos,
-        ?UserCredentials $userCredentials
+        UserCredentials $userCredentials = null
     ): AllEventsSliceTask {
         throw new \BadMethodCallException('Not yet implemented');
     }
@@ -247,7 +253,7 @@ class EventStoreHttpConnection implements EventStoreConnection
         string $stream,
         int $expectedMetastreamVersion,
         StreamMetadata $metadata,
-        ?UserCredentials $userCredentials
+        UserCredentials $userCredentials = null
     ): WriteResultTask {
         if (empty($stream)) {
             throw new \InvalidArgumentException('Stream cannot be empty');
@@ -282,12 +288,43 @@ class EventStoreHttpConnection implements EventStoreConnection
         return $operation->task();
     }
 
-    public function getStreamMetadataAsync(string $stream, ?UserCredentials $userCredentials): StreamMetadataResultTask
+    public function getStreamMetadataAsync(string $stream, UserCredentials $userCredentials = null): StreamMetadataResultTask
     {
-        // TODO: Implement getStreamMetadataAsync() method.
+        $task = $this->readEventAsync(
+            SystemStreams::metastreamOf($stream),
+            -1,
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
+
+        $callback = function (EventReadResult $result) use ($stream): StreamMetadataResult {
+            switch ($result->status()->value()) {
+                case EventReadStatus::Success:
+                    $event = $result->event();
+
+                    if (null === $event) {
+                        throw new \UnexpectedValueException('Event is null while operation result is Success');
+                    }
+
+                    return new StreamMetadataResult(
+                        $stream,
+                        false,
+                        $event->eventNumber(),
+                        $event->data()
+                    );
+                case EventReadStatus::NotFound:
+                case EventReadStatus::NoStream:
+                    return new StreamMetadataResult($stream, false, -1, '');
+                case EventReadStatus::StreamDeleted:
+                    return new StreamMetadataResult($stream, true, PHP_INT_MAX, '');
+                default:
+                    throw new \OutOfRangeException('Unexpected ReadEventResult: ' . $result->status()->value());
+            }
+        };
+
+        return $task->continueWith($callback, StreamMetadataResultTask::class);
     }
 
-    public function setSystemSettingsAsync(SystemSettings $settings, ?UserCredentials $userCredentials): Task
+    public function setSystemSettingsAsync(SystemSettings $settings, UserCredentials $userCredentials = null): Task
     {
         // TODO: Implement setSystemSettingsAsync() method.
     }
