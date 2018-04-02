@@ -7,6 +7,7 @@ namespace Prooph\EventStoreHttpClient\ClientOperations;
 use Http\Client\HttpAsyncClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
+use Prooph\EventStore\EventId;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Internal\DateTimeFactory;
 use Prooph\EventStore\ReadDirection;
@@ -118,7 +119,7 @@ class ReadStreamEventsForwardOperation extends Operation
 
                         $events[] = new RecordedEvent(
                             $entry['id'],
-                            $entry['eventId'],
+                            EventId::fromString($entry['eventId']),
                             $entry['eventNumber'],
                             $entry['eventType'],
                             $data,

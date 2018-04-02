@@ -50,8 +50,8 @@ class AppendToStreamOperation extends Operation
         $data = [];
         foreach ($this->events as $event) {
             $data[] = [
-                'eventId' => $event->eventId(),
-                'evenType' => $event->type(),
+                'eventId' => $event->eventId()->toString(),
+                'eventType' => $event->type(),
                 'data' => $event->data(),
                 'metadata' => $event->metadata(),
             ];
@@ -71,8 +71,15 @@ class AppendToStreamOperation extends Operation
         return new WriteResultTask($promise, function (ResponseInterface $response): WriteResult {
             switch ($response->getStatusCode()) {
                 case 400:
-                    $currentVersion = $response->getHeader('ES-CurrentVersion')[0];
-                    throw WrongExpectedVersion::duringAppend($this->stream, $this->expectedVersion, $currentVersion);
+                    $header = $response->getHeader('ES-CurrentVersion');
+
+                    if (empty($header)) {
+                        throw WrongExpectedVersion::withExpectedVersion($this->stream, $this->expectedVersion);
+                    } else {
+                        $currentVersion = (int) $header[0];
+                    }
+
+                    throw WrongExpectedVersion::withCurrentVersion($this->stream, $this->expectedVersion, $currentVersion);
                 case 401:
                     throw AccessDenied::with($this->stream);
                 case 410:
