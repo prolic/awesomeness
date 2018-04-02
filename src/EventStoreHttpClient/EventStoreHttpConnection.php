@@ -22,6 +22,7 @@ use Prooph\EventStore\Task\StreamEventsSliceTask;
 use Prooph\EventStore\Task\StreamMetadataResultTask;
 use Prooph\EventStore\Task\WriteResultTask;
 use Prooph\EventStore\UserCredentials;
+use Prooph\EventStoreHttpClient\ClientOperations\AppendToStreamOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\DeleteStreamOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\ReadEventOperation;
 use Ramsey\Uuid\Uuid;
@@ -107,7 +108,18 @@ class EventStoreHttpConnection implements EventStoreConnection
         ?UserCredentials $userCredentials,
         iterable $events
     ): WriteResultTask {
-        // TODO: Implement appendToStreamAsync() method.
+        $operation = new AppendToStreamOperation(
+            $this->asyncClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->baseUri,
+            $stream,
+            $expectedVersion,
+            $events,
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
+
+        return $operation->task();
     }
 
     public function conditionalAppendToStreamAsync(
