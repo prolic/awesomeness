@@ -15,6 +15,7 @@ use Prooph\EventStore\EventId;
 use Prooph\EventStore\EventReadResult;
 use Prooph\EventStore\EventReadStatus;
 use Prooph\EventStore\EventStoreConnection;
+use Prooph\EventStore\ExpectedVersion;
 use Prooph\EventStore\Internal\Consts;
 use Prooph\EventStore\Position;
 use Prooph\EventStore\StreamMetadata;
@@ -143,7 +144,7 @@ class EventStoreHttpConnection implements EventStoreConnection
         int $eventNumber,
         UserCredentials $userCredentials = null
     ): EventReadResultTask {
-        if ($eventNumber <  -1) {
+        if ($eventNumber < -1) {
             throw new \InvalidArgumentException('EventNumber cannot be smaller then -1');
         }
         if (empty($stream)) {
@@ -324,8 +325,21 @@ class EventStoreHttpConnection implements EventStoreConnection
         return $task->continueWith($callback, StreamMetadataResultTask::class);
     }
 
-    public function setSystemSettingsAsync(SystemSettings $settings, UserCredentials $userCredentials = null): Task
+    public function setSystemSettingsAsync(SystemSettings $settings, UserCredentials $userCredentials = null): WriteResultTask
     {
-        // TODO: Implement setSystemSettingsAsync() method.
+        return $this->appendToStreamAsync(
+            SystemStreams::SettingsStream,
+            ExpectedVersion::Any,
+            [
+                new EventData(
+                    EventId::generate(),
+                    SystemEventTypes::Settings,
+                    true,
+                    json_encode($settings->toArray()),
+                    ''
+                ),
+            ],
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
     }
 }

@@ -33,4 +33,25 @@ class SystemSettings
     {
         return $this->systemStreamAcl;
     }
+
+    public function toArray(): array
+    {
+        return [
+            '$userStreamAcl' => $this->userStreamAcl->toArray(),
+            '$systemStreamAcl' => $this->systemStreamAcl->toArray(),
+        ];
+    }
+
+    public static function fromArray(array $data): SystemSettings
+    {
+        if (! isset($data['$userStreamAcl'])) {
+            throw new \InvalidArgumentException('$userStreamAcl is missing');
+        }
+
+        if (! isset($data['$systemStreamAcl'])) {
+            throw new \InvalidArgumentException('$systemStreamAcl is missing');
+        }
+
+        return new self(StreamAcl::fromArray($data['$userStreamAcl']), StreamAcl::fromArray($data['$systemStreamAcl']));
+    }
 }

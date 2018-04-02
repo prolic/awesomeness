@@ -84,7 +84,7 @@ interface EventStoreConnection
 
     public function getStreamMetadataAsync(string $stream, UserCredentials $userCredentials = null): StreamMetadataResultTask;
 
-    public function setSystemSettingsAsync(SystemSettings $settings, UserCredentials $userCredentials = null): Task;
+    public function setSystemSettingsAsync(SystemSettings $settings, UserCredentials $userCredentials = null): WriteResultTask;
 
     // @todo subscriptions
     // @todo event handlers

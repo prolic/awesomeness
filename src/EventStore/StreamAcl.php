@@ -96,22 +96,22 @@ class StreamAcl
     public function toArray(): array
     {
         return [
-            'readRoles' => $this->readRoles,
-            'writeRoles' => $this->writeRoles,
-            'deleteRoles' => $this->deleteRoles,
-            'metaReadRoles' => $this->metaReadRoles,
-            'metaWriteRoles' => $this->metaWriteRoles,
+            '$r' => $this->readRoles,
+            '$w' => $this->writeRoles,
+            '$d' => $this->deleteRoles,
+            '$mr' => $this->metaReadRoles,
+            '$mw' => $this->metaWriteRoles,
         ];
     }
 
     public static function fromArray(array $data): StreamAcl
     {
         $values = [
-            'readRoles',
-            'writeRoles',
-            'deleteRoles',
-            'metaReadRoles',
-            'metaWriteRoles',
+            '$r',
+            '$w',
+            '$d',
+            '$mr',
+            '$mw',
         ];
 
         foreach ($values as $value) {
@@ -124,6 +124,6 @@ class StreamAcl
             }
         }
 
-        return new self($data['readRoles'], $data['writeRoles'], $data['deleteRoles'], $data['metaReadRoles'], $data['metaWriteRoles']);
+        return new self($data['$r'], $data['$w'], $data['$d'], $data['$mr'], $data['$mw']);
     }
 }
