@@ -10,6 +10,7 @@ use Http\Message\UriFactory;
 use Http\Promise\FulfilledPromise;
 use Prooph\EventStore\EventData;
 use Prooph\EventStore\EventStoreConnection;
+use Prooph\EventStore\Internal\Consts;
 use Prooph\EventStore\Position;
 use Prooph\EventStore\StreamMetadata;
 use Prooph\EventStore\SystemSettings;
@@ -24,6 +25,7 @@ use Prooph\EventStore\UserCredentials;
 use Prooph\EventStoreHttpClient\ClientOperations\AppendToStreamOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\DeleteStreamOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\ReadEventOperation;
+use Prooph\EventStoreHttpClient\ClientOperations\ReadStreamEventsBackwardOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\ReadStreamEventsForwardOperation;
 use Ramsey\Uuid\Uuid;
 
@@ -144,8 +146,19 @@ class EventStoreHttpConnection implements EventStoreConnection
         string $stream,
         int $start,
         int $count,
+        bool $resolveLinkTos,
         ?UserCredentials $userCredentials
     ): StreamEventsSliceTask {
+        if ($start < 0) {
+            throw new \InvalidArgumentException('Start cannot be negative');
+        }
+
+        if ($count > Consts::MaxReadSize) {
+            throw new \InvalidArgumentException(
+                'Count should be less than ' . Consts::MaxReadSize . '. For larger reads you should page.'
+            );
+        }
+
         $operation = new ReadStreamEventsForwardOperation(
             $this->asyncClient,
             $this->requestFactory,
@@ -154,6 +167,7 @@ class EventStoreHttpConnection implements EventStoreConnection
             $stream,
             $start,
             $count,
+            $resolveLinkTos,
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
 
@@ -164,25 +178,46 @@ class EventStoreHttpConnection implements EventStoreConnection
         string $stream,
         int $start,
         int $count,
+        bool $resolveLinkTos,
         ?UserCredentials $userCredentials
     ): StreamEventsSliceTask {
-        // TODO: Implement readStreamEventsBackwardAsync() method.
+        if ($count > Consts::MaxReadSize) {
+            throw new \InvalidArgumentException(
+                'Count should be less than ' . Consts::MaxReadSize . '. For larger reads you should page.'
+            );
+        }
+
+        $operation = new ReadStreamEventsBackwardOperation(
+            $this->asyncClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->baseUri,
+            $stream,
+            $start,
+            $count,
+            $resolveLinkTos,
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
+
+        return $operation->task();
     }
 
     public function readAllEventsForwardAsync(
         Position $position,
         int $maxCount,
+        bool $resolveLinkTos,
         ?UserCredentials $userCredentials
     ): AllEventsSliceTask {
-        // TODO: Implement readAllEventsForwardAsync() method.
+        throw new \BadMethodCallException('Not yet implemented');
     }
 
     public function readAllEventsBackwardAsync(
         Position $position,
         int $maxCount,
+        bool $resolveLinkTos,
         ?UserCredentials $userCredentials
     ): AllEventsSliceTask {
-        // TODO: Implement readAllEventsBackwardAsync() method.
+        throw new \BadMethodCallException('Not yet implemented');
     }
 
     public function setStreamMetadataAsync(

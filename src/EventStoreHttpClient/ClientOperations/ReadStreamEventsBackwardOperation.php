@@ -19,7 +19,7 @@ use Prooph\EventStoreHttpClient\Http\RequestMethod;
 use Psr\Http\Message\ResponseInterface;
 
 /** @internal */
-class ReadStreamEventsForwardOperation extends Operation
+class ReadStreamEventsBackwardOperation extends Operation
 {
     /** @var string */
     private $stream;
@@ -65,7 +65,7 @@ class ReadStreamEventsForwardOperation extends Operation
         $request = $this->requestFactory->createRequest(
             RequestMethod::Get,
             $this->uriFactory->createUri(
-                $this->baseUri . '/streams/' . urlencode($this->stream) . '/' . $this->start . '/forward/' . $this->count . $resolve
+                $this->baseUri . '/streams/' . urlencode($this->stream) . '/' . $this->start . '/backward/' . $this->count . $resolve
             ),
             $headers
         );
@@ -81,7 +81,7 @@ class ReadStreamEventsForwardOperation extends Operation
                         SliceReadStatus::streamNotFound(),
                         $this->stream,
                         $this->start,
-                        ReadDirection::forward(),
+                        ReadDirection::backward(),
                         [],
                         0,
                         0,
@@ -92,7 +92,7 @@ class ReadStreamEventsForwardOperation extends Operation
                         SliceReadStatus::streamDeleted(),
                         $this->stream,
                         $this->start,
-                        ReadDirection::forward(),
+                        ReadDirection::backward(),
                         [],
                         0,
                         0,
@@ -103,7 +103,7 @@ class ReadStreamEventsForwardOperation extends Operation
 
                     $events = [];
                     $lastEventNumber = 0;
-                    foreach (array_reverse($json['entries']) as $entry) {
+                    foreach ($json['entries'] as $entry) {
                         $events[] = new RecordedEvent(
                             $entry['id'],
                             $entry['eventId'],
@@ -116,16 +116,17 @@ class ReadStreamEventsForwardOperation extends Operation
                         );
                         $lastEventNumber = $entry['eventNumber'];
                     }
+                    $nextEventNumber = ($lastEventNumber < 1) ? 0 : ($lastEventNumber - 1);
 
                     return new StreamEventsSlice(
                         SliceReadStatus::success(),
                         $this->stream,
                         $this->start,
-                        ReadDirection::forward(),
+                        ReadDirection::backward(),
                         $events,
-                        $lastEventNumber + 1,
+                        $nextEventNumber,
                         $lastEventNumber,
-                        $json['headOfStream']
+                        false
                     );
                 default:
                     throw new \UnexpectedValueException('Unexpected status code ' . $response->getStatusCode() . ' returned');
