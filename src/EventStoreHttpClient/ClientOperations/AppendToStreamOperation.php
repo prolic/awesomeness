@@ -8,8 +8,9 @@ use Http\Client\HttpAsyncClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
 use Prooph\EventStore\EventData;
-use Prooph\EventStore\Exception\AccessDeniedException;
-use Prooph\EventStore\Exception\WrongExpectedVersionException;
+use Prooph\EventStore\Exception\AccessDenied;
+use Prooph\EventStore\Exception\StreamDeleted;
+use Prooph\EventStore\Exception\WrongExpectedVersion;
 use Prooph\EventStore\Task\WriteResultTask;
 use Prooph\EventStore\UserCredentials;
 use Prooph\EventStore\WriteResult;
@@ -70,14 +71,16 @@ class AppendToStreamOperation extends Operation
         return new WriteResultTask($promise, function (ResponseInterface $response): WriteResult {
             switch ($response->getStatusCode()) {
                 case 401:
-                    throw new AccessDeniedException();
+                    throw AccessDenied::with($this->stream);
                 case 201:
                     $nextExpectedVersion = $this->expectedVersion + count($this->events) + 1;
 
                     return new WriteResult($nextExpectedVersion);
                 case 400:
                     $currentVersion = $response->getHeader('ES-CurrentVersion')[0];
-                    throw WrongExpectedVersionException::duringAppend($this->stream, $this->expectedVersion, $currentVersion);
+                    throw WrongExpectedVersion::duringAppend($this->stream, $this->expectedVersion, $currentVersion);
+                case 410:
+                    throw StreamDeleted::with($this->stream);
                 default:
                     throw new \UnexpectedValueException('Unexpected status code ' . $response->getStatusCode() . ' returned');
             }

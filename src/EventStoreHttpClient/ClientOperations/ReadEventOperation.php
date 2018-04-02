@@ -9,7 +9,7 @@ use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
 use Prooph\EventStore\EventReadResult;
 use Prooph\EventStore\EventReadStatus;
-use Prooph\EventStore\Exception\AccessDeniedException;
+use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Internal\DateTimeFactory;
 use Prooph\EventStore\RecordedEvent;
 use Prooph\EventStore\Task\EventReadResultTask;
@@ -58,9 +58,11 @@ class ReadEventOperation extends Operation
         return new EventReadResultTask($promise, function (ResponseInterface $response): EventReadResult {
             switch ($response->getStatusCode()) {
                 case 401:
-                    throw new AccessDeniedException();
+                    throw AccessDenied::with($this->stream);
                 case 404:
                     return new EventReadResult(EventReadStatus::notFound(), $this->stream, $this->eventNumber, null);
+                case 410:
+                    return new EventReadResult(EventReadStatus::streamDeleted(), $this->stream, $this->eventNumber, null);
                 case 200:
                     $json = json_decode($response->getBody()->getContents(), true);
 
