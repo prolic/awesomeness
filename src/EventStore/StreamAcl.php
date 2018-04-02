@@ -92,4 +92,38 @@ class StreamAcl
     {
         return $this->metaWriteRoles;
     }
+
+    public function toArray(): array
+    {
+        return [
+            'readRoles' => $this->readRoles,
+            'writeRoles' => $this->writeRoles,
+            'deleteRoles' => $this->deleteRoles,
+            'metaReadRoles' => $this->metaReadRoles,
+            'metaWriteRoles' => $this->metaWriteRoles,
+        ];
+    }
+
+    public static function fromArray(array $data): StreamAcl
+    {
+        $values = [
+            'readRoles',
+            'writeRoles',
+            'deleteRoles',
+            'metaReadRoles',
+            'metaWriteRoles',
+        ];
+
+        foreach ($values as $value) {
+            if (! isset($data[$value])) {
+                throw new \InvalidArgumentException($value . ' is missing');
+            }
+
+            if (! is_array($data[$value])) {
+                throw new \InvalidArgumentException($value . ' is not an array');
+            }
+        }
+
+        return new self($data['readRoles'], $data['writeRoles'], $data['deleteRoles'], $data['metaReadRoles'], $data['metaWriteRoles']);
+    }
 }

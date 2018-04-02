@@ -8,7 +8,10 @@ use Http\Client\HttpAsyncClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
 use Http\Promise\FulfilledPromise;
+use Prooph\EventStore\Common\SystemEventTypes;
+use Prooph\EventStore\Common\SystemStreams;
 use Prooph\EventStore\EventData;
+use Prooph\EventStore\EventId;
 use Prooph\EventStore\EventStoreConnection;
 use Prooph\EventStore\Internal\Consts;
 use Prooph\EventStore\Position;
@@ -84,6 +87,10 @@ class EventStoreHttpConnection implements EventStoreConnection
         bool $hardDelete,
         UserCredentials $userCredentials = null
     ): DeleteResultTask {
+        if (empty($stream)) {
+            throw new \InvalidArgumentException('Stream cannot be empty');
+        }
+
         $operation = new DeleteStreamOperation(
             $this->asyncClient,
             $this->requestFactory,
@@ -110,6 +117,10 @@ class EventStoreHttpConnection implements EventStoreConnection
         ?UserCredentials $userCredentials,
         iterable $events
     ): WriteResultTask {
+        if (empty($stream)) {
+            throw new \InvalidArgumentException('Stream cannot be empty');
+        }
+
         $operation = new AppendToStreamOperation(
             $this->asyncClient,
             $this->requestFactory,
@@ -129,6 +140,10 @@ class EventStoreHttpConnection implements EventStoreConnection
         int $eventNumber,
         ?UserCredentials $userCredentials
     ): EventReadResultTask {
+        if (empty($stream)) {
+            throw new \InvalidArgumentException('Stream cannot be empty');
+        }
+
         $operation = new ReadEventOperation(
             $this->asyncClient,
             $this->requestFactory,
@@ -149,6 +164,10 @@ class EventStoreHttpConnection implements EventStoreConnection
         bool $resolveLinkTos,
         ?UserCredentials $userCredentials
     ): StreamEventsSliceTask {
+        if (empty($stream)) {
+            throw new \InvalidArgumentException('Stream cannot be empty');
+        }
+
         if ($start < 0) {
             throw new \InvalidArgumentException('Start cannot be negative');
         }
@@ -181,6 +200,10 @@ class EventStoreHttpConnection implements EventStoreConnection
         bool $resolveLinkTos,
         ?UserCredentials $userCredentials
     ): StreamEventsSliceTask {
+        if (empty($stream)) {
+            throw new \InvalidArgumentException('Stream cannot be empty');
+        }
+
         if ($count > Consts::MaxReadSize) {
             throw new \InvalidArgumentException(
                 'Count should be less than ' . Consts::MaxReadSize . '. For larger reads you should page.'
@@ -226,7 +249,37 @@ class EventStoreHttpConnection implements EventStoreConnection
         StreamMetadata $metadata,
         ?UserCredentials $userCredentials
     ): WriteResultTask {
-        // TODO: Implement setStreamMetadataAsync() method.
+        if (empty($stream)) {
+            throw new \InvalidArgumentException('Stream cannot be empty');
+        }
+
+        if (SystemStreams::isMetastream($stream)) {
+            throw new \InvalidArgumentException(sprintf(
+                'Setting metadata for metastream \'%s\' is not supported.',
+                $stream
+            ));
+        }
+
+        $metaevent = new EventData(
+            EventId::generate(),
+            SystemEventTypes::StreamMetadata,
+            true,
+            json_encode($metadata->toArray()),
+            ''
+        );
+
+        $operation = new AppendToStreamOperation(
+            $this->asyncClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->baseUri,
+            SystemStreams::metastreamOf($stream),
+            $expectedMetastreamVersion,
+            [$metaevent],
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
+
+        return $operation->task();
     }
 
     public function getStreamMetadataAsync(string $stream, ?UserCredentials $userCredentials): StreamMetadataResultTask

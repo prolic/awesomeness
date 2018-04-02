@@ -13,8 +13,8 @@ class StreamMetadata
     private $maxCount;
 
     /**
-     * The maximum age of events allowed in the stream.
-     * @var \DateInterval|null
+     * The maximum age in seconds for events allowed in the stream.
+     * @var int|null
      */
     private $maxAge;
 
@@ -26,14 +26,14 @@ class StreamMetadata
     private $truncateBefore;
 
     /**
-     * The amount of time for which the stream head is cachable.
-     * @var \DateInterval|null
+     * The amount of time in seconds for which the stream head is cachable.
+     * @var int|null
      */
     private $cacheControl;
 
     /**
      * The access control list for the stream.
-     * @var StreamAcl
+     * @var StreamAcl|null
      */
     private $acl;
 
@@ -45,26 +45,26 @@ class StreamMetadata
 
     public function __construct(
         ?int $maxCount,
-        ?\DateInterval $maxAge,
+        ?int $maxAge,
         ?int $truncateBefore,
-        ?\DateInterval $cacheControl,
-        StreamAcl $acl,
+        ?int $cacheControl,
+        ?StreamAcl $acl,
         array $customMetadata = []
     ) {
         if (null !== $maxCount && $maxCount <= 0) {
             throw new \InvalidArgumentException('maxCount should be positive value');
         }
 
-        if (null !== $maxAge && 1 === $maxAge->invert) {
-            throw new \InvalidArgumentException('maxAge should be positive time span');
+        if (null !== $maxAge && $maxAge < 1) {
+            throw new \InvalidArgumentException('maxAge should be positive value');
         }
 
         if (null !== $truncateBefore && $truncateBefore < 0) {
             throw new \InvalidArgumentException('truncateBefore should be non-negative value');
         }
 
-        if (null !== $cacheControl && 1 === $cacheControl->invert) {
-            throw new \InvalidArgumentException('cacheControl should be positive time span');
+        if (null !== $cacheControl && $cacheControl < 1) {
+            throw new \InvalidArgumentException('cacheControl should be positive value');
         }
 
         $this->maxCount = $maxCount;
@@ -80,7 +80,7 @@ class StreamMetadata
         return $this->maxCount;
     }
 
-    public function maxAge(): ?\DateInterval
+    public function maxAge(): ?int
     {
         return $this->maxAge;
     }
@@ -90,12 +90,12 @@ class StreamMetadata
         return $this->truncateBefore;
     }
 
-    public function cacheControl(): ?\DateInterval
+    public function cacheControl(): ?int
     {
         return $this->cacheControl;
     }
 
-    public function acl(): StreamAcl
+    public function acl(): ?StreamAcl
     {
         return $this->acl;
     }
@@ -119,5 +119,67 @@ class StreamMetadata
         }
 
         return $this->customMetadata[$key];
+    }
+
+    public function toArray(): array
+    {
+        $data = [];
+
+        if (null !== $this->maxCount) {
+            $data['$maxCount'] = $this->maxCount;
+        }
+
+        if (null !== $this->maxAge) {
+            $data['$maxAge'] = $this->maxAge;
+        }
+
+        if (null !== $this->truncateBefore) {
+            $data['$truncateBefore'] = $this->truncateBefore;
+        }
+
+        if (null !== $this->cacheControl) {
+            $data['$cacheControl'] = $this->cacheControl;
+        }
+
+        if (null !== $this->acl) {
+            $data['$acl'] = $this->acl->toArray();
+        }
+
+        foreach ($this->customMetadata as $key => $value) {
+            $data[$key] = $value;
+        }
+
+        return $data;
+    }
+
+    public static function fromArray(array $data): StreamMetadata
+    {
+        $internal = [
+            '$maxCount',
+            '$maxAge',
+            '$truncateBefore',
+            '$cacheControl',
+        ];
+
+        $params = [];
+
+        foreach ($data as $key => $value) {
+            if (in_array($key, $internal, true)) {
+                $params[$key] = $value;
+            } elseif ($key === '$acl') {
+                $params['$acl'] = StreamAcl::fromArray($value);
+            } else {
+                $params['customMetadata'][$key] = $value;
+            }
+        }
+
+        return new self(
+            $params['$maxCount'] ?? null,
+            $params['$maxAge'] ?? null,
+            $params['$truncateBefore'] ?? null,
+            $params['$cacheControl'] ?? null,
+            $params['$acl'] ?? null,
+            $params['customMetadata'] ?? []
+        );
     }
 }
