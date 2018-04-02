@@ -51,13 +51,13 @@ class ReadEventOperation extends Operation
         if (-1 === $this->eventNumber) {
             $request = $this->requestFactory->createRequest(
                 RequestMethod::Get,
-                $this->uriFactory->createUri($this->baseUri . '/streams/' . urlencode($this->stream) . '/head?embed=body'),
+                $this->uriFactory->createUri($this->baseUri . '/streams/' . urlencode($this->stream) . '/head?embed=tryharder'),
                 $headers
             );
         } else {
             $request = $this->requestFactory->createRequest(
                 RequestMethod::Get,
-                $this->uriFactory->createUri($this->baseUri . '/streams/' . urlencode($this->stream) . '/' . $this->eventNumber . '?embed=body'),
+                $this->uriFactory->createUri($this->baseUri . '/streams/' . urlencode($this->stream) . '/' . $this->eventNumber . '?embed=tryharder'),
                 $headers
             );
         }

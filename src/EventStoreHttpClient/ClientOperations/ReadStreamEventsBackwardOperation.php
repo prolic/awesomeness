@@ -58,7 +58,7 @@ class ReadStreamEventsBackwardOperation extends Operation
         ];
 
         if ($this->resolveLinkTos) {
-            $resolve = '?embed=body';
+            $resolve = '?embed=tryharder';
         } else {
             $resolve = '';
         }
@@ -105,13 +105,13 @@ class ReadStreamEventsBackwardOperation extends Operation
                     $events = [];
                     $lastEventNumber = 0;
                     foreach ($json['entries'] as $entry) {
-                        $data = $json['data'] ?? '';
+                        $data = $entry['data'] ?? '';
 
                         if (is_array($data)) {
                             $data = json_encode($data);
                         }
 
-                        $metadata = $json['metadata'] ?? '';
+                        $metadata = $entry['metadata'] ?? '';
 
                         if (is_array($metadata)) {
                             $metadata = json_encode($metadata);
