@@ -60,7 +60,7 @@ class DeleteStreamOperation extends Operation
                     throw new AccessDeniedException();
                 case 204:
                 case 410:
-                    return DeleteResult::success();
+                    return new DeleteResult();
                 default:
                     throw new \UnexpectedValueException('Unexpected status code ' . $response->getStatusCode() . ' returned');
             }
