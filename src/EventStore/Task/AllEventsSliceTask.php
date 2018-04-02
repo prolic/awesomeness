@@ -12,6 +12,9 @@ class AllEventsSliceTask extends BaseTask
 {
     public function result(): AllEventsSlice
     {
-        return $this->promise->wait();
+        $callback = $this->callback;
+        $response = $this->promise->wait();
+
+        return $callback($response);
     }
 }

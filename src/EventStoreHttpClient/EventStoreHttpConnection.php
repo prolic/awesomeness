@@ -24,6 +24,7 @@ use Prooph\EventStore\UserCredentials;
 use Prooph\EventStoreHttpClient\ClientOperations\AppendToStreamOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\DeleteStreamOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\ReadEventOperation;
+use Prooph\EventStoreHttpClient\ClientOperations\ReadStreamEventsForwardOperation;
 use Ramsey\Uuid\Uuid;
 
 class EventStoreHttpConnection implements EventStoreConnection
@@ -143,17 +144,26 @@ class EventStoreHttpConnection implements EventStoreConnection
         string $stream,
         int $start,
         int $count,
-        bool $resolveLinkTos,
         ?UserCredentials $userCredentials
     ): StreamEventsSliceTask {
-        // TODO: Implement readStreamEventsForwardAsync() method.
+        $operation = new ReadStreamEventsForwardOperation(
+            $this->asyncClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->baseUri,
+            $stream,
+            $start,
+            $count,
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
+
+        return $operation->task();
     }
 
     public function readStreamEventsBackwardAsync(
         string $stream,
         int $start,
         int $count,
-        bool $resolveLinkTos,
         ?UserCredentials $userCredentials
     ): StreamEventsSliceTask {
         // TODO: Implement readStreamEventsBackwardAsync() method.
@@ -162,7 +172,6 @@ class EventStoreHttpConnection implements EventStoreConnection
     public function readAllEventsForwardAsync(
         Position $position,
         int $maxCount,
-        bool $resolveLinkTos,
         ?UserCredentials $userCredentials
     ): AllEventsSliceTask {
         // TODO: Implement readAllEventsForwardAsync() method.
@@ -171,7 +180,6 @@ class EventStoreHttpConnection implements EventStoreConnection
     public function readAllEventsBackwardAsync(
         Position $position,
         int $maxCount,
-        bool $resolveLinkTos,
         ?UserCredentials $userCredentials
     ): AllEventsSliceTask {
         // TODO: Implement readAllEventsBackwardAsync() method.

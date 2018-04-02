@@ -49,7 +49,6 @@ interface EventStoreConnection
         string $stream,
         int $start,
         int $count,
-        bool $resolveLinkTos,
         ?UserCredentials $userCredentials
     ): StreamEventsSliceTask;
 
@@ -57,21 +56,18 @@ interface EventStoreConnection
         string $stream,
         int $start,
         int $count,
-        bool $resolveLinkTos,
         ?UserCredentials $userCredentials
     ): StreamEventsSliceTask;
 
     public function readAllEventsForwardAsync(
         Position $position,
         int $maxCount,
-        bool $resolveLinkTos,
         ?UserCredentials $userCredentials
     ): AllEventsSliceTask;
 
     public function readAllEventsBackwardAsync(
         Position $position,
         int $maxCount,
-        bool $resolveLinkTos,
         ?UserCredentials $userCredentials
     ): AllEventsSliceTask;
 

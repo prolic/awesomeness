@@ -70,17 +70,17 @@ class AppendToStreamOperation extends Operation
 
         return new WriteResultTask($promise, function (ResponseInterface $response): WriteResult {
             switch ($response->getStatusCode()) {
+                case 400:
+                    $currentVersion = $response->getHeader('ES-CurrentVersion')[0];
+                    throw WrongExpectedVersion::duringAppend($this->stream, $this->expectedVersion, $currentVersion);
                 case 401:
                     throw AccessDenied::with($this->stream);
+                case 410:
+                    throw StreamDeleted::with($this->stream);
                 case 201:
                     $nextExpectedVersion = $this->expectedVersion + count($this->events) + 1;
 
                     return new WriteResult($nextExpectedVersion);
-                case 400:
-                    $currentVersion = $response->getHeader('ES-CurrentVersion')[0];
-                    throw WrongExpectedVersion::duringAppend($this->stream, $this->expectedVersion, $currentVersion);
-                case 410:
-                    throw StreamDeleted::with($this->stream);
                 default:
                     throw new \UnexpectedValueException('Unexpected status code ' . $response->getStatusCode() . ' returned');
             }

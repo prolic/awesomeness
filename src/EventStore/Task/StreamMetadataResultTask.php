@@ -12,6 +12,9 @@ class StreamMetadataResultTask extends BaseTask
 {
     public function result(): StreamMetadataResult
     {
-        return $this->promise->wait();
+        $callback = $this->callback;
+        $response = $this->promise->wait();
+
+        return $callback($response);
     }
 }
