@@ -13,8 +13,6 @@ class ConnectionSettings
     private $endPoint;
     /** @var bool */
     private $useSslConnection;
-    /** @var bool */
-    private $validateServer;
     /** @var UserCredentials|null */
     private $defaultUserCredentials;
 
@@ -23,7 +21,6 @@ class ConnectionSettings
         return new self(
             new IpEndPoint('localhost', 2113),
             false,
-            false,
             null
         );
     }
@@ -31,12 +28,10 @@ class ConnectionSettings
     public function __construct(
         IpEndPoint $endpoint,
         bool $useSslConnection,
-        bool $validateServer,
         UserCredentials $defaultUserCredentials = null
     ) {
         $this->endPoint = $endpoint;
         $this->useSslConnection = $useSslConnection;
-        $this->validateServer = $validateServer;
         $this->defaultUserCredentials = $defaultUserCredentials;
     }
 
@@ -53,10 +48,5 @@ class ConnectionSettings
     public function endPoint(): IpEndPoint
     {
         return $this->endPoint;
-    }
-
-    public function validateServer(): bool
-    {
-        return $this->validateServer;
     }
 }

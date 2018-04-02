@@ -10,7 +10,7 @@ class SystemStreams
     public const SettingsStream = '$settings';
     public const StatsStreamPrefix = '$stats';
 
-    public static function metastramOf(string $streamId): string
+    public static function metastreamOf(string $streamId): string
     {
         return '$$' . $streamId;
     }
