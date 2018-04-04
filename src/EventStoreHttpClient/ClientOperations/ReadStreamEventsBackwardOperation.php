@@ -31,7 +31,6 @@ class ReadStreamEventsBackwardOperation extends Operation
     /** @var bool */
     private $resolveLinkTos;
 
-    /** @internal */
     public function __construct(
         HttpAsyncClient $asyncClient,
         RequestFactory $requestFactory,
@@ -57,16 +56,14 @@ class ReadStreamEventsBackwardOperation extends Operation
             'Accept' => 'application/vnd.eventstore.atom+json',
         ];
 
-        if ($this->resolveLinkTos) {
-            $resolve = '?embed=tryharder';
-        } else {
-            $resolve = '';
+        if (! $this->resolveLinkTos) {
+            $headers['ES-ResolveLinkTos'] = 'false';
         }
 
         $request = $this->requestFactory->createRequest(
             RequestMethod::Get,
             $this->uriFactory->createUri(
-                $this->baseUri . '/streams/' . urlencode($this->stream) . '/' . $this->start . '/backward/' . $this->count . $resolve
+                $this->baseUri . '/streams/' . urlencode($this->stream) . '/' . $this->start . '/backward/' . $this->count . '?embed=tryharder'
             ),
             $headers
         );

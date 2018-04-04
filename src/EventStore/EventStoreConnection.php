@@ -49,7 +49,7 @@ interface EventStoreConnection
         string $stream,
         int $start,
         int $count,
-        bool $resolveLinkTos,
+        bool $resolveLinkTos = true,
         UserCredentials $userCredentials = null
     ): StreamEventsSliceTask;
 
@@ -57,21 +57,21 @@ interface EventStoreConnection
         string $stream,
         int $start,
         int $count,
-        bool $resolveLinkTos,
+        bool $resolveLinkTos = true,
         UserCredentials $userCredentials = null
     ): StreamEventsSliceTask;
 
     public function readAllEventsForwardAsync(
         Position $position,
         int $maxCount,
-        bool $resolveLinkTos,
+        bool $resolveLinkTos = true,
         UserCredentials $userCredentials = null
     ): AllEventsSliceTask;
 
     public function readAllEventsBackwardAsync(
         Position $position,
         int $maxCount,
-        bool $resolveLinkTos,
+        bool $resolveLinkTos = true,
         UserCredentials $userCredentials = null
     ): AllEventsSliceTask;
 
@@ -86,6 +86,5 @@ interface EventStoreConnection
 
     public function setSystemSettingsAsync(SystemSettings $settings, UserCredentials $userCredentials = null): WriteResultTask;
 
-    // @todo subscriptions
     // @todo event handlers
 }

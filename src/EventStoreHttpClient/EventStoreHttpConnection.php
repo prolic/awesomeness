@@ -168,7 +168,7 @@ class EventStoreHttpConnection implements EventStoreConnection
         string $stream,
         int $start,
         int $count,
-        bool $resolveLinkTos,
+        bool $resolveLinkTos = true,
         UserCredentials $userCredentials = null
     ): StreamEventsSliceTask {
         if (empty($stream)) {
@@ -204,7 +204,7 @@ class EventStoreHttpConnection implements EventStoreConnection
         string $stream,
         int $start,
         int $count,
-        bool $resolveLinkTos,
+        bool $resolveLinkTos = true,
         UserCredentials $userCredentials = null
     ): StreamEventsSliceTask {
         if (empty($stream)) {
@@ -235,7 +235,7 @@ class EventStoreHttpConnection implements EventStoreConnection
     public function readAllEventsForwardAsync(
         Position $position,
         int $maxCount,
-        bool $resolveLinkTos,
+        bool $resolveLinkTos = true,
         UserCredentials $userCredentials = null
     ): AllEventsSliceTask {
         throw new \BadMethodCallException('Not yet implemented');
@@ -244,7 +244,7 @@ class EventStoreHttpConnection implements EventStoreConnection
     public function readAllEventsBackwardAsync(
         Position $position,
         int $maxCount,
-        bool $resolveLinkTos,
+        bool $resolveLinkTos = true,
         UserCredentials $userCredentials = null
     ): AllEventsSliceTask {
         throw new \BadMethodCallException('Not yet implemented');

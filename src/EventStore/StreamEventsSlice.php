@@ -23,7 +23,6 @@ class StreamEventsSlice
     /** @var bool */
     private $isEndOfStream;
 
-    /** @internal */
     public function __construct(
         SliceReadStatus $status,
         string $stream,

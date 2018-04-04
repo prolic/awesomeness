@@ -75,9 +75,8 @@ class AppendToStreamOperation extends Operation
 
                     if (empty($header)) {
                         throw WrongExpectedVersion::withExpectedVersion($this->stream, $this->expectedVersion);
-                    } else {
-                        $currentVersion = (int) $header[0];
                     }
+                        $currentVersion = (int) $header[0];
 
                     throw WrongExpectedVersion::withCurrentVersion($this->stream, $this->expectedVersion, $currentVersion);
                 case 401:

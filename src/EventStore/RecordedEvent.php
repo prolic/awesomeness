@@ -8,13 +8,21 @@ use DateTimeImmutable;
 
 class RecordedEvent
 {
+    /** @var string */
     private $eventStreamId;
+    /** @var EventId */
     private $eventId;
+    /** @var int */
     private $eventNumber;
+    /** @var string */
     private $eventType;
+    /** @var string */
     private $data;
+    /** @var string */
     private $metadata;
+    /** @var bool */
     private $isJson;
+    /** @var DateTimeImmutable */
     private $created;
 
     /** @internal */
