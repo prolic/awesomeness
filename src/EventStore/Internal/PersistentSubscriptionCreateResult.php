@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Prooph\EventStore;
+namespace Prooph\EventStore\Internal;
 
-class DeletePersistentSubscriptionResult
+/** @internal */
+class CreatePersistentSubscriptionResult
 {
     /** @var string */
     private $correlationId;
     /** @var string */
     private $reason;
-    /** @var DeletePersistentSubscriptionStatus */
+    /** @var PersistentSubscriptionCreateStatus */
     private $status;
 
-    /** @internal */
-    public function __construct(string $correlationId, string $reason, DeletePersistentSubscriptionStatus $status)
+    public function __construct(string $correlationId, string $reason, PersistentSubscriptionCreateStatus $status)
     {
         $this->correlationId = $correlationId;
         $this->reason = $reason;
@@ -31,7 +31,7 @@ class DeletePersistentSubscriptionResult
         return $this->reason;
     }
 
-    public function status(): DeletePersistentSubscriptionStatus
+    public function status(): PersistentSubscriptionCreateStatus
     {
         return $this->status;
     }

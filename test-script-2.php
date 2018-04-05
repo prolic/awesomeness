@@ -34,3 +34,7 @@ $task = $connection->deletePersistentSubscription(
 );
 
 var_dump($task->result());
+
+$task = $connection->getInformationForAllSubscriptions();
+
+var_dump($task->result());

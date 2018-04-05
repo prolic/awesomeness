@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Prooph\EventStore\Task;
 
 use Prooph\EventStore\Task;
-use Prooph\EventStore\UpdatePersistentSubscriptionResult;
+use Prooph\EventStore\Internal\PersistentSubscriptionUpdateResult;
 
 /**
  * @internal
- * @method UpdatePersistentSubscriptionResult result()
+ * @method PersistentSubscriptionUpdateResult result()
  */
 class UpdatePersistentSubscriptionTask extends Task
 {

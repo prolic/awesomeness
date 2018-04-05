@@ -39,6 +39,7 @@ use Prooph\EventStoreHttpClient\ClientOperations\AppendToStreamOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\CreatePersistentSubscriptionOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\DeletePersistentSubscriptionOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\DeleteStreamOperation;
+use Prooph\EventStoreHttpClient\ClientOperations\GetInformationForAllSubscriptionsOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\ReadEventOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\ReadStreamEventsBackwardOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\ReadStreamEventsForwardOperation;
@@ -447,17 +448,25 @@ class EventStoreHttpConnection implements EventStoreConnection, EventStoreSubscr
         // TODO: Implement replayParked() method.
     }
 
-    public function getInformationAboutAllSubscriptions(): Task
+    public function getInformationForAllSubscriptions(UserCredentials $userCredentials = null): Task
     {
-        // TODO: Implement getInformationAboutAllSubscriptions() method.
+        $operation = new GetInformationForAllSubscriptionsOperation(
+            $this->asyncClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->baseUri,
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
+
+        return $operation->task();
     }
 
-    public function getInformationAboutSubscriptionsForStream(string $stream): Task
+    public function getInformationForSubscriptionsWithStream(string $stream): Task
     {
         // TODO: Implement getInformationAboutSubscriptionsForStream() method.
     }
 
-    public function getInformationAboutSubscription(string $stream, string $groupName): Task
+    public function getInformationForSubscription(string $stream, string $groupName): Task
     {
         // TODO: Implement getInformationAboutSubscription() method.
     }

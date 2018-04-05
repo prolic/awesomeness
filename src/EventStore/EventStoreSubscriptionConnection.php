@@ -72,9 +72,9 @@ interface EventStoreSubscriptionConnection
 
     public function replayParked(string $stream, string $groupName): Task;
 
-    public function getInformationAboutAllSubscriptions(): Task;
+    public function getInformationForAllSubscriptions(): Task;
 
-    public function getInformationAboutSubscriptionsForStream(string $stream): Task;
+    public function getInformationForSubscriptionsWithStream(string $stream): Task;
 
-    public function getInformationAboutSubscription(string $stream, string $groupName): Task;
+    public function getInformationForSubscription(string $stream, string $groupName): Task;
 }

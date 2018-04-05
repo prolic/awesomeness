@@ -7,8 +7,8 @@ namespace Prooph\EventStoreHttpClient\ClientOperations;
 use Http\Client\HttpAsyncClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
-use Prooph\EventStore\DeletePersistentSubscriptionResult;
-use Prooph\EventStore\DeletePersistentSubscriptionStatus;
+use Prooph\EventStore\Internal\PersistentSubscriptionDeleteResult;
+use Prooph\EventStore\Internal\PersistentSubscriptionDeleteStatus;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Task\DeletePersistentSubscriptionTask;
 use Prooph\EventStore\UserCredentials;
@@ -47,17 +47,17 @@ class DeletePersistentSubscriptionOperation extends Operation
 
         $promise = $this->sendAsyncRequest($request);
 
-        return new DeletePersistentSubscriptionTask($promise, function (ResponseInterface $response): DeletePersistentSubscriptionResult {
+        return new DeletePersistentSubscriptionTask($promise, function (ResponseInterface $response): PersistentSubscriptionDeleteResult {
             $json = json_decode($response->getBody()->getContents(), true);
             switch ($response->getStatusCode()) {
                 case 401:
                     throw AccessDenied::toSubscription($this->stream, $this->groupName);
                 case 200:
                 case 404:
-                    return new DeletePersistentSubscriptionResult(
+                    return new PersistentSubscriptionDeleteResult(
                         $json['correlationId'],
                         $json['reason'],
-                        DeletePersistentSubscriptionStatus::byName($json['result'])
+                        PersistentSubscriptionDeleteStatus::byName($json['result'])
                     );
                 default:
                     throw new \UnexpectedValueException('Unexpected status code ' . $response->getStatusCode() . ' returned');

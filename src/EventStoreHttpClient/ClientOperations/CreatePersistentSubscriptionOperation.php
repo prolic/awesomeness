@@ -7,8 +7,8 @@ namespace Prooph\EventStoreHttpClient\ClientOperations;
 use Http\Client\HttpAsyncClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
-use Prooph\EventStore\CreatePersistentSubscriptionResult;
-use Prooph\EventStore\CreatePersistentSubscriptionStatus;
+use Prooph\EventStore\Internal\CreatePersistentSubscriptionResult;
+use Prooph\EventStore\Internal\PersistentSubscriptionCreateStatus;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\PersistentSubscriptionSettings;
 use Prooph\EventStore\Task\CreatePersistentSubscriptionTask;
@@ -66,7 +66,7 @@ class CreatePersistentSubscriptionOperation extends Operation
                     return new CreatePersistentSubscriptionResult(
                         $json['correlationId'],
                         $json['reason'],
-                        CreatePersistentSubscriptionStatus::byName($json['result'])
+                        PersistentSubscriptionCreateStatus::byName($json['result'])
                     );
                 default:
                     throw new \UnexpectedValueException('Unexpected status code ' . $response->getStatusCode() . ' returned');

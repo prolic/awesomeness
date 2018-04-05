@@ -10,8 +10,8 @@ use Http\Message\UriFactory;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\PersistentSubscriptionSettings;
 use Prooph\EventStore\Task\UpdatePersistentSubscriptionTask;
-use Prooph\EventStore\UpdatePersistentSubscriptionResult;
-use Prooph\EventStore\UpdatePersistentSubscriptionStatus;
+use Prooph\EventStore\Internal\PersistentSubscriptionUpdateResult;
+use Prooph\EventStore\Internal\PersistentSubscriptionUpdateStatus;
 use Prooph\EventStore\UserCredentials;
 use Prooph\EventStoreHttpClient\Http\RequestMethod;
 use Psr\Http\Message\ResponseInterface;
@@ -56,17 +56,17 @@ class UpdatePersistentSubscriptionOperation extends Operation
 
         $promise = $this->sendAsyncRequest($request);
 
-        return new UpdatePersistentSubscriptionTask($promise, function (ResponseInterface $response): UpdatePersistentSubscriptionResult {
+        return new UpdatePersistentSubscriptionTask($promise, function (ResponseInterface $response): PersistentSubscriptionUpdateResult {
             $json = json_decode($response->getBody()->getContents(), true);
             switch ($response->getStatusCode()) {
                 case 401:
                     throw AccessDenied::toSubscription($this->stream, $this->groupName);
                 case 200:
                 case 404:
-                    return new UpdatePersistentSubscriptionResult(
+                    return new PersistentSubscriptionUpdateResult(
                         $json['correlationId'],
                         $json['reason'],
-                        UpdatePersistentSubscriptionStatus::byName($json['result'])
+                        PersistentSubscriptionUpdateStatus::byName($json['result'])
                     );
 
                 default:

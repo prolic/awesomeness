@@ -11,13 +11,11 @@ class PersistentSubscriptionUpdateStatus
         'Success' => 0,
         'NotFound' => 1,
         'Failure' => 2,
-        'AccessDenied' => 3,
     ];
 
     public const Success = 0;
     public const NotFound = 1;
     public const Failure = 2;
-    public const AccessDenied = 3;
 
     private $name;
     private $value;
@@ -41,11 +39,6 @@ class PersistentSubscriptionUpdateStatus
     public static function failure(): self
     {
         return new self('Failure');
-    }
-
-    public static function accessDenied(): self
-    {
-        return new self('AccessDenied');
     }
 
     public static function byName(string $value): self
