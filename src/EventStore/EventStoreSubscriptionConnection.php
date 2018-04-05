@@ -8,6 +8,7 @@ use Prooph\EventStore\Task\CreatePersistentSubscriptionTask;
 use Prooph\EventStore\Task\DeletePersistentSubscriptionTask;
 use Prooph\EventStore\Task\GetInformationForSubscriptionsTask;
 use Prooph\EventStore\Task\GetInformationForSubscriptionTask;
+use Prooph\EventStore\Task\ReplayParkedTask;
 use Prooph\EventStore\Task\UpdatePersistentSubscriptionTask;
 
 interface EventStoreSubscriptionConnection
@@ -95,7 +96,11 @@ interface EventStoreSubscriptionConnection
         UserCredentials $userCredentials = null
     ): Task;
 
-    public function replayParked(string $stream, string $groupName, UserCredentials $userCredentials = null): Task;
+    public function replayParked(
+        string $stream,
+        string $groupName,
+        UserCredentials $userCredentials = null
+    ): ReplayParkedTask;
 
     public function getInformationForAllSubscriptions(
         UserCredentials $userCredentials = null

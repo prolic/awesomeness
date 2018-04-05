@@ -33,6 +33,7 @@ use Prooph\EventStore\Task\DeleteResultTask;
 use Prooph\EventStore\Task\EventReadResultTask;
 use Prooph\EventStore\Task\GetInformationForSubscriptionsTask;
 use Prooph\EventStore\Task\GetInformationForSubscriptionTask;
+use Prooph\EventStore\Task\ReplayParkedTask;
 use Prooph\EventStore\Task\StreamEventsSliceTask;
 use Prooph\EventStore\Task\StreamMetadataResultTask;
 use Prooph\EventStore\Task\UpdatePersistentSubscriptionTask;
@@ -50,6 +51,7 @@ use Prooph\EventStoreHttpClient\ClientOperations\NackOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\ReadEventOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\ReadStreamEventsBackwardOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\ReadStreamEventsForwardOperation;
+use Prooph\EventStoreHttpClient\ClientOperations\ReplayParkedOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\UpdatePersistentSubscriptionOperation;
 use Ramsey\Uuid\Uuid;
 
@@ -499,9 +501,22 @@ class EventStoreHttpConnection implements EventStoreConnection, EventStoreSubscr
         return $operation->task();
     }
 
-    public function replayParked(string $stream, string $groupName, UserCredentials $userCredentials = null): Task
-    {
-        // TODO: Implement replayParked() method.
+    public function replayParked(
+        string $stream,
+        string $groupName,
+        UserCredentials $userCredentials = null
+    ): ReplayParkedTask {
+        $operation = new ReplayParkedOperation(
+            $this->asyncClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->baseUri,
+            $stream,
+            $groupName,
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
+
+        return $operation->task();
     }
 
     public function getInformationForAllSubscriptions(
