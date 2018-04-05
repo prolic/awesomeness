@@ -30,7 +30,7 @@ use Prooph\EventStore\Task\CreatePersistentSubscriptionTask;
 use Prooph\EventStore\Task\DeletePersistentSubscriptionTask;
 use Prooph\EventStore\Task\DeleteResultTask;
 use Prooph\EventStore\Task\EventReadResultTask;
-use Prooph\EventStore\Task\GetInformationForAllSubscriptionsTask;
+use Prooph\EventStore\Task\GetInformationForSubscriptionsTask;
 use Prooph\EventStore\Task\StreamEventsSliceTask;
 use Prooph\EventStore\Task\StreamMetadataResultTask;
 use Prooph\EventStore\Task\UpdatePersistentSubscriptionTask;
@@ -41,6 +41,7 @@ use Prooph\EventStoreHttpClient\ClientOperations\CreatePersistentSubscriptionOpe
 use Prooph\EventStoreHttpClient\ClientOperations\DeletePersistentSubscriptionOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\DeleteStreamOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\GetInformationForAllSubscriptionsOperation;
+use Prooph\EventStoreHttpClient\ClientOperations\GetInformationForSubscriptionsWithStreamOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\ReadEventOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\ReadStreamEventsBackwardOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\ReadStreamEventsForwardOperation;
@@ -451,7 +452,7 @@ class EventStoreHttpConnection implements EventStoreConnection, EventStoreSubscr
 
     public function getInformationForAllSubscriptions(
         UserCredentials $userCredentials = null
-    ): GetInformationForAllSubscriptionsTask {
+    ): GetInformationForSubscriptionsTask {
         $operation = new GetInformationForAllSubscriptionsOperation(
             $this->asyncClient,
             $this->requestFactory,
@@ -463,9 +464,20 @@ class EventStoreHttpConnection implements EventStoreConnection, EventStoreSubscr
         return $operation->task();
     }
 
-    public function getInformationForSubscriptionsWithStream(string $stream): Task
-    {
-        // TODO: Implement getInformationAboutSubscriptionsForStream() method.
+    public function getInformationForSubscriptionsWithStream(
+        string $stream,
+        UserCredentials $userCredentials = null
+    ): GetInformationForSubscriptionsTask {
+        $operation = new GetInformationForSubscriptionsWithStreamOperation(
+            $this->asyncClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->baseUri,
+            $stream,
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
+
+        return $operation->task();
     }
 
     public function getInformationForSubscription(string $stream, string $groupName): Task

@@ -15,23 +15,29 @@ use Prooph\EventStoreHttpClient\Http\RequestMethod;
 use Psr\Http\Message\ResponseInterface;
 
 /** @internal */
-class GetInformationForAllSubscriptionsOperation extends Operation
+class GetInformationForSubscriptionsWithStreamOperation extends Operation
 {
+    /** @var string */
+    private $stream;
+
     public function __construct(
         HttpAsyncClient $asyncClient,
         RequestFactory $requestFactory,
         UriFactory $uriFactory,
         string $baseUri,
+        string $stream,
         ?UserCredentials $userCredentials
     ) {
         parent::__construct($asyncClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
+
+        $this->stream = $stream;
     }
 
     public function task(): GetInformationForSubscriptionsTask
     {
         $request = $this->requestFactory->createRequest(
             RequestMethod::Get,
-            $this->uriFactory->createUri($this->baseUri . '/subscriptions')
+            $this->uriFactory->createUri($this->baseUri . '/subscriptions/' . urlencode($this->stream))
         );
 
         $promise = $this->sendAsyncRequest($request);

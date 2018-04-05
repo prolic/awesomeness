@@ -6,7 +6,7 @@ namespace Prooph\EventStore;
 
 use Prooph\EventStore\Task\CreatePersistentSubscriptionTask;
 use Prooph\EventStore\Task\DeletePersistentSubscriptionTask;
-use Prooph\EventStore\Task\GetInformationForAllSubscriptionsTask;
+use Prooph\EventStore\Task\GetInformationForSubscriptionsTask;
 use Prooph\EventStore\Task\UpdatePersistentSubscriptionTask;
 
 interface EventStoreSubscriptionConnection
@@ -75,9 +75,12 @@ interface EventStoreSubscriptionConnection
 
     public function getInformationForAllSubscriptions(
         UserCredentials $userCredentials = null
-    ): GetInformationForAllSubscriptionsTask;
+    ): GetInformationForSubscriptionsTask;
 
-    public function getInformationForSubscriptionsWithStream(string $stream): Task;
+    public function getInformationForSubscriptionsWithStream(
+        string $stream,
+        UserCredentials $userCredentials = null
+    ): GetInformationForSubscriptionsTask;
 
     public function getInformationForSubscription(string $stream, string $groupName): Task;
 }

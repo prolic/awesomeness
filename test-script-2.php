@@ -38,3 +38,7 @@ $task = $connection->deletePersistentSubscription(
 $task = $connection->getInformationForAllSubscriptions();
 
 var_dump($task->result());
+
+$task = $connection->getInformationForSubscriptionsWithStream('sasastream');
+
+var_dump($task->result());

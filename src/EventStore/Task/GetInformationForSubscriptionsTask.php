@@ -11,6 +11,6 @@ use Prooph\EventStore\Task;
  * @internal
  * @method SubscriptionInformation[] result()
  */
-class GetInformationForAllSubscriptionsTask extends Task
+class GetInformationForSubscriptionsTask extends Task
 {
 }
