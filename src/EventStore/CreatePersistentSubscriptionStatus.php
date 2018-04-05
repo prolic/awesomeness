@@ -53,7 +53,7 @@ class CreatePersistentSubscriptionStatus
         throw new \InvalidArgumentException('Unknown enum value given');
     }
 
-    public function equals(EventReadStatus $other): bool
+    public function equals(CreatePersistentSubscriptionStatus $other): bool
     {
         return get_class($this) === get_class($other) && $this->name === $other->name;
     }
