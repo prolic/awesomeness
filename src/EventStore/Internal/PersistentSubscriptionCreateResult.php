@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Prooph\EventStore\Internal;
 
 /** @internal */
-class CreatePersistentSubscriptionResult
+class PersistentSubscriptionCreateResult
 {
     /** @var string */
     private $correlationId;

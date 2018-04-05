@@ -13,6 +13,8 @@ class Task
     protected $promise;
     /** @var callable|null */
     protected $callback;
+    /** @var mixed */
+    protected $result;
 
     /**
      * @internal
@@ -28,19 +30,24 @@ class Task
     }
 
     /**
+     * @return mixed
      * @throws \Throwable
      */
-    public function result(): ?object
+    public function result()
     {
-        $callback = $this->callback;
+        if (null === $this->result) {
+            $callback = $this->callback;
 
-        if ($this->promise instanceof Task) {
-            $response = $this->promise->result();
-        } else {
-            $response = $this->promise->wait(true);
+            if ($this->promise instanceof Task) {
+                $response = $this->promise->result();
+            } else {
+                $response = $this->promise->wait(true);
+            }
+
+            $this->result = $callback($response);
         }
 
-        return $callback($response);
+        return $this->result;
     }
 
     public function continueWith(callable $callback, string $task = __CLASS__): Task

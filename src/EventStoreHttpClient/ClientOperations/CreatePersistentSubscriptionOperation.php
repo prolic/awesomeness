@@ -7,9 +7,9 @@ namespace Prooph\EventStoreHttpClient\ClientOperations;
 use Http\Client\HttpAsyncClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
-use Prooph\EventStore\Internal\CreatePersistentSubscriptionResult;
-use Prooph\EventStore\Internal\PersistentSubscriptionCreateStatus;
 use Prooph\EventStore\Exception\AccessDenied;
+use Prooph\EventStore\Internal\PersistentSubscriptionCreateResult;
+use Prooph\EventStore\Internal\PersistentSubscriptionCreateStatus;
 use Prooph\EventStore\PersistentSubscriptionSettings;
 use Prooph\EventStore\Task\CreatePersistentSubscriptionTask;
 use Prooph\EventStore\UserCredentials;
@@ -56,14 +56,14 @@ class CreatePersistentSubscriptionOperation extends Operation
 
         $promise = $this->sendAsyncRequest($request);
 
-        return new CreatePersistentSubscriptionTask($promise, function (ResponseInterface $response): CreatePersistentSubscriptionResult {
+        return new CreatePersistentSubscriptionTask($promise, function (ResponseInterface $response): PersistentSubscriptionCreateResult {
             $json = json_decode($response->getBody()->getContents(), true);
             switch ($response->getStatusCode()) {
                 case 401:
                     throw AccessDenied::toSubscription($this->stream, $this->groupName);
                 case 201:
                 case 409:
-                    return new CreatePersistentSubscriptionResult(
+                    return new PersistentSubscriptionCreateResult(
                         $json['correlationId'],
                         $json['reason'],
                         PersistentSubscriptionCreateStatus::byName($json['result'])

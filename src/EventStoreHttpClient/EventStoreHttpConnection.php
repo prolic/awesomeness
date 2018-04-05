@@ -30,6 +30,7 @@ use Prooph\EventStore\Task\CreatePersistentSubscriptionTask;
 use Prooph\EventStore\Task\DeletePersistentSubscriptionTask;
 use Prooph\EventStore\Task\DeleteResultTask;
 use Prooph\EventStore\Task\EventReadResultTask;
+use Prooph\EventStore\Task\GetInformationForAllSubscriptionsTask;
 use Prooph\EventStore\Task\StreamEventsSliceTask;
 use Prooph\EventStore\Task\StreamMetadataResultTask;
 use Prooph\EventStore\Task\UpdatePersistentSubscriptionTask;
@@ -448,8 +449,9 @@ class EventStoreHttpConnection implements EventStoreConnection, EventStoreSubscr
         // TODO: Implement replayParked() method.
     }
 
-    public function getInformationForAllSubscriptions(UserCredentials $userCredentials = null): Task
-    {
+    public function getInformationForAllSubscriptions(
+        UserCredentials $userCredentials = null
+    ): GetInformationForAllSubscriptionsTask {
         $operation = new GetInformationForAllSubscriptionsOperation(
             $this->asyncClient,
             $this->requestFactory,
