@@ -26,3 +26,11 @@ $task = $connection->updatePersistentSubscription(
 );
 
 var_dump($task->result());
+
+$task = $connection->deletePersistentSubscription(
+    'sasastream',
+    'test',
+    new \Prooph\EventStore\UserCredentials('admin', 'changeit')
+);
+
+var_dump($task->result());

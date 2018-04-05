@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Prooph\EventStore;
 
 use Prooph\EventStore\Task\CreatePersistentSubscriptionTask;
+use Prooph\EventStore\Task\DeletePersistentSubscriptionTask;
 use Prooph\EventStore\Task\UpdatePersistentSubscriptionTask;
 
 interface EventStoreSubscriptionConnection
@@ -23,7 +24,11 @@ interface EventStoreSubscriptionConnection
         UserCredentials $userCredentials = null
     ): UpdatePersistentSubscriptionTask;
 
-    public function deletePersistentSubscription(string $stream, string $subscriptionName): Task;
+    public function deletePersistentSubscription(
+        string $stream,
+        string $groupName,
+        UserCredentials $userCredentials = null
+    ): DeletePersistentSubscriptionTask;
 
     /**
      * @param string $stream

@@ -27,6 +27,7 @@ use Prooph\EventStore\SystemSettings;
 use Prooph\EventStore\Task;
 use Prooph\EventStore\Task\AllEventsSliceTask;
 use Prooph\EventStore\Task\CreatePersistentSubscriptionTask;
+use Prooph\EventStore\Task\DeletePersistentSubscriptionTask;
 use Prooph\EventStore\Task\DeleteResultTask;
 use Prooph\EventStore\Task\EventReadResultTask;
 use Prooph\EventStore\Task\StreamEventsSliceTask;
@@ -36,6 +37,7 @@ use Prooph\EventStore\Task\WriteResultTask;
 use Prooph\EventStore\UserCredentials;
 use Prooph\EventStoreHttpClient\ClientOperations\AppendToStreamOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\CreatePersistentSubscriptionOperation;
+use Prooph\EventStoreHttpClient\ClientOperations\DeletePersistentSubscriptionOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\DeleteStreamOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\ReadEventOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\ReadStreamEventsBackwardOperation;
@@ -390,9 +392,22 @@ class EventStoreHttpConnection implements EventStoreConnection, EventStoreSubscr
         return $operation->task();
     }
 
-    public function deletePersistentSubscription(string $stream, string $subscriptionName): Task
-    {
-        // TODO: Implement deletePersistentSubscription() method.
+    public function deletePersistentSubscription(
+        string $stream,
+        string $groupName,
+        UserCredentials $userCredentials = null
+    ): DeletePersistentSubscriptionTask {
+        $operation = new DeletePersistentSubscriptionOperation(
+            $this->asyncClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->baseUri,
+            $stream,
+            $groupName,
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
+
+        return $operation->task();
     }
 
     public function connectToPersistentSubscription(
