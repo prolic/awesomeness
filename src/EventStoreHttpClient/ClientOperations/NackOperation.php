@@ -9,13 +9,14 @@ use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
 use Prooph\EventStore\EventId;
 use Prooph\EventStore\Exception\AccessDenied;
+use Prooph\EventStore\NackAction;
 use Prooph\EventStore\Task;
 use Prooph\EventStore\UserCredentials;
 use Prooph\EventStoreHttpClient\Http\RequestMethod;
 use Psr\Http\Message\ResponseInterface;
 
 /** @internal */
-class AckOperation extends Operation
+class NackOperation extends Operation
 {
     /** @var string */
     private $stream;
@@ -23,6 +24,8 @@ class AckOperation extends Operation
     private $groupName;
     /** @var EventId[] */
     private $eventIds;
+    /** @var NackAction */
+    private $action;
 
     public function __construct(
         HttpAsyncClient $asyncClient,
@@ -32,6 +35,7 @@ class AckOperation extends Operation
         string $stream,
         string $groupName,
         array $eventIds,
+        NackAction $action,
         ?UserCredentials $userCredentials
     ) {
         parent::__construct($asyncClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
@@ -39,6 +43,7 @@ class AckOperation extends Operation
         $this->stream = $stream;
         $this->groupName = $groupName;
         $this->eventIds = $eventIds;
+        $this->action = $action;
     }
 
     public function task(): Task
@@ -50,11 +55,12 @@ class AckOperation extends Operation
         $request = $this->requestFactory->createRequest(
             RequestMethod::Post,
             $this->uriFactory->createUri(sprintf(
-                '%s/subscriptions/%s/%s/ack?ids=%s',
+                '%s/subscriptions/%s/%s/nack?ids=%s&action=%s',
                 $this->baseUri,
                 urlencode($this->stream),
                 urlencode($this->groupName),
-                implode(',', $eventIds)
+                implode(',', $eventIds),
+                $this->action->name()
             )),
             [
                 'Content-Length' => 0,

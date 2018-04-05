@@ -34,7 +34,7 @@ class AppendToStreamOperation extends Operation
         string $baseUri,
         string $stream,
         int $expectedVersion,
-        iterable $events,
+        array $events,
         ?UserCredentials $userCredentials
     ) {
         parent::__construct($asyncClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);

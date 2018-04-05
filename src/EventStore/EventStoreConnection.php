@@ -35,7 +35,7 @@ interface EventStoreConnection
     public function appendToStreamAsync(
         string $stream,
         int $expectedVersion,
-        iterable $events,
+        array $events,
         UserCredentials $userCredentials = null
     ): WriteResultTask;
 

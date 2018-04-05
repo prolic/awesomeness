@@ -52,7 +52,12 @@ interface EventStoreSubscriptionConnection
         UserCredentials $userCredentials = null
     ): EventStorePersistentSubscription;
 
-    public function ack(string $stream, string $groupName, EventId $eventId): Task;
+    public function ack(
+        string $stream,
+        string $groupName,
+        EventId $eventId,
+        UserCredentials $userCredentials = null
+    ): Task;
 
     /**
      * @param string $stream
@@ -60,19 +65,37 @@ interface EventStoreSubscriptionConnection
      * @param EventId[] $eventIds
      * @return Task
      */
-    public function ackMultiple(string $stream, string $groupName, iterable $eventIds): Task;
+    public function ackMultiple(
+        string $stream,
+        string $groupName,
+        array $eventIds,
+        UserCredentials $userCredentials = null
+    ): Task;
 
-    public function nack(string $stream, string $groupName, EventId $eventId): Task;
+    public function nack(
+        string $stream,
+        string $groupName,
+        EventId $eventId,
+        NackAction $action,
+        UserCredentials $userCredentials = null
+    ): Task;
 
     /**
      * @param string $stream
      * @param string $groupName
      * @param EventId[] $eventIds
+     * @param NackAction $action
      * @return Task
      */
-    public function nackMultiple(string $stream, string $groupName, iterable $eventIds): Task;
+    public function nackMultiple(
+        string $stream,
+        string $groupName,
+        array $eventIds,
+        NackAction $action,
+        UserCredentials $userCredentials = null
+    ): Task;
 
-    public function replayParked(string $stream, string $groupName): Task;
+    public function replayParked(string $stream, string $groupName, UserCredentials $userCredentials = null): Task;
 
     public function getInformationForAllSubscriptions(
         UserCredentials $userCredentials = null

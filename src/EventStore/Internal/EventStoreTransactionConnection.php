@@ -13,7 +13,7 @@ interface EventStoreTransactionConnection
 {
     public function transactionalWriteAsync(
         EventStoreTransaction $transaction,
-        iterable $events,
+        array $events,
         ?UserCredentials $userCredentials
     ): Task;
 

@@ -28,7 +28,7 @@ class StreamEventsSlice
         string $stream,
         int $fromEventNumber,
         ReadDirection $readDirection,
-        iterable $events,
+        array $events,
         int $nextEventNumber,
         int $lastEventNumber,
         bool $isEndOfStream
@@ -66,7 +66,7 @@ class StreamEventsSlice
     /**
      * @return RecordedEvent[]
      */
-    public function events(): iterable
+    public function events(): array
     {
         return $this->events;
     }

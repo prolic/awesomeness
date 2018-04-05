@@ -44,7 +44,7 @@ class EventStoreTransaction
      * @param EventData[] $events
      * @return Task
      */
-    public function writeAsync(iterable $events): Task
+    public function writeAsync(array $events): Task
     {
         if ($this->isRolledBack) {
             throw new \RuntimeException('Cannot commit a rolledback transaction');

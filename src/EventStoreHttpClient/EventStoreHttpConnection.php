@@ -19,6 +19,7 @@ use Prooph\EventStore\EventStorePersistentSubscription;
 use Prooph\EventStore\EventStoreSubscriptionConnection;
 use Prooph\EventStore\ExpectedVersion;
 use Prooph\EventStore\Internal\Consts;
+use Prooph\EventStore\NackAction;
 use Prooph\EventStore\PersistentSubscriptionSettings;
 use Prooph\EventStore\Position;
 use Prooph\EventStore\StreamMetadata;
@@ -45,6 +46,7 @@ use Prooph\EventStoreHttpClient\ClientOperations\DeleteStreamOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\GetInformationForAllSubscriptionsOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\GetInformationForSubscriptionOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\GetInformationForSubscriptionsWithStreamOperation;
+use Prooph\EventStoreHttpClient\ClientOperations\NackOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\ReadEventOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\ReadStreamEventsBackwardOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\ReadStreamEventsForwardOperation;
@@ -133,7 +135,7 @@ class EventStoreHttpConnection implements EventStoreConnection, EventStoreSubscr
     public function appendToStreamAsync(
         string $stream,
         int $expectedVersion,
-        iterable $events,
+        array $events,
         UserCredentials $userCredentials = null
     ): WriteResultTask {
         if (empty($stream)) {
@@ -428,13 +430,21 @@ class EventStoreHttpConnection implements EventStoreConnection, EventStoreSubscr
         // TODO: Implement connectToPersistentSubscription() method.
     }
 
-    public function ack(string $stream, string $groupName, EventId $eventId): Task
-    {
-        return $this->ackMultiple($stream, $groupName, [$eventId]);
+    public function ack(
+        string $stream,
+        string $groupName,
+        EventId $eventId,
+        UserCredentials $userCredentials = null
+    ): Task {
+        return $this->ackMultiple($stream, $groupName, [$eventId], $userCredentials ?? $this->settings->defaultUserCredentials());
     }
 
-    public function ackMultiple(string $stream, string $groupName, iterable $eventIds): Task
-    {
+    public function ackMultiple(
+        string $stream,
+        string $groupName,
+        array $eventIds,
+        UserCredentials $userCredentials = null
+    ): Task {
         if (empty($eventIds)) {
             throw new \InvalidArgumentException('No eventIds given');
         }
@@ -453,17 +463,43 @@ class EventStoreHttpConnection implements EventStoreConnection, EventStoreSubscr
         return $operation->task();
     }
 
-    public function nack(string $stream, string $groupName, EventId $eventId): Task
-    {
-        // TODO: Implement nack() method.
+    public function nack(
+        string $stream,
+        string $groupName,
+        EventId $eventId,
+        NackAction $action,
+        UserCredentials $userCredentials = null
+    ): Task {
+        return $this->nackMultiple($stream, $groupName, [$eventId], $action, $userCredentials ?? $this->settings->defaultUserCredentials());
     }
 
-    public function nackMultiple(string $stream, string $groupName, iterable $eventIds): Task
-    {
-        // TODO: Implement nackMultiple() method.
+    public function nackMultiple(
+        string $stream,
+        string $groupName,
+        array $eventIds,
+        NackAction $action,
+        UserCredentials $userCredentials = null
+    ): Task {
+        if (empty($eventIds)) {
+            throw new \InvalidArgumentException('No eventIds given');
+        }
+
+        $operation = new NackOperation(
+            $this->asyncClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->baseUri,
+            $stream,
+            $groupName,
+            $eventIds,
+            $action,
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
+
+        return $operation->task();
     }
 
-    public function replayParked(string $stream, string $groupName): Task
+    public function replayParked(string $stream, string $groupName, UserCredentials $userCredentials = null): Task
     {
         // TODO: Implement replayParked() method.
     }
