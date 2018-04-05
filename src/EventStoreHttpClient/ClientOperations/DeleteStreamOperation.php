@@ -22,7 +22,6 @@ class DeleteStreamOperation extends Operation
     /** @var bool */
     private $hardDelete;
 
-    /** @internal */
     public function __construct(
         HttpAsyncClient $asyncClient,
         RequestFactory $requestFactory,
@@ -57,7 +56,7 @@ class DeleteStreamOperation extends Operation
         return new DeleteResultTask($promise, function (ResponseInterface $response): DeleteResult {
             switch ($response->getStatusCode()) {
                 case 401:
-                    throw AccessDenied::with($this->stream);
+                    throw AccessDenied::toStream($this->stream);
                 case 204:
                 case 410:
                     return new DeleteResult();

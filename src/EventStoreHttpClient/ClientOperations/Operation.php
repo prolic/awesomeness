@@ -26,7 +26,6 @@ abstract class Operation
     /** @var UserCredentials|null */
     protected $userCredentials;
 
-    /** @internal */
     public function __construct(
         HttpAsyncClient $asyncClient,
         RequestFactory $requestFactory,

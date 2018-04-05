@@ -26,7 +26,7 @@ $task = $connection->appendToStreamAsync(
             true,
             json_encode(['user' => 'Sascha Prolic']),
             ''
-        )
+        ),
     ]
 );
 
@@ -45,7 +45,7 @@ $task = $connection->setStreamMetadataAsync(
     'sasastream',
     \Prooph\EventStore\ExpectedVersion::Any,
     new \Prooph\EventStore\StreamMetadata(null, null, null, null, null, [
-        'foo' => 'bar'
+        'foo' => 'bar',
     ])
 );
 

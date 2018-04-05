@@ -31,7 +31,6 @@ class ReadStreamEventsForwardOperation extends Operation
     /** @var bool */
     private $resolveLinkTos;
 
-    /** @internal */
     public function __construct(
         HttpAsyncClient $asyncClient,
         RequestFactory $requestFactory,
@@ -74,7 +73,7 @@ class ReadStreamEventsForwardOperation extends Operation
         return new StreamEventsSliceTask($promise, function (ResponseInterface $response): StreamEventsSlice {
             switch ($response->getStatusCode()) {
                 case 401:
-                    throw AccessDenied::with($this->stream);
+                    throw AccessDenied::toStream($this->stream);
                 case 404:
                     return new StreamEventsSlice(
                         SliceReadStatus::streamNotFound(),

@@ -15,28 +15,35 @@ use Prooph\EventStore\EventId;
 use Prooph\EventStore\EventReadResult;
 use Prooph\EventStore\EventReadStatus;
 use Prooph\EventStore\EventStoreConnection;
+use Prooph\EventStore\EventStorePersistentSubscription;
+use Prooph\EventStore\EventStoreSubscriptionConnection;
 use Prooph\EventStore\ExpectedVersion;
 use Prooph\EventStore\Internal\Consts;
+use Prooph\EventStore\PersistentSubscriptionSettings;
 use Prooph\EventStore\Position;
 use Prooph\EventStore\StreamMetadata;
 use Prooph\EventStore\StreamMetadataResult;
 use Prooph\EventStore\SystemSettings;
 use Prooph\EventStore\Task;
 use Prooph\EventStore\Task\AllEventsSliceTask;
+use Prooph\EventStore\Task\CreatePersistentSubscriptionTask;
 use Prooph\EventStore\Task\DeleteResultTask;
 use Prooph\EventStore\Task\EventReadResultTask;
 use Prooph\EventStore\Task\StreamEventsSliceTask;
 use Prooph\EventStore\Task\StreamMetadataResultTask;
+use Prooph\EventStore\Task\UpdatePersistentSubscriptionTask;
 use Prooph\EventStore\Task\WriteResultTask;
 use Prooph\EventStore\UserCredentials;
 use Prooph\EventStoreHttpClient\ClientOperations\AppendToStreamOperation;
+use Prooph\EventStoreHttpClient\ClientOperations\CreatePersistentSubscriptionOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\DeleteStreamOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\ReadEventOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\ReadStreamEventsBackwardOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\ReadStreamEventsForwardOperation;
+use Prooph\EventStoreHttpClient\ClientOperations\UpdatePersistentSubscriptionOperation;
 use Ramsey\Uuid\Uuid;
 
-class EventStoreHttpConnection implements EventStoreConnection
+class EventStoreHttpConnection implements EventStoreConnection, EventStoreSubscriptionConnection
 {
     /** @var HttpAsyncClient */
     private $asyncClient;
@@ -341,5 +348,102 @@ class EventStoreHttpConnection implements EventStoreConnection
             ],
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
+    }
+
+    public function createPersistentSubscription(
+        string $stream,
+        string $groupName,
+        PersistentSubscriptionSettings $settings,
+        UserCredentials $userCredentials = null
+    ): CreatePersistentSubscriptionTask {
+        $operation = new CreatePersistentSubscriptionOperation(
+            $this->asyncClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->baseUri,
+            $stream,
+            $groupName,
+            $settings,
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
+
+        return $operation->task();
+    }
+
+    public function updatePersistentSubscription(
+        string $stream,
+        string $groupName,
+        PersistentSubscriptionSettings $settings,
+        UserCredentials $userCredentials = null
+    ): UpdatePersistentSubscriptionTask {
+        $operation = new UpdatePersistentSubscriptionOperation(
+            $this->asyncClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->baseUri,
+            $stream,
+            $groupName,
+            $settings,
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
+
+        return $operation->task();
+    }
+
+    public function deletePersistentSubscription(string $stream, string $subscriptionName): Task
+    {
+        // TODO: Implement deletePersistentSubscription() method.
+    }
+
+    public function connectToPersistentSubscription(
+        string $stream,
+        string $groupName,
+        callable $eventAppeared,
+        callable $subscriptionDropped = null,
+        int $bufferSize = 10,
+        bool $autoAck = true,
+        UserCredentials $userCredentials = null
+    ): EventStorePersistentSubscription {
+        // TODO: Implement connectToPersistentSubscription() method.
+    }
+
+    public function ack(string $stream, string $groupName, EventId $eventId): Task
+    {
+        // TODO: Implement ack() method.
+    }
+
+    public function ackMultiple(string $stream, string $groupName, iterable $eventIds): Task
+    {
+        // TODO: Implement ackMultiple() method.
+    }
+
+    public function nack(string $stream, string $groupName, EventId $eventId): Task
+    {
+        // TODO: Implement nack() method.
+    }
+
+    public function nackMultiple(string $stream, string $groupName, iterable $eventIds): Task
+    {
+        // TODO: Implement nackMultiple() method.
+    }
+
+    public function replayParked(string $stream, string $groupName): Task
+    {
+        // TODO: Implement replayParked() method.
+    }
+
+    public function getInformationAboutAllSubscriptions(): Task
+    {
+        // TODO: Implement getInformationAboutAllSubscriptions() method.
+    }
+
+    public function getInformationAboutSubscriptionsForStream(string $stream): Task
+    {
+        // TODO: Implement getInformationAboutSubscriptionsForStream() method.
+    }
+
+    public function getInformationAboutSubscription(string $stream, string $groupName): Task
+    {
+        // TODO: Implement getInformationAboutSubscription() method.
     }
 }

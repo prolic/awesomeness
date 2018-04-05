@@ -26,7 +26,6 @@ class ReadEventOperation extends Operation
     /** @var int */
     private $eventNumber;
 
-    /** @internal */
     public function __construct(
         HttpAsyncClient $asyncClient,
         RequestFactory $requestFactory,
@@ -67,7 +66,7 @@ class ReadEventOperation extends Operation
         return new EventReadResultTask($promise, function (ResponseInterface $response): EventReadResult {
             switch ($response->getStatusCode()) {
                 case 401:
-                    throw AccessDenied::with($this->stream);
+                    throw AccessDenied::toStream($this->stream);
                 case 404:
                     return new EventReadResult(EventReadStatus::notFound(), $this->stream, $this->eventNumber, null);
                 case 410:

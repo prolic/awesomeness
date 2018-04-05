@@ -27,7 +27,6 @@ class AppendToStreamOperation extends Operation
     /** @var EventData[] */
     private $events;
 
-    /** @internal */
     public function __construct(
         HttpAsyncClient $asyncClient,
         RequestFactory $requestFactory,
@@ -80,7 +79,7 @@ class AppendToStreamOperation extends Operation
 
                     throw WrongExpectedVersion::withCurrentVersion($this->stream, $this->expectedVersion, $currentVersion);
                 case 401:
-                    throw AccessDenied::with($this->stream);
+                    throw AccessDenied::toStream($this->stream);
                 case 410:
                     throw StreamDeleted::with($this->stream);
                 case 201:
