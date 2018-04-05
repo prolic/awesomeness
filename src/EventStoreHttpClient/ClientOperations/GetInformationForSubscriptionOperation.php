@@ -9,6 +9,7 @@ use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
 use Prooph\EventStore\DetailedSubscriptionInformation;
 use Prooph\EventStore\Exception\AccessDenied;
+use Prooph\EventStore\NamedConsumerStrategy;
 use Prooph\EventStore\PersistentSubscriptionSettings;
 use Prooph\EventStore\Task\GetInformationForSubscriptionTask;
 use Prooph\EventStore\UserCredentials;
@@ -68,7 +69,7 @@ class GetInformationForSubscriptionOperation extends Operation
                             $json['config']['maxSubscriberCount'],
                             $json['config']['messageTimeoutMilliseconds'],
                             $json['config']['minCheckPointCount'],
-                            $json['config']['namedConsumerStrategy']
+                            NamedConsumerStrategy::byName($json['config']['namedConsumerStrategy'])
                         ),
                         $json['eventStreamId'],
                         $json['groupName'],

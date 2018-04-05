@@ -37,6 +37,7 @@ use Prooph\EventStore\Task\StreamMetadataResultTask;
 use Prooph\EventStore\Task\UpdatePersistentSubscriptionTask;
 use Prooph\EventStore\Task\WriteResultTask;
 use Prooph\EventStore\UserCredentials;
+use Prooph\EventStoreHttpClient\ClientOperations\AckOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\AppendToStreamOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\CreatePersistentSubscriptionOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\DeletePersistentSubscriptionOperation;
@@ -346,7 +347,7 @@ class EventStoreHttpConnection implements EventStoreConnection, EventStoreSubscr
             ExpectedVersion::Any,
             [
                 new EventData(
-                    EventId::generate(),
+                    EventId::generate()->toString(),
                     SystemEventTypes::Settings,
                     true,
                     json_encode($settings->toArray()),
@@ -429,12 +430,27 @@ class EventStoreHttpConnection implements EventStoreConnection, EventStoreSubscr
 
     public function ack(string $stream, string $groupName, EventId $eventId): Task
     {
-        // TODO: Implement ack() method.
+        return $this->ackMultiple($stream, $groupName, [$eventId]);
     }
 
     public function ackMultiple(string $stream, string $groupName, iterable $eventIds): Task
     {
-        // TODO: Implement ackMultiple() method.
+        if (empty($eventIds)) {
+            throw new \InvalidArgumentException('No eventIds given');
+        }
+
+        $operation = new AckOperation(
+            $this->asyncClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->baseUri,
+            $stream,
+            $groupName,
+            $eventIds,
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
+
+        return $operation->task();
     }
 
     public function nack(string $stream, string $groupName, EventId $eventId): Task

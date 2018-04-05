@@ -66,10 +66,7 @@ final class PersistentSubscriptionSettings
      * @var int
      */
     private $minCheckPointCount;
-    /**
-     * RoundRobin/DispatchToSingle/Pinned
-     * @var string
-     */
+    /** @var NamedConsumerStrategy */
     private $namedConsumerStrategy;
 
     private const Int32Max = 2147483647;
@@ -89,7 +86,7 @@ final class PersistentSubscriptionSettings
             0,
             30000,
             10,
-            SystemConsumerStrategies::RoundRobin
+            NamedConsumerStrategy::roundRobin()
         );
     }
 
@@ -106,7 +103,7 @@ final class PersistentSubscriptionSettings
         int $maxSubscriberCount,
         int $messageTimeoutMilliseconds,
         int $minCheckPointCount,
-        string $namedConsumerStrategy
+        NamedConsumerStrategy $namedConsumerStrategy
     ) {
         if ($checkPointAfterMilliseconds > self::Int32Max) {
             throw new \InvalidArgumentException('checkPointAfterMilliseconds must smaller then ' . self::Int32Max);
@@ -191,7 +188,7 @@ final class PersistentSubscriptionSettings
         return $this->minCheckPointCount;
     }
 
-    public function namedConsumerStrategy(): string
+    public function namedConsumerStrategy(): NamedConsumerStrategy
     {
         return $this->namedConsumerStrategy;
     }
@@ -211,7 +208,7 @@ final class PersistentSubscriptionSettings
             'maxSubscriberCount' => $this->maxSubscriberCount,
             'messageTimeoutMilliseconds' => $this->messageTimeoutMilliseconds,
             'minCheckPointCount' => $this->minCheckPointCount,
-            'namedConsumerStrategy' => $this->namedConsumerStrategy,
+            'namedConsumerStrategy' => $this->namedConsumerStrategy->name(),
         ];
     }
 }
