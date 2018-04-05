@@ -42,3 +42,7 @@ var_dump($task->result());
 $task = $connection->getInformationForSubscriptionsWithStream('sasastream');
 
 var_dump($task->result());
+
+$task = $connection->getInformationForSubscription('sasastream', 'test');
+
+var_dump($task->result());

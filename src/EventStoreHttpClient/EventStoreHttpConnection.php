@@ -31,6 +31,7 @@ use Prooph\EventStore\Task\DeletePersistentSubscriptionTask;
 use Prooph\EventStore\Task\DeleteResultTask;
 use Prooph\EventStore\Task\EventReadResultTask;
 use Prooph\EventStore\Task\GetInformationForSubscriptionsTask;
+use Prooph\EventStore\Task\GetInformationForSubscriptionTask;
 use Prooph\EventStore\Task\StreamEventsSliceTask;
 use Prooph\EventStore\Task\StreamMetadataResultTask;
 use Prooph\EventStore\Task\UpdatePersistentSubscriptionTask;
@@ -41,6 +42,7 @@ use Prooph\EventStoreHttpClient\ClientOperations\CreatePersistentSubscriptionOpe
 use Prooph\EventStoreHttpClient\ClientOperations\DeletePersistentSubscriptionOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\DeleteStreamOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\GetInformationForAllSubscriptionsOperation;
+use Prooph\EventStoreHttpClient\ClientOperations\GetInformationForSubscriptionOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\GetInformationForSubscriptionsWithStreamOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\ReadEventOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\ReadStreamEventsBackwardOperation;
@@ -480,8 +482,21 @@ class EventStoreHttpConnection implements EventStoreConnection, EventStoreSubscr
         return $operation->task();
     }
 
-    public function getInformationForSubscription(string $stream, string $groupName): Task
-    {
-        // TODO: Implement getInformationAboutSubscription() method.
+    public function getInformationForSubscription(
+        string $stream,
+        string $groupName,
+        UserCredentials $userCredentials = null
+    ): GetInformationForSubscriptionTask {
+        $operation = new GetInformationForSubscriptionOperation(
+            $this->asyncClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->baseUri,
+            $stream,
+            $groupName,
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
+
+        return $operation->task();
     }
 }
