@@ -75,7 +75,8 @@ class AppendToStreamOperation extends Operation
                     if (empty($header)) {
                         throw WrongExpectedVersion::withExpectedVersion($this->stream, $this->expectedVersion);
                     }
-                        $currentVersion = (int) $header[0];
+
+                    $currentVersion = (int) $header[0];
 
                     throw WrongExpectedVersion::withCurrentVersion($this->stream, $this->expectedVersion, $currentVersion);
                 case 401:
@@ -83,9 +84,7 @@ class AppendToStreamOperation extends Operation
                 case 410:
                     throw StreamDeleted::with($this->stream);
                 case 201:
-                    $nextExpectedVersion = $this->expectedVersion + count($this->events) + 1;
-
-                    return new WriteResult($nextExpectedVersion);
+                    return new WriteResult();
                 default:
                     throw new \UnexpectedValueException('Unexpected status code ' . $response->getStatusCode() . ' returned');
             }
