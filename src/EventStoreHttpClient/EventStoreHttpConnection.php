@@ -351,7 +351,7 @@ class EventStoreHttpConnection implements EventStoreConnection, EventStoreSubscr
             ExpectedVersion::Any,
             [
                 new EventData(
-                    EventId::generate()->toString(),
+                    EventId::generate(),
                     SystemEventTypes::Settings,
                     true,
                     json_encode($settings->toArray()),
