@@ -65,11 +65,11 @@ Now we have: `PHP Fatal error:  Uncaught Prooph\EventStore\Exception\WrongExpect
 
 ## Using Docker
 
-A simple docker setup is available, too. Instead of the manual installation you can run:
+A simple docker setup is available, too. Instead of manual installation you can run:
 
 `docker-compose up -d`
 
-and the test scripts with:
+and test scripts with:
 
 `docker-compose run php php docker/test-script.php`
 
