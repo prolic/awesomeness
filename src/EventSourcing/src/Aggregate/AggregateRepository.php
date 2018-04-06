@@ -116,7 +116,6 @@ class AggregateRepository
             }
         } while (! $result->isEndOfStream());
 
-
         if (! $result->status()->equals(SliceReadStatus::success())) {
             return null;
         }

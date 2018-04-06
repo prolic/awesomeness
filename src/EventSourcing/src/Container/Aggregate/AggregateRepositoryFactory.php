@@ -101,7 +101,7 @@ final class AggregateRepositoryFactory implements ProvidesDefaultOptions, Requir
     public function defaultOptions(): iterable
     {
         return [
-            'optimistic_concurrecy' => true
+            'optimistic_concurrecy' => true,
         ];
     }
 
@@ -111,7 +111,7 @@ final class AggregateRepositoryFactory implements ProvidesDefaultOptions, Requir
             'repository_class',
             'aggregate_type',
             'aggregate_translator',
-            'category'
+            'category',
         ];
     }
 }
