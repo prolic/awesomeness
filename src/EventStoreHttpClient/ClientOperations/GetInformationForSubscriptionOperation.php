@@ -50,8 +50,6 @@ class GetInformationForSubscriptionOperation extends Operation
 
         return new GetInformationForSubscriptionTask($promise, function (ResponseInterface $response): DetailedSubscriptionInformation {
             switch ($response->getStatusCode()) {
-                case 401:
-                    throw new AccessDenied();
                 case 200:
                     $json = json_decode($response->getBody()->getContents(), true);
 
@@ -84,6 +82,14 @@ class GetInformationForSubscriptionOperation extends Operation
                         $json['retryBufferCount'],
                         $json['totalInFlightMessages']
                     );
+                case 401:
+                    throw new AccessDenied();
+                case 404:
+                    throw new \RuntimeException(sprintf(
+                        'Subscription with stream \'%s\' and group name \'%s\' not found',
+                        $this->stream,
+                        $this->groupName
+                    ));
                 default:
                     throw new \UnexpectedValueException('Unexpected status code ' . $response->getStatusCode() . ' returned');
             }
