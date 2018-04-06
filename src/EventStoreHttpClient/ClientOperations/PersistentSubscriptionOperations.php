@@ -102,7 +102,7 @@ final class PersistentSubscriptionOperations extends Operation implements BasePe
                 urlencode($this->stream),
                 urlencode($this->groupName),
                 implode(',', $eventIds),
-                $this->action->name()
+                $action->name()
             )),
             [
                 'Content-Length' => 0,
