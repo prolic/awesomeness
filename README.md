@@ -58,3 +58,5 @@ Not now...
 `php test-script.php`
 
 Now we have: `PHP Fatal error:  Uncaught Prooph\EventStore\Exception\WrongExpectedVersion: Append failed due to WrongExpectedVersion. Stream: sasastream, Expected version: -1, Current version: 1`
+
+8) There is also a second test-script regarding subscriptions, see `test-script-2.php`
