@@ -1,0 +1,14 @@
+version: '2'
+services:
+  php:
+    image: prooph/php:7.2-cli
+    volumes:
+      - .:/app
+
+  eventstore:
+    image: eventstore/eventstore
+    ports:
+      - 2113:2113
+      - 1113:1113
+    environment:
+      - EVENTSTORE_RUN_PROJECTIONS=all
