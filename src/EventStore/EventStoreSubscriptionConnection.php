@@ -50,7 +50,6 @@ interface EventStoreSubscriptionConnection extends EventStoreConnection
         callable $subscriptionDropped = null,
         int $bufferSize = 10,
         bool $autoAck = true,
-        bool $autoNack = true,
         UserCredentials $userCredentials = null
     ): EventStorePersistentSubscription;
 

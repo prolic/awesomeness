@@ -14,6 +14,7 @@ use Prooph\EventStore\PersistentSubscriptionNakEventAction;
 use Prooph\EventStore\Task\ReadFromSubscriptionTask;
 use Prooph\EventStore\UserCredentials;
 use Prooph\EventStoreHttpClient\Http\RequestMethod;
+use Psr\Http\Message\ResponseInterface;
 
 /** @internal */
 final class PersistentSubscriptionOperations extends Operation implements BasePersistentSubscriptionOperations
@@ -75,17 +76,16 @@ final class PersistentSubscriptionOperations extends Operation implements BasePe
             ''
         );
 
-        $promise = $this->sendAsyncRequest($request);
-        $response = $promise->wait();
-
-        switch ($response->getStatusCode()) {
-            case 202:
-                return;
-            case 401:
-                throw AccessDenied::toStream($this->stream);
-            default:
-                throw new \UnexpectedValueException('Unexpected status code ' . $response->getStatusCode() . ' returned');
-        }
+        $this->sendAsyncRequest($request)->then(function(ResponseInterface $response): void {
+            switch ($response->getStatusCode()) {
+                case 202:
+                    return;
+                case 401:
+                    throw AccessDenied::toStream($this->stream);
+                default:
+                    throw new \UnexpectedValueException('Unexpected status code ' . $response->getStatusCode() . ' returned');
+            }
+        });
     }
 
     public function fail(array $eventIds, PersistentSubscriptionNakEventAction $action): void
@@ -110,16 +110,15 @@ final class PersistentSubscriptionOperations extends Operation implements BasePe
             ''
         );
 
-        $promise = $this->sendAsyncRequest($request);
-        $response = $promise->wait();
-
-        switch ($response->getStatusCode()) {
-            case 202:
-                return;
-            case 401:
-                throw AccessDenied::toStream($this->stream);
-            default:
-                throw new \UnexpectedValueException('Unexpected status code ' . $response->getStatusCode() . ' returned');
-        }
+        $this->sendAsyncRequest($request)->then(function(ResponseInterface $response): void {
+            switch ($response->getStatusCode()) {
+                case 202:
+                    return;
+                case 401:
+                    throw AccessDenied::toStream($this->stream);
+                default:
+                    throw new \UnexpectedValueException('Unexpected status code ' . $response->getStatusCode() . ' returned');
+            }
+        });
     }
 }

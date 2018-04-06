@@ -425,7 +425,6 @@ class EventStoreHttpConnection implements EventStoreSubscriptionConnection
         callable $subscriptionDropped = null,
         int $bufferSize = 10,
         bool $autoAck = true,
-        bool $autoNack = true,
         UserCredentials $userCredentials = null
     ): EventStorePersistentSubscription {
         return new EventStorePersistentSubscription(
@@ -443,8 +442,7 @@ class EventStoreHttpConnection implements EventStoreSubscriptionConnection
             $eventAppeared,
             $subscriptionDropped,
             $bufferSize,
-            $autoAck,
-            $autoNack
+            $autoAck
         );
     }
 

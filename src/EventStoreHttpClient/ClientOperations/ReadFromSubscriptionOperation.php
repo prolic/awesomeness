@@ -75,6 +75,10 @@ class ReadFromSubscriptionOperation extends Operation
                     $json = json_decode($response->getBody()->getContents(), true);
                     $events = [];
 
+                    if (null === $json) {
+                        return $events;
+                    }
+
                     foreach (array_reverse($json['entries']) as $entry) {
                         $data = $entry['data'] ?? '';
 

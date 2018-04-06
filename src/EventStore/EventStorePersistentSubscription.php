@@ -21,8 +21,6 @@ class EventStorePersistentSubscription
     private $subscriptionDropped;
     /** @var bool */
     private $autoAck;
-    /** @var bool */
-    private $autoNack;
     /** @var int */
     private $bufferSize;
     /** @var bool */
@@ -35,8 +33,7 @@ class EventStorePersistentSubscription
         callable $eventAppeared,
         callable $subscriptionDropped = null,
         int $bufferSize,
-        bool $autoAck,
-        bool $autoNack
+        bool $autoAck
     ) {
         $this->operations = $operations;
         $this->subscriptionId = $subscriptionId;
@@ -45,7 +42,6 @@ class EventStorePersistentSubscription
         $this->subscriptionDropped = $subscriptionDropped;
         $this->bufferSize = $bufferSize;
         $this->autoAck = $autoAck;
-        $this->autoNack = $autoNack;
     }
 
     public function startSubscription(): void
@@ -72,9 +68,6 @@ class EventStorePersistentSubscription
 
             if ($this->autoAck) {
                 $toAck = [];
-            }
-
-            if ($this->autoNack) {
                 $toNack = [];
             }
 
@@ -92,7 +85,7 @@ class EventStorePersistentSubscription
                         $subscriptionDropped($this, SubscriptionDropReason::eventHandlerException(), $ex);
                     }
 
-                    if ($this->autoNack) {
+                    if ($this->autoAck) {
                         $toNack[] = $event->eventId();
                     }
 
@@ -105,7 +98,7 @@ class EventStorePersistentSubscription
                 $this->operations->acknowledge($toAck);
             }
 
-            if ($error && $this->autoNack) {
+            if ($error && $this->autoAck) {
                 $this->operations->fail($toNack, PersistentSubscriptionNakEventAction::retry());
                 $this->shouldStop = true;
             }
