@@ -21,7 +21,7 @@ trait EventProducerTrait
      *
      * @var int
      */
-    protected $version = 0;
+    protected $version = -1;
 
     /**
      * List of events that are not committed to the EventStore

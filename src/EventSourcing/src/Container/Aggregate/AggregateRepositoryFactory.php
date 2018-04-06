@@ -13,17 +13,17 @@ declare(strict_types=1);
 namespace Prooph\EventSourcing\Container\Aggregate;
 
 use Interop\Config\ConfigurationTrait;
+use Interop\Config\ProvidesDefaultOptions;
 use Interop\Config\RequiresConfigId;
 use Interop\Config\RequiresMandatoryOptions;
 use InvalidArgumentException;
 use Prooph\EventSourcing\Aggregate\AggregateRepository;
 use Prooph\EventSourcing\Aggregate\AggregateType;
-use Prooph\EventStore\EventStore;
-use Prooph\EventStore\Exception\ConfigurationException;
-use Prooph\EventStore\StreamName;
+use Prooph\EventSourcing\Aggregate\Exception;
+use Prooph\EventStore\EventStoreConnection;
 use Psr\Container\ContainerInterface;
 
-final class AggregateRepositoryFactory implements RequiresConfigId, RequiresMandatoryOptions
+final class AggregateRepositoryFactory implements ProvidesDefaultOptions, RequiresConfigId, RequiresMandatoryOptions
 {
     use ConfigurationTrait;
 
@@ -63,9 +63,6 @@ final class AggregateRepositoryFactory implements RequiresConfigId, RequiresMand
         $this->configId = $configId;
     }
 
-    /**
-     * @throws ConfigurationException
-     */
     public function __invoke(ContainerInterface $container): AggregateRepository
     {
         $config = $container->get('config');
@@ -74,36 +71,25 @@ final class AggregateRepositoryFactory implements RequiresConfigId, RequiresMand
         $repositoryClass = $config['repository_class'];
 
         if (! class_exists($repositoryClass)) {
-            throw ConfigurationException::configurationError(sprintf('Repository class %s cannot be found', $repositoryClass));
+            throw new Exception\RuntimeException(sprintf('Repository class %s cannot be found', $repositoryClass));
         }
 
         if (! is_subclass_of($repositoryClass, AggregateRepository::class)) {
-            throw ConfigurationException::configurationError(sprintf('Repository class %s must be a sub class of %s', $repositoryClass, AggregateRepository::class));
+            throw new Exception\RuntimeException(sprintf('Repository class %s must be a sub class of %s', $repositoryClass, AggregateRepository::class));
         }
 
-        $eventStore = $container->get(EventStore::class);
+        $eventStore = $container->get(EventStoreConnection::class);
 
-        if (is_array($config['aggregate_type'])) {
-            $aggregateType = AggregateType::fromMapping($config['aggregate_type']);
-        } else {
-            $aggregateType = AggregateType::fromAggregateRootClass($config['aggregate_type']);
-        }
+        $aggregateType = new AggregateType($config['aggregate_type']);
 
         $aggregateTranslator = $container->get($config['aggregate_translator']);
-
-        $snapshotStore = isset($config['snapshot_store']) ? $container->get($config['snapshot_store']) : null;
-
-        $streamName = isset($config['stream_name']) ? new StreamName($config['stream_name']) : null;
-
-        $oneStreamPerAggregate = (bool) ($config['one_stream_per_aggregate'] ?? false);
 
         return new $repositoryClass(
             $eventStore,
             $aggregateType,
             $aggregateTranslator,
-            $snapshotStore,
-            $streamName,
-            $oneStreamPerAggregate
+            $config['category'],
+            $config['optimistic_concurrecy']
         );
     }
 
@@ -112,12 +98,20 @@ final class AggregateRepositoryFactory implements RequiresConfigId, RequiresMand
         return ['prooph', 'event_sourcing', 'aggregate_repository'];
     }
 
+    public function defaultOptions(): iterable
+    {
+        return [
+            'optimistic_concurrecy' => true
+        ];
+    }
+
     public function mandatoryOptions(): iterable
     {
         return [
             'repository_class',
             'aggregate_type',
             'aggregate_translator',
+            'category'
         ];
     }
 }

@@ -23,7 +23,7 @@ trait EventSourcedTrait
      *
      * @var int
      */
-    protected $version = 0;
+    protected $version = -1;
 
     /**
      * @throws RuntimeException
