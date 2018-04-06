@@ -43,7 +43,7 @@ interface EventStoreSubscriptionConnection
      * @param UserCredentials|null $userCredentials
      * @return Task
      */
-    public function connectToPersistentSubscription(
+    public function connectToPersistentSubscriptionAsync(
         string $stream,
         string $groupName,
         callable $eventAppeared,
@@ -102,16 +102,16 @@ interface EventStoreSubscriptionConnection
         UserCredentials $userCredentials = null
     ): ReplayParkedTask;
 
-    public function getInformationForAllSubscriptions(
+    public function getInformationForAllSubscriptionsAsync(
         UserCredentials $userCredentials = null
     ): GetInformationForSubscriptionsTask;
 
-    public function getInformationForSubscriptionsWithStream(
+    public function getInformationForSubscriptionsWithStreamAsync(
         string $stream,
         UserCredentials $userCredentials = null
     ): GetInformationForSubscriptionsTask;
 
-    public function getInformationForSubscription(
+    public function getInformationForSubscriptionAsync(
         string $stream,
         string $groupName,
         UserCredentials $userCredentials = null

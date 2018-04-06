@@ -49,14 +49,14 @@ $task = $connection->deletePersistentSubscription(
 
 var_dump($task->result());
 */
-$task = $connection->getInformationForAllSubscriptions();
+$task = $connection->getInformationForAllSubscriptionsAsync();
 
 var_dump($task->result());
 
-$task = $connection->getInformationForSubscriptionsWithStream('sasastream');
+$task = $connection->getInformationForSubscriptionsWithStreamAsync('sasastream');
 
 var_dump($task->result());
 
-$task = $connection->getInformationForSubscription('sasastream', 'test');
+$task = $connection->getInformationForSubscriptionAsync('sasastream', 'test');
 
 var_dump($task->result());

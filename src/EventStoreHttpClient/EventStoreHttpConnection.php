@@ -420,7 +420,7 @@ class EventStoreHttpConnection implements EventStoreConnection, EventStoreSubscr
         return $operation->task();
     }
 
-    public function connectToPersistentSubscription(
+    public function connectToPersistentSubscriptionAsync(
         string $stream,
         string $groupName,
         callable $eventAppeared,
@@ -519,7 +519,7 @@ class EventStoreHttpConnection implements EventStoreConnection, EventStoreSubscr
         return $operation->task();
     }
 
-    public function getInformationForAllSubscriptions(
+    public function getInformationForAllSubscriptionsAsync(
         UserCredentials $userCredentials = null
     ): GetInformationForSubscriptionsTask {
         $operation = new GetInformationForAllSubscriptionsOperation(
@@ -533,7 +533,7 @@ class EventStoreHttpConnection implements EventStoreConnection, EventStoreSubscr
         return $operation->task();
     }
 
-    public function getInformationForSubscriptionsWithStream(
+    public function getInformationForSubscriptionsWithStreamAsync(
         string $stream,
         UserCredentials $userCredentials = null
     ): GetInformationForSubscriptionsTask {
@@ -549,7 +549,7 @@ class EventStoreHttpConnection implements EventStoreConnection, EventStoreSubscr
         return $operation->task();
     }
 
-    public function getInformationForSubscription(
+    public function getInformationForSubscriptionAsync(
         string $stream,
         string $groupName,
         UserCredentials $userCredentials = null
