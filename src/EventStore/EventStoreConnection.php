@@ -13,8 +13,6 @@ use Prooph\EventStore\Task\WriteResultTask;
 
 interface EventStoreConnection
 {
-    public function connectionName(): string;
-
     public function connectAsync(): Task;
 
     public function close(): void;

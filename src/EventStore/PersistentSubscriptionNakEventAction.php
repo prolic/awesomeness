@@ -4,19 +4,26 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
-class NackAction
+class PersistentSubscriptionNakEventAction
 {
     public const OPTIONS = [
-        'Park' => 'Park',
-        'Retry' => 'Retry',
-        'Skip' => 'Skip',
-        'Stop' => 'Stop',
+        'Unknown' => 0,
+        'Park' => 1,
+        'Retry' => 2,
+        'Skip' => 3,
+        'Stop' => 4,
     ];
 
-    public const Park = 'Park';
-    public const Retry = 'Retry';
-    public const Skip = 'Skip';
-    public const Stop = 'Stop';
+    // Client unknown on action. Let server decide
+    public const Unknown = 0;
+    // Park message do not resend. Put on poison queue
+    public const Park = 1;
+    // Explicitly retry the message
+    public const Retry = 2;
+    // Skip this message do not resend do not put in poison queue
+    public const Skip = 3;
+    // Stop the subscription
+    public const Stop = 4;
 
     private $name;
     private $value;
@@ -25,6 +32,11 @@ class NackAction
     {
         $this->name = $name;
         $this->value = self::OPTIONS[$name];
+    }
+
+    public static function unknown(): self
+    {
+        return new self('Unknown');
     }
 
     public static function park(): self
@@ -67,7 +79,7 @@ class NackAction
         throw new \InvalidArgumentException('Unknown enum value given');
     }
 
-    public function equals(NackAction $other): bool
+    public function equals(PersistentSubscriptionNakEventAction $other): bool
     {
         return get_class($this) === get_class($other) && $this->name === $other->name;
     }

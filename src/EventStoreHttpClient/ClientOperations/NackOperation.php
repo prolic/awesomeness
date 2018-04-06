@@ -9,7 +9,7 @@ use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
 use Prooph\EventStore\EventId;
 use Prooph\EventStore\Exception\AccessDenied;
-use Prooph\EventStore\NackAction;
+use Prooph\EventStore\PersistentSubscriptionNakEventAction;
 use Prooph\EventStore\Task;
 use Prooph\EventStore\UserCredentials;
 use Prooph\EventStoreHttpClient\Http\RequestMethod;
@@ -24,7 +24,7 @@ class NackOperation extends Operation
     private $groupName;
     /** @var EventId[] */
     private $eventIds;
-    /** @var NackAction */
+    /** @var PersistentSubscriptionNakEventAction */
     private $action;
 
     public function __construct(
@@ -35,7 +35,7 @@ class NackOperation extends Operation
         string $stream,
         string $groupName,
         array $eventIds,
-        NackAction $action,
+        PersistentSubscriptionNakEventAction $action,
         ?UserCredentials $userCredentials
     ) {
         parent::__construct($asyncClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);

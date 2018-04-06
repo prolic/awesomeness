@@ -14,10 +14,10 @@ use Prooph\EventStore\EventData;
 use Prooph\EventStore\EventId;
 use Prooph\EventStore\EventReadResult;
 use Prooph\EventStore\EventReadStatus;
+use Prooph\EventStore\EventStorePersistentSubscription;
 use Prooph\EventStore\EventStoreSubscriptionConnection;
 use Prooph\EventStore\ExpectedVersion;
 use Prooph\EventStore\Internal\Consts;
-use Prooph\EventStore\NackAction;
 use Prooph\EventStore\PersistentSubscriptionSettings;
 use Prooph\EventStore\Position;
 use Prooph\EventStore\StreamMetadata;
@@ -29,7 +29,6 @@ use Prooph\EventStore\Task\CreatePersistentSubscriptionTask;
 use Prooph\EventStore\Task\DeletePersistentSubscriptionTask;
 use Prooph\EventStore\Task\DeleteResultTask;
 use Prooph\EventStore\Task\EventReadResultTask;
-use Prooph\EventStore\Task\EventStorePersistentSubscriptionTask;
 use Prooph\EventStore\Task\GetInformationForSubscriptionsTask;
 use Prooph\EventStore\Task\GetInformationForSubscriptionTask;
 use Prooph\EventStore\Task\ReplayParkedTask;
@@ -38,7 +37,6 @@ use Prooph\EventStore\Task\StreamMetadataResultTask;
 use Prooph\EventStore\Task\UpdatePersistentSubscriptionTask;
 use Prooph\EventStore\Task\WriteResultTask;
 use Prooph\EventStore\UserCredentials;
-use Prooph\EventStoreHttpClient\ClientOperations\AckOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\AppendToStreamOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\CreatePersistentSubscriptionOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\DeletePersistentSubscriptionOperation;
@@ -46,13 +44,12 @@ use Prooph\EventStoreHttpClient\ClientOperations\DeleteStreamOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\GetInformationForAllSubscriptionsOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\GetInformationForSubscriptionOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\GetInformationForSubscriptionsWithStreamOperation;
-use Prooph\EventStoreHttpClient\ClientOperations\NackOperation;
+use Prooph\EventStoreHttpClient\ClientOperations\PersistentSubscriptionOperations;
 use Prooph\EventStoreHttpClient\ClientOperations\ReadEventOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\ReadStreamEventsBackwardOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\ReadStreamEventsForwardOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\ReplayParkedOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\UpdatePersistentSubscriptionOperation;
-use Ramsey\Uuid\Uuid;
 
 class EventStoreHttpConnection implements EventStoreSubscriptionConnection
 {
@@ -62,8 +59,6 @@ class EventStoreHttpConnection implements EventStoreSubscriptionConnection
     private $requestFactory;
     /** @var UriFactory */
     private $uriFactory;
-    /** @var string */
-    private $connectionName;
     /** @var ConnectionSettings */
     private $settings;
     /** @var string */
@@ -73,25 +68,18 @@ class EventStoreHttpConnection implements EventStoreSubscriptionConnection
         HttpAsyncClient $asyncClient,
         RequestFactory $requestFactory,
         UriFactory $uriFactory,
-        ConnectionSettings $settings = null,
-        string $connectionName = null
+        ConnectionSettings $settings = null
     ) {
         $this->asyncClient = $asyncClient;
         $this->requestFactory = $requestFactory;
         $this->uriFactory = $uriFactory;
         $this->settings = $settings ?? ConnectionSettings::default();
-        $this->connectionName = $connectionName ?? sprintf('ES-%s', Uuid::uuid4()->toString());
         $this->baseUri = sprintf(
             '%s://%s:%s',
             $this->settings->useSslConnection() ? 'https' : 'http',
             $this->settings->endPoint()->host(),
             $this->settings->endPoint()->port()
         );
-    }
-
-    public function connectionName(): string
-    {
-        return $this->connectionName;
     }
 
     public function connectAsync(): Task
@@ -419,85 +407,45 @@ class EventStoreHttpConnection implements EventStoreSubscriptionConnection
         return $operation->task();
     }
 
-    public function connectToPersistentSubscriptionAsync(
+    /**
+     * @param string $stream
+     * @param string $groupName
+     * @param callable(EventStorePersistentSubscription $subscription, RecordedEvent $event, int $retryCount, Task $task) $eventAppeared
+     * @param callable(EventStorePersistentSubscription $subscription, SubscriptionDropReason $reason, Throwable $error)|null $subscriptionDropped
+     * @param int $bufferSize
+     * @param bool $autoAck
+     * @param bool $autoNack
+     * @param UserCredentials|null $userCredentials
+     * @return EventStorePersistentSubscription
+     */
+    public function connectToPersistentSubscription(
         string $stream,
         string $groupName,
         callable $eventAppeared,
         callable $subscriptionDropped = null,
         int $bufferSize = 10,
         bool $autoAck = true,
+        bool $autoNack = true,
         UserCredentials $userCredentials = null
-    ): EventStorePersistentSubscriptionTask {
-        // TODO: Implement connectToPersistentSubscription() method.
-    }
-
-    public function ack(
-        string $stream,
-        string $groupName,
-        EventId $eventId,
-        UserCredentials $userCredentials = null
-    ): Task {
-        return $this->ackMultiple($stream, $groupName, [$eventId], $userCredentials ?? $this->settings->defaultUserCredentials());
-    }
-
-    public function ackMultiple(
-        string $stream,
-        string $groupName,
-        array $eventIds,
-        UserCredentials $userCredentials = null
-    ): Task {
-        if (empty($eventIds)) {
-            throw new \InvalidArgumentException('No eventIds given');
-        }
-
-        $operation = new AckOperation(
-            $this->asyncClient,
-            $this->requestFactory,
-            $this->uriFactory,
-            $this->baseUri,
-            $stream,
+    ): EventStorePersistentSubscription {
+        return new EventStorePersistentSubscription(
+            new PersistentSubscriptionOperations(
+                $this->asyncClient,
+                $this->requestFactory,
+                $this->uriFactory,
+                $this->baseUri,
+                $stream,
+                $groupName,
+                $userCredentials ?? $this->settings->defaultUserCredentials()
+            ),
             $groupName,
-            $eventIds,
-            $userCredentials ?? $this->settings->defaultUserCredentials()
-        );
-
-        return $operation->task();
-    }
-
-    public function nack(
-        string $stream,
-        string $groupName,
-        EventId $eventId,
-        NackAction $action,
-        UserCredentials $userCredentials = null
-    ): Task {
-        return $this->nackMultiple($stream, $groupName, [$eventId], $action, $userCredentials ?? $this->settings->defaultUserCredentials());
-    }
-
-    public function nackMultiple(
-        string $stream,
-        string $groupName,
-        array $eventIds,
-        NackAction $action,
-        UserCredentials $userCredentials = null
-    ): Task {
-        if (empty($eventIds)) {
-            throw new \InvalidArgumentException('No eventIds given');
-        }
-
-        $operation = new NackOperation(
-            $this->asyncClient,
-            $this->requestFactory,
-            $this->uriFactory,
-            $this->baseUri,
             $stream,
-            $groupName,
-            $eventIds,
-            $action,
-            $userCredentials ?? $this->settings->defaultUserCredentials()
+            $eventAppeared,
+            $subscriptionDropped,
+            $bufferSize,
+            $autoAck,
+            $autoNack
         );
-
-        return $operation->task();
     }
 
     public function replayParked(

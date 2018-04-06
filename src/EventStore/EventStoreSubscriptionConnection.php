@@ -6,7 +6,6 @@ namespace Prooph\EventStore;
 
 use Prooph\EventStore\Task\CreatePersistentSubscriptionTask;
 use Prooph\EventStore\Task\DeletePersistentSubscriptionTask;
-use Prooph\EventStore\Task\EventStorePersistentSubscriptionTask;
 use Prooph\EventStore\Task\GetInformationForSubscriptionsTask;
 use Prooph\EventStore\Task\GetInformationForSubscriptionTask;
 use Prooph\EventStore\Task\ReplayParkedTask;
@@ -37,65 +36,23 @@ interface EventStoreSubscriptionConnection extends EventStoreConnection
     /**
      * @param string $stream
      * @param string $groupName
-     * @param callable(EventStorePersistentSubscription $subscription, RecordedEvent $event, int $retryCount, Task $task) $eventAppeared,
+     * @param callable(EventStorePersistentSubscription $subscription, RecordedEvent $event, int $retryCount, Task $task) $eventAppeared
      * @param callable(EventStorePersistentSubscription $subscription, SubscriptionDropReason $reason, \Throwable $exception)|null $subscriptionDropped
      * @param int $bufferSize
      * @param bool $autoAck
      * @param UserCredentials|null $userCredentials
-     * @return Task
+     * @return EventStorePersistentSubscription
      */
-    public function connectToPersistentSubscriptionAsync(
+    public function connectToPersistentSubscription(
         string $stream,
         string $groupName,
         callable $eventAppeared,
         callable $subscriptionDropped = null,
         int $bufferSize = 10,
         bool $autoAck = true,
+        bool $autoNack = true,
         UserCredentials $userCredentials = null
-    ): EventStorePersistentSubscriptionTask;
-
-    public function ack(
-        string $stream,
-        string $groupName,
-        EventId $eventId,
-        UserCredentials $userCredentials = null
-    ): Task;
-
-    /**
-     * @param string $stream
-     * @param string $groupName
-     * @param EventId[] $eventIds
-     * @return Task
-     */
-    public function ackMultiple(
-        string $stream,
-        string $groupName,
-        array $eventIds,
-        UserCredentials $userCredentials = null
-    ): Task;
-
-    public function nack(
-        string $stream,
-        string $groupName,
-        EventId $eventId,
-        NackAction $action,
-        UserCredentials $userCredentials = null
-    ): Task;
-
-    /**
-     * @param string $stream
-     * @param string $groupName
-     * @param EventId[] $eventIds
-     * @param NackAction $action
-     * @return Task
-     */
-    public function nackMultiple(
-        string $stream,
-        string $groupName,
-        array $eventIds,
-        NackAction $action,
-        UserCredentials $userCredentials = null
-    ): Task;
+    ): EventStorePersistentSubscription;
 
     public function replayParked(
         string $stream,
