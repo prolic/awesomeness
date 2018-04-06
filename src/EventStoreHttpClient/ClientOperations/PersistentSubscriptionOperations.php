@@ -76,7 +76,7 @@ final class PersistentSubscriptionOperations extends Operation implements BasePe
             ''
         );
 
-        $this->sendAsyncRequest($request)->then(function(ResponseInterface $response): void {
+        $this->sendAsyncRequest($request)->then(function (ResponseInterface $response): void {
             switch ($response->getStatusCode()) {
                 case 202:
                     return;
@@ -110,7 +110,7 @@ final class PersistentSubscriptionOperations extends Operation implements BasePe
             ''
         );
 
-        $this->sendAsyncRequest($request)->then(function(ResponseInterface $response): void {
+        $this->sendAsyncRequest($request)->then(function (ResponseInterface $response): void {
             switch ($response->getStatusCode()) {
                 case 202:
                     return;
