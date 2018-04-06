@@ -6,9 +6,13 @@ namespace Prooph\EventStore;
 
 class StreamMetadataResult
 {
+    /** @var string */
     private $stream;
+    /** @var bool */
     private $isStreamDeleted;
+    /** @var int */
     private $metastreamVersion;
+    /** @var string */
     private $streamMetadata;
 
     public function __construct(string $stream, bool $isStreamDeleted, int $metastreamVersion, string $streamMetadata)

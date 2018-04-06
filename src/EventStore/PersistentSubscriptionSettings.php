@@ -13,6 +13,8 @@ final class PersistentSubscriptionSettings
     private $resolveLinkTos;
     /**
      * Start the subscription from the position-of the event in the stream.
+     * If the value is set to `-1` that the subscription should start from
+     * where the stream is when the subscription is first connected.
      * @var int
      */
     private $startFrom;
