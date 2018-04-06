@@ -9,7 +9,7 @@ final class EventData
     /** @var EventId */
     private $eventId;
     /** @var string */
-    private $type;
+    private $eventType;
     /** @var bool */
     private $isJson;
     /** @var string */
@@ -17,10 +17,10 @@ final class EventData
     /** @var string */
     private $metadata;
 
-    public function __construct(EventId $eventId, string $type, bool $isJson, string $data, string $metadata)
+    public function __construct(EventId $eventId, string $eventType, bool $isJson, string $data, string $metadata)
     {
         $this->eventId = $eventId;
-        $this->type = $type;
+        $this->eventType = $eventType;
         $this->isJson = $isJson;
         $this->data = $data;
         $this->metadata = $metadata;
@@ -31,9 +31,9 @@ final class EventData
         return $this->eventId;
     }
 
-    public function type(): string
+    public function eventType(): string
     {
-        return $this->type;
+        return $this->eventType;
     }
 
     public function isJson(): bool

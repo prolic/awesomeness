@@ -50,7 +50,7 @@ class AppendToStreamOperation extends Operation
         foreach ($this->events as $event) {
             $data[] = [
                 'eventId' => $event->eventId()->toString(),
-                'eventType' => $event->type(),
+                'eventType' => $event->eventType(),
                 'data' => $event->data(),
                 'metadata' => $event->metadata(),
             ];
