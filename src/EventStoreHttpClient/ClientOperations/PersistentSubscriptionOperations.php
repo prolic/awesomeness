@@ -7,10 +7,13 @@ namespace Prooph\EventStoreHttpClient\ClientOperations;
 use Http\Client\HttpAsyncClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
+use Prooph\EventStore\EventId;
+use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Internal\PersistentSubscriptionOperations as BasePersistentSubscriptionOperations;
 use Prooph\EventStore\PersistentSubscriptionNakEventAction;
 use Prooph\EventStore\Task\ReadFromSubscriptionTask;
 use Prooph\EventStore\UserCredentials;
+use Prooph\EventStoreHttpClient\Http\RequestMethod;
 
 /** @internal */
 final class PersistentSubscriptionOperations extends Operation implements BasePersistentSubscriptionOperations
@@ -53,36 +56,70 @@ final class PersistentSubscriptionOperations extends Operation implements BasePe
 
     public function acknowledge(array $eventIds): void
     {
-        $operation = new AckOperation(
-            $this->asyncClient,
-            $this->requestFactory,
-            $this->uriFactory,
-            $this->baseUri,
-            $this->stream,
-            $this->groupName,
-            $eventIds,
-            $this->userCredentials
+        $eventIds = array_map(function (EventId $eventId): string {
+            return $eventId->toString();
+        }, $eventIds);
+
+        $request = $this->requestFactory->createRequest(
+            RequestMethod::Post,
+            $this->uriFactory->createUri(sprintf(
+                '%s/subscriptions/%s/%s/ack?ids=%s',
+                $this->baseUri,
+                urlencode($this->stream),
+                urlencode($this->groupName),
+                implode(',', $eventIds)
+            )),
+            [
+                'Content-Length' => 0,
+            ],
+            ''
         );
 
-        $task = $operation->task();
-        $task->result();
+        $promise = $this->sendAsyncRequest($request);
+        $response = $promise->wait();
+
+        switch ($response->getStatusCode()) {
+            case 202:
+                return;
+            case 401:
+                throw AccessDenied::toStream($this->stream);
+            default:
+                throw new \UnexpectedValueException('Unexpected status code ' . $response->getStatusCode() . ' returned');
+        }
     }
 
     public function fail(array $eventIds, PersistentSubscriptionNakEventAction $action): void
     {
-        $operation = new NackOperation(
-            $this->asyncClient,
-            $this->requestFactory,
-            $this->uriFactory,
-            $this->baseUri,
-            $this->stream,
-            $this->groupName,
-            $eventIds,
-            $action,
-            $this->userCredentials
+        $eventIds = array_map(function (EventId $eventId): string {
+            return $eventId->toString();
+        }, $eventIds);
+
+        $request = $this->requestFactory->createRequest(
+            RequestMethod::Post,
+            $this->uriFactory->createUri(sprintf(
+                '%s/subscriptions/%s/%s/nack?ids=%s&action=%s',
+                $this->baseUri,
+                urlencode($this->stream),
+                urlencode($this->groupName),
+                implode(',', $eventIds),
+                $this->action->name()
+            )),
+            [
+                'Content-Length' => 0,
+            ],
+            ''
         );
 
-        $task = $operation->task();
-        $task->result();
+        $promise = $this->sendAsyncRequest($request);
+        $response = $promise->wait();
+
+        switch ($response->getStatusCode()) {
+            case 202:
+                return;
+            case 401:
+                throw AccessDenied::toStream($this->stream);
+            default:
+                throw new \UnexpectedValueException('Unexpected status code ' . $response->getStatusCode() . ' returned');
+        }
     }
 }
