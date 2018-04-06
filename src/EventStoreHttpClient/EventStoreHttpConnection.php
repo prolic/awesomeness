@@ -14,8 +14,6 @@ use Prooph\EventStore\EventData;
 use Prooph\EventStore\EventId;
 use Prooph\EventStore\EventReadResult;
 use Prooph\EventStore\EventReadStatus;
-use Prooph\EventStore\EventStoreConnection;
-use Prooph\EventStore\EventStorePersistentSubscription;
 use Prooph\EventStore\EventStoreSubscriptionConnection;
 use Prooph\EventStore\ExpectedVersion;
 use Prooph\EventStore\Internal\Consts;
@@ -31,6 +29,7 @@ use Prooph\EventStore\Task\CreatePersistentSubscriptionTask;
 use Prooph\EventStore\Task\DeletePersistentSubscriptionTask;
 use Prooph\EventStore\Task\DeleteResultTask;
 use Prooph\EventStore\Task\EventReadResultTask;
+use Prooph\EventStore\Task\EventStorePersistentSubscriptionTask;
 use Prooph\EventStore\Task\GetInformationForSubscriptionsTask;
 use Prooph\EventStore\Task\GetInformationForSubscriptionTask;
 use Prooph\EventStore\Task\ReplayParkedTask;
@@ -55,7 +54,7 @@ use Prooph\EventStoreHttpClient\ClientOperations\ReplayParkedOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\UpdatePersistentSubscriptionOperation;
 use Ramsey\Uuid\Uuid;
 
-class EventStoreHttpConnection implements EventStoreConnection, EventStoreSubscriptionConnection
+class EventStoreHttpConnection implements EventStoreSubscriptionConnection
 {
     /** @var HttpAsyncClient */
     private $asyncClient;
@@ -428,7 +427,7 @@ class EventStoreHttpConnection implements EventStoreConnection, EventStoreSubscr
         int $bufferSize = 10,
         bool $autoAck = true,
         UserCredentials $userCredentials = null
-    ): EventStorePersistentSubscription {
+    ): EventStorePersistentSubscriptionTask {
         // TODO: Implement connectToPersistentSubscription() method.
     }
 

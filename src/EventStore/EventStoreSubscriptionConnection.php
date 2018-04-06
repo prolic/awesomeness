@@ -6,12 +6,13 @@ namespace Prooph\EventStore;
 
 use Prooph\EventStore\Task\CreatePersistentSubscriptionTask;
 use Prooph\EventStore\Task\DeletePersistentSubscriptionTask;
+use Prooph\EventStore\Task\EventStorePersistentSubscriptionTask;
 use Prooph\EventStore\Task\GetInformationForSubscriptionsTask;
 use Prooph\EventStore\Task\GetInformationForSubscriptionTask;
 use Prooph\EventStore\Task\ReplayParkedTask;
 use Prooph\EventStore\Task\UpdatePersistentSubscriptionTask;
 
-interface EventStoreSubscriptionConnection
+interface EventStoreSubscriptionConnection extends EventStoreConnection
 {
     public function createPersistentSubscription(
         string $stream,
@@ -51,7 +52,7 @@ interface EventStoreSubscriptionConnection
         int $bufferSize = 10,
         bool $autoAck = true,
         UserCredentials $userCredentials = null
-    ): EventStorePersistentSubscription;
+    ): EventStorePersistentSubscriptionTask;
 
     public function ack(
         string $stream,
