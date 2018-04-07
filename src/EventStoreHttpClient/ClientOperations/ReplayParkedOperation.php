@@ -7,12 +7,12 @@ namespace Prooph\EventStoreHttpClient\ClientOperations;
 use Http\Client\HttpAsyncClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
-use Prooph\EventStore\Exception\AccessDenied;
-use Prooph\EventStore\Internal\ReplayParkedResult;
-use Prooph\EventStore\Internal\ReplayParkedStatus;
-use Prooph\EventStore\Task;
-use Prooph\EventStore\Task\ReplayParkedTask;
-use Prooph\EventStore\UserCredentials;
+use Prooph\EventStoreClient\Exception\AccessDenied;
+use Prooph\EventStoreClient\Internal\ReplayParkedResult;
+use Prooph\EventStoreClient\Internal\ReplayParkedStatus;
+use Prooph\EventStoreClient\Task;
+use Prooph\EventStoreClient\Task\ReplayParkedTask;
+use Prooph\EventStoreClient\UserCredentials;
 use Prooph\EventStoreHttpClient\Http\RequestMethod;
 use Psr\Http\Message\ResponseInterface;
 

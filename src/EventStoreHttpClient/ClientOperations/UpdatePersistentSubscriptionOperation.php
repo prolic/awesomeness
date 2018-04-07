@@ -7,12 +7,12 @@ namespace Prooph\EventStoreHttpClient\ClientOperations;
 use Http\Client\HttpAsyncClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
-use Prooph\EventStore\Exception\AccessDenied;
-use Prooph\EventStore\Internal\PersistentSubscriptionUpdateResult;
-use Prooph\EventStore\Internal\PersistentSubscriptionUpdateStatus;
-use Prooph\EventStore\PersistentSubscriptionSettings;
-use Prooph\EventStore\Task\UpdatePersistentSubscriptionTask;
-use Prooph\EventStore\UserCredentials;
+use Prooph\EventStoreClient\Exception\AccessDenied;
+use Prooph\EventStoreClient\Internal\PersistentSubscriptionUpdateResult;
+use Prooph\EventStoreClient\Internal\PersistentSubscriptionUpdateStatus;
+use Prooph\EventStoreClient\PersistentSubscriptionSettings;
+use Prooph\EventStoreClient\Task\UpdatePersistentSubscriptionTask;
+use Prooph\EventStoreClient\UserCredentials;
 use Prooph\EventStoreHttpClient\Http\RequestMethod;
 use Psr\Http\Message\ResponseInterface;
 

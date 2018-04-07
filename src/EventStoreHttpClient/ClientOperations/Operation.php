@@ -9,7 +9,7 @@ use Http\Message\Authentication\BasicAuth;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
 use Http\Promise\Promise;
-use Prooph\EventStore\UserCredentials;
+use Prooph\EventStoreClient\UserCredentials;
 use Psr\Http\Message\RequestInterface;
 
 /** @internal */

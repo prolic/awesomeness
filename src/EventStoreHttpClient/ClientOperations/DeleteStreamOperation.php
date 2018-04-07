@@ -7,10 +7,10 @@ namespace Prooph\EventStoreHttpClient\ClientOperations;
 use Http\Client\HttpAsyncClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
-use Prooph\EventStore\DeleteResult;
-use Prooph\EventStore\Exception\AccessDenied;
-use Prooph\EventStore\Task\DeleteResultTask;
-use Prooph\EventStore\UserCredentials;
+use Prooph\EventStoreClient\DeleteResult;
+use Prooph\EventStoreClient\Exception\AccessDenied;
+use Prooph\EventStoreClient\Task\DeleteResultTask;
+use Prooph\EventStoreClient\UserCredentials;
 use Prooph\EventStoreHttpClient\Http\RequestMethod;
 use Psr\Http\Message\ResponseInterface;
 

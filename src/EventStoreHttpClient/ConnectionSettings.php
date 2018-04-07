@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreHttpClient;
 
-use Prooph\EventStore\IpEndPoint;
-use Prooph\EventStore\UserCredentials;
+use Prooph\EventStoreClient\IpEndPoint;
+use Prooph\EventStoreClient\UserCredentials;
 
 class ConnectionSettings
 {

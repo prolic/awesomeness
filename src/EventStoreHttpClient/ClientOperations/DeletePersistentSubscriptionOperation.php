@@ -7,11 +7,11 @@ namespace Prooph\EventStoreHttpClient\ClientOperations;
 use Http\Client\HttpAsyncClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
-use Prooph\EventStore\Exception\AccessDenied;
-use Prooph\EventStore\Internal\PersistentSubscriptionDeleteResult;
-use Prooph\EventStore\Internal\PersistentSubscriptionDeleteStatus;
-use Prooph\EventStore\Task\DeletePersistentSubscriptionTask;
-use Prooph\EventStore\UserCredentials;
+use Prooph\EventStoreClient\Exception\AccessDenied;
+use Prooph\EventStoreClient\Internal\PersistentSubscriptionDeleteResult;
+use Prooph\EventStoreClient\Internal\PersistentSubscriptionDeleteStatus;
+use Prooph\EventStoreClient\Task\DeletePersistentSubscriptionTask;
+use Prooph\EventStoreClient\UserCredentials;
 use Prooph\EventStoreHttpClient\Http\RequestMethod;
 use Psr\Http\Message\ResponseInterface;
 

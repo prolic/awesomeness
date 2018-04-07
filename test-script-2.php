@@ -12,8 +12,8 @@ $connection = new \Prooph\EventStoreHttpClient\EventStoreHttpConnection(
 $task = $connection->createPersistentSubscription(
     'sasastream',
     'test',
-    \Prooph\EventStore\PersistentSubscriptionSettings::default(),
-    new \Prooph\EventStore\UserCredentials('admin', 'changeit')
+    \Prooph\EventStoreClient\PersistentSubscriptionSettings::default(),
+    new \Prooph\EventStoreClient\UserCredentials('admin', 'changeit')
 );
 
 var_dump($task->result());
@@ -21,7 +21,7 @@ var_dump($task->result());
 $task = $connection->updatePersistentSubscription(
     'sasastream',
     'test',
-    new \Prooph\EventStore\PersistentSubscriptionSettings(
+    new \Prooph\EventStoreClient\PersistentSubscriptionSettings(
         true,
         0,
         false,
@@ -34,9 +34,9 @@ $task = $connection->updatePersistentSubscription(
         0,
         30000,
         10,
-        \Prooph\EventStore\NamedConsumerStrategy::roundRobin()
+        \Prooph\EventStoreClient\NamedConsumerStrategy::roundRobin()
     ),
-    new \Prooph\EventStore\UserCredentials('admin', 'changeit')
+    new \Prooph\EventStoreClient\UserCredentials('admin', 'changeit')
 );
 
 var_dump($task->result());
