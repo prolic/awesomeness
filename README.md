@@ -62,3 +62,20 @@ Now we have: `PHP Fatal error:  Uncaught Prooph\EventStore\Exception\WrongExpect
 8) There is also a second test-script regarding subscriptions, see `test-script-2.php`
 
 9) And there is a third test-script which starts an example subscription, see  `test-script-3.php`
+
+## Using Docker
+
+A simple docker setup is available, too. Instead of manual installation you can run:
+
+`docker-compose up -d`
+
+and test scripts with:
+
+`docker-compose run php php docker/test-script.php`
+
+`docker-compose run php php docker/test-script-2.php`
+
+`docker-compose run php php docker/test-script-3.php`
+
+Greg's EventStore provides a Web UI which you can access in your browser: [http://localhost:2113](http://localhost:2113)
+Default login credentials are `admin` with pwd `changeit`.
