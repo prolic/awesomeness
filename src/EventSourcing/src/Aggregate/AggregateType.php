@@ -34,7 +34,7 @@ class AggregateType
         return $this->map['type'];
     }
 
-    public function type(string $className): string
+    public function typeFromClassName(string $className): string
     {
         $map = array_flip($this->map);
 
@@ -45,11 +45,24 @@ class AggregateType
         return $this->map[$className];
     }
 
+    public function typeFromAggregate(object $aggregateRoot): string
+    {
+        $className = get_class($aggregateRoot);
+
+        return $this->typeFromClassName($className);
+    }
+
     /**
      * @throws Exception\AggregateTypeException
      */
     public function assert(object $aggregateRoot): void
     {
-        $this->type(get_class($aggregateRoot));
+        $className = get_class($aggregateRoot);
+
+        $map = array_flip($this->map);
+
+        if (! isset($map[$className])) {
+            throw new Exception\AggregateTypeException('Unknown aggregate root');
+        }
     }
 }

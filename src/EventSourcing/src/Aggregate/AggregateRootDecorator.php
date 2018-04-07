@@ -10,7 +10,7 @@
 
 declare(strict_types=1);
 
-namespace Prooph\EventSourcing\EventStoreIntegration;
+namespace Prooph\EventSourcing\Aggregate;
 
 use BadMethodCallException;
 use Iterator;
@@ -31,8 +31,6 @@ class AggregateRootDecorator extends AggregateRoot
     }
 
     /**
-     * @param AggregateRoot $anAggregateRoot
-     *
      * @return \Prooph\EventSourcing\AggregateChanged[]
      */
     public function extractRecordedEvents(AggregateRoot $anAggregateRoot): array
@@ -48,15 +46,15 @@ class AggregateRootDecorator extends AggregateRoot
     /**
      * @throws RuntimeException
      */
-    public function fromHistory($arClass, Iterator $aggregateChangedEvents): AggregateRoot
+    public function fromHistory(string $aggregateRootClass, Iterator $aggregateChangedEvents): AggregateRoot
     {
-        if (! class_exists($arClass)) {
+        if (! class_exists($aggregateRootClass)) {
             throw new RuntimeException(
-                sprintf('Aggregate root class %s cannot be found', $arClass)
+                sprintf('Aggregate root class %s cannot be found', $aggregateRootClass)
             );
         }
 
-        return $arClass::reconstituteFromHistory($aggregateChangedEvents);
+        return $aggregateRootClass::reconstituteFromHistory($aggregateChangedEvents);
     }
 
     public function replayStreamEvents(AggregateRoot $aggregateRoot, Iterator $events): void

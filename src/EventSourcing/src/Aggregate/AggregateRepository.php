@@ -106,24 +106,37 @@ class AggregateRepository
 
         $iterator = new ArrayIterator();
 
-        do {
-            $task = $this->eventStoreConnection->readStreamEventsForwardAsync($stream, 0, 100, true);
+        $task = $this->eventStoreConnection->readStreamEventsForwardAsync($stream, 0, 100, true);
 
+        do {
             $result = $task->result();
+
+            if (! $result->status()->equals(SliceReadStatus::success())) {
+                return null;
+            }
+
+            if (! $result->isEndOfStream()) {
+                $task = $this->eventStoreConnection->readStreamEventsForwardAsync(
+                    $stream,
+                    $result->lastEventNumber() + 1,
+                    100,
+                    true
+                );
+            }
 
             foreach ($result->events() as $event) {
                 $iterator->append($this->transformer->toMessage($event));
             }
+
+            if (isset($eventSourcedAggregateRoot)) {
+                $this->aggregateTranslator->replayStreamEvents($eventSourcedAggregateRoot, $iterator);
+            } else {
+                $eventSourcedAggregateRoot = $this->aggregateTranslator->reconstituteAggregateFromHistory(
+                    $this->aggregateType,
+                    $iterator
+                );
+            }
         } while (! $result->isEndOfStream());
-
-        if (! $result->status()->equals(SliceReadStatus::success())) {
-            return null;
-        }
-
-        $eventSourcedAggregateRoot = $this->aggregateTranslator->reconstituteAggregateFromHistory(
-            $this->aggregateType,
-            $iterator
-        );
 
         //Cache aggregate root in the identity map but without pending events
         $this->identityMap[$aggregateId] = $eventSourcedAggregateRoot;
@@ -148,10 +161,11 @@ class AggregateRepository
      * Add aggregate_id and aggregate_type as metadata to $domainEvent
      * Override this method in an extending repository to add more or different metadata.
      */
-    protected function enrichEventMetadata(Message $domainEvent, string $aggregateId): Message
+    protected function enrichEventMetadata(object $eventSourcedAggregateRoot, Message $domainEvent, string $aggregateId): Message
     {
         $domainEvent = $domainEvent->withAddedMetadata('_aggregate_id', $aggregateId);
-        $domainEvent = $domainEvent->withAddedMetadata('_aggregate_type', $this->aggregateType->toString());
+        $domainEvent = $domainEvent->withAddedMetadata('_aggregate_type', $this->aggregateType->typeFromAggregate($eventSourcedAggregateRoot));
+        $domainEvent = $domainEvent->withAddedMetadata('effectiveTime', $domainEvent->createdAt()->format('Y-m-d H:i:s.u'));
 
         return $domainEvent;
     }

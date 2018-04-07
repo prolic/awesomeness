@@ -18,6 +18,7 @@ use Interop\Config\RequiresConfigId;
 use Interop\Config\RequiresMandatoryOptions;
 use InvalidArgumentException;
 use Prooph\EventSourcing\Aggregate\AggregateRepository;
+use Prooph\EventSourcing\Aggregate\AggregateRootTranslator;
 use Prooph\EventSourcing\Aggregate\AggregateType;
 use Prooph\EventSourcing\Aggregate\Exception;
 use Prooph\EventStore\EventStoreConnection;
@@ -101,6 +102,7 @@ final class AggregateRepositoryFactory implements ProvidesDefaultOptions, Requir
     public function defaultOptions(): iterable
     {
         return [
+            'aggregate_translator' => AggregateRootTranslator::class,
             'optimistic_concurrecy' => true,
         ];
     }
@@ -110,7 +112,6 @@ final class AggregateRepositoryFactory implements ProvidesDefaultOptions, Requir
         return [
             'repository_class',
             'aggregate_type',
-            'aggregate_translator',
             'category',
         ];
     }

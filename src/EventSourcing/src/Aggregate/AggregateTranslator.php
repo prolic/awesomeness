@@ -17,16 +17,16 @@ use Prooph\Common\Messaging\Message;
 
 interface AggregateTranslator
 {
-    public function extractAggregateVersion(object $eventSourcedAggregateRoot): int;
+    public function extractAggregateVersion(object $aggregateRoot): int;
 
-    public function extractAggregateId(object $eventSourcedAggregateRoot): string;
+    public function extractAggregateId(object $aggregateRoot): string;
 
     public function reconstituteAggregateFromHistory(AggregateType $aggregateType, Iterator $historyEvents);
 
     /**
      * @return Message[]
      */
-    public function extractPendingStreamEvents(object $eventSourcedAggregateRoot): array;
+    public function extractPendingStreamEvents(object $aggregateRoot): array;
 
     public function replayStreamEvents(object $eventSourcedAggregateRoot, Iterator $events): void;
 }
