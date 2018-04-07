@@ -22,4 +22,9 @@ class AccessDenied extends RuntimeException
             $groupName
         ));
     }
+
+    public static function toUserManagementOperation(): AccessDenied
+    {
+        return new self('Access to user management operation denied');
+    }
 }

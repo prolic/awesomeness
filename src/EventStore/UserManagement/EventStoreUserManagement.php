@@ -35,35 +35,17 @@ interface EventStoreUserManagement
         UserCredentials $userCredentials = null
     ): Task;
 
-    public function deleteUserAsync(
-        string $login,
-        UserCredentials $userCredentials = null
-    ): Task;
+    public function deleteUserAsync(string $login, UserCredentials $userCredentials = null): Task;
 
-    public function disableUserAsync(
-        string $login,
-        UserCredentials $userCredentials = null
-    ): Task;
+    public function disableUserAsync(string $login, UserCredentials $userCredentials = null): Task;
 
-    public function enableUserAsync(
-        string $login,
-        UserCredentials $userCredentials = null
-    ): Task;
+    public function enableUserAsync(string $login, UserCredentials $userCredentials = null): Task;
 
-    public function getUserAsync(
-        string $login,
-        UserCredentials $userCredentials = null
-    ): GetUserTask;
+    public function getUserAsync(string $login, UserCredentials $userCredentials = null): GetUserTask;
 
-    public function getAllUsersAsync(
-        UserCredentials $userCredentials = null
-    ): GetAllUsersTask;
+    public function getAllUsersAsync(UserCredentials $userCredentials = null): GetAllUsersTask;
 
-    public function resetPasswordAsync(
-        string $login,
-        string $newPassword,
-        UserCredentials $userCredentials = null
-    ): Task;
+    public function resetPasswordAsync(string $login, string $newPassword, UserCredentials $userCredentials = null): Task;
 
     /**
      * @param string $login

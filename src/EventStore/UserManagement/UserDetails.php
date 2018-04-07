@@ -10,26 +10,20 @@ final class UserDetails
     private $login;
     /** @var string */
     private $fullName;
-    /** @var string */
-    private $password;
     /** @var string[] */
     private $groups;
+    /** @var bool */
+    private $disabled;
     /** @var array */
     private $links;
 
-    /**
-     * @param string $login
-     * @param string $fullName
-     * @param string $password
-     * @param string[] $groups
-     * @param array $links
-     */
-    public function __construct(string $login, string $fullName, string $password, array $groups, array $links)
+    /** @internal */
+    public function __construct(string $login, string $fullName, array $groups, bool $disabled, array $links)
     {
         $this->login = $login;
         $this->fullName = $fullName;
-        $this->password = $password;
         $this->groups = $groups;
+        $this->disabled = $disabled;
         $this->links = $links;
     }
 
@@ -43,17 +37,17 @@ final class UserDetails
         return $this->fullName;
     }
 
-    public function password(): string
-    {
-        return $this->password;
-    }
-
     /**
      * @return string[]
      */
     public function groups(): array
     {
         return $this->groups;
+    }
+
+    public function disabled(): bool
+    {
+        return $this->disabled;
     }
 
     public function links(): array
