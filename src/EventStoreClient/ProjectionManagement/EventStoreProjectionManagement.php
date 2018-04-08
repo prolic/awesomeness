@@ -25,7 +25,7 @@ interface EventStoreProjectionManagement
         bool $enabled,
         bool $checkpoints,
         bool $emit,
-        bool $trackemittedstreams,
+        bool $trackEmittedStreams,
         UserCredentials $userCredentials = null
     ): Task;
 
@@ -36,7 +36,7 @@ interface EventStoreProjectionManagement
         bool $enabled,
         bool $checkpoints,
         bool $emit,
-        bool $trackemittedstreams,
+        bool $trackEmittedStreams,
         UserCredentials $userCredentials = null
     ): Task;
 
@@ -47,7 +47,7 @@ interface EventStoreProjectionManagement
         bool $enabled,
         bool $checkpoints,
         bool $emit,
-        bool $trackemittedstreams,
+        bool $trackEmittedStreams,
         UserCredentials $userCredentials = null
     ): Task;
 
