@@ -5,12 +5,11 @@ declare(strict_types=1);
 namespace Prooph\EventStoreClient\ProjectionManagement;
 
 use Prooph\EventStoreClient\Task;
+use Prooph\EventStoreClient\Task\GetArrayTask;
 use Prooph\EventStoreClient\Task\GetProjectionConfigTask;
 use Prooph\EventStoreClient\Task\GetProjectionDefinitionTask;
 use Prooph\EventStoreClient\Task\GetProjectionQueryTask;
-use Prooph\EventStoreClient\Task\GetProjectionResultTask;
 use Prooph\EventStoreClient\Task\GetProjectionsTask;
-use Prooph\EventStoreClient\Task\GetProjectionStateTask;
 use Prooph\EventStoreClient\Task\GetProjectionTask;
 use Prooph\EventStoreClient\UserCredentials;
 
@@ -81,17 +80,17 @@ interface EventStoreProjectionManagement
 
     public function getQuery(string $name, UserCredentials $userCredentials = null): GetProjectionQueryTask;
 
-    public function getResult(string $name, UserCredentials $userCredentials = null): GetProjectionResultTask;
+    public function getResult(string $name, UserCredentials $userCredentials = null): GetArrayTask;
 
     public function getPartitionResult(
         string $name,
         string $partition,
         UserCredentials $userCredentials = null
-    ): GetProjectionResultTask;
+    ): GetArrayTask;
 
-    public function getState(string $name, UserCredentials $userCredentials = null): GetProjectionStateTask;
+    public function getState(string $name, UserCredentials $userCredentials = null): GetArrayTask;
 
-    public function getPartitionState(string $name, UserCredentials $userCredentials = null): GetProjectionStateTask;
+    public function getPartitionState(string $name, UserCredentials $userCredentials = null): GetArrayTask;
 
     public function reset(string $name, bool $enableRunAs, UserCredentials $userCredentials = null): Task;
 

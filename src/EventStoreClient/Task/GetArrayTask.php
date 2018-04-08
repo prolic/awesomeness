@@ -10,6 +10,6 @@ use Prooph\EventStoreClient\Task as BaseTask;
  * @internal
  * @method array result()
  */
-class GetProjectionResultTask extends BaseTask
+class GetArrayTask extends BaseTask
 {
 }
