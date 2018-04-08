@@ -15,7 +15,7 @@ use Prooph\EventStoreClient\UserCredentials;
 
 interface ProjectionManagement
 {
-    public function abort(string $name, bool $enableRunAs, UserCredentials $userCredentials = null): Task;
+    public function abort(string $name, UserCredentials $userCredentials = null): Task;
 
     public function createOneTime(
         string $name,
@@ -58,9 +58,9 @@ interface ProjectionManagement
         UserCredentials $userCredentials = null
     ): Task;
 
-    public function disable(string $name, bool $enableRunAs, UserCredentials $userCredentials = null): Task;
+    public function disable(string $name, UserCredentials $userCredentials = null): Task;
 
-    public function enable(string $name, bool $enableRunAs, UserCredentials $userCredentials = null): Task;
+    public function enable(string $name, UserCredentials $userCredentials = null): Task;
 
     public function get(string $name, UserCredentials $userCredentials = null): GetProjectionTask;
 
@@ -92,7 +92,7 @@ interface ProjectionManagement
 
     public function getPartitionState(string $name, UserCredentials $userCredentials = null): GetArrayTask;
 
-    public function reset(string $name, bool $enableRunAs, UserCredentials $userCredentials = null): Task;
+    public function reset(string $name, UserCredentials $userCredentials = null): Task;
 
     public function updateConfig(string $name, ProjectionConfig $config, UserCredentials $userCredentials = null): Task;
 
