@@ -13,7 +13,7 @@ use Prooph\EventStoreClient\Task\GetProjectionsTask;
 use Prooph\EventStoreClient\Task\GetProjectionTask;
 use Prooph\EventStoreClient\UserCredentials;
 
-interface EventStoreProjectionManagement
+interface ProjectionManagement
 {
     public function abort(string $name, bool $enableRunAs, UserCredentials $userCredentials = null): Task;
 

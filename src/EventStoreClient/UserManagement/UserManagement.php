@@ -10,7 +10,7 @@ use Prooph\EventStoreClient\Task\GetUserTask;
 use Prooph\EventStoreClient\UserCredentials;
 
 /** @internal */
-interface EventStoreUserManagement
+interface UserManagement
 {
     public function changePasswordAsync(
         string $login,
