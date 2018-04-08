@@ -22,6 +22,7 @@ use Prooph\EventStoreHttpClient\ConnectionSettings;
 use Prooph\EventStoreHttpClient\ProjectionManagement\ClientOperations\AbortOperation;
 use Prooph\EventStoreHttpClient\ProjectionManagement\ClientOperations\DisableOperation;
 use Prooph\EventStoreHttpClient\ProjectionManagement\ClientOperations\EnableOperation;
+use Prooph\EventStoreHttpClient\ProjectionManagement\ClientOperations\GetOperation;
 use Prooph\EventStoreHttpClient\ProjectionManagement\ClientOperations\ResetOperation;
 
 final class HttpProjectionManagement implements ProjectionManagement
@@ -148,7 +149,16 @@ final class HttpProjectionManagement implements ProjectionManagement
 
     public function get(string $name, UserCredentials $userCredentials = null): GetProjectionTask
     {
-        // TODO: Implement get() method.
+        $operation = new GetOperation(
+            $this->asyncClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->baseUri,
+            $name,
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
+
+        return $operation->task();
     }
 
     public function getAll(UserCredentials $userCredentials = null): GetProjectionsTask
