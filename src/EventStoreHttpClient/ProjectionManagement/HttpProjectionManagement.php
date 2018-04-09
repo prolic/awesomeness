@@ -7,9 +7,9 @@ namespace Prooph\EventStoreHttpClient\ProjectionManagement;
 use Http\Client\HttpAsyncClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
+use Prooph\EventStoreClient\ProjectionManagement\AsyncProjectionManagement;
 use Prooph\EventStoreClient\ProjectionManagement\ProjectionConfig;
 use Prooph\EventStoreClient\ProjectionManagement\ProjectionDefinition;
-use Prooph\EventStoreClient\ProjectionManagement\ProjectionManagement;
 use Prooph\EventStoreClient\Task;
 use Prooph\EventStoreClient\Task\GetArrayTask;
 use Prooph\EventStoreClient\Task\GetProjectionConfigTask;
@@ -25,7 +25,7 @@ use Prooph\EventStoreHttpClient\ProjectionManagement\ClientOperations\EnableOper
 use Prooph\EventStoreHttpClient\ProjectionManagement\ClientOperations\GetOperation;
 use Prooph\EventStoreHttpClient\ProjectionManagement\ClientOperations\ResetOperation;
 
-final class HttpProjectionManagement implements ProjectionManagement
+final class HttpProjectionManagement implements AsyncProjectionManagement
 {
     /** @var HttpAsyncClient */
     private $asyncClient;
@@ -56,7 +56,7 @@ final class HttpProjectionManagement implements ProjectionManagement
         );
     }
 
-    public function abort(string $name, UserCredentials $userCredentials = null): Task
+    public function abortAsync(string $name, UserCredentials $userCredentials = null): Task
     {
         $operation = new AbortOperation(
             $this->asyncClient,
@@ -70,7 +70,7 @@ final class HttpProjectionManagement implements ProjectionManagement
         return $operation->task();
     }
 
-    public function createOneTime(
+    public function createOneTimeAsync(
         string $name,
         string $type,
         string $query,
@@ -83,7 +83,7 @@ final class HttpProjectionManagement implements ProjectionManagement
         // TODO: Implement createOneTime() method.
     }
 
-    public function createContinuous(
+    public function createContinuousAsync(
         string $name,
         string $type,
         string $query,
@@ -96,7 +96,7 @@ final class HttpProjectionManagement implements ProjectionManagement
         // TODO: Implement createContinuous() method.
     }
 
-    public function createTransient(
+    public function createTransientAsync(
         string $name,
         string $type,
         string $query,
@@ -109,7 +109,7 @@ final class HttpProjectionManagement implements ProjectionManagement
         // TODO: Implement createTransient() method.
     }
 
-    public function delete(
+    public function deleteAsync(
         string $name,
         bool $deleteStateStream,
         bool $deleteCheckpointStream,
@@ -119,7 +119,7 @@ final class HttpProjectionManagement implements ProjectionManagement
         // TODO: Implement delete() method.
     }
 
-    public function disable(string $name, UserCredentials $userCredentials = null): Task
+    public function disableAsync(string $name, UserCredentials $userCredentials = null): Task
     {
         $operation = new DisableOperation(
             $this->asyncClient,
@@ -133,7 +133,7 @@ final class HttpProjectionManagement implements ProjectionManagement
         return $operation->task();
     }
 
-    public function enable(string $name, UserCredentials $userCredentials = null): Task
+    public function enableAsync(string $name, UserCredentials $userCredentials = null): Task
     {
         $operation = new EnableOperation(
             $this->asyncClient,
@@ -147,7 +147,7 @@ final class HttpProjectionManagement implements ProjectionManagement
         return $operation->task();
     }
 
-    public function get(string $name, UserCredentials $userCredentials = null): GetProjectionTask
+    public function getAsync(string $name, UserCredentials $userCredentials = null): GetProjectionTask
     {
         $operation = new GetOperation(
             $this->asyncClient,
@@ -161,52 +161,52 @@ final class HttpProjectionManagement implements ProjectionManagement
         return $operation->task();
     }
 
-    public function getAll(UserCredentials $userCredentials = null): GetProjectionsTask
+    public function getAllAsync(UserCredentials $userCredentials = null): GetProjectionsTask
     {
         // TODO: Implement getAll() method.
     }
 
-    public function getAllOneTime(UserCredentials $userCredentials = null): GetProjectionsTask
+    public function getAllOneTimeAsync(UserCredentials $userCredentials = null): GetProjectionsTask
     {
         // TODO: Implement getAllOneTime() method.
     }
 
-    public function getAllContinuous(UserCredentials $userCredentials = null): GetProjectionsTask
+    public function getAllContinuousAsync(UserCredentials $userCredentials = null): GetProjectionsTask
     {
         // TODO: Implement getAllContinuous() method.
     }
 
-    public function getAllNonTransient(UserCredentials $userCredentials = null): GetProjectionsTask
+    public function getAllNonTransientAsync(UserCredentials $userCredentials = null): GetProjectionsTask
     {
         // TODO: Implement getAllNonTransient() method.
     }
 
-    public function getAllQueries(UserCredentials $userCredentials = null): GetProjectionsTask
+    public function getAllQueriesAsync(UserCredentials $userCredentials = null): GetProjectionsTask
     {
         // TODO: Implement getAllQueries() method.
     }
 
-    public function getConfig(string $name, UserCredentials $userCredentials = null): GetProjectionConfigTask
+    public function getConfigAsync(string $name, UserCredentials $userCredentials = null): GetProjectionConfigTask
     {
         // TODO: Implement getConfig() method.
     }
 
-    public function getDefinition(string $name, UserCredentials $userCredentials = null): GetProjectionDefinitionTask
+    public function getDefinitionAsync(string $name, UserCredentials $userCredentials = null): GetProjectionDefinitionTask
     {
         // TODO: Implement getDefinition() method.
     }
 
-    public function getQuery(string $name, UserCredentials $userCredentials = null): GetProjectionQueryTask
+    public function getQueryAsync(string $name, UserCredentials $userCredentials = null): GetProjectionQueryTask
     {
         // TODO: Implement getQuery() method.
     }
 
-    public function getResult(string $name, UserCredentials $userCredentials = null): GetArrayTask
+    public function getResultAsync(string $name, UserCredentials $userCredentials = null): GetArrayTask
     {
         // TODO: Implement getResult() method.
     }
 
-    public function getPartitionResult(
+    public function getPartitionResultAsync(
         string $name,
         string $partition,
         UserCredentials $userCredentials = null
@@ -214,17 +214,17 @@ final class HttpProjectionManagement implements ProjectionManagement
         // TODO: Implement getPartitionResult() method.
     }
 
-    public function getState(string $name, UserCredentials $userCredentials = null): GetArrayTask
+    public function getStateAsync(string $name, UserCredentials $userCredentials = null): GetArrayTask
     {
         // TODO: Implement getState() method.
     }
 
-    public function getPartitionState(string $name, UserCredentials $userCredentials = null): GetArrayTask
+    public function getPartitionStateAsync(string $name, UserCredentials $userCredentials = null): GetArrayTask
     {
         // TODO: Implement getPartitionState() method.
     }
 
-    public function reset(string $name, UserCredentials $userCredentials = null): Task
+    public function resetAsync(string $name, UserCredentials $userCredentials = null): Task
     {
         $operation = new ResetOperation(
             $this->asyncClient,
@@ -238,12 +238,12 @@ final class HttpProjectionManagement implements ProjectionManagement
         return $operation->task();
     }
 
-    public function updateConfig(string $name, ProjectionConfig $config, UserCredentials $userCredentials = null): Task
+    public function updateConfigAsync(string $name, ProjectionConfig $config, UserCredentials $userCredentials = null): Task
     {
         // TODO: Implement updateConfig() method.
     }
 
-    public function updateDefinition(
+    public function updateDefinitionAsync(
         string $name,
         string $type,
         ProjectionDefinition $definition,
@@ -252,7 +252,7 @@ final class HttpProjectionManagement implements ProjectionManagement
         // TODO: Implement updateDefinition() method.
     }
 
-    public function updateQuery(
+    public function updateQueryAsync(
         string $name,
         string $query,
         bool $emitEnabled,

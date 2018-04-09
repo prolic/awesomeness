@@ -4,13 +4,6 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient\ProjectionManagement;
 
-use Prooph\EventStoreClient\Task;
-use Prooph\EventStoreClient\Task\GetArrayTask;
-use Prooph\EventStoreClient\Task\GetProjectionConfigTask;
-use Prooph\EventStoreClient\Task\GetProjectionDefinitionTask;
-use Prooph\EventStoreClient\Task\GetProjectionQueryTask;
-use Prooph\EventStoreClient\Task\GetProjectionsTask;
-use Prooph\EventStoreClient\Task\GetProjectionTask;
 use Prooph\EventStoreClient\UserCredentials;
 
 interface ProjectionManagement
