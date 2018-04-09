@@ -4,20 +4,17 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient\UserManagement;
 
-use Prooph\EventStoreClient\Task;
-use Prooph\EventStoreClient\Task\GetAllUsersTask;
-use Prooph\EventStoreClient\Task\GetUserTask;
 use Prooph\EventStoreClient\UserCredentials;
 
 /** @internal */
 interface UserManagement
 {
-    public function changePasswordAsync(
+    public function changePassword(
         string $login,
         string $oldPassword,
         string $newPassword,
         UserCredentials $userCredentials = null
-    ): Task;
+    ): void;
 
     /**
      * @param string $login
@@ -25,39 +22,42 @@ interface UserManagement
      * @param string $password
      * @param string[] $groups
      * @param UserCredentials|null $userCredentials
-     * @return Task
+     * @return void
      */
-    public function createUserAsync(
+    public function createUser(
         string $login,
         string $fullName,
         string $password,
         array $groups,
         UserCredentials $userCredentials = null
-    ): Task;
+    ): void;
 
-    public function deleteUserAsync(string $login, UserCredentials $userCredentials = null): Task;
+    public function deleteUser(string $login, UserCredentials $userCredentials = null): void;
 
-    public function disableUserAsync(string $login, UserCredentials $userCredentials = null): Task;
+    public function disableUser(string $login, UserCredentials $userCredentials = null): void;
 
-    public function enableUserAsync(string $login, UserCredentials $userCredentials = null): Task;
+    public function enableUser(string $login, UserCredentials $userCredentials = null): void;
 
-    public function getUserAsync(string $login, UserCredentials $userCredentials = null): GetUserTask;
+    public function getUser(string $login, UserCredentials $userCredentials = null): UserDetails;
 
-    public function getAllUsersAsync(UserCredentials $userCredentials = null): GetAllUsersTask;
+    /**
+     * @return UserDetails[]
+     */
+    public function getAllUsers(UserCredentials $userCredentials = null): array;
 
-    public function resetPasswordAsync(string $login, string $newPassword, UserCredentials $userCredentials = null): Task;
+    public function resetPassword(string $login, string $newPassword, UserCredentials $userCredentials = null): void;
 
     /**
      * @param string $login
      * @param string $fullName
      * @param string[] $groups
      * @param UserCredentials|null $userCredentials
-     * @return Task
+     * @return void
      */
-    public function updateUserAsync(
+    public function updateUser(
         string $login,
         string $fullName,
         array $groups,
         UserCredentials $userCredentials = null
-    ): Task;
+    ): void;
 }
