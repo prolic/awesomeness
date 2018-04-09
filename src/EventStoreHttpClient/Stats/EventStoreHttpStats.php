@@ -67,7 +67,7 @@ final class EventStoreHttpStats implements EventStoreStats
 
     public function getTcp(UserCredentials $userCredentials = null): GetArrayTask
     {
-        $operation = $this->statsOperation('/tcp', $userCredentials);
+        $operation = $this->statsOperation('/proc/tcp', $userCredentials);
 
         return $operation->task();
     }
