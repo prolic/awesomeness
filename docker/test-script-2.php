@@ -10,7 +10,7 @@ $connection = new \Prooph\EventStoreHttpClient\EventStoreHttpConnection(
     new \Prooph\EventStoreHttpClient\ConnectionSettings(new \Prooph\EventStoreClient\IpEndPoint('eventstore', 2113), false)
 );
 
-$task = $connection->createPersistentSubscription(
+$task = $connection->createPersistentSubscriptionAsync(
     'sasastream',
     'test',
     \Prooph\EventStoreClient\PersistentSubscriptionSettings::default(),
@@ -19,7 +19,7 @@ $task = $connection->createPersistentSubscription(
 
 var_dump($task->result());
 
-$task = $connection->updatePersistentSubscription(
+$task = $connection->updatePersistentSubscriptionAsync(
     'sasastream',
     'test',
     new \Prooph\EventStoreClient\PersistentSubscriptionSettings(
@@ -42,7 +42,7 @@ $task = $connection->updatePersistentSubscription(
 
 var_dump($task->result());
 /*
-$task = $connection->deletePersistentSubscription(
+$task = $connection->deletePersistentSubscriptionAsync(
     'sasastream',
     'test',
     new \Prooph\EventStore\UserCredentials('admin', 'changeit')

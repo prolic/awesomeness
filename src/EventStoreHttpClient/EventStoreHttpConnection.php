@@ -14,8 +14,8 @@ use Prooph\EventStoreClient\EventData;
 use Prooph\EventStoreClient\EventId;
 use Prooph\EventStoreClient\EventReadResult;
 use Prooph\EventStoreClient\EventReadStatus;
+use Prooph\EventStoreClient\EventStoreAsyncSubscriptionConnection;
 use Prooph\EventStoreClient\EventStorePersistentSubscription;
-use Prooph\EventStoreClient\EventStoreSubscriptionConnection;
 use Prooph\EventStoreClient\ExpectedVersion;
 use Prooph\EventStoreClient\Internal\Consts;
 use Prooph\EventStoreClient\PersistentSubscriptionSettings;
@@ -51,7 +51,7 @@ use Prooph\EventStoreHttpClient\ClientOperations\ReadStreamEventsForwardOperatio
 use Prooph\EventStoreHttpClient\ClientOperations\ReplayParkedOperation;
 use Prooph\EventStoreHttpClient\ClientOperations\UpdatePersistentSubscriptionOperation;
 
-class EventStoreHttpConnection implements EventStoreSubscriptionConnection
+class EventStoreHttpConnection implements EventStoreAsyncSubscriptionConnection
 {
     /** @var HttpAsyncClient */
     private $asyncClient;
@@ -349,7 +349,7 @@ class EventStoreHttpConnection implements EventStoreSubscriptionConnection
         );
     }
 
-    public function createPersistentSubscription(
+    public function createPersistentSubscriptionAsync(
         string $stream,
         string $groupName,
         PersistentSubscriptionSettings $settings,
@@ -369,7 +369,7 @@ class EventStoreHttpConnection implements EventStoreSubscriptionConnection
         return $operation->task();
     }
 
-    public function updatePersistentSubscription(
+    public function updatePersistentSubscriptionAsync(
         string $stream,
         string $groupName,
         PersistentSubscriptionSettings $settings,
@@ -389,7 +389,7 @@ class EventStoreHttpConnection implements EventStoreSubscriptionConnection
         return $operation->task();
     }
 
-    public function deletePersistentSubscription(
+    public function deletePersistentSubscriptionAsync(
         string $stream,
         string $groupName,
         UserCredentials $userCredentials = null
@@ -446,7 +446,7 @@ class EventStoreHttpConnection implements EventStoreSubscriptionConnection
         );
     }
 
-    public function replayParked(
+    public function replayParkedAsync(
         string $stream,
         string $groupName,
         UserCredentials $userCredentials = null

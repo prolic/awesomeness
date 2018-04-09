@@ -4,32 +4,34 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient;
 
-use Prooph\EventStoreClient\Internal\PersistentSubscriptionCreateResult;
-use Prooph\EventStoreClient\Internal\PersistentSubscriptionDeleteResult;
-use Prooph\EventStoreClient\Internal\PersistentSubscriptionUpdateResult;
-use Prooph\EventStoreClient\Internal\ReplayParkedResult;
+use Prooph\EventStoreClient\Task\CreatePersistentSubscriptionTask;
+use Prooph\EventStoreClient\Task\DeletePersistentSubscriptionTask;
+use Prooph\EventStoreClient\Task\GetInformationForSubscriptionsTask;
+use Prooph\EventStoreClient\Task\GetInformationForSubscriptionTask;
+use Prooph\EventStoreClient\Task\ReplayParkedTask;
+use Prooph\EventStoreClient\Task\UpdatePersistentSubscriptionTask;
 
-interface EventStoreSubscriptionConnection extends EventStoreConnection
+interface EventStoreAsyncSubscriptionConnection extends EventStoreAsyncConnection
 {
-    public function createPersistentSubscription(
+    public function createPersistentSubscriptionAsync(
         string $stream,
         string $groupName,
         PersistentSubscriptionSettings $settings,
         UserCredentials $userCredentials = null
-    ): PersistentSubscriptionCreateResult;
+    ): CreatePersistentSubscriptionTask;
 
-    public function updatePersistentSubscription(
+    public function updatePersistentSubscriptionAsync(
         string $stream,
         string $groupName,
         PersistentSubscriptionSettings $settings,
         UserCredentials $userCredentials = null
-    ): PersistentSubscriptionUpdateResult;
+    ): UpdatePersistentSubscriptionTask;
 
-    public function deletePersistentSubscription(
+    public function deletePersistentSubscriptionAsync(
         string $stream,
         string $groupName,
         UserCredentials $userCredentials = null
-    ): PersistentSubscriptionDeleteResult;
+    ): DeletePersistentSubscriptionTask;
 
     /**
      * @param string $stream
@@ -51,33 +53,24 @@ interface EventStoreSubscriptionConnection extends EventStoreConnection
         UserCredentials $userCredentials = null
     ): EventStorePersistentSubscription;
 
-    public function replayParked(
+    public function replayParkedAsync(
         string $stream,
         string $groupName,
         UserCredentials $userCredentials = null
-    ): ReplayParkedResult;
+    ): ReplayParkedTask;
 
-    /**
-     * @return SubscriptionInformation[]
-     */
-    public function getInformationForAllSubscriptions(
+    public function getInformationForAllSubscriptionsAsync(
         UserCredentials $userCredentials = null
-    ): array;
+    ): GetInformationForSubscriptionsTask;
 
-    /**
-     * @return SubscriptionInformation[]
-     */
-    public function getInformationForSubscriptionsWithStream(
+    public function getInformationForSubscriptionsWithStreamAsync(
         string $stream,
         UserCredentials $userCredentials = null
-    ): array;
+    ): GetInformationForSubscriptionsTask;
 
-    /**
-     * @return SubscriptionInformation[]
-     */
-    public function getInformationForSubscription(
+    public function getInformationForSubscriptionAsync(
         string $stream,
         string $groupName,
         UserCredentials $userCredentials = null
-    ): array;
+    ): GetInformationForSubscriptionTask;
 }
