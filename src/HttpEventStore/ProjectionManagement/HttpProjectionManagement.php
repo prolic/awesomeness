@@ -11,6 +11,7 @@ use Prooph\EventStore\ProjectionManagement\AsyncProjectionManagement;
 use Prooph\EventStore\ProjectionManagement\ProjectionConfig;
 use Prooph\EventStore\ProjectionManagement\ProjectionDefinition;
 use Prooph\EventStore\Task;
+use Prooph\EventStore\Task\CreateProjectionResultTask;
 use Prooph\EventStore\Task\GetArrayTask;
 use Prooph\EventStore\Task\GetProjectionConfigTask;
 use Prooph\EventStore\Task\GetProjectionDefinitionTask;
@@ -20,6 +21,8 @@ use Prooph\EventStore\Task\GetProjectionTask;
 use Prooph\EventStore\UserCredentials;
 use Prooph\HttpEventStore\ConnectionSettings;
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\AbortOperation;
+use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\CreateOperation;
+use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\CreateTransientOperation;
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\DisableOperation;
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\EnableOperation;
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\GetOperation;
@@ -79,8 +82,24 @@ final class HttpProjectionManagement implements AsyncProjectionManagement
         bool $emit,
         bool $trackEmittedStreams,
         UserCredentials $userCredentials = null
-    ): Task {
-        // TODO: Implement createOneTime() method.
+    ): CreateProjectionResultTask {
+        $operation = new CreateOperation(
+            $this->asyncClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->baseUri,
+            $name,
+            'onetime',
+            $type,
+            $query,
+            $enabled,
+            $checkpoints,
+            $emit,
+            $trackEmittedStreams,
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
+
+        return $operation->task();
     }
 
     public function createContinuousAsync(
@@ -92,8 +111,24 @@ final class HttpProjectionManagement implements AsyncProjectionManagement
         bool $emit,
         bool $trackEmittedStreams,
         UserCredentials $userCredentials = null
-    ): Task {
-        // TODO: Implement createContinuous() method.
+    ): CreateProjectionResultTask {
+        $operation = new CreateOperation(
+            $this->asyncClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->baseUri,
+            $name,
+            'continuous',
+            $type,
+            $query,
+            $enabled,
+            $checkpoints,
+            $emit,
+            $trackEmittedStreams,
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
+
+        return $operation->task();
     }
 
     public function createTransientAsync(
@@ -101,12 +136,21 @@ final class HttpProjectionManagement implements AsyncProjectionManagement
         string $type,
         string $query,
         bool $enabled,
-        bool $checkpoints,
-        bool $emit,
-        bool $trackEmittedStreams,
         UserCredentials $userCredentials = null
-    ): Task {
-        // TODO: Implement createTransient() method.
+    ): CreateProjectionResultTask {
+        $operation = new CreateTransientOperation(
+            $this->asyncClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->baseUri,
+            $name,
+            $type,
+            $query,
+            $enabled,
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
+
+        return $operation->task();
     }
 
     public function deleteAsync(

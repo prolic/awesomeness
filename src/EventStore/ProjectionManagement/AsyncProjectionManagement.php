@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Prooph\EventStore\ProjectionManagement;
 
 use Prooph\EventStore\Task;
+use Prooph\EventStore\Task\CreateProjectionResultTask;
 use Prooph\EventStore\Task\GetArrayTask;
 use Prooph\EventStore\Task\GetProjectionConfigTask;
 use Prooph\EventStore\Task\GetProjectionDefinitionTask;
@@ -26,7 +27,7 @@ interface AsyncProjectionManagement
         bool $emit,
         bool $trackEmittedStreams,
         UserCredentials $userCredentials = null
-    ): Task;
+    ): CreateProjectionResultTask;
 
     public function createContinuousAsync(
         string $name,
@@ -37,18 +38,15 @@ interface AsyncProjectionManagement
         bool $emit,
         bool $trackEmittedStreams,
         UserCredentials $userCredentials = null
-    ): Task;
+    ): CreateProjectionResultTask;
 
     public function createTransientAsync(
         string $name,
         string $type,
         string $query,
         bool $enabled,
-        bool $checkpoints,
-        bool $emit,
-        bool $trackEmittedStreams,
         UserCredentials $userCredentials = null
-    ): Task;
+    ): CreateProjectionResultTask;
 
     public function deleteAsync(
         string $name,
