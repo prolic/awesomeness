@@ -14,6 +14,7 @@ namespace Prooph\EventSourcing\Aggregate;
 
 use ArrayIterator;
 use Prooph\Common\Messaging\Message;
+use Prooph\EventStore\EventStoreAsyncConnection;
 use Prooph\EventStore\EventStoreConnection;
 use Prooph\EventStore\ExpectedVersion;
 use Prooph\EventStore\SliceReadStatus;
@@ -21,7 +22,7 @@ use Prooph\MessageTransformer;
 
 class AggregateRepository
 {
-    /** @var EventStoreConnection */
+    /** @var EventStoreAsyncConnection */
     protected $eventStoreConnection;
     /** @var AggregateTranslator */
     protected $aggregateTranslator;
@@ -37,7 +38,7 @@ class AggregateRepository
     protected $optimisticConcurrency;
 
     public function __construct(
-        EventStoreConnection $eventStoreConnection,
+        EventStoreAsyncConnection $eventStoreConnection,
         AggregateType $aggregateType,
         AggregateTranslator $aggregateTranslator,
         MessageTransformer $transformer,
