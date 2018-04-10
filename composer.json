@@ -38,7 +38,8 @@
   "autoload": {
     "psr-4": {
       "Prooph\\EventStore\\": "src/EventStore/",
-      "Prooph\\EventStoreHttpClient\\": "src/EventStoreHttpClient/",
+      "Prooph\\HttpEventStore\\": "src/HttpEventStore/",
+      "Prooph\\PdoEventStore\\": "src/PdoEventStore/",
       "Prooph\\Common\\": "src/Common/"
     }
   },
