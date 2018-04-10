@@ -70,8 +70,6 @@ interface AsyncProjectionManagement
 
     public function getAllNonTransientAsync(UserCredentials $userCredentials = null): GetProjectionsTask;
 
-    public function getAllQueriesAsync(UserCredentials $userCredentials = null): GetProjectionsTask;
-
     public function getConfigAsync(string $name, UserCredentials $userCredentials = null): GetProjectionConfigTask;
 
     public function getDefinitionAsync(string $name, UserCredentials $userCredentials = null): GetProjectionDefinitionTask;

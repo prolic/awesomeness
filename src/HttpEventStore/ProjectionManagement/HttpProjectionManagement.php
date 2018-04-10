@@ -26,6 +26,7 @@ use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\CreateTransientO
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\DeleteOperation;
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\DisableOperation;
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\EnableOperation;
+use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\GetMultiOperation;
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\GetOperation;
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\ResetOperation;
 
@@ -220,27 +221,58 @@ final class HttpProjectionManagement implements AsyncProjectionManagement
 
     public function getAllAsync(UserCredentials $userCredentials = null): GetProjectionsTask
     {
-        // TODO: Implement getAll() method.
+        $operation = new GetMultiOperation(
+            $this->asyncClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->baseUri,
+            'any',
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
+
+        return $operation->task();
     }
 
     public function getAllOneTimeAsync(UserCredentials $userCredentials = null): GetProjectionsTask
     {
-        // TODO: Implement getAllOneTime() method.
+        $operation = new GetMultiOperation(
+            $this->asyncClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->baseUri,
+            'onetime',
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
+
+        return $operation->task();
     }
 
     public function getAllContinuousAsync(UserCredentials $userCredentials = null): GetProjectionsTask
     {
-        // TODO: Implement getAllContinuous() method.
+        $operation = new GetMultiOperation(
+            $this->asyncClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->baseUri,
+            'continuous',
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
+
+        return $operation->task();
     }
 
     public function getAllNonTransientAsync(UserCredentials $userCredentials = null): GetProjectionsTask
     {
-        // TODO: Implement getAllNonTransient() method.
-    }
+        $operation = new GetMultiOperation(
+            $this->asyncClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->baseUri,
+            'all-non-transient',
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
 
-    public function getAllQueriesAsync(UserCredentials $userCredentials = null): GetProjectionsTask
-    {
-        // TODO: Implement getAllQueries() method.
+        return $operation->task();
     }
 
     public function getConfigAsync(string $name, UserCredentials $userCredentials = null): GetProjectionConfigTask
