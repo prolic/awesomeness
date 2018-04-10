@@ -101,6 +101,7 @@ interface AsyncProjectionManagement
 
     public function updateQueryAsync(
         string $name,
+        string $type,
         string $query,
         bool $emitEnabled,
         UserCredentials $userCredentials = null

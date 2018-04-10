@@ -101,15 +101,9 @@ interface ProjectionManagement
 
     public function updateConfig(string $name, ProjectionConfig $config, UserCredentials $userCredentials = null): void;
 
-    public function updateDefinition(
-        string $name,
-        string $type,
-        ProjectionDefinition $definition,
-        UserCredentials $userCredentials = null
-    ): void;
-
     public function updateQuery(
         string $name,
+        string $type,
         string $query,
         bool $emitEnabled,
         UserCredentials $userCredentials = null

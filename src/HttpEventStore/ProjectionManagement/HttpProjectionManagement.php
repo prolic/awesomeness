@@ -9,7 +9,6 @@ use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
 use Prooph\EventStore\ProjectionManagement\AsyncProjectionManagement;
 use Prooph\EventStore\ProjectionManagement\ProjectionConfig;
-use Prooph\EventStore\ProjectionManagement\ProjectionDefinition;
 use Prooph\EventStore\Task;
 use Prooph\EventStore\Task\CreateProjectionResultTask;
 use Prooph\EventStore\Task\GetArrayTask;
@@ -33,6 +32,8 @@ use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\GetMultiOperatio
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\GetOperation;
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\GetQueryOperation;
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\ResetOperation;
+use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\UpdateConfigOperation;
+use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\UpdateQueryOperation;
 
 final class HttpProjectionManagement implements AsyncProjectionManagement
 {
@@ -400,24 +401,38 @@ final class HttpProjectionManagement implements AsyncProjectionManagement
 
     public function updateConfigAsync(string $name, ProjectionConfig $config, UserCredentials $userCredentials = null): Task
     {
-        // TODO: Implement updateConfig() method.
-    }
+        $operation = new UpdateConfigOperation(
+            $this->asyncClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->baseUri,
+            $name,
+            $config,
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
 
-    public function updateDefinitionAsync(
-        string $name,
-        string $type,
-        ProjectionDefinition $definition,
-        UserCredentials $userCredentials = null
-    ): Task {
-        // TODO: Implement updateDefinition() method.
+        return $operation->task();
     }
 
     public function updateQueryAsync(
         string $name,
+        string $type,
         string $query,
         bool $emitEnabled,
         UserCredentials $userCredentials = null
     ): Task {
-        // TODO: Implement updateQuery() method.
+        $operation = new UpdateQueryOperation(
+            $this->asyncClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->baseUri,
+            $name,
+            $type,
+            $query,
+            $emitEnabled,
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
+
+        return $operation->task();
     }
 }
