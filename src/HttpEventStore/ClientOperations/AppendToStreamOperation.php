@@ -52,7 +52,7 @@ class AppendToStreamOperation extends Operation
                 'eventId' => $event->eventId()->toString(),
                 'eventType' => $event->eventType(),
                 'data' => $event->data(),
-                'metadata' => $event->metadata(),
+                'metadata' => $event->metaData(),
             ];
         }
         $request = $this->requestFactory->createRequest(

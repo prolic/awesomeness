@@ -15,7 +15,6 @@ namespace Prooph\EventSourcing\Aggregate;
 use ArrayIterator;
 use Prooph\Common\Messaging\Message;
 use Prooph\EventStore\EventStoreAsyncConnection;
-use Prooph\EventStore\EventStoreConnection;
 use Prooph\EventStore\ExpectedVersion;
 use Prooph\EventStore\SliceReadStatus;
 use Prooph\MessageTransformer;

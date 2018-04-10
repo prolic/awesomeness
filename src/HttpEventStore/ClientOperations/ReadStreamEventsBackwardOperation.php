@@ -108,16 +108,18 @@ class ReadStreamEventsBackwardOperation extends Operation
                             $data = json_encode($data);
                         }
 
-                        $metadata = $entry['metadata'] ?? '';
+                        $field = $json['isLinkMetaData'] ? 'linkMetaData' : 'metaData';
+
+                        $metadata = $json[$field] ?? '';
 
                         if (is_array($metadata)) {
                             $metadata = json_encode($metadata);
                         }
 
                         $events[] = new RecordedEvent(
-                            $entry['id'],
+                            $entry['positionStreamId'],
                             EventId::fromString($entry['eventId']),
-                            $entry['eventNumber'],
+                            $entry['positionEventNumber'],
                             $entry['eventType'],
                             $data,
                             $metadata,

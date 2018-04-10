@@ -46,7 +46,7 @@ class MessageTransformer
             'uui' => $event->eventId()->toString(),
             'message_name' => $event->eventType(),
             'payload' => json_decode($event->data(), true),
-            'metadata' => json_decode($event->metadata(), true),
+            'metadata' => json_decode($event->metaData(), true),
             'created' => $event->created(),
         ]);
     }

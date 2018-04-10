@@ -93,6 +93,7 @@ EventStore
 - [x] AsyncEventStoreStats interface
 - [x] UserManagement interface
 - [x] AsyncUserManagement interface
+- [ ] Remove Delete/Write Result classes (if no use-case found)
 
 HttpEventStore
 

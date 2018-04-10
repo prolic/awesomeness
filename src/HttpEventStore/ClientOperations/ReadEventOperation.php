@@ -84,16 +84,18 @@ class ReadEventOperation extends Operation
                         $data = json_encode($data);
                     }
 
-                    $metadata = $json['metadata'] ?? '';
+                    $field = $json['isLinkMetaData'] ? 'linkMetaData' : 'metaData';
+
+                    $metadata = $json[$field] ?? '';
 
                     if (is_array($metadata)) {
                         $metadata = json_encode($metadata);
                     }
 
                     $event = new RecordedEvent(
-                        $json['id'],
+                        $json['positionStreamId'],
                         EventId::fromString($json['eventId']),
-                        $json['eventNumber'],
+                        $json['positionEventNumber'],
                         $json['eventType'],
                         $data,
                         $metadata,

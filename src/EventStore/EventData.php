@@ -15,15 +15,15 @@ final class EventData
     /** @var string */
     private $data;
     /** @var string */
-    private $metadata;
+    private $metaData;
 
-    public function __construct(EventId $eventId, string $eventType, bool $isJson, string $data, string $metadata)
+    public function __construct(EventId $eventId, string $eventType, bool $isJson, string $data, string $metaData)
     {
         $this->eventId = $eventId;
         $this->eventType = $eventType;
         $this->isJson = $isJson;
         $this->data = $data;
-        $this->metadata = $metadata;
+        $this->metaData = $metaData;
     }
 
     public function eventId(): EventId
@@ -46,8 +46,8 @@ final class EventData
         return $this->data;
     }
 
-    public function metadata(): string
+    public function metaData(): string
     {
-        return $this->metadata;
+        return $this->metaData;
     }
 }

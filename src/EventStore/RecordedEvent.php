@@ -9,7 +9,7 @@ use DateTimeImmutable;
 class RecordedEvent
 {
     /** @var string */
-    private $eventStreamId;
+    private $streamId;
     /** @var EventId */
     private $eventId;
     /** @var int */
@@ -19,7 +19,7 @@ class RecordedEvent
     /** @var string */
     private $data;
     /** @var string */
-    private $metadata;
+    private $metaData;
     /** @var bool */
     private $isJson;
     /** @var DateTimeImmutable */
@@ -27,28 +27,28 @@ class RecordedEvent
 
     /** @internal */
     public function __construct(
-        string $eventStreamId,
+        string $streamId,
         EventId $eventId,
         int $eventNumber,
         string $eventType,
         string $data,
-        string $metadata,
+        string $metaData,
         bool $isJson,
         DateTimeImmutable $created
     ) {
-        $this->eventStreamId = $eventStreamId;
+        $this->streamId = $streamId;
         $this->eventId = $eventId;
         $this->eventNumber = $eventNumber;
         $this->eventType = $eventType;
         $this->data = $data;
-        $this->metadata = $metadata;
+        $this->metaData = $metaData;
         $this->isJson = $isJson;
         $this->created = $created;
     }
 
-    public function eventStreamId(): string
+    public function streamId(): string
     {
-        return $this->eventStreamId;
+        return $this->streamId;
     }
 
     public function eventId(): EventId
@@ -71,9 +71,9 @@ class RecordedEvent
         return $this->data;
     }
 
-    public function metadata(): string
+    public function metaData(): string
     {
-        return $this->metadata;
+        return $this->metaData;
     }
 
     public function isJson(): bool
