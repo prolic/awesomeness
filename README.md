@@ -10,12 +10,9 @@ Mono-Repository combining multiple prooph components into one (for easier develo
 
 Base classes for usage with all event store implementations.
 
-Note: some implementation details are skipped for now, some of those are:
-- Subscriptions
+## HttpEventStore
 
-## Greg's EventStore
-
-This is the first implementation being delivered
+Compatible with Greg's EventStore as well as HTTP-API from pdo-event-store
 
 ## Postgres EventStore
 
