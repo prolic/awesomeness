@@ -79,3 +79,44 @@ and test scripts with:
 
 Greg's EventStore provides a Web UI which you can access in your browser: [http://localhost:2113](http://localhost:2113)
 Default login credentials are `admin` with pwd `changeit`.
+
+## Todos
+
+EventStore
+
+- [x] EventStoreConnection interface
+- [x] EventStoreAsyncConnection interface
+- [x] EventStoreSubscriptionConnection interface
+- [x] EventStoreAsyncSubscriptionConnection interface
+- [x] EventStoreTransactionConnection interface
+- [x] EventStoreAsyncTransactionConnection interface
+- [x] ProjectionManagement interface
+- [x] AsyncProjectionManagement interface
+- [x] EventStoreStats interface
+- [x] AsyncEventStoreStats interface
+- [x] UserManagement interface
+- [x] AsyncUserManagement interface
+
+HttpEventStore
+
+- [x] HttpEventStoreConnection
+- [x] HttpProjectionManagement
+- [x] HttpEventStoreStats
+- [x] HttpUserManagement
+
+EventSourcing
+
+- [x] Use async connection interface
+- [ ] Use connection interface
+- [ ] Event Publisher
+- [ ] Upcaster
+- [ ] Causation Metadata Enricher
+- [ ] Transaction Handling
+
+Common
+
+- TBD
+
+MessageTransformer
+
+- [ ] find a place to live for this class
