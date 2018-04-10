@@ -23,6 +23,7 @@ use Prooph\HttpEventStore\ConnectionSettings;
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\AbortOperation;
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\CreateOperation;
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\CreateTransientOperation;
+use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\DeleteOperation;
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\DisableOperation;
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\EnableOperation;
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\GetOperation;
@@ -160,7 +161,19 @@ final class HttpProjectionManagement implements AsyncProjectionManagement
         bool $deleteEmittedStreams,
         UserCredentials $userCredentials = null
     ): Task {
-        // TODO: Implement delete() method.
+        $operation = new DeleteOperation(
+            $this->asyncClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->baseUri,
+            $name,
+            $deleteStateStream,
+            $deleteCheckpointStream,
+            $deleteEmittedStreams,
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
+
+        return $operation->task();
     }
 
     public function disableAsync(string $name, UserCredentials $userCredentials = null): Task
