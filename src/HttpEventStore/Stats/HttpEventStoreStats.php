@@ -13,7 +13,7 @@ use Prooph\EventStore\UserCredentials;
 use Prooph\HttpEventStore\ConnectionSettings;
 use Prooph\HttpEventStore\Stats\ClientOperations\StatsOperation;
 
-final class EventStoreHttpStats implements EventStoreStats
+final class HttpEventStoreStats implements EventStoreStats
 {
     /** @var HttpAsyncClient */
     private $asyncClient;
