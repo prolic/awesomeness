@@ -37,7 +37,7 @@
   },
   "autoload": {
     "psr-4": {
-      "Prooph\\EventStoreClient\\": "src/EventStoreClient/",
+      "Prooph\\EventStore\\": "src/EventStore/",
       "Prooph\\EventStoreHttpClient\\": "src/EventStoreHttpClient/",
       "Prooph\\Common\\": "src/Common/"
     }
@@ -45,7 +45,7 @@
   "autoload-dev": {
     "psr-4": {
       "ProophTest\\EventStore\\": "tests/EventStore/",
-      "ProophTest\\EventStoreHttpClient\\": "tests/EventStoreHttpClient/"
+      "ProophTest\\HttpEventStore\\": "tests/HttpEventStore/"
     }
   },
   "scripts": {

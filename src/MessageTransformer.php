@@ -6,9 +6,9 @@ namespace Prooph;
 
 use Prooph\Common\Messaging\DomainMessage;
 use Prooph\Common\Messaging\Message;
-use Prooph\EventStoreClient\EventData;
-use Prooph\EventStoreClient\EventId;
-use Prooph\EventStoreClient\RecordedEvent;
+use Prooph\EventStore\EventData;
+use Prooph\EventStore\EventId;
+use Prooph\EventStore\RecordedEvent;
 
 class MessageTransformer
 {

@@ -21,7 +21,7 @@ use Prooph\EventSourcing\Aggregate\AggregateRepository;
 use Prooph\EventSourcing\Aggregate\AggregateRootTranslator;
 use Prooph\EventSourcing\Aggregate\AggregateType;
 use Prooph\EventSourcing\Aggregate\Exception;
-use Prooph\EventStoreClient\EventStoreConnection;
+use Prooph\EventStore\EventStoreConnection;
 use Psr\Container\ContainerInterface;
 
 final class AggregateRepositoryFactory implements ProvidesDefaultOptions, RequiresConfigId, RequiresMandatoryOptions

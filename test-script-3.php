@@ -3,7 +3,7 @@
 declare(strict_types=1);
 require 'vendor/autoload.php';
 
-$connection = new \Prooph\EventStoreHttpClient\EventStoreHttpConnection(
+$connection = new \Prooph\HttpEventStore\EventStoreHttpConnection(
     new \Http\Client\Curl\Client(new \Http\Message\MessageFactory\DiactorosMessageFactory()),
     new \Http\Message\MessageFactory\DiactorosMessageFactory(),
     new \Http\Message\UriFactory\DiactorosUriFactory()
@@ -12,7 +12,7 @@ $connection = new \Prooph\EventStoreHttpClient\EventStoreHttpConnection(
 $subscription = $connection->connectToPersistentSubscription(
     'sasastream',
     'test',
-    function (\Prooph\EventStoreClient\EventStorePersistentSubscription $subscription, \Prooph\EventStoreClient\RecordedEvent $event): void {
+    function (\Prooph\EventStore\EventStorePersistentSubscription $subscription, \Prooph\EventStore\RecordedEvent $event): void {
         echo $event->eventId()->toString() . PHP_EOL;
         echo $event->data() . PHP_EOL;
         echo '#########################' . PHP_EOL;

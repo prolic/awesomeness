@@ -3,18 +3,18 @@
 declare(strict_types=1);
 require 'vendor/autoload.php';
 
-$connection = new \Prooph\EventStoreHttpClient\EventStoreHttpConnection(
+$connection = new \Prooph\HttpEventStore\EventStoreHttpConnection(
     new \Http\Client\Curl\Client(new \Http\Message\MessageFactory\DiactorosMessageFactory()),
     new \Http\Message\MessageFactory\DiactorosMessageFactory(),
     new \Http\Message\UriFactory\DiactorosUriFactory(),
-    new \Prooph\EventStoreHttpClient\ConnectionSettings(new \Prooph\EventStoreClient\IpEndPoint('eventstore', 2113), false)
+    new \Prooph\HttpEventStore\ConnectionSettings(new \Prooph\EventStore\IpEndPoint('eventstore', 2113), false)
 );
 
 $task = $connection->createPersistentSubscriptionAsync(
     'sasastream',
     'test',
-    \Prooph\EventStoreClient\PersistentSubscriptionSettings::default(),
-    new \Prooph\EventStoreClient\UserCredentials('admin', 'changeit')
+    \Prooph\EventStore\PersistentSubscriptionSettings::default(),
+    new \Prooph\EventStore\UserCredentials('admin', 'changeit')
 );
 
 var_dump($task->result());
@@ -22,7 +22,7 @@ var_dump($task->result());
 $task = $connection->updatePersistentSubscriptionAsync(
     'sasastream',
     'test',
-    new \Prooph\EventStoreClient\PersistentSubscriptionSettings(
+    new \Prooph\EventStore\PersistentSubscriptionSettings(
         true,
         0,
         false,
@@ -35,9 +35,9 @@ $task = $connection->updatePersistentSubscriptionAsync(
         0,
         30000,
         10,
-        \Prooph\EventStoreClient\NamedConsumerStrategy::roundRobin()
+        \Prooph\EventStore\NamedConsumerStrategy::roundRobin()
     ),
-    new \Prooph\EventStoreClient\UserCredentials('admin', 'changeit')
+    new \Prooph\EventStore\UserCredentials('admin', 'changeit')
 );
 
 var_dump($task->result());
