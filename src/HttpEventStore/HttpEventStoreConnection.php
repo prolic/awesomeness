@@ -51,7 +51,7 @@ use Prooph\HttpEventStore\ClientOperations\ReadStreamEventsForwardOperation;
 use Prooph\HttpEventStore\ClientOperations\ReplayParkedOperation;
 use Prooph\HttpEventStore\ClientOperations\UpdatePersistentSubscriptionOperation;
 
-class EventStoreHttpConnection implements EventStoreAsyncSubscriptionConnection
+class HttpEventStoreConnection implements EventStoreAsyncSubscriptionConnection
 {
     /** @var HttpAsyncClient */
     private $asyncClient;

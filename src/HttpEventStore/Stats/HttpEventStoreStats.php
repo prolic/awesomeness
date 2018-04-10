@@ -7,13 +7,13 @@ namespace Prooph\HttpEventStore\Stats;
 use Http\Client\HttpAsyncClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
-use Prooph\EventStore\Stats\EventStoreStats;
+use Prooph\EventStore\Stats\AsyncEventStoreStats;
 use Prooph\EventStore\Task\GetArrayTask;
 use Prooph\EventStore\UserCredentials;
 use Prooph\HttpEventStore\ConnectionSettings;
 use Prooph\HttpEventStore\Stats\ClientOperations\StatsOperation;
 
-final class HttpEventStoreStats implements EventStoreStats
+final class HttpEventStoreStats implements AsyncEventStoreStats
 {
     /** @var HttpAsyncClient */
     private $asyncClient;
@@ -44,49 +44,49 @@ final class HttpEventStoreStats implements EventStoreStats
         );
     }
 
-    public function getAll(UserCredentials $userCredentials = null): GetArrayTask
+    public function getAllAsync(UserCredentials $userCredentials = null): GetArrayTask
     {
         $operation = $this->statsOperation('', $userCredentials);
 
         return $operation->task();
     }
 
-    public function getProc(UserCredentials $userCredentials = null): GetArrayTask
+    public function getProcAsync(UserCredentials $userCredentials = null): GetArrayTask
     {
         $operation = $this->statsOperation('/proc', $userCredentials);
 
         return $operation->task();
     }
 
-    public function getReplication(UserCredentials $userCredentials = null): GetArrayTask
+    public function getReplicationAsync(UserCredentials $userCredentials = null): GetArrayTask
     {
         $operation = $this->statsOperation('/replication', $userCredentials);
 
         return $operation->task();
     }
 
-    public function getTcp(UserCredentials $userCredentials = null): GetArrayTask
+    public function getTcpAsync(UserCredentials $userCredentials = null): GetArrayTask
     {
         $operation = $this->statsOperation('/proc/tcp', $userCredentials);
 
         return $operation->task();
     }
 
-    public function getSys(UserCredentials $userCredentials = null): GetArrayTask
+    public function getSysAsync(UserCredentials $userCredentials = null): GetArrayTask
     {
         $operation = $this->statsOperation('/sys', $userCredentials);
 
         return $operation->task();
     }
 
-    public function getEs(UserCredentials $userCredentials = null): GetArrayTask
+    public function getEsAsync(UserCredentials $userCredentials = null): GetArrayTask
     {
         $operation = $this->statsOperation('/es', $userCredentials);
 
         return $operation->task();
     }
 
-    private function statsOperation(string $section, ?UserCredentials $userCredentials): StatsOperation
+    private function statsOperationAsync(string $section, ?UserCredentials $userCredentials): StatsOperation
     {
         return new StatsOperation(
             $this->asyncClient,
