@@ -86,7 +86,7 @@ interface AsyncProjectionManagement
 
     public function getStateAsync(string $name, UserCredentials $userCredentials = null): GetArrayTask;
 
-    public function getPartitionStateAsync(string $name, UserCredentials $userCredentials = null): GetArrayTask;
+    public function getPartitionStateAsync(string $name, string $partition, UserCredentials $userCredentials = null): GetArrayTask;
 
     public function resetAsync(string $name, UserCredentials $userCredentials = null): Task;
 

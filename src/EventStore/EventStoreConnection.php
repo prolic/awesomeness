@@ -30,6 +30,9 @@ interface EventStoreConnection
         UserCredentials $userCredentials = null
     ): WriteResult;
 
+    /**
+     * for event number see StreamPosition
+     */
     public function readEvent(
         string $stream,
         int $eventNumber,

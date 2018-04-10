@@ -37,9 +37,6 @@ interface ProjectionManagement
         string $type,
         string $query,
         bool $enabled,
-        bool $checkpoints,
-        bool $emit,
-        bool $trackEmittedStreams,
         UserCredentials $userCredentials = null
     ): void;
 
@@ -98,7 +95,7 @@ interface ProjectionManagement
 
     public function getState(string $name, UserCredentials $userCredentials = null): array;
 
-    public function getPartitionState(string $name, UserCredentials $userCredentials = null): array;
+    public function getPartitionState(string $name, string $partition, UserCredentials $userCredentials = null): array;
 
     public function reset(string $name, UserCredentials $userCredentials = null): void;
 

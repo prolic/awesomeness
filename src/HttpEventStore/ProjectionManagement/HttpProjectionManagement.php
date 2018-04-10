@@ -26,8 +26,12 @@ use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\CreateTransientO
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\DeleteOperation;
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\DisableOperation;
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\EnableOperation;
+use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\GetArrayOperation;
+use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\GetConfigOperation;
+use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\GetDefinitionOperation;
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\GetMultiOperation;
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\GetOperation;
+use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\GetQueryOperation;
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\ResetOperation;
 
 final class HttpProjectionManagement implements AsyncProjectionManagement
@@ -277,22 +281,59 @@ final class HttpProjectionManagement implements AsyncProjectionManagement
 
     public function getConfigAsync(string $name, UserCredentials $userCredentials = null): GetProjectionConfigTask
     {
-        // TODO: Implement getConfig() method.
+        $operation = new GetConfigOperation(
+            $this->asyncClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->baseUri,
+            $name,
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
+
+        return $operation->task();
     }
 
     public function getDefinitionAsync(string $name, UserCredentials $userCredentials = null): GetProjectionDefinitionTask
     {
-        // TODO: Implement getDefinition() method.
+        $operation = new GetDefinitionOperation(
+            $this->asyncClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->baseUri,
+            $name,
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
+
+        return $operation->task();
     }
 
     public function getQueryAsync(string $name, UserCredentials $userCredentials = null): GetProjectionQueryTask
     {
-        // TODO: Implement getQuery() method.
+        $operation = new GetQueryOperation(
+            $this->asyncClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->baseUri,
+            $name,
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
+
+        return $operation->task();
     }
 
     public function getResultAsync(string $name, UserCredentials $userCredentials = null): GetArrayTask
     {
-        // TODO: Implement getResult() method.
+        $operation = new GetArrayOperation(
+            $this->asyncClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->baseUri,
+            $name,
+            'result',
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
+
+        return $operation->task();
     }
 
     public function getPartitionResultAsync(
@@ -300,17 +341,47 @@ final class HttpProjectionManagement implements AsyncProjectionManagement
         string $partition,
         UserCredentials $userCredentials = null
     ): GetArrayTask {
-        // TODO: Implement getPartitionResult() method.
+        $operation = new GetArrayOperation(
+            $this->asyncClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->baseUri,
+            $name,
+            'result?parition=' . urlencode($partition),
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
+
+        return $operation->task();
     }
 
     public function getStateAsync(string $name, UserCredentials $userCredentials = null): GetArrayTask
     {
-        // TODO: Implement getState() method.
+        $operation = new GetArrayOperation(
+            $this->asyncClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->baseUri,
+            $name,
+            'state',
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
+
+        return $operation->task();
     }
 
-    public function getPartitionStateAsync(string $name, UserCredentials $userCredentials = null): GetArrayTask
+    public function getPartitionStateAsync(string $name, string $partition, UserCredentials $userCredentials = null): GetArrayTask
     {
-        // TODO: Implement getPartitionState() method.
+        $operation = new GetArrayOperation(
+            $this->asyncClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->baseUri,
+            $name,
+            'state?parition=' . urlencode($partition),
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
+
+        return $operation->task();
     }
 
     public function resetAsync(string $name, UserCredentials $userCredentials = null): Task

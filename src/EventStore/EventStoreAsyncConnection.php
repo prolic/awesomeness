@@ -37,6 +37,9 @@ interface EventStoreAsyncConnection
         UserCredentials $userCredentials = null
     ): WriteResultTask;
 
+    /**
+     * for event number see StreamPosition
+     */
     public function readEventAsync(
         string $stream,
         int $eventNumber,
