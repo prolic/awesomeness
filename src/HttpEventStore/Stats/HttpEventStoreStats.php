@@ -7,13 +7,13 @@ namespace Prooph\HttpEventStore\Stats;
 use Http\Client\HttpAsyncClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
-use Prooph\EventStore\Stats\AsyncEventStoreStats;
+use Prooph\EventStore\Stats\EventStoreStats;
 use Prooph\EventStore\Task\GetArrayTask;
 use Prooph\EventStore\UserCredentials;
 use Prooph\HttpEventStore\ConnectionSettings;
 use Prooph\HttpEventStore\Stats\ClientOperations\StatsOperation;
 
-final class HttpEventStoreStats implements AsyncEventStoreStats
+final class HttpEventStoreStats implements EventStoreStats
 {
     /** @var HttpAsyncClient */
     private $asyncClient;

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
+use Prooph\EventStore\Task\EventStoreTransactionTask;
+
 /** @internal */
 interface EventStoreTransactionConnection
 {
@@ -11,10 +13,10 @@ interface EventStoreTransactionConnection
         string $stream,
         int $expectedVersion,
         UserCredentials $userCredentials = null
-    );
+    ): EventStoreTransactionTask;
 
     /* only available with TCP connection, not available with rest-interface */
-    public function continueTransaction(int $transactionId, UserCredentials $userCredentials = null);
+    public function continueTransaction(int $transactionId, UserCredentials $userCredentials = null): EventStoreTransaction;
 
     public function transactionalWriteAsync(
         EventStoreTransaction $transaction,

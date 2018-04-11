@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Prooph\EventStore\Task;
 
 use Prooph\EventStore\ProjectionManagement\ProjectionConfig;
-use Prooph\EventStore\Task as BaseTask;
+use Prooph\EventStore\Task;
 
 /**
  * @internal
  * @method ProjectionConfig result()
  */
-class GetProjectionConfigTask extends BaseTask
+class GetProjectionConfigTask extends Task
 {
 }

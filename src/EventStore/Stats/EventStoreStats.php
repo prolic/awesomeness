@@ -7,7 +7,7 @@ namespace Prooph\EventStore\Stats;
 use Prooph\EventStore\Task\GetArrayTask;
 use Prooph\EventStore\UserCredentials;
 
-interface AsyncEventStoreStats
+interface EventStoreStats
 {
     public function getAllAsync(UserCredentials $userCredentials = null): GetArrayTask;
 

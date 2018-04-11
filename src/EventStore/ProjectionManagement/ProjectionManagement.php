@@ -92,13 +92,6 @@ interface ProjectionManagement
 
     public function updateConfigAsync(string $name, ProjectionConfig $config, UserCredentials $userCredentials = null): Task;
 
-    public function updateDefinitionAsync(
-        string $name,
-        string $type,
-        ProjectionDefinition $definition,
-        UserCredentials $userCredentials = null
-    ): Task;
-
     public function updateQueryAsync(
         string $name,
         string $type,
