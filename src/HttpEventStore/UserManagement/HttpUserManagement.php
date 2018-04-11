@@ -11,7 +11,7 @@ use Prooph\EventStore\Task;
 use Prooph\EventStore\Task\GetAllUsersTask;
 use Prooph\EventStore\Task\GetUserTask;
 use Prooph\EventStore\UserCredentials;
-use Prooph\EventStore\UserManagement\AsyncUserManagement;
+use Prooph\EventStore\UserManagement\UserManagement;
 use Prooph\HttpEventStore\ConnectionSettings;
 use Prooph\HttpEventStore\UserManagement\ClientOperations\ChangePasswordOperation;
 use Prooph\HttpEventStore\UserManagement\ClientOperations\CreateUserOperation;
@@ -24,7 +24,7 @@ use Prooph\HttpEventStore\UserManagement\ClientOperations\ResetPasswordOperation
 use Prooph\HttpEventStore\UserManagement\ClientOperations\UpdateUserOperation;
 use Webmozart\Assert\Assert;
 
-final class HttpUserManagement implements AsyncUserManagement
+final class HttpUserManagement implements UserManagement
 {
     /** @var HttpAsyncClient */
     private $asyncClient;

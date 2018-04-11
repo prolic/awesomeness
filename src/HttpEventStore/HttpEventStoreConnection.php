@@ -14,7 +14,7 @@ use Prooph\EventStore\EventData;
 use Prooph\EventStore\EventId;
 use Prooph\EventStore\EventReadResult;
 use Prooph\EventStore\EventReadStatus;
-use Prooph\EventStore\EventStoreAsyncSubscriptionConnection;
+use Prooph\EventStore\EventStoreSubscriptionConnection;
 use Prooph\EventStore\EventStorePersistentSubscription;
 use Prooph\EventStore\ExpectedVersion;
 use Prooph\EventStore\Internal\Consts;
@@ -51,7 +51,7 @@ use Prooph\HttpEventStore\ClientOperations\ReadStreamEventsForwardOperation;
 use Prooph\HttpEventStore\ClientOperations\ReplayParkedOperation;
 use Prooph\HttpEventStore\ClientOperations\UpdatePersistentSubscriptionOperation;
 
-class HttpEventStoreConnection implements EventStoreAsyncSubscriptionConnection
+class HttpEventStoreConnection implements EventStoreSubscriptionConnection
 {
     /** @var HttpAsyncClient */
     private $asyncClient;

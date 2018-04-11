@@ -7,7 +7,7 @@ namespace Prooph\HttpEventStore\ProjectionManagement;
 use Http\Client\HttpAsyncClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
-use Prooph\EventStore\ProjectionManagement\AsyncProjectionManagement;
+use Prooph\EventStore\ProjectionManagement\ProjectionManagement;
 use Prooph\EventStore\ProjectionManagement\ProjectionConfig;
 use Prooph\EventStore\Task;
 use Prooph\EventStore\Task\CreateProjectionResultTask;
@@ -35,7 +35,7 @@ use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\ResetOperation;
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\UpdateConfigOperation;
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\UpdateQueryOperation;
 
-final class HttpProjectionManagement implements AsyncProjectionManagement
+final class HttpProjectionManagement implements ProjectionManagement
 {
     /** @var HttpAsyncClient */
     private $asyncClient;

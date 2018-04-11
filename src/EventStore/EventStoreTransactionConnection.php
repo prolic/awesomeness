@@ -7,14 +7,23 @@ namespace Prooph\EventStore;
 /** @internal */
 interface EventStoreTransactionConnection
 {
-    public function transactionalWrite(
+    public function startTransactionAsync(
+        string $stream,
+        int $expectedVersion,
+        UserCredentials $userCredentials = null
+    );
+
+    /* only available with TCP connection, not available with rest-interface */
+    public function continueTransaction(int $transactionId, UserCredentials $userCredentials = null);
+
+    public function transactionalWriteAsync(
         EventStoreTransaction $transaction,
         array $events,
-        ?UserCredentials $userCredentials
-    ): void;
+        UserCredentials $userCredentials = null
+    ): Task;
 
-    public function commitTransaction(
+    public function commitTransactionAsync(
         EventStoreTransaction $transaction,
-        ?UserCredentials $userCredentials
-    ): WriteResult;
+        UserCredentials $userCredentials = null
+    ): Task\WriteResultTask;
 }

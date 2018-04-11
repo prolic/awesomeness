@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
-use Prooph\EventStore\Internal\EventStoreTransactionConnection;
 use Prooph\EventStore\Task\WriteResultTask;
 
 class EventStoreTransaction
@@ -54,7 +53,7 @@ class EventStoreTransaction
             throw new \RuntimeException('Transaction is already committed');
         }
 
-        return $this->connection->transactionalWriteAsync($this, $events);
+        return $this->connection->transactionalWriteAsync($this, $events, $this->userCredentials);
     }
 
     public function rollback(): void

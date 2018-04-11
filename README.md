@@ -82,17 +82,11 @@ Default login credentials are `admin` with pwd `changeit`.
 EventStore
 
 - [x] EventStoreConnection interface
-- [x] EventStoreAsyncConnection interface
 - [x] EventStoreSubscriptionConnection interface
-- [x] EventStoreAsyncSubscriptionConnection interface
 - [x] EventStoreTransactionConnection interface
-- [x] EventStoreAsyncTransactionConnection interface
 - [x] ProjectionManagement interface
-- [x] AsyncProjectionManagement interface
 - [x] EventStoreStats interface
-- [x] AsyncEventStoreStats interface
 - [x] UserManagement interface
-- [x] AsyncUserManagement interface
 - [ ] Remove Delete/Write Result classes (if no use-case found)
 
 HttpEventStore
@@ -104,8 +98,7 @@ HttpEventStore
 
 EventSourcing
 
-- [x] Use async connection interface
-- [ ] Use connection interface
+- [x] Use connection interface
 - [ ] Event Publisher
 - [ ] Upcaster
 - [ ] Causation Metadata Enricher
