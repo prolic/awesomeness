@@ -59,7 +59,7 @@ final class PostgresEventStore implements EventStoreSubscriptionConnection, Even
         UserCredentials $userCredentials = null
     ): DeleteResultTask
     {
-        // TODO: Implement deleteStreamAsync() method.
+        'DELETE FROM events WHERE streamId = ?', [$stream]
     }
 
     public function appendToStreamAsync(

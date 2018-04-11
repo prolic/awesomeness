@@ -16,7 +16,10 @@ Compatible with Greg's EventStore as well as HTTP-API from pdo-event-store
 
 ## Postgres EventStore
 
-This will get targeted second, let's see if we can implement everything or only parts of it.
+requires the following php-extensions:
+
+- raphf
+- pq
 
 ## MySQL / MariaDB EventStore
 
