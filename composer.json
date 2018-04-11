@@ -17,6 +17,7 @@
   "prefer-stable": true,
   "require": {
     "php": "^7.2",
+    "amphp/postgres": "dev-master",
     "php-http/httplug": "^1.1.0",
     "ramsey/uuid": "^3.7.3"
   },
