@@ -12,7 +12,6 @@ use Prooph\EventStore\ProjectionManagement\ProjectionDetails;
 use Prooph\EventStore\UserCredentials;
 use Prooph\HttpEventStore\ClientOperations\Operation;
 use Prooph\HttpEventStore\Http\RequestMethod;
-use Psr\Http\Message\ResponseInterface;
 
 /** @internal */
 class GetMultiOperation extends Operation

@@ -12,7 +12,6 @@ use Prooph\EventStore\ProjectionManagement\CreateProjectionResult;
 use Prooph\EventStore\UserCredentials;
 use Prooph\HttpEventStore\ClientOperations\Operation;
 use Prooph\HttpEventStore\Http\RequestMethod;
-use Psr\Http\Message\ResponseInterface;
 
 /** @internal */
 class CreateTransientOperation extends Operation

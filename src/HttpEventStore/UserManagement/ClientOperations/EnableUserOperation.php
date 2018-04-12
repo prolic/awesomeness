@@ -12,7 +12,6 @@ use Prooph\EventStore\UserCredentials;
 use Prooph\EventStore\UserManagement\UserNotFound;
 use Prooph\HttpEventStore\ClientOperations\Operation;
 use Prooph\HttpEventStore\Http\RequestMethod;
-use Psr\Http\Message\ResponseInterface;
 
 /** @internal */
 class EnableUserOperation extends Operation

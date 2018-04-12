@@ -2,13 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Prooph\PostgresEventStore;
+namespace Prooph\PdoEventStore;
 
 use Prooph\EventStore\IpEndPoint;
 use Prooph\EventStore\UserCredentials;
 
-// @todo add ssl support
-class ConnectionSettings
+class PostgresConnectionSettings implements ConnectionSettings
 {
     /** @var IpEndPoint */
     private $endPoint;
@@ -31,7 +30,7 @@ class ConnectionSettings
     /** @var string|null */
     private $applicationName;
 
-    public static function default(): ConnectionSettings
+    public static function default(): PostgresConnectionSettings
     {
         return new self(
             new IpEndPoint('localhost', 5432),
@@ -67,38 +66,33 @@ class ConnectionSettings
 
     public function connectionString(): string
     {
-        $connectionString = "dbname=$this->dbName host={$this->endPoint->host()} port={$this->endPoint->port()} "
-            . "user={$this->userCredentials->username()}";
-
-        if ('' !== $this->userCredentials->password()) {
-            $connectionString .= "  password={$this->userCredentials->password()}";
-        }
+        $dsn = "pgsql:dbname=$this->dbName;host={$this->endPoint->host()};port={$this->endPoint->port()};";
 
         if (null !== $this->sslmode) {
-            $connectionString .= " sslmode=$this->sslmode";
+            $dsn .= "sslmode=$this->sslmode;";
         }
 
         if (null !== $this->sslcert) {
-            $connectionString .= " sslrootcert=$this->sslrootcert";
+            $dsn .= "sslrootcert=$this->sslrootcert;";
         }
 
         if (null !== $this->sslcert) {
-            $connectionString .= " sslcert=$this->sslcert";
+            $dsn .= "sslcert=$this->sslcert;";
         }
 
         if (null !== $this->sslkey) {
-            $connectionString .= " sslkey=$this->sslkey";
+            $dsn .= "sslkey=$this->sslkey;";
         }
 
         if (null !== $this->sslcrl) {
-            $connectionString .= " sslcrl=$this->sslcrl";
+            $dsn .= "sslcrl=$this->sslcrl;";
         }
 
         if (null !== $this->applicationName) {
-            $connectionString .= " application_name=$this->applicationName";
+            $dsn .= "application_name=$this->applicationName;";
         }
 
-        return $connectionString;
+        return $dsn;
     }
 
     public function dbName(): string

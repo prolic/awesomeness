@@ -8,7 +8,6 @@ use Http\Client\HttpClient;
 use Http\Message\Authentication\BasicAuth;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
-use Http\Promise\Promise;
 use Prooph\EventStore\UserCredentials;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;

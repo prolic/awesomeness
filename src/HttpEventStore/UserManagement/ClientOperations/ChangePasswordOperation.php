@@ -11,7 +11,6 @@ use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\UserCredentials;
 use Prooph\HttpEventStore\ClientOperations\Operation;
 use Prooph\HttpEventStore\Http\RequestMethod;
-use Psr\Http\Message\ResponseInterface;
 
 /** @internal */
 class ChangePasswordOperation extends Operation
@@ -42,7 +41,7 @@ class ChangePasswordOperation extends Operation
 
     public function __invoke(): void
     {
-        $string  = json_encode([
+        $string = json_encode([
             'oldPassword' => $this->oldPassword,
             'newPassword' => $this->newPassword,
         ]);

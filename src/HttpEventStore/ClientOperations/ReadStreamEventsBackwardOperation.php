@@ -16,7 +16,6 @@ use Prooph\EventStore\SliceReadStatus;
 use Prooph\EventStore\StreamEventsSlice;
 use Prooph\EventStore\UserCredentials;
 use Prooph\HttpEventStore\Http\RequestMethod;
-use Psr\Http\Message\ResponseInterface;
 
 /** @internal */
 class ReadStreamEventsBackwardOperation extends Operation

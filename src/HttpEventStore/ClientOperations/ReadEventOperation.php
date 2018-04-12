@@ -15,7 +15,6 @@ use Prooph\EventStore\Internal\DateTimeFactory;
 use Prooph\EventStore\RecordedEvent;
 use Prooph\EventStore\UserCredentials;
 use Prooph\HttpEventStore\Http\RequestMethod;
-use Psr\Http\Message\ResponseInterface;
 
 /** @internal */
 class ReadEventOperation extends Operation

@@ -13,7 +13,6 @@ use Prooph\EventStore\NamedConsumerStrategy;
 use Prooph\EventStore\PersistentSubscriptionSettings;
 use Prooph\EventStore\UserCredentials;
 use Prooph\HttpEventStore\Http\RequestMethod;
-use Psr\Http\Message\ResponseInterface;
 
 /** @internal */
 class GetInformationForSubscriptionOperation extends Operation

@@ -12,7 +12,6 @@ use Prooph\EventStore\Internal\ReplayParkedResult;
 use Prooph\EventStore\Internal\ReplayParkedStatus;
 use Prooph\EventStore\UserCredentials;
 use Prooph\HttpEventStore\Http\RequestMethod;
-use Psr\Http\Message\ResponseInterface;
 
 /** @internal */
 class ReplayParkedOperation extends Operation

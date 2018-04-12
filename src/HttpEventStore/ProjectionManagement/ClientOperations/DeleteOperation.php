@@ -12,7 +12,6 @@ use Prooph\EventStore\UserCredentials;
 use Prooph\HttpEventStore\ClientOperations\Operation;
 use Prooph\HttpEventStore\Http\RequestMethod;
 use Prooph\HttpEventStore\ProjectionManagement\ProjectionNotFound;
-use Psr\Http\Message\ResponseInterface;
 
 /** @internal */
 class DeleteOperation extends Operation

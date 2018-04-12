@@ -12,7 +12,6 @@ use Prooph\EventStore\Internal\PersistentSubscriptionDeleteResult;
 use Prooph\EventStore\Internal\PersistentSubscriptionDeleteStatus;
 use Prooph\EventStore\UserCredentials;
 use Prooph\HttpEventStore\Http\RequestMethod;
-use Psr\Http\Message\ResponseInterface;
 
 /** @internal  */
 class DeletePersistentSubscriptionOperation extends Operation

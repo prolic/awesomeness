@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
-use Prooph\EventStore\Task\AllEventsSliceTask;
 use Prooph\EventStore\Task\DeleteResultTask;
 use Prooph\EventStore\Task\EventReadResultTask;
 use Prooph\EventStore\Task\StreamEventsSliceTask;

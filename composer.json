@@ -41,7 +41,7 @@
     "psr-4": {
       "Prooph\\EventStore\\": "src/EventStore/",
       "Prooph\\HttpEventStore\\": "src/HttpEventStore/",
-      "Prooph\\PostgresEventStore\\": "src/PostgresEventStore/",
+      "Prooph\\PdoEventStore\\": "src/PdoEventStore/",
       "Prooph\\Common\\": "src/Common/"
     }
   },
