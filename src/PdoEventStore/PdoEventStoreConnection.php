@@ -28,7 +28,7 @@ use Prooph\PdoEventStore\ClientOperations\ReadEventOperation;
 use Prooph\PdoEventStore\ClientOperations\ReadStreamEventsBackwardOperation;
 use Prooph\PdoEventStore\ClientOperations\ReadStreamEventsForwardOperation;
 
-final class PdoEventStoreConnetion implements EventStoreSubscriptionConnection, EventStoreTransactionConnection
+final class PdoEventStoreConnection implements EventStoreSubscriptionConnection, EventStoreTransactionConnection
 {
     /** @var PDO */
     private $connection;
