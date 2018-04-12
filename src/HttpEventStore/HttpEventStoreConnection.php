@@ -139,11 +139,12 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
         int $eventNumber,
         UserCredentials $userCredentials = null
     ): EventReadResult {
-        if ($eventNumber < -1) {
-            throw new \InvalidArgumentException('EventNumber cannot be smaller then -1');
-        }
         if (empty($stream)) {
             throw new \InvalidArgumentException('Stream cannot be empty');
+        }
+
+        if ($eventNumber < -1) {
+            throw new \InvalidArgumentException('EventNumber cannot be smaller then -1');
         }
 
         return (new ReadEventOperation(
@@ -170,6 +171,10 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
 
         if ($start < 0) {
             throw new \InvalidArgumentException('Start cannot be negative');
+        }
+
+        if ($count < 0) {
+            throw new \InvalidArgumentException('Count cannot be negative');
         }
 
         if ($count > Consts::MaxReadSize) {
@@ -200,6 +205,14 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
     ): StreamEventsSlice {
         if (empty($stream)) {
             throw new \InvalidArgumentException('Stream cannot be empty');
+        }
+
+        if ($start < 0) {
+            throw new \InvalidArgumentException('Start cannot be negative');
+        }
+
+        if ($count < 0) {
+            throw new \InvalidArgumentException('Count cannot be negative');
         }
 
         if ($count > Consts::MaxReadSize) {
