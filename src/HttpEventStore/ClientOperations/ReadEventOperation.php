@@ -11,7 +11,7 @@ use Prooph\EventStore\EventId;
 use Prooph\EventStore\EventReadResult;
 use Prooph\EventStore\EventReadStatus;
 use Prooph\EventStore\Exception\AccessDenied;
-use Prooph\EventStore\Internal\DateTimeFactory;
+use Prooph\EventStore\Internal\DateTimeUtil;
 use Prooph\EventStore\RecordedEvent;
 use Prooph\EventStore\UserCredentials;
 use Prooph\HttpEventStore\Http\RequestMethod;
@@ -97,7 +97,7 @@ class ReadEventOperation extends Operation
                     $data,
                     $metadata,
                     $json['isJson'],
-                    DateTimeFactory::create($json['updated'])
+                    DateTimeUtil::create($json['updated'])
                 );
 
                 return new EventReadResult(EventReadStatus::success(), $this->stream, $this->eventNumber, $event);

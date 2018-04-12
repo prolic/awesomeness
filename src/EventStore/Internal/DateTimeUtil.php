@@ -7,7 +7,7 @@ namespace Prooph\EventStore\Internal;
 use DateTimeImmutable;
 use DateTimeZone;
 
-abstract class DateTimeFactory
+abstract class DateTimeUtil
 {
     public static function create(string $dateTimeString): DateTimeImmutable
     {
@@ -16,5 +16,10 @@ abstract class DateTimeFactory
             $dateTimeString,
             new DateTimeZone('UTC')
         );
+    }
+
+    public static function format(DateTimeImmutable $dateTime): string
+    {
+        return $dateTime->format('Y-m-d\TH:i:s.u\Z');
     }
 }

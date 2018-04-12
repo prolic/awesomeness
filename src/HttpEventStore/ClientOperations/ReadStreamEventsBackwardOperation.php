@@ -9,7 +9,7 @@ use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
 use Prooph\EventStore\EventId;
 use Prooph\EventStore\Exception\AccessDenied;
-use Prooph\EventStore\Internal\DateTimeFactory;
+use Prooph\EventStore\Internal\DateTimeUtil;
 use Prooph\EventStore\ReadDirection;
 use Prooph\EventStore\RecordedEvent;
 use Prooph\EventStore\SliceReadStatus;
@@ -121,7 +121,7 @@ class ReadStreamEventsBackwardOperation extends Operation
                         $data,
                         $metadata,
                         $entry['isJson'],
-                        DateTimeFactory::create($entry['updated'])
+                        DateTimeUtil::create($entry['updated'])
                     );
                     $lastEventNumber = $entry['eventNumber'];
                 }
