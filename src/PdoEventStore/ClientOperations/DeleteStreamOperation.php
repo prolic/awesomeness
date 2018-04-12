@@ -9,9 +9,17 @@ use PDO;
 /** @internal */
 class DeleteStreamOperation
 {
-    public function __invoke(PDO $connection, string $stream): void
+    public function __invoke(PDO $connection, string $stream, bool $hardDelete): void
     {
-        $statement = $connection->prepare('DELETE FROM events WHERE streamId = ?');
-        $statement->execute([$stream]);
+        if ($hardDelete) {
+            $statement = $connection->prepare('UPDATE streams SET markDeleted = ?, delete = ? WHERE streamName = ?');
+            $statement->execute([false, true, $stream]);
+
+            $statement = $connection->prepare('DELETE FROM events WHERE streamId = ?');
+            $statement->execute([$stream]);
+        } else {
+            $statement = $connection->prepare('UPDATE streams SET markDeleted = ? WHERE streamName = ?');
+            $statement->execute([true, $stream]);
+        }
     }
 }

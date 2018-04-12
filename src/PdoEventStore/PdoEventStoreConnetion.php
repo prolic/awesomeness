@@ -11,6 +11,7 @@ use Prooph\EventStore\EventStorePersistentSubscription;
 use Prooph\EventStore\EventStoreSubscriptionConnection;
 use Prooph\EventStore\EventStoreTransaction;
 use Prooph\EventStore\EventStoreTransactionConnection;
+use Prooph\EventStore\Internal\Consts;
 use Prooph\EventStore\Internal\PersistentSubscriptionCreateResult;
 use Prooph\EventStore\Internal\PersistentSubscriptionDeleteResult;
 use Prooph\EventStore\Internal\PersistentSubscriptionUpdateResult;
@@ -24,8 +25,10 @@ use Prooph\EventStore\UserCredentials;
 use Prooph\EventStore\WriteResult;
 use Prooph\PdoEventStore\ClientOperations\DeleteStreamOperation;
 use Prooph\PdoEventStore\ClientOperations\ReadEventOperation;
+use Prooph\PdoEventStore\ClientOperations\ReadStreamEventsBackwardOperation;
+use Prooph\PdoEventStore\ClientOperations\ReadStreamEventsForwardOperation;
 
-final class PdoEventStore implements EventStoreSubscriptionConnection, EventStoreTransactionConnection
+final class PdoEventStoreConnetion implements EventStoreSubscriptionConnection, EventStoreTransactionConnection
 {
     /** @var PDO */
     private $connection;
@@ -51,7 +54,11 @@ final class PdoEventStore implements EventStoreSubscriptionConnection, EventStor
         bool $hardDelete,
         UserCredentials $userCredentials = null
     ): void {
-        (new DeleteStreamOperation())($this->connection, $stream);
+        if (empty($stream)) {
+            throw new \InvalidArgumentException('Stream cannot be empty');
+        }
+
+        (new DeleteStreamOperation())($this->connection, $stream, $hardDelete);
     }
 
     public function appendToStream(
@@ -60,6 +67,10 @@ final class PdoEventStore implements EventStoreSubscriptionConnection, EventStor
         array $events,
         UserCredentials $userCredentials = null
     ): WriteResult {
+        if (empty($stream)) {
+            throw new \InvalidArgumentException('Stream cannot be empty');
+        }
+
         // TODO: Implement appendToStream() method.
     }
 
@@ -68,6 +79,14 @@ final class PdoEventStore implements EventStoreSubscriptionConnection, EventStor
         int $eventNumber,
         UserCredentials $userCredentials = null
     ): EventReadResult {
+        if (empty($stream)) {
+            throw new \InvalidArgumentException('Stream cannot be empty');
+        }
+
+        if ($eventNumber < -1) {
+            throw new \InvalidArgumentException('EventNumber cannot be smaller then -1');
+        }
+
         return (new ReadEventOperation())($this->connection, $stream, $eventNumber);
     }
 
@@ -78,7 +97,25 @@ final class PdoEventStore implements EventStoreSubscriptionConnection, EventStor
         bool $resolveLinkTos = true,
         UserCredentials $userCredentials = null
     ): StreamEventsSlice {
-        // TODO: Implement readStreamEventsForward() method.
+        if (empty($stream)) {
+            throw new \InvalidArgumentException('Stream cannot be empty');
+        }
+
+        if ($start < 0) {
+            throw new \InvalidArgumentException('Start cannot be negative');
+        }
+
+        if ($count < 0) {
+            throw new \InvalidArgumentException('Count cannot be negative');
+        }
+
+        if ($count > Consts::MaxReadSize) {
+            throw new \InvalidArgumentException(
+                'Count should be less than ' . Consts::MaxReadSize . '. For larger reads you should page.'
+            );
+        }
+
+        return (new ReadStreamEventsForwardOperation())($this->connection, $stream, $start, $count);
     }
 
     public function readStreamEventsBackward(
@@ -88,7 +125,25 @@ final class PdoEventStore implements EventStoreSubscriptionConnection, EventStor
         bool $resolveLinkTos = true,
         UserCredentials $userCredentials = null
     ): StreamEventsSlice {
-        // TODO: Implement readStreamEventsBackward() method.
+        if (empty($stream)) {
+            throw new \InvalidArgumentException('Stream cannot be empty');
+        }
+
+        if ($start < 0) {
+            throw new \InvalidArgumentException('Start cannot be negative');
+        }
+
+        if ($count < 0) {
+            throw new \InvalidArgumentException('Count cannot be negative');
+        }
+
+        if ($count > Consts::MaxReadSize) {
+            throw new \InvalidArgumentException(
+                'Count should be less than ' . Consts::MaxReadSize . '. For larger reads you should page.'
+            );
+        }
+
+        return (new ReadStreamEventsBackwardOperation())($this->connection, $stream, $start, $count);
     }
 
     public function setStreamMetadata(

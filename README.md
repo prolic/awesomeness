@@ -14,12 +14,11 @@ Base classes for usage with all event store implementations.
 
 Compatible with Greg's EventStore as well as HTTP-API from pdo-event-store
 
-## Postgres EventStore
+## PDO EventStore
 
 requires the following php-extensions:
 
-- raphf
-- pq
+- pdo_mysql or pdo_pgsql
 
 ## MySQL / MariaDB EventStore
 
@@ -85,12 +84,19 @@ Default login credentials are `admin` with pwd `changeit`.
 EventStore
 
 - [x] EventStoreConnection interface
+- [x] EventStoreAsyncConnection interface
 - [x] EventStoreSubscriptionConnection interface
+- [x] EventStoreAsyncSubscriptionConnection interface
 - [x] EventStoreTransactionConnection interface
+- [x] EventStoreAsyncTransactionConnection interface
 - [x] ProjectionManagement interface
+- [x] AsyncProjectionManagement interface
 - [x] EventStoreStats interface
+- [x] AsyncEventStoreStats interface
 - [x] UserManagement interface
-- [ ] Remove Delete/Write Result classes (if no use-case found)
+- [x] AsyncUserManagement interface
+- [ ] Remove Write Result classes (if no use-case found)
+- [ ] Scavenging
 
 HttpEventStore
 
@@ -113,4 +119,4 @@ Common
 
 MessageTransformer
 
-- [ ] find a place to live for this class
+- [ ] find a place to live for this class (maybe event-sourcing and duplicate in micro)
