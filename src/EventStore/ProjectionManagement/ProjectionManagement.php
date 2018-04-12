@@ -4,21 +4,13 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\ProjectionManagement;
 
-use Prooph\EventStore\Task;
-use Prooph\EventStore\Task\CreateProjectionResultTask;
-use Prooph\EventStore\Task\GetArrayTask;
-use Prooph\EventStore\Task\GetProjectionConfigTask;
-use Prooph\EventStore\Task\GetProjectionDefinitionTask;
-use Prooph\EventStore\Task\GetProjectionQueryTask;
-use Prooph\EventStore\Task\GetProjectionsTask;
-use Prooph\EventStore\Task\GetProjectionTask;
 use Prooph\EventStore\UserCredentials;
 
 interface ProjectionManagement
 {
-    public function abortAsync(string $name, UserCredentials $userCredentials = null): Task;
+    public function abort(string $name, UserCredentials $userCredentials = null): void;
 
-    public function createOneTimeAsync(
+    public function createOneTime(
         string $name,
         string $type,
         string $query,
@@ -27,9 +19,9 @@ interface ProjectionManagement
         bool $emit,
         bool $trackEmittedStreams,
         UserCredentials $userCredentials = null
-    ): CreateProjectionResultTask;
+    ): void;
 
-    public function createContinuousAsync(
+    public function createContinuous(
         string $name,
         string $type,
         string $query,
@@ -38,67 +30,84 @@ interface ProjectionManagement
         bool $emit,
         bool $trackEmittedStreams,
         UserCredentials $userCredentials = null
-    ): CreateProjectionResultTask;
+    ): void;
 
-    public function createTransientAsync(
+    public function createTransient(
         string $name,
         string $type,
         string $query,
         bool $enabled,
         UserCredentials $userCredentials = null
-    ): CreateProjectionResultTask;
+    ): void;
 
-    public function deleteAsync(
+    public function delete(
         string $name,
         bool $deleteStateStream,
         bool $deleteCheckpointStream,
         bool $deleteEmittedStreams,
         UserCredentials $userCredentials = null
-    ): Task;
+    ): void;
 
-    public function disableAsync(string $name, UserCredentials $userCredentials = null): Task;
+    public function disable(string $name, UserCredentials $userCredentials = null): void;
 
-    public function enableAsync(string $name, UserCredentials $userCredentials = null): Task;
+    public function enable(string $name, UserCredentials $userCredentials = null): void;
 
-    public function getAsync(string $name, UserCredentials $userCredentials = null): GetProjectionTask;
+    public function get(string $name, UserCredentials $userCredentials = null): ProjectionDetails;
 
-    public function getAllAsync(UserCredentials $userCredentials = null): GetProjectionsTask;
+    /**
+     * @return ProjectionDetails[]
+     */
+    public function getAll(UserCredentials $userCredentials = null): array;
 
-    public function getAllOneTimeAsync(UserCredentials $userCredentials = null): GetProjectionsTask;
+    /**
+     * @return ProjectionDetails[]
+     */
+    public function getAllOneTime(UserCredentials $userCredentials = null): array;
 
-    public function getAllContinuousAsync(UserCredentials $userCredentials = null): GetProjectionsTask;
+    /**
+     * @return ProjectionDetails[]
+     */
+    public function getAllContinuous(UserCredentials $userCredentials = null): array;
 
-    public function getAllNonTransientAsync(UserCredentials $userCredentials = null): GetProjectionsTask;
+    /**
+     * @return ProjectionDetails[]
+     */
+    public function getAllNonTransient(UserCredentials $userCredentials = null): array;
 
-    public function getConfigAsync(string $name, UserCredentials $userCredentials = null): GetProjectionConfigTask;
+    /**
+     * @return ProjectionDetails[]
+     */
+    public function getAllQueries(UserCredentials $userCredentials = null): array;
 
-    public function getDefinitionAsync(string $name, UserCredentials $userCredentials = null): GetProjectionDefinitionTask;
+    public function getConfig(string $name, UserCredentials $userCredentials = null): ProjectionConfig;
 
-    public function getQueryAsync(string $name, UserCredentials $userCredentials = null): GetProjectionQueryTask;
+    public function getDefinition(string $name, UserCredentials $userCredentials = null): ProjectionDefinition;
 
-    public function getResultAsync(string $name, UserCredentials $userCredentials = null): GetArrayTask;
+    public function getQuery(string $name, UserCredentials $userCredentials = null): string;
 
-    public function getPartitionResultAsync(
+    public function getResult(string $name, UserCredentials $userCredentials = null): array;
+
+    public function getPartitionResult(
         string $name,
         string $partition,
         UserCredentials $userCredentials = null
-    ): GetArrayTask;
+    ): array;
 
-    public function getStateAsync(string $name, UserCredentials $userCredentials = null): GetArrayTask;
+    public function getState(string $name, UserCredentials $userCredentials = null): array;
 
-    public function getPartitionStateAsync(string $name, string $partition, UserCredentials $userCredentials = null): GetArrayTask;
+    public function getPartitionState(string $name, string $partition, UserCredentials $userCredentials = null): array;
 
-    public function resetAsync(string $name, UserCredentials $userCredentials = null): Task;
+    public function reset(string $name, UserCredentials $userCredentials = null): void;
 
-    public function updateConfigAsync(string $name, ProjectionConfig $config, UserCredentials $userCredentials = null): Task;
+    public function updateConfig(string $name, ProjectionConfig $config, UserCredentials $userCredentials = null): void;
 
-    public function updateQueryAsync(
+    public function updateQuery(
         string $name,
         string $type,
         string $query,
         bool $emitEnabled,
         UserCredentials $userCredentials = null
-    ): Task;
+    ): void;
 
     // @todo
     // Read projection events based on a query

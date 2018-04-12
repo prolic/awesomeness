@@ -4,20 +4,19 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\Stats;
 
-use Prooph\EventStore\Task\GetArrayTask;
 use Prooph\EventStore\UserCredentials;
 
 interface EventStoreStats
 {
-    public function getAllAsync(UserCredentials $userCredentials = null): GetArrayTask;
+    public function getAll(UserCredentials $userCredentials = null): array;
 
-    public function getProcAsync(UserCredentials $userCredentials = null): GetArrayTask;
+    public function getProc(UserCredentials $userCredentials = null): array;
 
-    public function getReplicationAsync(UserCredentials $userCredentials = null): GetArrayTask;
+    public function getReplication(UserCredentials $userCredentials = null): array;
 
-    public function getTcpAsync(UserCredentials $userCredentials = null): GetArrayTask;
+    public function getTcp(UserCredentials $userCredentials = null): array;
 
-    public function getSysAsync(UserCredentials $userCredentials = null): GetArrayTask;
+    public function getSys(UserCredentials $userCredentials = null): array;
 
-    public function getEsAsync(UserCredentials $userCredentials = null): GetArrayTask;
+    public function getEs(UserCredentials $userCredentials = null): array;
 }

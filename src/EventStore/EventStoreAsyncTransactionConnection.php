@@ -5,16 +5,16 @@ declare(strict_types=1);
 namespace Prooph\EventStore;
 
 /** @internal */
-interface EventStoreTransactionConnection
+interface EventStoreAsyncTransactionConnection
 {
-    public function transactionalWrite(
+    public function transactionalWriteAsync(
         EventStoreTransaction $transaction,
         array $events,
         ?UserCredentials $userCredentials
-    ): void;
+    ): Task;
 
-    public function commitTransaction(
+    public function commitTransactionAsync(
         EventStoreTransaction $transaction,
         ?UserCredentials $userCredentials
-    ): WriteResult;
+    ): Task\WriteResultTask;
 }

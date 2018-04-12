@@ -4,19 +4,11 @@ declare(strict_types=1);
 
 namespace Prooph\HttpEventStore\ProjectionManagement;
 
-use Http\Client\HttpAsyncClient;
+use Http\Client\HttpClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
+use Prooph\EventStore\ProjectionManagement\AsyncProjectionManagement;
 use Prooph\EventStore\ProjectionManagement\ProjectionConfig;
-use Prooph\EventStore\ProjectionManagement\ProjectionManagement;
-use Prooph\EventStore\Task;
-use Prooph\EventStore\Task\CreateProjectionResultTask;
-use Prooph\EventStore\Task\GetArrayTask;
-use Prooph\EventStore\Task\GetProjectionConfigTask;
-use Prooph\EventStore\Task\GetProjectionDefinitionTask;
-use Prooph\EventStore\Task\GetProjectionQueryTask;
-use Prooph\EventStore\Task\GetProjectionsTask;
-use Prooph\EventStore\Task\GetProjectionTask;
 use Prooph\EventStore\UserCredentials;
 use Prooph\HttpEventStore\ConnectionSettings;
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\AbortOperation;
@@ -35,7 +27,7 @@ use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\ResetOperation;
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\UpdateConfigOperation;
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\UpdateQueryOperation;
 
-final class HttpProjectionManagement implements ProjectionManagement
+final class HttpProjectionManagement implements AsyncProjectionManagement
 {
     /** @var HttpAsyncClient */
     private $asyncClient;
@@ -49,7 +41,7 @@ final class HttpProjectionManagement implements ProjectionManagement
     private $baseUri;
 
     public function __construct(
-        HttpAsyncClient $asyncClient,
+        HttpClient $httpClient,
         RequestFactory $requestFactory,
         UriFactory $uriFactory,
         ConnectionSettings $settings = null

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\HttpEventStore\ClientOperations;
 
-use Http\Client\HttpAsyncClient;
+use Http\Client\HttpClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
 use Prooph\EventStore\EventId;
@@ -14,7 +14,6 @@ use Prooph\EventStore\ReadDirection;
 use Prooph\EventStore\RecordedEvent;
 use Prooph\EventStore\SliceReadStatus;
 use Prooph\EventStore\StreamEventsSlice;
-use Prooph\EventStore\Task\StreamEventsSliceTask;
 use Prooph\EventStore\UserCredentials;
 use Prooph\HttpEventStore\Http\RequestMethod;
 use Psr\Http\Message\ResponseInterface;
@@ -32,7 +31,7 @@ class ReadStreamEventsBackwardOperation extends Operation
     private $resolveLinkTos;
 
     public function __construct(
-        HttpAsyncClient $asyncClient,
+        HttpClient $httpClient,
         RequestFactory $requestFactory,
         UriFactory $uriFactory,
         string $baseUri,
@@ -42,7 +41,7 @@ class ReadStreamEventsBackwardOperation extends Operation
         bool $resolveLinkTos,
         ?UserCredentials $userCredentials
     ) {
-        parent::__construct($asyncClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
+        parent::__construct($httpClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
 
         $this->stream = $stream;
         $this->start = $start;
@@ -50,7 +49,7 @@ class ReadStreamEventsBackwardOperation extends Operation
         $this->resolveLinkTos = $resolveLinkTos;
     }
 
-    public function task(): StreamEventsSliceTask
+    public function __invoke(): StreamEventsSlice
     {
         $headers = [
             'Accept' => 'application/vnd.eventstore.atom+json',
@@ -68,81 +67,79 @@ class ReadStreamEventsBackwardOperation extends Operation
             $headers
         );
 
-        $promise = $this->sendAsyncRequest($request);
+        $response = $this->sendRequest($request);
 
-        return new StreamEventsSliceTask($promise, function (ResponseInterface $response): StreamEventsSlice {
-            switch ($response->getStatusCode()) {
-                case 401:
-                    throw AccessDenied::toStream($this->stream);
-                case 404:
-                    return new StreamEventsSlice(
-                        SliceReadStatus::streamNotFound(),
-                        $this->stream,
-                        $this->start,
-                        ReadDirection::backward(),
-                        [],
-                        0,
-                        0,
-                        true
-                    );
-                case 410:
-                    return new StreamEventsSlice(
-                        SliceReadStatus::streamDeleted(),
-                        $this->stream,
-                        $this->start,
-                        ReadDirection::backward(),
-                        [],
-                        0,
-                        0,
-                        true
-                    );
-                case 200:
-                    $json = json_decode($response->getBody()->getContents(), true);
+        switch ($response->getStatusCode()) {
+            case 401:
+                throw AccessDenied::toStream($this->stream);
+            case 404:
+                return new StreamEventsSlice(
+                    SliceReadStatus::streamNotFound(),
+                    $this->stream,
+                    $this->start,
+                    ReadDirection::backward(),
+                    [],
+                    0,
+                    0,
+                    true
+                );
+            case 410:
+                return new StreamEventsSlice(
+                    SliceReadStatus::streamDeleted(),
+                    $this->stream,
+                    $this->start,
+                    ReadDirection::backward(),
+                    [],
+                    0,
+                    0,
+                    true
+                );
+            case 200:
+                $json = json_decode($response->getBody()->getContents(), true);
 
-                    $events = [];
-                    $lastEventNumber = 0;
-                    foreach ($json['entries'] as $entry) {
-                        $data = $entry['data'] ?? '';
+                $events = [];
+                $lastEventNumber = 0;
+                foreach ($json['entries'] as $entry) {
+                    $data = $entry['data'] ?? '';
 
-                        if (is_array($data)) {
-                            $data = json_encode($data);
-                        }
-
-                        $field = $json['isLinkMetaData'] ? 'linkMetaData' : 'metaData';
-
-                        $metadata = $json[$field] ?? '';
-
-                        if (is_array($metadata)) {
-                            $metadata = json_encode($metadata);
-                        }
-
-                        $events[] = new RecordedEvent(
-                            $entry['positionStreamId'],
-                            EventId::fromString($entry['eventId']),
-                            $entry['positionEventNumber'],
-                            $entry['eventType'],
-                            $data,
-                            $metadata,
-                            $entry['isJson'],
-                            DateTimeFactory::create($entry['updated'])
-                        );
-                        $lastEventNumber = $entry['eventNumber'];
+                    if (is_array($data)) {
+                        $data = json_encode($data);
                     }
-                    $nextEventNumber = ($lastEventNumber < 1) ? 0 : ($lastEventNumber - 1);
 
-                    return new StreamEventsSlice(
-                        SliceReadStatus::success(),
-                        $this->stream,
-                        $this->start,
-                        ReadDirection::backward(),
-                        $events,
-                        $nextEventNumber,
-                        $lastEventNumber,
-                        false
+                    $field = isset($json['isLinkMetaData']) && $json['isLinkMetaData'] ? 'linkMetaData' : 'metaData';
+
+                    $metadata = $json[$field] ?? '';
+
+                    if (is_array($metadata)) {
+                        $metadata = json_encode($metadata);
+                    }
+
+                    $events[] = new RecordedEvent(
+                        $entry['positionStreamId'],
+                        EventId::fromString($entry['eventId']),
+                        $entry['positionEventNumber'],
+                        $entry['eventType'],
+                        $data,
+                        $metadata,
+                        $entry['isJson'],
+                        DateTimeFactory::create($entry['updated'])
                     );
-                default:
-                    throw new \UnexpectedValueException('Unexpected status code ' . $response->getStatusCode() . ' returned');
-            }
-        });
+                    $lastEventNumber = $entry['eventNumber'];
+                }
+                $nextEventNumber = ($lastEventNumber < 1) ? 0 : ($lastEventNumber - 1);
+
+                return new StreamEventsSlice(
+                    SliceReadStatus::success(),
+                    $this->stream,
+                    $this->start,
+                    ReadDirection::backward(),
+                    $events,
+                    $nextEventNumber,
+                    $lastEventNumber,
+                    false
+                );
+            default:
+                throw new \UnexpectedValueException('Unexpected status code ' . $response->getStatusCode() . ' returned');
+        }
     }
 }

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Prooph\PostgresEventStore;
 
 use Http\Promise\FulfilledPromise;
-use PDO;
+use pq\Connection;
 use Prooph\EventStore\AllEventsSlice;
 use Prooph\EventStore\DeleteResult;
 use Prooph\EventStore\EventData;
@@ -40,17 +40,38 @@ use Prooph\EventStore\Task\UpdatePersistentSubscriptionTask;
 use Prooph\EventStore\Task\WriteResultTask;
 use Prooph\EventStore\UserCredentials;
 use Prooph\EventStore\WriteResult;
+use Prooph\PostgresEventStore\Task\ConnectTask;
+use React\Promise\Deferred;
+use React\Promise\Promise;
+use React\Promise\PromiseInterface;
 
 final class PostgresEventStore implements EventStoreSubscriptionConnection, EventStoreTransactionConnection
 {
+    /** @var ConnectionSettings */
+    private $settings;
+    /** @var ?Connection */
+    private $connection;
+
+    public function __construct(ConnectionSettings $settings)
+    {
+        $this->settings = $settings;
+    }
+
     public function connectAsync(): Task
     {
-        return new Task(new FulfilledPromise(null));
+        if ($this->settings->persistent()) {
+            $flags = Connection::ASYNC | Connection::PERSISTENT;
+        } else {
+            $flags = Connection::ASYNC;
+        }
+        $this->connection = new Connection($this->settings->connectionString(), $flags);
+
+        return new ConnectTask($this->connection);
     }
 
     public function close(): void
     {
-        // do nothing
+        $this->connection = null;
     }
 
     public function deleteStreamAsync(
@@ -59,7 +80,23 @@ final class PostgresEventStore implements EventStoreSubscriptionConnection, Even
         UserCredentials $userCredentials = null
     ): DeleteResultTask
     {
-        'DELETE FROM events WHERE streamId = ?', [$stream]
+        // TODO: Implement deleteStreamAsync() method.
+    }
+
+    public function deleteStreamAsync2222(
+        string $stream,
+        bool $hardDelete,
+        UserCredentials $userCredentials = null
+    )
+    {
+        $deferred = new Deferred();
+        $promise = $deferred->promise();
+
+        $this->connection->execParamsAsync('DELETE FROM events WHERE streamId = ?', [$stream], null, function ($res) use ($deferred) {
+            $deferred->resolve(new DeleteResult());
+        });
+
+        return new ConnectTask($this->connection);
     }
 
     public function appendToStreamAsync(

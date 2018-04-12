@@ -4,7 +4,7 @@ declare(strict_types=1);
 require 'vendor/autoload.php';
 
 $connection = new \Prooph\HttpEventStore\HttpEventStoreConnection(
-    new \Http\Client\Curl\Client(new \Http\Message\MessageFactory\DiactorosMessageFactory()),
+    new \Http\Client\Socket\Client(new \Http\Message\MessageFactory\DiactorosMessageFactory()),
     new \Http\Message\MessageFactory\DiactorosMessageFactory(),
     new \Http\Message\UriFactory\DiactorosUriFactory(),
     new \Prooph\HttpEventStore\ConnectionSettings(new \Prooph\EventStore\IpEndPoint('eventstore', 2113), false)

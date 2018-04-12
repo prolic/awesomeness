@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace Prooph\HttpEventStore\ClientOperations;
 
-use Http\Client\HttpAsyncClient;
+use Http\Client\HttpClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
 use Prooph\EventStore\EventId;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Internal\DateTimeFactory;
 use Prooph\EventStore\RecordedEvent;
-use Prooph\EventStore\Task\ReadFromSubscriptionTask;
 use Prooph\EventStore\UserCredentials;
 use Prooph\HttpEventStore\Http\RequestMethod;
 use Psr\Http\Message\ResponseInterface;
@@ -27,7 +26,7 @@ class ReadFromSubscriptionOperation extends Operation
     private $amount;
 
     public function __construct(
-        HttpAsyncClient $asyncClient,
+        HttpClient $httpClient,
         RequestFactory $requestFactory,
         UriFactory $uriFactory,
         string $baseUri,
@@ -36,14 +35,17 @@ class ReadFromSubscriptionOperation extends Operation
         int $amount,
         ?UserCredentials $userCredentials
     ) {
-        parent::__construct($asyncClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
+        parent::__construct($httpClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
 
         $this->stream = $stream;
         $this->groupName = $groupName;
         $this->amount = $amount;
     }
 
-    public function task(): ReadFromSubscriptionTask
+    /**
+     * @return RecordedEvent[]
+     */
+    public function __invoke(): array
     {
         $request = $this->requestFactory->createRequest(
             RequestMethod::Get,
@@ -59,57 +61,55 @@ class ReadFromSubscriptionOperation extends Operation
             ]
         );
 
-        $promise = $this->sendAsyncRequest($request);
+        $response = $this->sendRequest($request);
 
-        return new ReadFromSubscriptionTask($promise, function (ResponseInterface $response): array {
-            switch ($response->getStatusCode()) {
-                case 401:
-                    throw AccessDenied::toStream($this->stream);
-                case 404:
-                    throw new \RuntimeException(sprintf(
-                        'Subscription with stream \'%s\' and group name \'%s\' not found',
-                        $this->stream,
-                        $this->groupName
-                    ));
-                case 200:
-                    $json = json_decode($response->getBody()->getContents(), true);
-                    $events = [];
+        switch ($response->getStatusCode()) {
+            case 401:
+                throw AccessDenied::toStream($this->stream);
+            case 404:
+                throw new \RuntimeException(sprintf(
+                    'Subscription with stream \'%s\' and group name \'%s\' not found',
+                    $this->stream,
+                    $this->groupName
+                ));
+            case 200:
+                $json = json_decode($response->getBody()->getContents(), true);
+                $events = [];
 
-                    if (null === $json) {
-                        return $events;
-                    }
-
-                    foreach (array_reverse($json['entries']) as $entry) {
-                        $data = $entry['data'] ?? '';
-
-                        if (is_array($data)) {
-                            $data = json_encode($data);
-                        }
-
-                        $field = $json['isLinkMetaData'] ? 'linkMetaData' : 'metaData';
-
-                        $metadata = $json[$field] ?? '';
-
-                        if (is_array($metadata)) {
-                            $metadata = json_encode($metadata);
-                        }
-
-                        $events[] = new RecordedEvent(
-                            $entry['positionStreamId'],
-                            EventId::fromString($entry['eventId']),
-                            $entry['positionEventNumber'],
-                            $entry['eventType'],
-                            $data,
-                            $metadata,
-                            $entry['isJson'],
-                            DateTimeFactory::create($entry['updated'])
-                        );
-                    }
-
+                if (null === $json) {
                     return $events;
-                default:
-                    throw new \UnexpectedValueException('Unexpected status code ' . $response->getStatusCode() . ' returned');
-            }
-        });
+                }
+
+                foreach (array_reverse($json['entries']) as $entry) {
+                    $data = $entry['data'] ?? '';
+
+                    if (is_array($data)) {
+                        $data = json_encode($data);
+                    }
+
+                    $field = isset($json['isLinkMetaData']) && $json['isLinkMetaData'] ? 'linkMetaData' : 'metaData';
+
+                    $metadata = $json[$field] ?? '';
+
+                    if (is_array($metadata)) {
+                        $metadata = json_encode($metadata);
+                    }
+
+                    $events[] = new RecordedEvent(
+                        $entry['positionStreamId'],
+                        EventId::fromString($entry['eventId']),
+                        $entry['positionEventNumber'],
+                        $entry['eventType'],
+                        $data,
+                        $metadata,
+                        $entry['isJson'],
+                        DateTimeFactory::create($entry['updated'])
+                    );
+                }
+
+                return $events;
+            default:
+                throw new \UnexpectedValueException('Unexpected status code ' . $response->getStatusCode() . ' returned');
+        }
     }
 }

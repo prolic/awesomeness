@@ -4,16 +4,15 @@ declare(strict_types=1);
 
 namespace Prooph\HttpEventStore\Stats;
 
-use Http\Client\HttpAsyncClient;
+use Http\Client\HttpClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
-use Prooph\EventStore\Stats\EventStoreStats;
-use Prooph\EventStore\Task\GetArrayTask;
+use Prooph\EventStore\Stats\AsyncEventStoreStats;
 use Prooph\EventStore\UserCredentials;
 use Prooph\HttpEventStore\ConnectionSettings;
 use Prooph\HttpEventStore\Stats\ClientOperations\StatsOperation;
 
-final class HttpEventStoreStats implements EventStoreStats
+final class HttpEventStoreStats implements AsyncEventStoreStats
 {
     /** @var HttpAsyncClient */
     private $asyncClient;
@@ -27,7 +26,7 @@ final class HttpEventStoreStats implements EventStoreStats
     private $baseUri;
 
     public function __construct(
-        HttpAsyncClient $asyncClient,
+        HttpClient $httpClient,
         RequestFactory $requestFactory,
         UriFactory $uriFactory,
         ConnectionSettings $settings = null

@@ -4,15 +4,12 @@ declare(strict_types=1);
 
 namespace Prooph\HttpEventStore\ClientOperations;
 
-use Http\Client\HttpAsyncClient;
+use Http\Client\HttpClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
-use Prooph\EventStore\DeleteResult;
 use Prooph\EventStore\Exception\AccessDenied;
-use Prooph\EventStore\Task\DeleteResultTask;
 use Prooph\EventStore\UserCredentials;
 use Prooph\HttpEventStore\Http\RequestMethod;
-use Psr\Http\Message\ResponseInterface;
 
 /** @internal */
 class DeleteStreamOperation extends Operation
@@ -23,7 +20,7 @@ class DeleteStreamOperation extends Operation
     private $hardDelete;
 
     public function __construct(
-        HttpAsyncClient $asyncClient,
+        HttpClient $httpClient,
         RequestFactory $requestFactory,
         UriFactory $uriFactory,
         string $baseUri,
@@ -31,13 +28,13 @@ class DeleteStreamOperation extends Operation
         bool $hardDelete,
         ?UserCredentials $userCredentials
     ) {
-        parent::__construct($asyncClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
+        parent::__construct($httpClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
 
         $this->stream = $stream;
         $this->hardDelete = $hardDelete;
     }
 
-    public function task(): DeleteResultTask
+    public function __invoke(): void
     {
         $headers = [];
 
@@ -51,18 +48,16 @@ class DeleteStreamOperation extends Operation
             $headers
         );
 
-        $promise = $this->sendAsyncRequest($request);
+        $response = $this->sendRequest($request);
 
-        return new DeleteResultTask($promise, function (ResponseInterface $response): DeleteResult {
-            switch ($response->getStatusCode()) {
-                case 401:
-                    throw AccessDenied::toStream($this->stream);
-                case 204:
-                case 410:
-                    return new DeleteResult();
-                default:
-                    throw new \UnexpectedValueException('Unexpected status code ' . $response->getStatusCode() . ' returned');
-            }
-        });
+        switch ($response->getStatusCode()) {
+            case 204:
+            case 410:
+                return;
+            case 401:
+                throw AccessDenied::toStream($this->stream);
+            default:
+                throw new \UnexpectedValueException('Unexpected status code ' . $response->getStatusCode() . ' returned');
+        }
     }
 }

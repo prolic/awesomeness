@@ -53,18 +53,13 @@ class EventStorePersistentSubscription
             $subscriptionDropped = $this->subscriptionDropped;
         }
 
-        $task = $this->operations->readFromSubscription($this->bufferSize);
-
         while (! $this->shouldStop) {
-            $events = $task->result();
+            $events = $this->operations->readFromSubscription($this->bufferSize);
 
             if (empty($events)) {
                 usleep(100000);
-                $task = $this->operations->readFromSubscription($this->bufferSize);
                 continue;
             }
-
-            $task = $this->operations->readFromSubscription($this->bufferSize);
 
             if ($this->autoAck) {
                 $toAck = [];

@@ -4,19 +4,20 @@ declare(strict_types=1);
 
 namespace Prooph\HttpEventStore\ClientOperations;
 
-use Http\Client\HttpAsyncClient;
+use Http\Client\HttpClient;
 use Http\Message\Authentication\BasicAuth;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
 use Http\Promise\Promise;
 use Prooph\EventStore\UserCredentials;
 use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 
 /** @internal */
 abstract class Operation
 {
-    /** @var HttpAsyncClient */
-    protected $asyncClient;
+    /** @var HttpClient */
+    protected $httpClient;
     /** @var RequestFactory */
     protected $requestFactory;
     /** @var UriFactory */
@@ -27,26 +28,26 @@ abstract class Operation
     protected $userCredentials;
 
     public function __construct(
-        HttpAsyncClient $asyncClient,
+        HttpClient $httpClient,
         RequestFactory $requestFactory,
         UriFactory $uriFactory,
         string $baseUri,
         ?UserCredentials $userCredentials
     ) {
-        $this->asyncClient = $asyncClient;
+        $this->httpClient = $httpClient;
         $this->requestFactory = $requestFactory;
         $this->uriFactory = $uriFactory;
         $this->baseUri = $baseUri;
         $this->userCredentials = $userCredentials;
     }
 
-    protected function sendAsyncRequest(RequestInterface $request): Promise
+    protected function sendRequest(RequestInterface $request): ResponseInterface
     {
         if ($this->userCredentials) {
             $auth = new BasicAuth($this->userCredentials->username(), $this->userCredentials->password());
             $request = $auth->authenticate($request);
         }
 
-        return $this->asyncClient->sendAsyncRequest($request);
+        return $this->httpClient->sendRequest($request);
     }
 }

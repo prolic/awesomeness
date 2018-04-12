@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Prooph\HttpEventStore\ClientOperations;
 
-use Http\Client\HttpAsyncClient;
+use Http\Client\HttpClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
 use Prooph\EventStore\EventId;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Internal\PersistentSubscriptionOperations as BasePersistentSubscriptionOperations;
 use Prooph\EventStore\PersistentSubscriptionNakEventAction;
-use Prooph\EventStore\Task\ReadFromSubscriptionTask;
+use Prooph\EventStore\RecordedEvent;
 use Prooph\EventStore\UserCredentials;
 use Prooph\HttpEventStore\Http\RequestMethod;
 use Psr\Http\Message\ResponseInterface;
@@ -25,7 +25,7 @@ final class PersistentSubscriptionOperations extends Operation implements BasePe
     private $groupName;
 
     public function __construct(
-        HttpAsyncClient $asyncClient,
+        HttpClient $httpClient,
         RequestFactory $requestFactory,
         UriFactory $uriFactory,
         string $baseUri,
@@ -33,16 +33,20 @@ final class PersistentSubscriptionOperations extends Operation implements BasePe
         string $groupName,
         ?UserCredentials $userCredentials
     ) {
-        parent::__construct($asyncClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
+        parent::__construct($httpClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
 
         $this->stream = $stream;
         $this->groupName = $groupName;
     }
 
-    public function readFromSubscription(int $amount): ReadFromSubscriptionTask
+    /**
+     * @param int $amount
+     * @return RecordedEvent[]
+     */
+    public function readFromSubscription(int $amount): array
     {
         $operation = new ReadFromSubscriptionOperation(
-            $this->asyncClient,
+            $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
             $this->baseUri,
@@ -52,7 +56,7 @@ final class PersistentSubscriptionOperations extends Operation implements BasePe
             $this->userCredentials
         );
 
-        return $operation->task();
+        return $operation();
     }
 
     public function acknowledge(array $eventIds): void
@@ -76,16 +80,16 @@ final class PersistentSubscriptionOperations extends Operation implements BasePe
             ''
         );
 
-        $this->sendAsyncRequest($request)->then(function (ResponseInterface $response): void {
-            switch ($response->getStatusCode()) {
-                case 202:
-                    return;
-                case 401:
-                    throw AccessDenied::toStream($this->stream);
-                default:
-                    throw new \UnexpectedValueException('Unexpected status code ' . $response->getStatusCode() . ' returned');
-            }
-        });
+        $response = $this->sendRequest($request);
+
+        switch ($response->getStatusCode()) {
+            case 202:
+                return;
+            case 401:
+                throw AccessDenied::toStream($this->stream);
+            default:
+                throw new \UnexpectedValueException('Unexpected status code ' . $response->getStatusCode() . ' returned');
+        }
     }
 
     public function fail(array $eventIds, PersistentSubscriptionNakEventAction $action): void
@@ -110,15 +114,15 @@ final class PersistentSubscriptionOperations extends Operation implements BasePe
             ''
         );
 
-        $this->sendAsyncRequest($request)->then(function (ResponseInterface $response): void {
-            switch ($response->getStatusCode()) {
-                case 202:
-                    return;
-                case 401:
-                    throw AccessDenied::toStream($this->stream);
-                default:
-                    throw new \UnexpectedValueException('Unexpected status code ' . $response->getStatusCode() . ' returned');
-            }
-        });
+        $response = $this->sendRequest($request);
+
+        switch ($response->getStatusCode()) {
+            case 202:
+                return;
+            case 401:
+                throw AccessDenied::toStream($this->stream);
+            default:
+                throw new \UnexpectedValueException('Unexpected status code ' . $response->getStatusCode() . ' returned');
+        }
     }
 }

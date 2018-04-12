@@ -4,22 +4,22 @@ declare(strict_types=1);
 require 'vendor/autoload.php';
 
 $connection = new \Prooph\HttpEventStore\HttpEventStoreConnection(
-    new \Http\Client\Curl\Client(new \Http\Message\MessageFactory\DiactorosMessageFactory()),
+    new \Http\Client\Socket\Client(new \Http\Message\MessageFactory\DiactorosMessageFactory()),
     new \Http\Message\MessageFactory\DiactorosMessageFactory(),
     new \Http\Message\UriFactory\DiactorosUriFactory(),
     new \Prooph\HttpEventStore\ConnectionSettings(new \Prooph\EventStore\IpEndPoint('eventstore', 2113), false)
 );
 
-$task = $connection->createPersistentSubscriptionAsync(
+$result = $connection->createPersistentSubscription(
     'sasastream',
     'test',
     \Prooph\EventStore\PersistentSubscriptionSettings::default(),
     new \Prooph\EventStore\UserCredentials('admin', 'changeit')
 );
 
-var_dump($task->result());
+var_dump($result);
 
-$task = $connection->updatePersistentSubscriptionAsync(
+$result = $connection->updatePersistentSubscription(
     'sasastream',
     'test',
     new \Prooph\EventStore\PersistentSubscriptionSettings(
@@ -40,24 +40,24 @@ $task = $connection->updatePersistentSubscriptionAsync(
     new \Prooph\EventStore\UserCredentials('admin', 'changeit')
 );
 
-var_dump($task->result());
+var_dump($result);
 /*
-$task = $connection->deletePersistentSubscriptionAsync(
+$result = $connection->deletePersistentSubscription(
     'sasastream',
     'test',
     new \Prooph\EventStore\UserCredentials('admin', 'changeit')
 );
 
-var_dump($task->result());
+var_dump($result);
 */
-$task = $connection->getInformationForAllSubscriptionsAsync();
+$result = $connection->getInformationForAllSubscriptions();
 
-var_dump($task->result());
+var_dump($result);
 
-$task = $connection->getInformationForSubscriptionsWithStreamAsync('sasastream');
+$result = $connection->getInformationForSubscriptionsWithStream('sasastream');
 
-var_dump($task->result());
+var_dump($result);
 
-$task = $connection->getInformationForSubscriptionAsync('sasastream', 'test');
+$result = $connection->getInformationForSubscription('sasastream', 'test');
 
-var_dump($task->result());
+var_dump($result);

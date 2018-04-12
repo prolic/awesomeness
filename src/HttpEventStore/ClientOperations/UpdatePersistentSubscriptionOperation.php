@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace Prooph\HttpEventStore\ClientOperations;
 
-use Http\Client\HttpAsyncClient;
+use Http\Client\HttpClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Internal\PersistentSubscriptionUpdateResult;
 use Prooph\EventStore\Internal\PersistentSubscriptionUpdateStatus;
 use Prooph\EventStore\PersistentSubscriptionSettings;
-use Prooph\EventStore\Task\UpdatePersistentSubscriptionTask;
 use Prooph\EventStore\UserCredentials;
 use Prooph\HttpEventStore\Http\RequestMethod;
 use Psr\Http\Message\ResponseInterface;
@@ -27,7 +26,7 @@ class UpdatePersistentSubscriptionOperation extends Operation
     private $settings;
 
     public function __construct(
-        HttpAsyncClient $asyncClient,
+        HttpClient $httpClient,
         RequestFactory $requestFactory,
         UriFactory $uriFactory,
         string $baseUri,
@@ -36,42 +35,43 @@ class UpdatePersistentSubscriptionOperation extends Operation
         PersistentSubscriptionSettings $settings,
         ?UserCredentials $userCredentials
     ) {
-        parent::__construct($asyncClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
+        parent::__construct($httpClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
 
         $this->stream = $stream;
         $this->groupName = $groupName;
         $this->settings = $settings;
     }
 
-    public function task(): UpdatePersistentSubscriptionTask
+    public function __invoke(): PersistentSubscriptionUpdateResult
     {
+        $string = json_encode($this->settings->toArray());
+
         $request = $this->requestFactory->createRequest(
             RequestMethod::Post,
             $this->uriFactory->createUri($this->baseUri . '/subscriptions/' . urlencode($this->stream) . '/' . urlencode($this->groupName)),
             [
                 'Content-Type' => 'application/json',
+                'Content-Length' => strlen($string),
             ],
-            json_encode($this->settings->toArray())
+            $string
         );
 
-        $promise = $this->sendAsyncRequest($request);
+        $response = $this->sendRequest($request);
 
-        return new UpdatePersistentSubscriptionTask($promise, function (ResponseInterface $response): PersistentSubscriptionUpdateResult {
-            $json = json_decode($response->getBody()->getContents(), true);
-            switch ($response->getStatusCode()) {
-                case 401:
-                    throw AccessDenied::toSubscription($this->stream, $this->groupName);
-                case 200:
-                case 404:
-                    return new PersistentSubscriptionUpdateResult(
-                        $json['correlationId'],
-                        $json['reason'],
-                        PersistentSubscriptionUpdateStatus::byName($json['result'])
-                    );
+        $json = json_decode($response->getBody()->getContents(), true);
+        switch ($response->getStatusCode()) {
+            case 401:
+                throw AccessDenied::toSubscription($this->stream, $this->groupName);
+            case 200:
+            case 404:
+                return new PersistentSubscriptionUpdateResult(
+                    $json['correlationId'],
+                    $json['reason'],
+                    PersistentSubscriptionUpdateStatus::byName($json['result'])
+                );
 
-                default:
-                    throw new \UnexpectedValueException('Unexpected status code ' . $response->getStatusCode() . ' returned');
-            }
-        });
+            default:
+                throw new \UnexpectedValueException('Unexpected status code ' . $response->getStatusCode() . ' returned');
+        }
     }
 }

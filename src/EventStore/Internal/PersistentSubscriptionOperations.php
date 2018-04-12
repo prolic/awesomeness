@@ -6,12 +6,15 @@ namespace Prooph\EventStore\Internal;
 
 use Prooph\EventStore\EventId;
 use Prooph\EventStore\PersistentSubscriptionNakEventAction;
-use Prooph\EventStore\Task\ReadFromSubscriptionTask;
+use Prooph\EventStore\RecordedEvent;
 
 /** @internal */
 interface PersistentSubscriptionOperations
 {
-    public function readFromSubscription(int $amount): ReadFromSubscriptionTask;
+    /**
+     * @return RecordedEvent[]
+     */
+    public function readFromSubscription(int $amount): array;
 
     /**
      * @param EventId[] $events

@@ -4,12 +4,12 @@ declare(strict_types=1);
 require 'vendor/autoload.php';
 
 $connection = new \Prooph\HttpEventStore\HttpEventStoreConnection(
-    new \Http\Client\Curl\Client(new \Http\Message\MessageFactory\DiactorosMessageFactory()),
+    new \Http\Client\Socket\Client(new \Http\Message\MessageFactory\DiactorosMessageFactory()),
     new \Http\Message\MessageFactory\DiactorosMessageFactory(),
     new \Http\Message\UriFactory\DiactorosUriFactory()
 );
 
-$task = $connection->appendToStreamAsync(
+$writeResult = $connection->appendToStream(
     'sasastream',
     \Prooph\EventStore\ExpectedVersion::NoStream,
     [
@@ -30,18 +30,18 @@ $task = $connection->appendToStreamAsync(
     ]
 );
 
-var_dump($task->result());
+var_dump($writeResult);
 
-$task = $connection->readStreamEventsForwardAsync(
+$streamEventsSlice = $connection->readStreamEventsForward(
     'sasastream',
     0,
     100,
     true
 );
 
-var_dump($task->result());
+var_dump($streamEventsSlice);
 
-$task = $connection->setStreamMetadataAsync(
+$writeResult = $connection->setStreamMetadata(
     'sasastream',
     \Prooph\EventStore\ExpectedVersion::Any,
     new \Prooph\EventStore\StreamMetadata(null, null, null, null, null, [
@@ -49,12 +49,10 @@ $task = $connection->setStreamMetadataAsync(
     ])
 );
 
-var_dump($task->result());
+var_dump($writeResult);
 
-$task = $connection->getStreamMetadataAsync('sasastream');
+$streamMetadataResult = $connection->getStreamMetadata('sasastream');
 
-var_dump($task->result());
+var_dump($streamMetadataResult);
 
-$task = $connection->deleteStreamAsync('foo', false);
-
-var_dump($task->result());
+$connection->deleteStream('foo', false);

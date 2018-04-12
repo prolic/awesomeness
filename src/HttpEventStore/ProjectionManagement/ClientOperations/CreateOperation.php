@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace Prooph\HttpEventStore\ProjectionManagement\ClientOperations;
 
-use Http\Client\HttpAsyncClient;
+use Http\Client\HttpClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\ProjectionManagement\CreateProjectionResult;
-use Prooph\EventStore\Task\CreateProjectionResultTask;
 use Prooph\EventStore\UserCredentials;
 use Prooph\HttpEventStore\ClientOperations\Operation;
 use Prooph\HttpEventStore\Http\RequestMethod;
@@ -36,7 +35,7 @@ class CreateOperation extends Operation
     private $trackEmittedStreams;
 
     public function __construct(
-        HttpAsyncClient $asyncClient,
+        HttpClient $httpClient,
         RequestFactory $requestFactory,
         UriFactory $uriFactory,
         string $baseUri,
@@ -50,7 +49,7 @@ class CreateOperation extends Operation
         bool $trackEmittedStreams,
         ?UserCredentials $userCredentials
     ) {
-        parent::__construct($asyncClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
+        parent::__construct($httpClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
 
         $this->name = $name;
         $this->mode = $mode;
@@ -62,7 +61,7 @@ class CreateOperation extends Operation
         $this->trackEmittedStreams = $trackEmittedStreams;
     }
 
-    public function task(): CreateProjectionResultTask
+    public function __invoke(): CreateProjectionResult
     {
         $request = $this->requestFactory->createRequest(
             RequestMethod::Post,
@@ -82,19 +81,17 @@ class CreateOperation extends Operation
             $this->query
         );
 
-        $promise = $this->sendAsyncRequest($request);
+        $response = $this->sendRequest($request);
 
-        return new CreateProjectionResultTask($promise, function (ResponseInterface $response): CreateProjectionResult {
-            switch ($response->getStatusCode()) {
-                case 201:
-                    return CreateProjectionResult::success();
-                case 401:
-                    throw AccessDenied::toUserManagementOperation();
-                case 409:
-                    return CreateProjectionResult::conflict();
-                default:
-                    throw new \UnexpectedValueException('Unexpected status code ' . $response->getStatusCode() . ' returned');
-            }
-        });
+        switch ($response->getStatusCode()) {
+            case 201:
+                return CreateProjectionResult::success();
+            case 401:
+                throw AccessDenied::toUserManagementOperation();
+            case 409:
+                return CreateProjectionResult::conflict();
+            default:
+                throw new \UnexpectedValueException('Unexpected status code ' . $response->getStatusCode() . ' returned');
+        }
     }
 }

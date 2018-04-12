@@ -17,14 +17,15 @@
   "prefer-stable": true,
   "require": {
     "php": "^7.2",
-    "php-http/httplug": "^1.1.0",
-    "ramsey/uuid": "^3.7.3",
-    "react/promise": "^2.5.1"
+    "ramsey/uuid": "^3.7.3"
   },
   "require-dev": {
+    "amphp/amp": "^2.0.6",
     "malukenho/docheader": "^0.1.4",
-    "php-http/curl-client": "^1.7.1",
+    "php-http/httplug": "^1.1.0",
+    "php-http/message": "^1.6.0",
     "php-http/message-factory": "^1.0.2",
+    "php-http/socket-client": "^1.4.0",
     "phpunit/phpunit": "^6.5",
     "phpspec/prophecy": "^1.7",
     "prooph/php-cs-fixer-config": "^0.2.1",
@@ -40,7 +41,7 @@
     "psr-4": {
       "Prooph\\EventStore\\": "src/EventStore/",
       "Prooph\\HttpEventStore\\": "src/HttpEventStore/",
-      "Prooph\\PdoEventStore\\": "src/PdoEventStore/",
+      "Prooph\\PostgresEventStore\\": "src/PostgresEventStore/",
       "Prooph\\Common\\": "src/Common/"
     }
   },
