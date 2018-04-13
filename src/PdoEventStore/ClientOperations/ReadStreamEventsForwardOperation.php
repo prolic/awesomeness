@@ -17,11 +17,9 @@ class ReadStreamEventsForwardOperation
 {
     public function __invoke(PDO $connection, string $stream, int $start, int $count): StreamEventsSlice
     {
-        $statement = $connection->prepare(
-            <<<SQL
+        $statement = $connection->prepare(<<<SQL
 SELECT * FROM streams WHERE streamName = ?
 SQL
-
         );
         $statement->execute([$stream]);
         $statement->setFetchMode(PDO::FETCH_OBJ);
@@ -54,8 +52,7 @@ SQL
             );
         }
 
-        $statement = $connection->prepare(
-            <<<SQL
+        $statement = $connection->prepare(<<<SQL
 SELECT
     COALESCE(e1.eventId, e2.eventId) as eventId,
     e1.eventNumber as eventNumber,
@@ -74,7 +71,6 @@ AND e1.eventNumber >= ?
 ORDER BY e1.eventNumber ASC
 LIMIT ?
 SQL
-
         );
         $statement->setFetchMode(PDO::FETCH_OBJ);
         $statement->execute([$streamData->streamId, $start, $count]);

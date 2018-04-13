@@ -7,12 +7,14 @@ namespace Prooph\PdoEventStore;
 use PDO;
 use Prooph\EventStore\Common\SystemStreams;
 use Prooph\EventStore\DetailedSubscriptionInformation;
+use Prooph\EventStore\EventData;
 use Prooph\EventStore\EventReadResult;
 use Prooph\EventStore\EventReadStatus;
 use Prooph\EventStore\EventStorePersistentSubscription;
 use Prooph\EventStore\EventStoreSubscriptionConnection;
 use Prooph\EventStore\EventStoreTransaction;
 use Prooph\EventStore\EventStoreTransactionConnection;
+use Prooph\EventStore\Exception\RuntimeException;
 use Prooph\EventStore\Internal\Consts;
 use Prooph\EventStore\Internal\PersistentSubscriptionCreateResult;
 use Prooph\EventStore\Internal\PersistentSubscriptionDeleteResult;
@@ -25,6 +27,7 @@ use Prooph\EventStore\StreamMetadataResult;
 use Prooph\EventStore\SystemSettings;
 use Prooph\EventStore\UserCredentials;
 use Prooph\EventStore\WriteResult;
+use Prooph\PdoEventStore\ClientOperations\AppendToStreamOperation;
 use Prooph\PdoEventStore\ClientOperations\DeleteStreamOperation;
 use Prooph\PdoEventStore\ClientOperations\ReadEventOperation;
 use Prooph\PdoEventStore\ClientOperations\ReadStreamEventsBackwardOperation;
@@ -34,6 +37,9 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
 {
     /** @var PDO */
     private $connection;
+
+    /** @var array */
+    private $locks = [];
 
     public function __construct(PDO $connection)
     {
@@ -63,6 +69,13 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
         (new DeleteStreamOperation())($this->connection, $stream, $hardDelete);
     }
 
+    /**
+     * @param string $stream
+     * @param int $expectedVersion
+     * @param null|UserCredentials $userCredentials
+     * @param EventData[] $events
+     * @return WriteResult
+     */
     public function appendToStream(
         string $stream,
         int $expectedVersion,
@@ -73,7 +86,20 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
             throw new \InvalidArgumentException('Stream cannot be empty');
         }
 
-        // TODO: Implement appendToStream() method.
+        if (empty($events)) {
+            throw new \InvalidArgumentException('Empty stream given');
+        }
+
+        if (isset($this->locks[$stream])) {
+            throw new RuntimeException('Lock on stream ' . $stream . ' is already acquired');
+        }
+
+        return (new AppendToStreamOperation())(
+            $stream,
+            $expectedVersion,
+            $events,
+            $userCredentials
+        );
     }
 
     public function readEvent(
@@ -269,8 +295,7 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
         string $stream,
         int $expectedVersion,
         UserCredentials $userCredentials = null
-    ): EventStoreTransaction
-    {
+    ): EventStoreTransaction {
         // TODO: Implement startTransaction() method.
     }
 

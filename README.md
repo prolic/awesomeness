@@ -81,6 +81,10 @@ Default login credentials are `admin` with pwd `changeit`.
 
 ## Todos
 
+General
+
+- [ ] Calculate next expected version after writing
+
 EventStore
 
 - [x] EventStoreConnection interface

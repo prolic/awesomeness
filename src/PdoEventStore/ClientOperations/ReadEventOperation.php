@@ -16,11 +16,9 @@ class ReadEventOperation
 {
     public function __invoke(PDO $connection, string $stream, int $eventNumber): EventReadResult
     {
-        $statement = $connection->prepare(
-            <<<SQL
+        $statement = $connection->prepare(<<<SQL
 SELECT * FROM streams WHERE streamName = ?
 SQL
-
         );
         $statement->execute([$stream]);
         $statement->setFetchMode(PDO::FETCH_OBJ);
@@ -35,8 +33,7 @@ SQL
             return new EventReadResult(EventReadStatus::streamDeleted(), $stream, $eventNumber, null);
         }
 
-        $statement = $connection->prepare(
-            <<<SQL
+        $statement = $connection->prepare(<<<SQL
 SELECT
     COALESCE(e1.eventId, e2.eventId) as eventId,
     e1.eventNumber as eventNumber,
@@ -53,7 +50,6 @@ LEFT JOIN events e2
 WHERE e1.streamId = ?
 AND e1.eventNumber = ?
 SQL
-
         );
         $statement->setFetchMode(PDO::FETCH_OBJ);
         $statement->execute([$streamData->streamId, $eventNumber]);
