@@ -15,30 +15,20 @@ use Prooph\HttpEventStore\Http\RequestMethod;
 /** @internal */
 class StatsOperation extends Operation
 {
-    /** @var string */
-    private $section;
-
-    public function __construct(
+    public function __invoke(
         HttpClient $httpClient,
         RequestFactory $requestFactory,
         UriFactory $uriFactory,
         string $baseUri,
         string $section,
         ?UserCredentials $userCredentials
-    ) {
-        parent::__construct($httpClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
-
-        $this->section = $section;
-    }
-
-    public function __invoke(): array
-    {
-        $request = $this->requestFactory->createRequest(
+    ): array {
+        $request = $requestFactory->createRequest(
             RequestMethod::Get,
-            $this->uriFactory->createUri($this->baseUri . '/stats' . $this->section)
+            $uriFactory->createUri($baseUri . '/stats' . $section)
         );
 
-        $response = $this->sendRequest($request);
+        $response = $this->sendRequest($httpClient, $userCredentials, $request);
 
         switch ($response->getStatusCode()) {
             case 200:

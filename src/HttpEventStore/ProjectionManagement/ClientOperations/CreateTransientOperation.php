@@ -16,16 +16,7 @@ use Prooph\HttpEventStore\Http\RequestMethod;
 /** @internal */
 class CreateTransientOperation extends Operation
 {
-    /** @var string */
-    private $name;
-    /** @var string */
-    private $type;
-    /** @var string */
-    private $query;
-    /** @var bool */
-    private $enabled;
-
-    public function __construct(
+    public function __invoke(
         HttpClient $httpClient,
         RequestFactory $requestFactory,
         UriFactory $uriFactory,
@@ -35,32 +26,22 @@ class CreateTransientOperation extends Operation
         string $query,
         bool $enabled,
         ?UserCredentials $userCredentials
-    ) {
-        parent::__construct($httpClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
-
-        $this->name = $name;
-        $this->type = $type;
-        $this->query = $query;
-        $this->enabled = $enabled;
-    }
-
-    public function __invoke(): CreateProjectionResult
-    {
-        $request = $this->requestFactory->createRequest(
+    ): CreateProjectionResult {
+        $request = $requestFactory->createRequest(
             RequestMethod::Post,
-            $this->uriFactory->createUri(sprintf(
-                $this->baseUri . '/projections/transient?name=%s&enabled=%s&type=%s',
-                urlencode($this->name),
-                (int) $this->enabled,
-                $this->type
+            $uriFactory->createUri(sprintf(
+                $baseUri . '/projections/transient?name=%s&enabled=%s&type=%s',
+                urlencode($name),
+                (int) $enabled,
+                $type
             )),
             [
                 'Content-Type' => 'application/json',
             ],
-            $this->query
+            $query
         );
 
-        $response = $this->sendRequest($request);
+        $response = $this->sendRequest($httpClient, $userCredentials, $request);
 
         switch ($response->getStatusCode()) {
             case 201:

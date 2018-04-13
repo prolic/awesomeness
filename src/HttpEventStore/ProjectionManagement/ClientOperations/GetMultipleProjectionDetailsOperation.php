@@ -14,35 +14,25 @@ use Prooph\HttpEventStore\ClientOperations\Operation;
 use Prooph\HttpEventStore\Http\RequestMethod;
 
 /** @internal */
-class GetMultiOperation extends Operation
+class GetMultipleProjectionDetailsOperation extends Operation
 {
-    /** @var string */
-    private $mode;
-
-    public function __construct(
+    /**
+     * @return ProjectionDetails[]
+     */
+    public function __invoke(
         HttpClient $httpClient,
         RequestFactory $requestFactory,
         UriFactory $uriFactory,
         string $baseUri,
         string $mode,
         ?UserCredentials $userCredentials
-    ) {
-        parent::__construct($httpClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
-
-        $this->mode = $mode;
-    }
-
-    /**
-     * @return ProjectionDetails[]
-     */
-    public function __invoke(): array
-    {
-        $request = $this->requestFactory->createRequest(
+    ): array {
+        $request = $requestFactory->createRequest(
             RequestMethod::Get,
-            $this->uriFactory->createUri($this->baseUri . '/projections/' . $this->mode)
+            $uriFactory->createUri($baseUri . '/projections/' . $mode)
         );
 
-        $response = $this->sendRequest($request);
+        $response = $this->sendRequest($httpClient, $userCredentials, $request);
 
         switch ($response->getStatusCode()) {
             case 200:

@@ -17,14 +17,10 @@ use Prooph\HttpEventStore\Http\RequestMethod;
 /** @internal */
 class ReadFromSubscriptionOperation extends Operation
 {
-    /** @var string */
-    private $stream;
-    /** @var string */
-    private $groupName;
-    /** @var int */
-    private $amount;
-
-    public function __construct(
+    /**
+     * @return RecordedEvent[]
+     */
+    public function __invoke(
         HttpClient $httpClient,
         RequestFactory $requestFactory,
         UriFactory $uriFactory,
@@ -33,43 +29,31 @@ class ReadFromSubscriptionOperation extends Operation
         string $groupName,
         int $amount,
         ?UserCredentials $userCredentials
-    ) {
-        parent::__construct($httpClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
-
-        $this->stream = $stream;
-        $this->groupName = $groupName;
-        $this->amount = $amount;
-    }
-
-    /**
-     * @return RecordedEvent[]
-     */
-    public function __invoke(): array
-    {
-        $request = $this->requestFactory->createRequest(
+    ): array {
+        $request = $requestFactory->createRequest(
             RequestMethod::Get,
-            $this->uriFactory->createUri(sprintf(
+            $uriFactory->createUri(sprintf(
                 '%s/subscriptions/%s/%s/%d?embed=tryharder',
-                $this->baseUri,
-                urlencode($this->stream),
-                urlencode($this->groupName),
-                $this->amount
+                $baseUri,
+                urlencode($stream),
+                urlencode($groupName),
+                $amount
             )),
             [
                 'Accept' => 'application/vnd.eventstore.competingatom+json',
             ]
         );
 
-        $response = $this->sendRequest($request);
+        $response = $this->sendRequest($httpClient, $userCredentials, $request);
 
         switch ($response->getStatusCode()) {
             case 401:
-                throw AccessDenied::toStream($this->stream);
+                throw AccessDenied::toStream($stream);
             case 404:
                 throw new \RuntimeException(sprintf(
                     'Subscription with stream \'%s\' and group name \'%s\' not found',
-                    $this->stream,
-                    $this->groupName
+                    $stream,
+                    $groupName
                 ));
             case 200:
                 $json = json_decode($response->getBody()->getContents(), true);

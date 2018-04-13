@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace Prooph\HttpEventStore\UserManagement\ClientOperations;
 
+use Http\Client\HttpClient;
+use Http\Message\RequestFactory;
+use Http\Message\UriFactory;
 use Prooph\EventStore\Exception\AccessDenied;
+use Prooph\EventStore\UserCredentials;
 use Prooph\EventStore\UserManagement\UserDetails;
 use Prooph\HttpEventStore\ClientOperations\Operation;
 use Prooph\HttpEventStore\Http\RequestMethod;
@@ -15,14 +19,20 @@ class GetAllUsersOperation extends Operation
     /**
      * @return UserDetails[]
      */
-    public function __invoke(): array
-    {
-        $request = $this->requestFactory->createRequest(
+    public function __invoke(
+        HttpClient $httpClient,
+        RequestFactory $requestFactory,
+        UriFactory $uriFactory,
+        string $baseUri,
+        string $login,
+        ?UserCredentials $userCredentials
+    ): array {
+        $request = $requestFactory->createRequest(
             RequestMethod::Post,
-            $this->uriFactory->createUri($this->baseUri . '/users/' . urlencode($this->stream))
+            $uriFactory->createUri($baseUri . '/users/' . urlencode($stream))
         );
 
-        $response = $this->sendRequest($request);
+        $response = $this->sendRequest($httpClient, $userCredentials, $request);
 
         switch ($response->getStatusCode()) {
             case 200:

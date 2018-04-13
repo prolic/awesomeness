@@ -94,7 +94,7 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
             throw new \InvalidArgumentException('Stream cannot be empty');
         }
 
-        (new DeleteStreamOperation(
+        (new DeleteStreamOperation())(
             $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
@@ -102,7 +102,7 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
             $stream,
             $hardDelete,
             $userCredentials ?? $this->settings->defaultUserCredentials()
-        ))();
+        );
     }
 
     /**
@@ -122,7 +122,7 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
             throw new \InvalidArgumentException('Stream cannot be empty');
         }
 
-        return (new AppendToStreamOperation(
+        return (new AppendToStreamOperation())(
             $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
@@ -131,7 +131,7 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
             $expectedVersion,
             $events,
             $userCredentials ?? $this->settings->defaultUserCredentials()
-        ))();
+        );
     }
 
     public function readEvent(
@@ -147,7 +147,7 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
             throw new \InvalidArgumentException('EventNumber cannot be smaller then -1');
         }
 
-        return (new ReadEventOperation(
+        return (new ReadEventOperation())(
             $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
@@ -155,7 +155,7 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
             $stream,
             $eventNumber,
             $userCredentials ?? $this->settings->defaultUserCredentials()
-        ))();
+        );
     }
 
     public function readStreamEventsForward(
@@ -183,7 +183,7 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
             );
         }
 
-        return (new ReadStreamEventsForwardOperation(
+        return (new ReadStreamEventsForwardOperation())(
             $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
@@ -193,7 +193,7 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
             $count,
             $resolveLinkTos,
             $userCredentials ?? $this->settings->defaultUserCredentials()
-        ))();
+        );
     }
 
     public function readStreamEventsBackward(
@@ -221,7 +221,7 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
             );
         }
 
-        return (new ReadStreamEventsBackwardOperation(
+        return (new ReadStreamEventsBackwardOperation())(
             $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
@@ -231,7 +231,7 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
             $count,
             $resolveLinkTos,
             $userCredentials ?? $this->settings->defaultUserCredentials()
-        ))();
+        );
     }
 
     public function setStreamMetadata(
@@ -259,7 +259,7 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
             ''
         );
 
-        return (new AppendToStreamOperation(
+        return (new AppendToStreamOperation())(
             $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
@@ -268,11 +268,15 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
             $expectedMetastreamVersion,
             [$metaevent],
             $userCredentials ?? $this->settings->defaultUserCredentials()
-        ))();
+        );
     }
 
     public function getStreamMetadata(string $stream, UserCredentials $userCredentials = null): StreamMetadataResult
     {
+        if (empty($stream)) {
+            throw new \InvalidArgumentException('Stream cannot be empty');
+        }
+
         $eventReadResult = $this->readEvent(
             SystemStreams::metastreamOf($stream),
             -1,
@@ -327,7 +331,15 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
         PersistentSubscriptionSettings $settings,
         UserCredentials $userCredentials = null
     ): PersistentSubscriptionCreateResult {
-        return (new CreatePersistentSubscriptionOperation(
+        if (empty($stream)) {
+            throw new \InvalidArgumentException('Stream cannot be empty');
+        }
+
+        if (empty($groupName)) {
+            throw new \InvalidArgumentException('Group name cannot be empty');
+        }
+
+        return (new CreatePersistentSubscriptionOperation())(
             $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
@@ -336,7 +348,7 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
             $groupName,
             $settings,
             $userCredentials ?? $this->settings->defaultUserCredentials()
-        ))();
+        );
     }
 
     public function updatePersistentSubscription(
@@ -345,7 +357,15 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
         PersistentSubscriptionSettings $settings,
         UserCredentials $userCredentials = null
     ): PersistentSubscriptionUpdateResult {
-        return (new UpdatePersistentSubscriptionOperation(
+        if (empty($stream)) {
+            throw new \InvalidArgumentException('Stream cannot be empty');
+        }
+
+        if (empty($groupName)) {
+            throw new \InvalidArgumentException('Group name cannot be empty');
+        }
+
+        return (new UpdatePersistentSubscriptionOperation())(
             $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
@@ -354,7 +374,7 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
             $groupName,
             $settings,
             $userCredentials ?? $this->settings->defaultUserCredentials()
-        ))();
+        );
     }
 
     public function deletePersistentSubscription(
@@ -362,7 +382,15 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
         string $groupName,
         UserCredentials $userCredentials = null
     ): PersistentSubscriptionDeleteResult {
-        return (new DeletePersistentSubscriptionOperation(
+        if (empty($stream)) {
+            throw new \InvalidArgumentException('Stream cannot be empty');
+        }
+
+        if (empty($groupName)) {
+            throw new \InvalidArgumentException('Group name cannot be empty');
+        }
+
+        return (new DeletePersistentSubscriptionOperation())(
             $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
@@ -370,7 +398,7 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
             $stream,
             $groupName,
             $userCredentials ?? $this->settings->defaultUserCredentials()
-        ))();
+        );
     }
 
     /**
@@ -393,6 +421,14 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
         bool $autoAck = true,
         UserCredentials $userCredentials = null
     ): EventStorePersistentSubscription {
+        if (empty($stream)) {
+            throw new \InvalidArgumentException('Stream cannot be empty');
+        }
+
+        if (empty($groupName)) {
+            throw new \InvalidArgumentException('Group name cannot be empty');
+        }
+
         return new EventStorePersistentSubscription(
             new PersistentSubscriptionOperations(
                 $this->httpClient,
@@ -417,7 +453,15 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
         string $groupName,
         UserCredentials $userCredentials = null
     ): ReplayParkedResult {
-        return (new ReplayParkedOperation(
+        if (empty($stream)) {
+            throw new \InvalidArgumentException('Stream cannot be empty');
+        }
+
+        if (empty($groupName)) {
+            throw new \InvalidArgumentException('Group name cannot be empty');
+        }
+
+        return (new ReplayParkedOperation())(
             $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
@@ -425,7 +469,7 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
             $stream,
             $groupName,
             $userCredentials ?? $this->settings->defaultUserCredentials()
-        ))();
+        );
     }
 
     /**
@@ -434,13 +478,13 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
     public function getInformationForAllSubscriptions(
         UserCredentials $userCredentials = null
     ): array {
-        return (new GetInformationForAllSubscriptionsOperation(
+        return (new GetInformationForAllSubscriptionsOperation())(
             $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
             $this->baseUri,
             $userCredentials ?? $this->settings->defaultUserCredentials()
-        ))();
+        );
     }
 
     /**
@@ -450,14 +494,18 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
         string $stream,
         UserCredentials $userCredentials = null
     ): array {
-        return (new GetInformationForSubscriptionsWithStreamOperation(
+        if (empty($stream)) {
+            throw new \InvalidArgumentException('Stream cannot be empty');
+        }
+
+        return (new GetInformationForSubscriptionsWithStreamOperation())(
             $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
             $this->baseUri,
             $stream,
             $userCredentials ?? $this->settings->defaultUserCredentials()
-        ))();
+        );
     }
 
     public function getInformationForSubscription(
@@ -465,7 +513,15 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
         string $groupName,
         UserCredentials $userCredentials = null
     ): DetailedSubscriptionInformation {
-        return (new GetInformationForSubscriptionOperation(
+        if (empty($stream)) {
+            throw new \InvalidArgumentException('Stream cannot be empty');
+        }
+
+        if (empty($groupName)) {
+            throw new \InvalidArgumentException('Group name cannot be empty');
+        }
+
+        return (new GetInformationForSubscriptionOperation())(
             $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
@@ -473,6 +529,6 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
             $stream,
             $groupName,
             $userCredentials ?? $this->settings->defaultUserCredentials()
-        ))();
+        );
     }
 }

@@ -15,16 +15,7 @@ use Prooph\HttpEventStore\Http\RequestMethod;
 /** @internal */
 class CreateUserOperation extends Operation
 {
-    /** @var string */
-    private $login;
-    /** @var string */
-    private $fullName;
-    /** @var string */
-    private $password;
-    /** @var string[] */
-    private $groups;
-
-    public function __construct(
+    public function __invoke(
         HttpClient $httpClient,
         RequestFactory $requestFactory,
         UriFactory $uriFactory,
@@ -34,27 +25,17 @@ class CreateUserOperation extends Operation
         string $password,
         array $groups,
         ?UserCredentials $userCredentials
-    ) {
-        parent::__construct($httpClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
-
-        $this->login = $login;
-        $this->fullName = $fullName;
-        $this->password = $password;
-        $this->groups = $groups;
-    }
-
-    public function __invoke(): void
-    {
+    ): void {
         $string = json_encode([
-            'login' => $this->login,
-            'fullName' => $this->fullName,
-            'password' => $this->password,
-            'groups' => $this->groups,
+            'login' => $login,
+            'fullName' => $fullName,
+            'password' => $password,
+            'groups' => $groups,
         ]);
 
-        $request = $this->requestFactory->createRequest(
+        $request = $requestFactory->createRequest(
             RequestMethod::Post,
-            $this->uriFactory->createUri($this->baseUri . '/users/'),
+            $uriFactory->createUri($baseUri . '/users/'),
             [
                 'Content-Type' => 'application/json',
                 'Content-Length' => strlen($string),
@@ -62,7 +43,7 @@ class CreateUserOperation extends Operation
             $string
         );
 
-        $response = $this->sendRequest($request);
+        $response = $this->sendRequest($httpClient, $userCredentials, $request);
 
         switch ($response->getStatusCode()) {
             case 201:

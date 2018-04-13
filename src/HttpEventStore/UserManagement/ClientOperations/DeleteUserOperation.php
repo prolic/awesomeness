@@ -16,30 +16,20 @@ use Prooph\HttpEventStore\Http\RequestMethod;
 /** @internal */
 class DeleteUserOperation extends Operation
 {
-    /** @var string */
-    private $login;
-
-    public function __construct(
+    public function __invoke(
         HttpClient $httpClient,
         RequestFactory $requestFactory,
         UriFactory $uriFactory,
         string $baseUri,
         string $login,
         ?UserCredentials $userCredentials
-    ) {
-        parent::__construct($httpClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
-
-        $this->login = $login;
-    }
-
-    public function __invoke(): void
-    {
-        $request = $this->requestFactory->createRequest(
+    ): void {
+        $request = $requestFactory->createRequest(
             RequestMethod::Delete,
-            $this->uriFactory->createUri($this->baseUri . '/users/' . urlencode($this->login))
+            $uriFactory->createUri($baseUri . '/users/' . urlencode($login))
         );
 
-        $response = $this->sendRequest($request);
+        $response = $this->sendRequest($httpClient, $userCredentials, $request);
 
         switch ($response->getStatusCode()) {
             case 204:

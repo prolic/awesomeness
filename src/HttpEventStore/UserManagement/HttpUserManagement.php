@@ -8,7 +8,8 @@ use Http\Client\HttpClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
 use Prooph\EventStore\UserCredentials;
-use Prooph\EventStore\UserManagement\AsyncUserManagement;
+use Prooph\EventStore\UserManagement\UserDetails;
+use Prooph\EventStore\UserManagement\UserManagement;
 use Prooph\HttpEventStore\ConnectionSettings;
 use Prooph\HttpEventStore\UserManagement\ClientOperations\ChangePasswordOperation;
 use Prooph\HttpEventStore\UserManagement\ClientOperations\CreateUserOperation;
@@ -21,10 +22,10 @@ use Prooph\HttpEventStore\UserManagement\ClientOperations\ResetPasswordOperation
 use Prooph\HttpEventStore\UserManagement\ClientOperations\UpdateUserOperation;
 use Webmozart\Assert\Assert;
 
-final class HttpUserManagement implements AsyncUserManagement
+final class HttpUserManagement implements UserManagement
 {
-    /** @var HttpAsyncClient */
-    private $asyncClient;
+    /** @var HttpClient */
+    private $httpClient;
     /** @var RequestFactory */
     private $requestFactory;
     /** @var UriFactory */
@@ -40,7 +41,7 @@ final class HttpUserManagement implements AsyncUserManagement
         UriFactory $uriFactory,
         ConnectionSettings $settings = null
     ) {
-        $this->asyncClient = $asyncClient;
+        $this->httpClient = $httpClient;
         $this->requestFactory = $requestFactory;
         $this->uriFactory = $uriFactory;
         $this->settings = $settings ?? ConnectionSettings::default();
@@ -52,14 +53,14 @@ final class HttpUserManagement implements AsyncUserManagement
         );
     }
 
-    public function changePasswordAsync(
+    public function changePassword(
         string $login,
         string $oldPassword,
         string $newPassword,
         UserCredentials $userCredentials = null
-    ): Task {
-        $operation = new ChangePasswordOperation(
-            $this->asyncClient,
+    ): void {
+        (new ChangePasswordOperation())(
+            $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
             $this->baseUri,
@@ -68,8 +69,6 @@ final class HttpUserManagement implements AsyncUserManagement
             $newPassword,
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
-
-        return $operation->task();
     }
 
     /**
@@ -78,19 +77,19 @@ final class HttpUserManagement implements AsyncUserManagement
      * @param string $password
      * @param string[] $groups
      * @param UserCredentials|null $userCredentials
-     * @return Task
+     * @return void
      */
-    public function createUserAsync(
+    public function createUser(
         string $login,
         string $fullName,
         string $password,
         array $groups,
         UserCredentials $userCredentials = null
-    ): Task {
+    ): void {
         Assert::allString($groups, 'Expected an array of strings for groups');
 
-        $operation = new CreateUserOperation(
-            $this->asyncClient,
+        (new CreateUserOperation())(
+            $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
             $this->baseUri,
@@ -100,83 +99,74 @@ final class HttpUserManagement implements AsyncUserManagement
             $groups,
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
-
-        return $operation->task();
     }
 
-    public function deleteUserAsync(string $login, UserCredentials $userCredentials = null): Task
+    public function deleteUser(string $login, UserCredentials $userCredentials = null): void
     {
-        $operation = new DeleteUserOperation(
-            $this->asyncClient,
+        (new DeleteUserOperation())(
+            $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
             $this->baseUri,
             $login,
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
-
-        return $operation->task();
     }
 
-    public function disableUserAsync(string $login, UserCredentials $userCredentials = null): Task
+    public function disableUser(string $login, UserCredentials $userCredentials = null): void
     {
-        $operation = new DisableUserOperation(
-            $this->asyncClient,
+        (new DisableUserOperation())(
+            $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
             $this->baseUri,
             $login,
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
-
-        return $operation->task();
     }
 
-    public function enableUserAsync(string $login, UserCredentials $userCredentials = null): Task
+    public function enableUser(string $login, UserCredentials $userCredentials = null): void
     {
-        $operation = new EnableUserOperation(
-            $this->asyncClient,
+        (new EnableUserOperation())(
+            $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
             $this->baseUri,
             $login,
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
-
-        return $operation->task();
     }
 
-    public function getUserAsync(string $login, UserCredentials $userCredentials = null): GetUserTask
+    public function getUser(string $login, UserCredentials $userCredentials = null): UserDetails
     {
-        $operation = new GetUserOperation(
-            $this->asyncClient,
+        return (new GetUserOperation())(
+            $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
             $this->baseUri,
             $login,
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
-
-        return $operation->task();
     }
 
-    public function getAllUsersAsync(UserCredentials $userCredentials = null): GetAllUsersTask
+    /**
+     * @return UserDetails[]
+     */
+    public function getAllUsers(UserCredentials $userCredentials = null): array
     {
-        $operation = new GetAllUsersOperation(
-            $this->asyncClient,
+        return (new GetAllUsersOperation())(
+            $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
             $this->baseUri,
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
-
-        return $operation->task();
     }
 
-    public function resetPasswordAsync(string $login, string $newPassword, UserCredentials $userCredentials = null): Task
+    public function resetPassword(string $login, string $newPassword, UserCredentials $userCredentials = null): void
     {
-        $operation = new ResetPasswordOperation(
-            $this->asyncClient,
+        (new ResetPasswordOperation())(
+            $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
             $this->baseUri,
@@ -184,20 +174,18 @@ final class HttpUserManagement implements AsyncUserManagement
             $newPassword,
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
-
-        return $operation->task();
     }
 
-    public function updateUserAsync(
+    public function updateUser(
         string $login,
         string $fullName,
         array $groups,
         UserCredentials $userCredentials = null
-    ): Task {
+    ): void {
         Assert::allString($groups, 'Expected an array of strings for groups');
 
-        $operation = new UpdateUserOperation(
-            $this->asyncClient,
+        (new UpdateUserOperation())(
+            $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
             $this->baseUri,
@@ -206,7 +194,5 @@ final class HttpUserManagement implements AsyncUserManagement
             $groups,
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
-
-        return $operation->task();
     }
 }

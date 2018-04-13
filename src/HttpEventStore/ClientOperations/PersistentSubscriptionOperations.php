@@ -18,10 +18,20 @@ use Prooph\HttpEventStore\Http\RequestMethod;
 /** @internal */
 final class PersistentSubscriptionOperations extends Operation implements BasePersistentSubscriptionOperations
 {
+    /** @var HttpClient */
+    private $httpClient;
+    /** @var RequestFactory */
+    private $requestFactory;
+    /** @var UriFactory */
+    private $uriFactory;
+    /** @var string */
+    private $baseUri;
     /** @var string */
     private $stream;
     /** @var string */
     private $groupName;
+    /** @var ?UserCredentials */
+    private $userCredentials;
 
     public function __construct(
         HttpClient $httpClient,
@@ -32,10 +42,13 @@ final class PersistentSubscriptionOperations extends Operation implements BasePe
         string $groupName,
         ?UserCredentials $userCredentials
     ) {
-        parent::__construct($httpClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
-
+        $this->httpClient = $httpClient;
+        $this->requestFactory = $requestFactory;
+        $this->uriFactory = $uriFactory;
+        $this->baseUri = $baseUri;
         $this->stream = $stream;
         $this->groupName = $groupName;
+        $this->userCredentials = $userCredentials;
     }
 
     /**
@@ -79,7 +92,7 @@ final class PersistentSubscriptionOperations extends Operation implements BasePe
             ''
         );
 
-        $response = $this->sendRequest($request);
+        $response = $this->sendRequest($httpClient, $userCredentials, $request);
 
         switch ($response->getStatusCode()) {
             case 202:
@@ -113,7 +126,7 @@ final class PersistentSubscriptionOperations extends Operation implements BasePe
             ''
         );
 
-        $response = $this->sendRequest($request);
+        $response = $this->sendRequest($httpClient, $userCredentials, $request);
 
         switch ($response->getStatusCode()) {
             case 202:

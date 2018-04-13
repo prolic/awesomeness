@@ -7,15 +7,15 @@ namespace Prooph\HttpEventStore\Stats;
 use Http\Client\HttpClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
-use Prooph\EventStore\Stats\AsyncEventStoreStats;
+use Prooph\EventStore\Stats\EventStoreStats;
 use Prooph\EventStore\UserCredentials;
 use Prooph\HttpEventStore\ConnectionSettings;
 use Prooph\HttpEventStore\Stats\ClientOperations\StatsOperation;
 
-final class HttpEventStoreStats implements AsyncEventStoreStats
+final class HttpEventStoreStats implements EventStoreStats
 {
-    /** @var HttpAsyncClient */
-    private $asyncClient;
+    /** @var HttpClient */
+    private $httpClient;
     /** @var RequestFactory */
     private $requestFactory;
     /** @var UriFactory */
@@ -31,7 +31,7 @@ final class HttpEventStoreStats implements AsyncEventStoreStats
         UriFactory $uriFactory,
         ConnectionSettings $settings = null
     ) {
-        $this->asyncClient = $asyncClient;
+        $this->httpClient = $httpClient;
         $this->requestFactory = $requestFactory;
         $this->uriFactory = $uriFactory;
         $this->settings = $settings ?? ConnectionSettings::default();
@@ -43,52 +43,40 @@ final class HttpEventStoreStats implements AsyncEventStoreStats
         );
     }
 
-    public function getAllAsync(UserCredentials $userCredentials = null): GetArrayTask
+    public function getAll(UserCredentials $userCredentials = null): array
     {
-        $operation = $this->statsOperation('', $userCredentials);
-
-        return $operation->task();
+        return $this->fetchStats('', $userCredentials);
     }
 
-    public function getProcAsync(UserCredentials $userCredentials = null): GetArrayTask
+    public function getProc(UserCredentials $userCredentials = null): array
     {
-        $operation = $this->statsOperation('/proc', $userCredentials);
-
-        return $operation->task();
+        return $this->fetchStats('/proc', $userCredentials);
     }
 
-    public function getReplicationAsync(UserCredentials $userCredentials = null): GetArrayTask
+    public function getReplication(UserCredentials $userCredentials = null): array
     {
-        $operation = $this->statsOperation('/replication', $userCredentials);
-
-        return $operation->task();
+        return $this->fetchStats('/replication', $userCredentials);
     }
 
-    public function getTcpAsync(UserCredentials $userCredentials = null): GetArrayTask
+    public function getTcp(UserCredentials $userCredentials = null): array
     {
-        $operation = $this->statsOperation('/proc/tcp', $userCredentials);
-
-        return $operation->task();
+        return $this->fetchStats('/proc/tcp', $userCredentials);
     }
 
-    public function getSysAsync(UserCredentials $userCredentials = null): GetArrayTask
+    public function getSys(UserCredentials $userCredentials = null): array
     {
-        $operation = $this->statsOperation('/sys', $userCredentials);
-
-        return $operation->task();
+        return $this->fetchStats('/sys', $userCredentials);
     }
 
-    public function getEsAsync(UserCredentials $userCredentials = null): GetArrayTask
+    public function getEs(UserCredentials $userCredentials = null): array
     {
-        $operation = $this->statsOperation('/es', $userCredentials);
-
-        return $operation->task();
+        return $this->fetchStats('/es', $userCredentials);
     }
 
-    private function statsOperationAsync(string $section, ?UserCredentials $userCredentials): StatsOperation
+    private function fetchStats(string $section, ?UserCredentials $userCredentials): array
     {
-        return new StatsOperation(
-            $this->asyncClient,
+        return (new StatsOperation())(
+            $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
             $this->baseUri,

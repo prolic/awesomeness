@@ -20,16 +20,7 @@ use Prooph\HttpEventStore\Http\RequestMethod;
 /** @internal */
 class ReadStreamEventsBackwardOperation extends Operation
 {
-    /** @var string */
-    private $stream;
-    /** @var int */
-    private $start;
-    /** @var int */
-    private $count;
-    /** @var bool */
-    private $resolveLinkTos;
-
-    public function __construct(
+    public function __invoke(
         HttpClient $httpClient,
         RequestFactory $requestFactory,
         UriFactory $uriFactory,
@@ -39,43 +30,33 @@ class ReadStreamEventsBackwardOperation extends Operation
         int $count,
         bool $resolveLinkTos,
         ?UserCredentials $userCredentials
-    ) {
-        parent::__construct($httpClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
-
-        $this->stream = $stream;
-        $this->start = $start;
-        $this->count = $count;
-        $this->resolveLinkTos = $resolveLinkTos;
-    }
-
-    public function __invoke(): StreamEventsSlice
-    {
+    ): StreamEventsSlice {
         $headers = [
             'Accept' => 'application/vnd.eventstore.atom+json',
         ];
 
-        if (! $this->resolveLinkTos) {
+        if (! $resolveLinkTos) {
             $headers['ES-ResolveLinkTos'] = 'false';
         }
 
-        $request = $this->requestFactory->createRequest(
+        $request = $requestFactory->createRequest(
             RequestMethod::Get,
-            $this->uriFactory->createUri(
-                $this->baseUri . '/streams/' . urlencode($this->stream) . '/' . $this->start . '/backward/' . $this->count . '?embed=tryharder'
+            $uriFactory->createUri(
+                $baseUri . '/streams/' . urlencode($stream) . '/' . $start . '/backward/' . $count . '?embed=tryharder'
             ),
             $headers
         );
 
-        $response = $this->sendRequest($request);
+        $response = $this->sendRequest($httpClient, $userCredentials, $request);
 
         switch ($response->getStatusCode()) {
             case 401:
-                throw AccessDenied::toStream($this->stream);
+                throw AccessDenied::toStream($stream);
             case 404:
                 return new StreamEventsSlice(
                     SliceReadStatus::streamNotFound(),
-                    $this->stream,
-                    $this->start,
+                    $stream,
+                    $start,
                     ReadDirection::backward(),
                     [],
                     0,
@@ -85,8 +66,8 @@ class ReadStreamEventsBackwardOperation extends Operation
             case 410:
                 return new StreamEventsSlice(
                     SliceReadStatus::streamDeleted(),
-                    $this->stream,
-                    $this->start,
+                    $stream,
+                    $start,
                     ReadDirection::backward(),
                     [],
                     0,
@@ -129,8 +110,8 @@ class ReadStreamEventsBackwardOperation extends Operation
 
                 return new StreamEventsSlice(
                     SliceReadStatus::success(),
-                    $this->stream,
-                    $this->start,
+                    $stream,
+                    $start,
                     ReadDirection::backward(),
                     $events,
                     $nextEventNumber,

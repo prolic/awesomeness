@@ -15,32 +15,22 @@ use Prooph\HttpEventStore\Http\RequestMethod;
 use Prooph\HttpEventStore\ProjectionManagement\ProjectionNotFound;
 
 /** @internal */
-class GetOperation extends Operation
+class GetProjectionDetailsOperation extends Operation
 {
-    /** @var string */
-    private $name;
-
-    public function __construct(
+    public function __invoke(
         HttpClient $httpClient,
         RequestFactory $requestFactory,
         UriFactory $uriFactory,
         string $baseUri,
         string $name,
         ?UserCredentials $userCredentials
-    ) {
-        parent::__construct($httpClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
-
-        $this->name = $name;
-    }
-
-    public function __invoke(): ProjectionDetails
-    {
-        $request = $this->requestFactory->createRequest(
+    ): ProjectionDetails {
+        $request = $requestFactory->createRequest(
             RequestMethod::Get,
-            $this->uriFactory->createUri($this->baseUri . '/projection/' . urlencode($this->name))
+            $uriFactory->createUri($baseUri . '/projection/' . urlencode($name))
         );
 
-        $response = $this->sendRequest($request);
+        $response = $this->sendRequest($httpClient, $userCredentials, $request);
 
         switch ($response->getStatusCode()) {
             case 200:

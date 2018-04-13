@@ -8,50 +8,41 @@ use Http\Client\HttpClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
 use Prooph\EventStore\Exception\AccessDenied;
-use Prooph\EventStore\ProjectionManagement\ProjectionDefinition;
+use Prooph\EventStore\ProjectionManagement\ProjectionConfig;
 use Prooph\EventStore\UserCredentials;
 use Prooph\HttpEventStore\ClientOperations\Operation;
 use Prooph\HttpEventStore\Http\RequestMethod;
 use Prooph\HttpEventStore\ProjectionManagement\ProjectionNotFound;
 
 /** @internal */
-class GetDefinitionOperation extends Operation
+class GetProjectionConfigOperation extends Operation
 {
-    /** @var string */
-    private $name;
-
-    public function __construct(
+    public function __invoke(
         HttpClient $httpClient,
         RequestFactory $requestFactory,
         UriFactory $uriFactory,
         string $baseUri,
         string $name,
         ?UserCredentials $userCredentials
-    ) {
-        parent::__construct($httpClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
-
-        $this->name = $name;
-    }
-
-    public function __invoke(): ProjectionDefinition
-    {
-        $request = $this->requestFactory->createRequest(
+    ): ProjectionConfig {
+        $request = $requestFactory->createRequest(
             RequestMethod::Get,
-            $this->uriFactory->createUri($this->baseUri . '/projection/' . urlencode($this->name) . '/query?config=true')
+            $uriFactory->createUri($baseUri . '/projection/' . urlencode($name) . '/config')
         );
 
-        $response = $this->sendRequest($request);
+        $response = $this->sendRequest($httpClient, $userCredentials, $request);
 
         switch ($response->getStatusCode()) {
             case 200:
                 $json = json_decode($response->getBody()->getContents());
 
-                return new ProjectionDefinition(
-                    $json['name'],
-                    $json['query'],
+                return new ProjectionConfig(
                     $json['emitEnabled'],
-                    $json['definition'],
-                    $json['outputConfig']
+                    $json['checkpointAfterMs'] ?? 0,
+                    $json['checkpointHandledThreshold'],
+                    $json['checkpointUnhandledBytesThreshold'],
+                    $json['pendingEventsThreshold'],
+                    $json['maxWriteBatchLength']
                 );
             case 401:
                 throw AccessDenied::toUserManagementOperation();

@@ -14,12 +14,7 @@ use Prooph\HttpEventStore\Http\RequestMethod;
 /** @internal */
 class DeleteStreamOperation extends Operation
 {
-    /** @var string */
-    private $stream;
-    /** @var bool */
-    private $hardDelete;
-
-    public function __construct(
+    public function __invoke(
         HttpClient $httpClient,
         RequestFactory $requestFactory,
         UriFactory $uriFactory,
@@ -27,35 +22,27 @@ class DeleteStreamOperation extends Operation
         string $stream,
         bool $hardDelete,
         ?UserCredentials $userCredentials
-    ) {
-        parent::__construct($httpClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
-
-        $this->stream = $stream;
-        $this->hardDelete = $hardDelete;
-    }
-
-    public function __invoke(): void
-    {
+    ): void {
         $headers = [];
 
-        if ($this->hardDelete) {
+        if ($hardDelete) {
             $headers['ES-HardDelete'] = 'true';
         }
 
-        $request = $this->requestFactory->createRequest(
+        $request = $requestFactory->createRequest(
             RequestMethod::Delete,
-            $this->uriFactory->createUri($this->baseUri . '/streams/' . urlencode($this->stream)),
+            $uriFactory->createUri($baseUri . '/streams/' . urlencode($stream)),
             $headers
         );
 
-        $response = $this->sendRequest($request);
+        $response = $this->sendRequest($httpClient, $userCredentials, $request);
 
         switch ($response->getStatusCode()) {
             case 204:
             case 410:
                 return;
             case 401:
-                throw AccessDenied::toStream($this->stream);
+                throw AccessDenied::toStream($stream);
             default:
                 throw new \UnexpectedValueException('Unexpected status code ' . $response->getStatusCode() . ' returned');
         }

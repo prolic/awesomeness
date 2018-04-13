@@ -16,12 +16,7 @@ use Prooph\HttpEventStore\ProjectionManagement\ProjectionNotFound;
 /** @internal */
 class GetArrayOperation extends Operation
 {
-    /** @var string */
-    private $name;
-    /** @var string */
-    private $urlQuery;
-
-    public function __construct(
+    public function __invoke(
         HttpClient $httpClient,
         RequestFactory $requestFactory,
         UriFactory $uriFactory,
@@ -29,21 +24,13 @@ class GetArrayOperation extends Operation
         string $name,
         string $urlQuery,
         ?UserCredentials $userCredentials
-    ) {
-        parent::__construct($httpClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
-
-        $this->name = $name;
-        $this->urlQuery = $urlQuery;
-    }
-
-    public function __invoke(): array
-    {
-        $request = $this->requestFactory->createRequest(
+    ): array {
+        $request = $requestFactory->createRequest(
             RequestMethod::Get,
-            $this->uriFactory->createUri($this->baseUri . '/projection/' . urlencode($this->name) . '/' . $this->urlQuery)
+            $uriFactory->createUri($baseUri . '/projection/' . urlencode($name) . '/' . $urlQuery)
         );
 
-        $response = $this->sendRequest($request);
+        $response = $this->sendRequest($httpClient, $userCredentials, $request);
 
         switch ($response->getStatusCode()) {
             case 200:

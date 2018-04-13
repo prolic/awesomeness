@@ -16,30 +16,20 @@ use Prooph\HttpEventStore\ProjectionManagement\ProjectionNotFound;
 /** @internal */
 class ResetOperation extends Operation
 {
-    /** @var string */
-    private $name;
-
-    public function __construct(
+    public function __invoke(
         HttpClient $httpClient,
         RequestFactory $requestFactory,
         UriFactory $uriFactory,
         string $baseUri,
         string $name,
         ?UserCredentials $userCredentials
-    ) {
-        parent::__construct($httpClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
-
-        $this->name = $name;
-    }
-
-    public function __invoke(): void
-    {
-        $request = $this->requestFactory->createRequest(
+    ): void {
+        $request = $requestFactory->createRequest(
             RequestMethod::Post,
-            $this->uriFactory->createUri($this->baseUri . '/projection/' . urlencode($this->name) . '/command/reset')
+            $uriFactory->createUri($baseUri . '/projection/' . urlencode($name) . '/command/reset')
         );
 
-        $response = $this->sendRequest($request);
+        $response = $this->sendRequest($httpClient, $userCredentials, $request);
 
         switch ($response->getStatusCode()) {
             case 200:

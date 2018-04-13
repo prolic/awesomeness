@@ -17,12 +17,7 @@ use Prooph\HttpEventStore\ProjectionManagement\ProjectionNotFound;
 /** @internal */
 class UpdateConfigOperation extends Operation
 {
-    /** @var string */
-    private $name;
-    /** @var ProjectionConfig */
-    private $config;
-
-    public function __construct(
+    public function __invoke(
         HttpClient $httpClient,
         RequestFactory $requestFactory,
         UriFactory $uriFactory,
@@ -30,20 +25,12 @@ class UpdateConfigOperation extends Operation
         string $name,
         ProjectionConfig $definition,
         ?UserCredentials $userCredentials
-    ) {
-        parent::__construct($httpClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
+    ): void {
+        $string = json_encode($config->toArray());
 
-        $this->name = $name;
-        $this->config = $definition;
-    }
-
-    public function __invoke(): void
-    {
-        $string = json_encode($this->config->toArray());
-
-        $request = $this->requestFactory->createRequest(
+        $request = $requestFactory->createRequest(
             RequestMethod::Put,
-            $this->uriFactory->createUri($this->baseUri . '/projection/' . urlencode($this->name) . '/config'),
+            $uriFactory->createUri($baseUri . '/projection/' . urlencode($name) . '/config'),
             [
                 'Content-Type' => 'application/json',
                 'Content-Length' => strlen($string),
@@ -51,7 +38,7 @@ class UpdateConfigOperation extends Operation
             $string
         );
 
-        $response = $this->sendRequest($request);
+        $response = $this->sendRequest($httpClient, $userCredentials, $request);
 
         switch ($response->getStatusCode()) {
             case 200:

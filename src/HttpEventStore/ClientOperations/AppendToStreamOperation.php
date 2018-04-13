@@ -7,7 +7,6 @@ namespace Prooph\HttpEventStore\ClientOperations;
 use Http\Client\HttpClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
-use Prooph\EventStore\EventData;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Exception\StreamDeleted;
 use Prooph\EventStore\Exception\WrongExpectedVersion;
@@ -18,14 +17,7 @@ use Prooph\HttpEventStore\Http\RequestMethod;
 /** @internal */
 class AppendToStreamOperation extends Operation
 {
-    /** @var string */
-    private $stream;
-    /** @var int */
-    private $expectedVersion;
-    /** @var EventData[] */
-    private $events;
-
-    public function __construct(
+    public function __invoke(
         HttpClient $httpClient,
         RequestFactory $requestFactory,
         UriFactory $uriFactory,
@@ -34,19 +26,10 @@ class AppendToStreamOperation extends Operation
         int $expectedVersion,
         array $events,
         ?UserCredentials $userCredentials
-    ) {
-        parent::__construct($httpClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
-
-        $this->stream = $stream;
-        $this->expectedVersion = $expectedVersion;
-        $this->events = $events;
-    }
-
-    public function __invoke(): WriteResult
-    {
+    ): WriteResult {
         $data = [];
 
-        foreach ($this->events as $event) {
+        foreach ($events as $event) {
             $data[] = [
                 'eventId' => $event->eventId()->toString(),
                 'eventType' => $event->eventType(),
@@ -57,34 +40,34 @@ class AppendToStreamOperation extends Operation
 
         $string = json_encode($data);
 
-        $request = $this->requestFactory->createRequest(
+        $request = $requestFactory->createRequest(
             RequestMethod::Post,
-            $this->uriFactory->createUri($this->baseUri . '/streams/' . urlencode($this->stream)),
+            $uriFactory->createUri($baseUri . '/streams/' . urlencode($stream)),
             [
                 'Content-Type' => 'application/vnd.eventstore.events+json',
                 'Content-Length' => strlen($string),
-                'ES-ExpectedVersion' => $this->expectedVersion,
+                'ES-ExpectedVersion' => $expectedVersion,
             ],
             $string
         );
 
-        $response = $this->sendRequest($request);
+        $response = $this->sendRequest($httpClient, $userCredentials, $request);
 
         switch ($response->getStatusCode()) {
             case 400:
                 $header = $response->getHeader('ES-CurrentVersion');
 
                 if (empty($header)) {
-                    throw WrongExpectedVersion::withExpectedVersion($this->stream, $this->expectedVersion);
+                    throw WrongExpectedVersion::withExpectedVersion($stream, $expectedVersion);
                 }
 
                 $currentVersion = (int) $header[0];
 
-                throw WrongExpectedVersion::withCurrentVersion($this->stream, $this->expectedVersion, $currentVersion);
+                throw WrongExpectedVersion::withCurrentVersion($stream, $expectedVersion, $currentVersion);
             case 401:
-                throw AccessDenied::toStream($this->stream);
+                throw AccessDenied::toStream($stream);
             case 410:
-                throw StreamDeleted::with($this->stream);
+                throw StreamDeleted::with($stream);
             case 201:
                 return new WriteResult();
             default:

@@ -16,24 +16,7 @@ use Prooph\HttpEventStore\Http\RequestMethod;
 /** @internal */
 class CreateOperation extends Operation
 {
-    /** @var string */
-    private $name;
-    /** @var string */
-    private $mode;
-    /** @var string */
-    private $type;
-    /** @var string */
-    private $query;
-    /** @var bool */
-    private $enabled;
-    /** @var bool */
-    private $checkpoints;
-    /** @var bool */
-    private $emit;
-    /** @var bool */
-    private $trackEmittedStreams;
-
-    public function __construct(
+    public function __invoke(
         HttpClient $httpClient,
         RequestFactory $requestFactory,
         UriFactory $uriFactory,
@@ -47,40 +30,26 @@ class CreateOperation extends Operation
         bool $emit,
         bool $trackEmittedStreams,
         ?UserCredentials $userCredentials
-    ) {
-        parent::__construct($httpClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
-
-        $this->name = $name;
-        $this->mode = $mode;
-        $this->type = $type;
-        $this->query = $query;
-        $this->enabled = $enabled;
-        $this->checkpoints = $checkpoints;
-        $this->emit = $emit;
-        $this->trackEmittedStreams = $trackEmittedStreams;
-    }
-
-    public function __invoke(): CreateProjectionResult
-    {
-        $request = $this->requestFactory->createRequest(
+    ): CreateProjectionResult {
+        $request = $requestFactory->createRequest(
             RequestMethod::Post,
-            $this->uriFactory->createUri(sprintf(
-                $this->baseUri . '/projections/%s?name=%s&enabled=%s&checkpoints=%semit=%s&type=%s&trackemittedstreams=%s',
-                $this->mode,
-                urlencode($this->name),
-                (int) $this->enabled,
-                (int) $this->checkpoints,
-                (int) $this->emit,
-                $this->type,
-                (int) $this->trackEmittedStreams
+            $uriFactory->createUri(sprintf(
+                $baseUri . '/projections/%s?name=%s&enabled=%s&checkpoints=%semit=%s&type=%s&trackemittedstreams=%s',
+                $mode,
+                urlencode($name),
+                (int) $enabled,
+                (int) $checkpoints,
+                (int) $emit,
+                $type,
+                (int) $trackEmittedStreams
             )),
             [
                 'Content-Type' => 'application/json',
             ],
-            $this->query
+            $query
         );
 
-        $response = $this->sendRequest($request);
+        $response = $this->sendRequest($httpClient, $userCredentials, $request);
 
         switch ($response->getStatusCode()) {
             case 201:

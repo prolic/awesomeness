@@ -15,27 +15,22 @@ use Prooph\HttpEventStore\Http\RequestMethod;
 /** @internal */
 class GetInformationForAllSubscriptionsOperation extends Operation
 {
-    public function __construct(
+    /**
+     * @return SubscriptionInformation[]
+     */
+    public function __invoke(
         HttpClient $httpClient,
         RequestFactory $requestFactory,
         UriFactory $uriFactory,
         string $baseUri,
         ?UserCredentials $userCredentials
-    ) {
-        parent::__construct($httpClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
-    }
-
-    /**
-     * @return SubscriptionInformation[]
-     */
-    public function __invoke(): array
-    {
-        $request = $this->requestFactory->createRequest(
+    ): array {
+        $request = $requestFactory->createRequest(
             RequestMethod::Get,
-            $this->uriFactory->createUri($this->baseUri . '/subscriptions')
+            $uriFactory->createUri($baseUri . '/subscriptions')
         );
 
-        $response = $this->sendRequest($request);
+        $response = $this->sendRequest($httpClient, $userCredentials, $request);
 
         switch ($response->getStatusCode()) {
             case 401:

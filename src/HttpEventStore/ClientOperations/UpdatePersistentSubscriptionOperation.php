@@ -17,14 +17,7 @@ use Prooph\HttpEventStore\Http\RequestMethod;
 /** @internal  */
 class UpdatePersistentSubscriptionOperation extends Operation
 {
-    /** @var string */
-    private $stream;
-    /** @var string */
-    private $groupName;
-    /** @var PersistentSubscriptionSettings */
-    private $settings;
-
-    public function __construct(
+    public function __invoke(
         HttpClient $httpClient,
         RequestFactory $requestFactory,
         UriFactory $uriFactory,
@@ -33,21 +26,12 @@ class UpdatePersistentSubscriptionOperation extends Operation
         string $groupName,
         PersistentSubscriptionSettings $settings,
         ?UserCredentials $userCredentials
-    ) {
-        parent::__construct($httpClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
+    ): PersistentSubscriptionUpdateResult {
+        $string = json_encode($settings->toArray());
 
-        $this->stream = $stream;
-        $this->groupName = $groupName;
-        $this->settings = $settings;
-    }
-
-    public function __invoke(): PersistentSubscriptionUpdateResult
-    {
-        $string = json_encode($this->settings->toArray());
-
-        $request = $this->requestFactory->createRequest(
+        $request = $requestFactory->createRequest(
             RequestMethod::Post,
-            $this->uriFactory->createUri($this->baseUri . '/subscriptions/' . urlencode($this->stream) . '/' . urlencode($this->groupName)),
+            $uriFactory->createUri($baseUri . '/subscriptions/' . urlencode($stream) . '/' . urlencode($groupName)),
             [
                 'Content-Type' => 'application/json',
                 'Content-Length' => strlen($string),
@@ -55,12 +39,12 @@ class UpdatePersistentSubscriptionOperation extends Operation
             $string
         );
 
-        $response = $this->sendRequest($request);
+        $response = $this->sendRequest($httpClient, $userCredentials, $request);
 
         $json = json_decode($response->getBody()->getContents(), true);
         switch ($response->getStatusCode()) {
             case 401:
-                throw AccessDenied::toSubscription($this->stream, $this->groupName);
+                throw AccessDenied::toSubscription($stream, $groupName);
             case 200:
             case 404:
                 return new PersistentSubscriptionUpdateResult(

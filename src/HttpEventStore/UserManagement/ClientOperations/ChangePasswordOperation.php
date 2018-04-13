@@ -15,14 +15,7 @@ use Prooph\HttpEventStore\Http\RequestMethod;
 /** @internal */
 class ChangePasswordOperation extends Operation
 {
-    /** @var string */
-    private $login;
-    /** @var string */
-    private $oldPassword;
-    /** @var string */
-    private $newPassword;
-
-    public function __construct(
+    public function __invoke(
         HttpClient $httpClient,
         RequestFactory $requestFactory,
         UriFactory $uriFactory,
@@ -31,24 +24,15 @@ class ChangePasswordOperation extends Operation
         string $oldPassword,
         string $newPassword,
         ?UserCredentials $userCredentials
-    ) {
-        parent::__construct($httpClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
-
-        $this->login = $login;
-        $this->oldPassword = $oldPassword;
-        $this->newPassword = $newPassword;
-    }
-
-    public function __invoke(): void
-    {
+    ): void {
         $string = json_encode([
-            'oldPassword' => $this->oldPassword,
-            'newPassword' => $this->newPassword,
+            'oldPassword' => $oldPassword,
+            'newPassword' => $newPassword,
         ]);
 
-        $request = $this->requestFactory->createRequest(
+        $request = $requestFactory->createRequest(
             RequestMethod::Post,
-            $this->uriFactory->createUri($this->baseUri . '/users/' . urlencode($this->login) . '/command/change-password'),
+            $uriFactory->createUri($baseUri . '/users/' . urlencode($login) . '/command/change-password'),
             [
                 'Content-Type' => 'application/json',
                 'Content-Length' => strlen($string),
@@ -56,7 +40,7 @@ class ChangePasswordOperation extends Operation
             $string
         );
 
-        $response = $this->sendRequest($request);
+        $response = $this->sendRequest($httpClient, $userCredentials, $request);
 
         switch ($response->getStatusCode()) {
             case 200:

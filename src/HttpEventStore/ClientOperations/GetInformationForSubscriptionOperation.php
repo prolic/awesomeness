@@ -17,12 +17,7 @@ use Prooph\HttpEventStore\Http\RequestMethod;
 /** @internal */
 class GetInformationForSubscriptionOperation extends Operation
 {
-    /** @var string */
-    private $stream;
-    /** @var string */
-    private $groupName;
-
-    public function __construct(
+    public function __invoke(
         HttpClient $httpClient,
         RequestFactory $requestFactory,
         UriFactory $uriFactory,
@@ -30,21 +25,13 @@ class GetInformationForSubscriptionOperation extends Operation
         string $stream,
         string $groupName,
         ?UserCredentials $userCredentials
-    ) {
-        parent::__construct($httpClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
-
-        $this->stream = $stream;
-        $this->groupName = $groupName;
-    }
-
-    public function __invoke(): DetailedSubscriptionInformation
-    {
-        $request = $this->requestFactory->createRequest(
+    ): DetailedSubscriptionInformation {
+        $request = $requestFactory->createRequest(
             RequestMethod::Get,
-            $this->uriFactory->createUri($this->baseUri . '/subscriptions/' . urlencode($this->stream) . '/' . urlencode($this->groupName) . '/info')
+            $uriFactory->createUri($baseUri . '/subscriptions/' . urlencode($stream) . '/' . urlencode($groupName) . '/info')
         );
 
-        $response = $this->sendRequest($request);
+        $response = $this->sendRequest($httpClient, $userCredentials, $request);
 
         switch ($response->getStatusCode()) {
             case 200:
@@ -84,8 +71,8 @@ class GetInformationForSubscriptionOperation extends Operation
             case 404:
                 throw new \RuntimeException(sprintf(
                     'Subscription with stream \'%s\' and group name \'%s\' not found',
-                    $this->stream,
-                    $this->groupName
+                    $stream,
+                    $groupName
                 ));
             default:
                 throw new \UnexpectedValueException('Unexpected status code ' . $response->getStatusCode() . ' returned');

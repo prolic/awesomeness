@@ -16,16 +16,7 @@ use Prooph\HttpEventStore\ProjectionManagement\ProjectionNotFound;
 /** @internal */
 class DeleteOperation extends Operation
 {
-    /** @var string */
-    private $name;
-    /** @var bool */
-    private $deleteStateStream;
-    /** @var bool */
-    private $deleteCheckpointStream;
-    /** @var bool */
-    private $deleteEmittedStreams;
-
-    public function __construct(
+    public function __invoke(
         HttpClient $httpClient,
         RequestFactory $requestFactory,
         UriFactory $uriFactory,
@@ -35,29 +26,19 @@ class DeleteOperation extends Operation
         bool $deleteCheckpointStream,
         bool $deleteEmittedStreams,
         ?UserCredentials $userCredentials
-    ) {
-        parent::__construct($httpClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
-
-        $this->name = $name;
-        $this->deleteStateStream = $deleteStateStream;
-        $this->deleteCheckpointStream = $deleteCheckpointStream;
-        $this->deleteEmittedStreams = $deleteEmittedStreams;
-    }
-
-    public function __invoke(): void
-    {
-        $request = $this->requestFactory->createRequest(
+    ): void {
+        $request = $requestFactory->createRequest(
             RequestMethod::Delete,
-            $this->uriFactory->createUri(sprintf(
-                $this->baseUri . '/projection/%s?deleteStateStream=%s&deleteCheckpointStream=%s&deleteEmittedStreams=%s',
-                urlencode($this->name),
-                (int) $this->deleteStateStream,
-                (int) $this->deleteCheckpointStream,
-                (int) $this->deleteEmittedStreams
+            $uriFactory->createUri(sprintf(
+                $baseUri . '/projection/%s?deleteStateStream=%s&deleteCheckpointStream=%s&deleteEmittedStreams=%s',
+                urlencode($name),
+                (int) $deleteStateStream,
+                (int) $deleteCheckpointStream,
+                (int) $deleteEmittedStreams
             ))
         );
 
-        $response = $this->sendRequest($request);
+        $response = $this->sendRequest($httpClient, $userCredentials, $request);
 
         switch ($response->getStatusCode()) {
             case 204:

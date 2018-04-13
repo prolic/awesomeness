@@ -16,12 +16,7 @@ use Prooph\HttpEventStore\Http\RequestMethod;
 /** @internal */
 class ReplayParkedOperation extends Operation
 {
-    /** @var string */
-    private $stream;
-    /** @var string */
-    private $groupName;
-
-    public function __construct(
+    public function __invoke(
         HttpClient $httpClient,
         RequestFactory $requestFactory,
         UriFactory $uriFactory,
@@ -29,22 +24,14 @@ class ReplayParkedOperation extends Operation
         string $stream,
         string $groupName,
         ?UserCredentials $userCredentials
-    ) {
-        parent::__construct($httpClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
-
-        $this->stream = $stream;
-        $this->groupName = $groupName;
-    }
-
-    public function __invoke(): ReplayParkedResult
-    {
-        $request = $this->requestFactory->createRequest(
+    ): ReplayParkedResult {
+        $request = $requestFactory->createRequest(
             RequestMethod::Post,
-            $this->uriFactory->createUri(sprintf(
+            $uriFactory->createUri(sprintf(
                 '%s/subscriptions/%s/%s/replayParked',
-                $this->baseUri,
-                urlencode($this->stream),
-                urlencode($this->groupName)
+                $baseUri,
+                urlencode($stream),
+                urlencode($groupName)
             )),
             [
                 'Content-Length' => 0,
@@ -52,11 +39,11 @@ class ReplayParkedOperation extends Operation
             ''
         );
 
-        $response = $this->sendRequest($request);
+        $response = $this->sendRequest($httpClient, $userCredentials, $request);
 
         switch ($response->getStatusCode()) {
             case 401:
-                throw AccessDenied::toStream($this->stream);
+                throw AccessDenied::toStream($stream);
             case 404:
             case 200:
                 $json = json_decode($response->getBody()->getContents(), true);

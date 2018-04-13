@@ -7,8 +7,11 @@ namespace Prooph\HttpEventStore\ProjectionManagement;
 use Http\Client\HttpClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
-use Prooph\EventStore\ProjectionManagement\AsyncProjectionManagement;
+use Prooph\EventStore\ProjectionManagement\CreateProjectionResult;
 use Prooph\EventStore\ProjectionManagement\ProjectionConfig;
+use Prooph\EventStore\ProjectionManagement\ProjectionDefinition;
+use Prooph\EventStore\ProjectionManagement\ProjectionDetails;
+use Prooph\EventStore\ProjectionManagement\ProjectionManagement;
 use Prooph\EventStore\UserCredentials;
 use Prooph\HttpEventStore\ConnectionSettings;
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\AbortOperation;
@@ -18,19 +21,19 @@ use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\DeleteOperation;
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\DisableOperation;
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\EnableOperation;
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\GetArrayOperation;
-use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\GetConfigOperation;
-use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\GetDefinitionOperation;
-use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\GetMultiOperation;
-use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\GetOperation;
+use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\GetMultipleProjectionDetailsOperation;
+use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\GetProjectionConfigOperation;
+use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\GetProjectionDefinitionOperation;
+use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\GetProjectionDetailsOperation;
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\GetQueryOperation;
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\ResetOperation;
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\UpdateConfigOperation;
 use Prooph\HttpEventStore\ProjectionManagement\ClientOperations\UpdateQueryOperation;
 
-final class HttpProjectionManagement implements AsyncProjectionManagement
+final class HttpProjectionManagement implements ProjectionManagement
 {
-    /** @var HttpAsyncClient */
-    private $asyncClient;
+    /** @var HttpClient */
+    private $httpClient;
     /** @var RequestFactory */
     private $requestFactory;
     /** @var UriFactory */
@@ -46,7 +49,7 @@ final class HttpProjectionManagement implements AsyncProjectionManagement
         UriFactory $uriFactory,
         ConnectionSettings $settings = null
     ) {
-        $this->asyncClient = $asyncClient;
+        $this->httpClient = $httpClient;
         $this->requestFactory = $requestFactory;
         $this->uriFactory = $uriFactory;
         $this->settings = $settings ?? ConnectionSettings::default();
@@ -58,21 +61,19 @@ final class HttpProjectionManagement implements AsyncProjectionManagement
         );
     }
 
-    public function abortAsync(string $name, UserCredentials $userCredentials = null): Task
+    public function abort(string $name, UserCredentials $userCredentials = null): void
     {
-        $operation = new AbortOperation(
-            $this->asyncClient,
+        (new AbortOperation())(
+            $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
             $this->baseUri,
             $name,
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
-
-        return $operation->task();
     }
 
-    public function createOneTimeAsync(
+    public function createOneTime(
         string $name,
         string $type,
         string $query,
@@ -81,9 +82,9 @@ final class HttpProjectionManagement implements AsyncProjectionManagement
         bool $emit,
         bool $trackEmittedStreams,
         UserCredentials $userCredentials = null
-    ): CreateProjectionResultTask {
-        $operation = new CreateOperation(
-            $this->asyncClient,
+    ): CreateProjectionResult {
+        return (new CreateOperation())(
+            $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
             $this->baseUri,
@@ -97,11 +98,9 @@ final class HttpProjectionManagement implements AsyncProjectionManagement
             $trackEmittedStreams,
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
-
-        return $operation->task();
     }
 
-    public function createContinuousAsync(
+    public function createContinuous(
         string $name,
         string $type,
         string $query,
@@ -110,9 +109,9 @@ final class HttpProjectionManagement implements AsyncProjectionManagement
         bool $emit,
         bool $trackEmittedStreams,
         UserCredentials $userCredentials = null
-    ): CreateProjectionResultTask {
-        $operation = new CreateOperation(
-            $this->asyncClient,
+    ): CreateProjectionResult {
+        return (new CreateOperation())(
+            $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
             $this->baseUri,
@@ -126,19 +125,17 @@ final class HttpProjectionManagement implements AsyncProjectionManagement
             $trackEmittedStreams,
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
-
-        return $operation->task();
     }
 
-    public function createTransientAsync(
+    public function createTransient(
         string $name,
         string $type,
         string $query,
         bool $enabled,
         UserCredentials $userCredentials = null
-    ): CreateProjectionResultTask {
-        $operation = new CreateTransientOperation(
-            $this->asyncClient,
+    ): CreateProjectionResult {
+        return (new CreateTransientOperation())(
+            $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
             $this->baseUri,
@@ -148,19 +145,17 @@ final class HttpProjectionManagement implements AsyncProjectionManagement
             $enabled,
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
-
-        return $operation->task();
     }
 
-    public function deleteAsync(
+    public function delete(
         string $name,
         bool $deleteStateStream,
         bool $deleteCheckpointStream,
         bool $deleteEmittedStreams,
         UserCredentials $userCredentials = null
-    ): Task {
-        $operation = new DeleteOperation(
-            $this->asyncClient,
+    ): void {
+        (new DeleteOperation())(
+            $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
             $this->baseUri,
@@ -170,154 +165,144 @@ final class HttpProjectionManagement implements AsyncProjectionManagement
             $deleteEmittedStreams,
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
-
-        return $operation->task();
     }
 
-    public function disableAsync(string $name, UserCredentials $userCredentials = null): Task
+    public function disable(string $name, UserCredentials $userCredentials = null): void
     {
-        $operation = new DisableOperation(
-            $this->asyncClient,
+        (new DisableOperation())(
+            $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
             $this->baseUri,
             $name,
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
-
-        return $operation->task();
     }
 
-    public function enableAsync(string $name, UserCredentials $userCredentials = null): Task
+    public function enable(string $name, UserCredentials $userCredentials = null): void
     {
-        $operation = new EnableOperation(
-            $this->asyncClient,
+        (new EnableOperation())(
+            $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
             $this->baseUri,
             $name,
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
-
-        return $operation->task();
     }
 
-    public function getAsync(string $name, UserCredentials $userCredentials = null): GetProjectionTask
+    public function get(string $name, UserCredentials $userCredentials = null): ProjectionDetails
     {
-        $operation = new GetOperation(
-            $this->asyncClient,
+        return (new GetProjectionDetailsOperation())(
+            $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
             $this->baseUri,
             $name,
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
-
-        return $operation->task();
     }
 
-    public function getAllAsync(UserCredentials $userCredentials = null): GetProjectionsTask
+    /**
+     * @return ProjectionDetails[]
+     */
+    public function getAll(UserCredentials $userCredentials = null): array
     {
-        $operation = new GetMultiOperation(
-            $this->asyncClient,
+        return (new GetMultipleProjectionDetailsOperation())(
+            $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
             $this->baseUri,
             'any',
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
-
-        return $operation->task();
     }
 
-    public function getAllOneTimeAsync(UserCredentials $userCredentials = null): GetProjectionsTask
+    /**
+     * @return ProjectionDetails[]
+     */
+    public function getAllOneTime(UserCredentials $userCredentials = null): array
     {
-        $operation = new GetMultiOperation(
-            $this->asyncClient,
+        return (new GetMultipleProjectionDetailsOperation())(
+            $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
             $this->baseUri,
             'onetime',
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
-
-        return $operation->task();
     }
 
-    public function getAllContinuousAsync(UserCredentials $userCredentials = null): GetProjectionsTask
+    /**
+     * @return ProjectionDetails[]
+     */
+    public function getAllContinuous(UserCredentials $userCredentials = null): array
     {
-        $operation = new GetMultiOperation(
-            $this->asyncClient,
+        return (new GetMultipleProjectionDetailsOperation())(
+            $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
             $this->baseUri,
             'continuous',
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
-
-        return $operation->task();
     }
 
-    public function getAllNonTransientAsync(UserCredentials $userCredentials = null): GetProjectionsTask
+    /**
+     * @return ProjectionDetails[]
+     */
+    public function getAllNonTransient(UserCredentials $userCredentials = null): array
     {
-        $operation = new GetMultiOperation(
-            $this->asyncClient,
+        return (new GetMultipleProjectionDetailsOperation())(
+            $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
             $this->baseUri,
             'all-non-transient',
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
-
-        return $operation->task();
     }
 
-    public function getConfigAsync(string $name, UserCredentials $userCredentials = null): GetProjectionConfigTask
+    public function getConfig(string $name, UserCredentials $userCredentials = null): ProjectionConfig
     {
-        $operation = new GetConfigOperation(
-            $this->asyncClient,
+        return (new GetProjectionConfigOperation())(
+            $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
             $this->baseUri,
             $name,
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
-
-        return $operation->task();
     }
 
-    public function getDefinitionAsync(string $name, UserCredentials $userCredentials = null): GetProjectionDefinitionTask
+    public function getDefinition(string $name, UserCredentials $userCredentials = null): ProjectionDefinition
     {
-        $operation = new GetDefinitionOperation(
-            $this->asyncClient,
+        return (new GetProjectionDefinitionOperation())(
+            $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
             $this->baseUri,
             $name,
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
-
-        return $operation->task();
     }
 
-    public function getQueryAsync(string $name, UserCredentials $userCredentials = null): GetProjectionQueryTask
+    public function getQuery(string $name, UserCredentials $userCredentials = null): string
     {
-        $operation = new GetQueryOperation(
-            $this->asyncClient,
+        return (new GetQueryOperation())(
+            $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
             $this->baseUri,
             $name,
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
-
-        return $operation->task();
     }
 
-    public function getResultAsync(string $name, UserCredentials $userCredentials = null): GetArrayTask
+    public function getResult(string $name, UserCredentials $userCredentials = null): array
     {
-        $operation = new GetArrayOperation(
-            $this->asyncClient,
+        return (new GetArrayOperation())(
+            $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
             $this->baseUri,
@@ -325,17 +310,15 @@ final class HttpProjectionManagement implements AsyncProjectionManagement
             'result',
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
-
-        return $operation->task();
     }
 
-    public function getPartitionResultAsync(
+    public function getPartitionResult(
         string $name,
         string $partition,
         UserCredentials $userCredentials = null
-    ): GetArrayTask {
-        $operation = new GetArrayOperation(
-            $this->asyncClient,
+    ): array {
+        return (new GetArrayOperation())(
+            $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
             $this->baseUri,
@@ -343,14 +326,12 @@ final class HttpProjectionManagement implements AsyncProjectionManagement
             'result?parition=' . urlencode($partition),
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
-
-        return $operation->task();
     }
 
-    public function getStateAsync(string $name, UserCredentials $userCredentials = null): GetArrayTask
+    public function getState(string $name, UserCredentials $userCredentials = null): array
     {
-        $operation = new GetArrayOperation(
-            $this->asyncClient,
+        return (new GetArrayOperation())(
+            $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
             $this->baseUri,
@@ -358,14 +339,12 @@ final class HttpProjectionManagement implements AsyncProjectionManagement
             'state',
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
-
-        return $operation->task();
     }
 
-    public function getPartitionStateAsync(string $name, string $partition, UserCredentials $userCredentials = null): GetArrayTask
+    public function getPartitionState(string $name, string $partition, UserCredentials $userCredentials = null): array
     {
-        $operation = new GetArrayOperation(
-            $this->asyncClient,
+        return (new GetArrayOperation())(
+            $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
             $this->baseUri,
@@ -373,28 +352,24 @@ final class HttpProjectionManagement implements AsyncProjectionManagement
             'state?parition=' . urlencode($partition),
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
-
-        return $operation->task();
     }
 
-    public function resetAsync(string $name, UserCredentials $userCredentials = null): Task
+    public function reset(string $name, UserCredentials $userCredentials = null): void
     {
-        $operation = new ResetOperation(
-            $this->asyncClient,
+        (new ResetOperation())(
+            $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
             $this->baseUri,
             $name,
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
-
-        return $operation->task();
     }
 
-    public function updateConfigAsync(string $name, ProjectionConfig $config, UserCredentials $userCredentials = null): Task
+    public function updateConfig(string $name, ProjectionConfig $config, UserCredentials $userCredentials = null): void
     {
-        $operation = new UpdateConfigOperation(
-            $this->asyncClient,
+        (new UpdateConfigOperation())(
+            $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
             $this->baseUri,
@@ -402,19 +377,17 @@ final class HttpProjectionManagement implements AsyncProjectionManagement
             $config,
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
-
-        return $operation->task();
     }
 
-    public function updateQueryAsync(
+    public function updateQuery(
         string $name,
         string $type,
         string $query,
         bool $emitEnabled,
         UserCredentials $userCredentials = null
-    ): Task {
-        $operation = new UpdateQueryOperation(
-            $this->asyncClient,
+    ): void {
+        (new UpdateQueryOperation())(
+            $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
             $this->baseUri,
@@ -424,7 +397,5 @@ final class HttpProjectionManagement implements AsyncProjectionManagement
             $emitEnabled,
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
-
-        return $operation->task();
     }
 }

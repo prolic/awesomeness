@@ -30,7 +30,7 @@ interface ProjectionManagement
         bool $emit,
         bool $trackEmittedStreams,
         UserCredentials $userCredentials = null
-    ): void;
+    ): CreateProjectionResult;
 
     public function createTransient(
         string $name,
@@ -38,7 +38,7 @@ interface ProjectionManagement
         string $query,
         bool $enabled,
         UserCredentials $userCredentials = null
-    ): void;
+    ): CreateProjectionResult;
 
     public function delete(
         string $name,

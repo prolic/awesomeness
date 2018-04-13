@@ -16,16 +16,7 @@ use Prooph\HttpEventStore\ProjectionManagement\ProjectionNotFound;
 /** @internal */
 class UpdateQueryOperation extends Operation
 {
-    /** @var string */
-    private $name;
-    /** @var string */
-    private $type;
-    /** @var string */
-    private $query;
-    /** @var bool */
-    private $emitEnabled;
-
-    public function __construct(
+    public function __invoke(
         HttpClient $httpClient,
         RequestFactory $requestFactory,
         UriFactory $uriFactory,
@@ -35,32 +26,22 @@ class UpdateQueryOperation extends Operation
         string $query,
         bool $emitEnabled,
         ?UserCredentials $userCredentials
-    ) {
-        parent::__construct($httpClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
-
-        $this->name = $name;
-        $this->type = $type;
-        $this->query = $query;
-        $this->emitEnabled = $emitEnabled;
-    }
-
-    public function __invoke(): void
-    {
-        $request = $this->requestFactory->createRequest(
+    ): void {
+        $request = $requestFactory->createRequest(
             RequestMethod::Put,
-                $this->uriFactory->createUri(sprintf(
-                    $this->baseUri . '/projection/%s/query?type=%s&emit=%s',
-                    urlencode($this->name),
-                    $this->type,
-                    (int) $this->emitEnabled
+                $uriFactory->createUri(sprintf(
+                    $baseUri . '/projection/%s/query?type=%s&emit=%s',
+                    urlencode($name),
+                    $type,
+                    (int) $emitEnabled
                 )),
             [
                 'Content-Type' => 'application/json',
             ],
-            $this->query
+            $query
         );
 
-        $response = $this->sendRequest($request);
+        $response = $this->sendRequest($httpClient, $userCredentials, $request);
 
         switch ($response->getStatusCode()) {
             case 200:

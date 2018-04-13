@@ -16,12 +16,7 @@ use Prooph\HttpEventStore\Http\RequestMethod;
 /** @internal */
 class ResetPasswordOperation extends Operation
 {
-    /** @var string */
-    private $login;
-    /** @var string */
-    private $newPassword;
-
-    public function __construct(
+    public function __invoke(
         HttpClient $httpClient,
         RequestFactory $requestFactory,
         UriFactory $uriFactory,
@@ -29,22 +24,14 @@ class ResetPasswordOperation extends Operation
         string $login,
         string $newPassword,
         ?UserCredentials $userCredentials
-    ) {
-        parent::__construct($httpClient, $requestFactory, $uriFactory, $baseUri, $userCredentials);
-
-        $this->login = $login;
-        $this->newPassword = $newPassword;
-    }
-
-    public function __invoke(): void
-    {
+    ): void {
         $string = json_encode([
-            'newPassword' => $this->newPassword,
+            'newPassword' => $newPassword,
         ]);
 
-        $request = $this->requestFactory->createRequest(
+        $request = $requestFactory->createRequest(
             RequestMethod::Post,
-            $this->uriFactory->createUri($this->baseUri . '/users/' . urlencode($this->login) . '/command/reset-password'),
+            $uriFactory->createUri($baseUri . '/users/' . urlencode($login) . '/command/reset-password'),
             [
                 'Content-Type' => 'application/json',
                 'Content-Length' => strlen($string),
@@ -52,7 +39,7 @@ class ResetPasswordOperation extends Operation
             $string
         );
 
-        $response = $this->sendRequest($request);
+        $response = $this->sendRequest($httpClient, $userCredentials, $request);
 
         switch ($response->getStatusCode()) {
             case 200:
