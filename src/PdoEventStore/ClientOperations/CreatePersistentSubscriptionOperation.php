@@ -78,7 +78,8 @@ class CreatePersistentSubscriptionOperation
                     '$persistentSubscriptionConfig',
                     ExpectedVersion::NoStream,
                     [$eventData],
-                    $userCredentials
+                    $userCredentials,
+                    true
                 );
             } catch (\Exception $e) {
                 return new PersistentSubscriptionCreateResult(
@@ -136,7 +137,8 @@ class CreatePersistentSubscriptionOperation
                         ''
                     ),
                 ],
-                $userCredentials
+                $userCredentials,
+                true
             );
         } catch (\Exception $e) {
             return new PersistentSubscriptionCreateResult(

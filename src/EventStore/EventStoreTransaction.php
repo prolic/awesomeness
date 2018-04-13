@@ -27,6 +27,11 @@ class EventStoreTransaction
         $this->connection = $connection;
     }
 
+    public function transactionId(): int
+    {
+        return $this->transactionId;
+    }
+
     public function commit(): WriteResult
     {
         if ($this->isRolledBack) {

@@ -97,7 +97,8 @@ class DeletePersistentSubscriptionOperation
                         ''
                     ),
                 ],
-                $userCredentials
+                $userCredentials,
+                true
             );
         } catch (\Exception $e) {
             return new PersistentSubscriptionDeleteResult(

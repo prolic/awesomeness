@@ -18,11 +18,15 @@ use Ramsey\Uuid\Uuid;
 class AppendToStreamOperation
 {
     /**
+     * @param PDO $connection
      * @param string $stream
      * @param int $expectedVersion
-     * @param null|UserCredentials $userCredentials
      * @param EventData[] $events
+     * @param UserCredentials|null $userCredentials
+     * @param bool $aquireLock
+     *
      * @return WriteResult
+     *
      * @throws \Throwable
      */
     public function __invoke(
@@ -30,9 +34,12 @@ class AppendToStreamOperation
         string $stream,
         int $expectedVersion,
         array $events,
-        ?UserCredentials $userCredentials
+        ?UserCredentials $userCredentials,
+        bool $aquireLock
     ): WriteResult {
-        (new AcquireStreamLockOperation())($connection, $stream);
+        if ($aquireLock) {
+            (new AcquireStreamLockOperation())($connection, $stream);
+        }
 
         $statement = $connection->prepare(<<<SQL
 SELECT * FROM streams WHERE streamName = ?
@@ -44,15 +51,15 @@ SQL
         $streamData = $statement->fetch();
 
         if (! $streamData && $expectedVersion === ExpectedVersion::StreamExists) {
-            $this->throw(WrongExpectedVersion::withExpectedVersion($stream, $expectedVersion), $connection, $stream);
+            $this->throw(WrongExpectedVersion::withExpectedVersion($stream, $expectedVersion), $connection, $stream, $aquireLock);
         }
 
         if ($streamData && ($streamData->markDeleted || $streamData->deleted)) {
-            $this->throw(StreamDeleted::with($stream), $connection, $stream);
+            $this->throw(StreamDeleted::with($stream), $connection, $stream, $aquireLock);
         }
 
         if ($streamData && $expectedVersion === ExpectedVersion::NoStream) {
-            $this->throw(WrongExpectedVersion::withExpectedVersion($stream, $expectedVersion), $connection, $stream);
+            $this->throw(WrongExpectedVersion::withExpectedVersion($stream, $expectedVersion), $connection, $stream, $aquireLock);
         }
 
         $statement = $connection->prepare(<<<SQL
@@ -65,15 +72,15 @@ SQL
         $currentVersion = $statement->fetch()->currentVersion;
 
         if (null === $currentVersion && $expectedVersion > -1) {
-            $this->throw(WrongExpectedVersion::withExpectedVersion($stream, $expectedVersion), $connection, $stream);
+            $this->throw(WrongExpectedVersion::withExpectedVersion($stream, $expectedVersion), $connection, $stream, $aquireLock);
         }
 
         if ($currentVersion > -1 && $expectedVersion === ExpectedVersion::EmptyStream) {
-            $this->throw(WrongExpectedVersion::withCurrentVersion($stream, $currentVersion, $expectedVersion), $connection, $stream);
+            $this->throw(WrongExpectedVersion::withCurrentVersion($stream, $currentVersion, $expectedVersion), $connection, $stream, $aquireLock);
         }
 
         if ($expectedVersion > -1 && $expectedVersion !== $currentVersion) {
-            $this->throw(WrongExpectedVersion::withCurrentVersion($stream, $currentVersion, $expectedVersion), $connection, $stream);
+            $this->throw(WrongExpectedVersion::withCurrentVersion($stream, $currentVersion, $expectedVersion), $connection, $stream, $aquireLock);
         }
 
         if (! $streamData) {
@@ -113,15 +120,19 @@ SQL;
         $statement = $connection->prepare($sql);
         $statement->execute($params);
 
-        (new ReleaseStreamLockOperation())($connection, $stream);
+        if ($aquireLock) {
+            (new ReleaseStreamLockOperation())($connection, $stream);
+        }
 
         return new WriteResult();
     }
 
     /** @throws \Throwable */
-    private function throw(\Throwable $e, PDO $connection, string $stream): void
+    private function throw(\Throwable $e, PDO $connection, string $stream, bool $aquireLock): void
     {
-        (new ReleaseStreamLockOperation())($connection, $stream);
+        if ($aquireLock) {
+            (new ReleaseStreamLockOperation())($connection, $stream);
+        }
 
         throw $e;
     }
