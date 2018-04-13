@@ -563,6 +563,8 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
 
         $this->connection->commit();
 
+        (new ReleaseStreamLockOperation())($this->connection, $stream);
+
         unset($this->locks[$stream]);
 
         return new WriteResult();
