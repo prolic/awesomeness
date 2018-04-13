@@ -18,7 +18,6 @@ use Prooph\EventStore\EventStoreTransaction;
 use Prooph\EventStore\EventStoreTransactionConnection;
 use Prooph\EventStore\Exception\ConnectionException;
 use Prooph\EventStore\Exception\RuntimeException;
-use Prooph\EventStore\Exception\WrongExpectedVersion;
 use Prooph\EventStore\ExpectedVersion;
 use Prooph\EventStore\Internal\Consts;
 use Prooph\EventStore\Internal\PersistentSubscriptionCreateResult;
@@ -26,15 +25,14 @@ use Prooph\EventStore\Internal\PersistentSubscriptionDeleteResult;
 use Prooph\EventStore\Internal\PersistentSubscriptionUpdateResult;
 use Prooph\EventStore\Internal\ReplayParkedResult;
 use Prooph\EventStore\PersistentSubscriptionSettings;
-use Prooph\EventStore\SliceReadStatus;
 use Prooph\EventStore\StreamEventsSlice;
 use Prooph\EventStore\StreamMetadata;
 use Prooph\EventStore\StreamMetadataResult;
 use Prooph\EventStore\SystemSettings;
 use Prooph\EventStore\UserCredentials;
 use Prooph\EventStore\WriteResult;
-use Prooph\PdoEventStore\ClientOperations\AcquireStreamLockOperation;
 use Prooph\PdoEventStore\ClientOperations\AppendToStreamOperation;
+use Prooph\PdoEventStore\ClientOperations\CommitTransactionOperation;
 use Prooph\PdoEventStore\ClientOperations\CreatePersistentSubscriptionOperation;
 use Prooph\PdoEventStore\ClientOperations\DeletePersistentSubscriptionOperation;
 use Prooph\PdoEventStore\ClientOperations\DeleteStreamOperation;
@@ -42,6 +40,8 @@ use Prooph\PdoEventStore\ClientOperations\ReadEventOperation;
 use Prooph\PdoEventStore\ClientOperations\ReadStreamEventsBackwardOperation;
 use Prooph\PdoEventStore\ClientOperations\ReadStreamEventsForwardOperation;
 use Prooph\PdoEventStore\ClientOperations\ReleaseStreamLockOperation;
+use Prooph\PdoEventStore\ClientOperations\StartTransactionOperation;
+use Prooph\PdoEventStore\ClientOperations\TransactionalWriteOperation;
 use Prooph\PdoEventStore\ClientOperations\UpdatePersistentSubscriptionOperation;
 
 final class PdoEventStoreConnection implements EventStoreSubscriptionConnection, EventStoreTransactionConnection
@@ -426,72 +426,24 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
             throw new ConnectionException('PDO connection is already in transaction');
         }
 
-        (new AcquireStreamLockOperation())($this->connection, $stream);
+        try {
+            $lockData = (new StartTransactionOperation())(
+                $this->connection,
+                $stream,
+                $expectedVersion,
+                $userCredentials
+            );
+        } catch (\Exception $e) {
+            (new ReleaseStreamLockOperation())($this->connection, $stream);
+            unset($this->locks[$stream]);
 
-        /* @var StreamEventsSlice $slice */
-        $slice = (new ReadStreamEventsBackwardOperation())(
-            $this->connection,
-            $stream,
-            PHP_INT_MAX,
-            1
-        );
-
-        switch ($expectedVersion) {
-            case ExpectedVersion::NoStream:
-                if (! $slice->status()->equals(SliceReadStatus::streamNotFound())) {
-                    (new ReleaseStreamLockOperation())($this->connection, $stream);
-                    unset($this->locks[$stream]);
-
-                    if (! $slice->isEndOfStream()) {
-                        throw WrongExpectedVersion::withCurrentVersion($stream, $expectedVersion, $slice->lastEventNumber());
-                    }
-                    throw WrongExpectedVersion::withExpectedVersion($stream, $expectedVersion);
-                }
-                break;
-            case ExpectedVersion::StreamExists:
-                if (! $slice->status()->equals(SliceReadStatus::success())) {
-                    (new ReleaseStreamLockOperation())($this->connection, $stream);
-                    unset($this->locks[$stream]);
-
-                    if (! $slice->isEndOfStream()) {
-                        throw WrongExpectedVersion::withCurrentVersion($stream, $expectedVersion, $slice->lastEventNumber());
-                    }
-                    throw WrongExpectedVersion::withExpectedVersion($stream, $expectedVersion);
-                }
-                break;
-            case ExpectedVersion::EmptyStream:
-                if (! $slice->status()->equals(SliceReadStatus::success())
-                    && ! $slice->isEndOfStream()
-                ) {
-                    (new ReleaseStreamLockOperation())($this->connection, $stream);
-                    unset($this->locks[$stream]);
-
-                    throw WrongExpectedVersion::withCurrentVersion($stream, $expectedVersion, $slice->lastEventNumber());
-                }
-                break;
-            case ExpectedVersion::Any:
-                break;
-            default:
-                if (! $slice->status()->equals(SliceReadStatus::success())
-                    && $expectedVersion !== $slice->lastEventNumber()
-                ) {
-                    (new ReleaseStreamLockOperation())($this->connection, $stream);
-                    unset($this->locks[$stream]);
-
-                    throw WrongExpectedVersion::withCurrentVersion($stream, $expectedVersion, $slice->lastEventNumber());
-                }
-                break;
+            throw $e;
         }
 
-        $this->locks[$stream] = [
-            'id' => random_int(0, PHP_INT_MAX),
-            'expectedVersion' => $slice->lastEventNumber(),
-        ];
-
-        $this->connection->beginTransaction();
+        $this->locks[$stream] = $lockData;
 
         return new EventStoreTransaction(
-            $this->locks[$stream]['id'],
+            $lockData['id'],
             $userCredentials,
             $this
         );
@@ -522,17 +474,12 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
             );
         }
 
-        if (! $this->connection->inTransaction()) {
-            throw new ConnectionException('PDO connection is not in transaction');
-        }
-
-        (new AppendToStreamOperation())(
+        (new TransactionalWriteOperation())(
             $this->connection,
             $stream,
             $expectedVersion,
             $events,
-            $userCredentials,
-            false
+            $userCredentials
         );
 
         $this->locks[$stream]['expectedVersion'] += count($events);
@@ -557,16 +504,8 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
             );
         }
 
-        if (! $this->connection->inTransaction()) {
-            throw new ConnectionException('PDO connection is not in transaction');
-        }
-
-        $this->connection->commit();
-
-        (new ReleaseStreamLockOperation())($this->connection, $stream);
-
         unset($this->locks[$stream]);
 
-        return new WriteResult();
+        return (new CommitTransactionOperation())($this->connection, $stream);
     }
 }
