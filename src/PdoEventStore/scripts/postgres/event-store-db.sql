@@ -1,6 +1,6 @@
 CREATE TABLE streams (
-  streamId UUID NOT NULL,
-  streamName text NOT NULL,
+  streamId UUID NOT NULL UNIQUE,
+  streamName text NOT NULL UNIQUE,
   deleted BOOLEAN NOT NULL,
   markDeleted BOOLEAN NOT NULL,
   PRIMARY KEY (streamName)
@@ -9,7 +9,7 @@ CREATE TABLE streams (
 CREATE INDEX ON streams (markDeleted);
 
 CREATE TABLE events (
-  eventId UUID,
+  eventId UUID UNIQUE,
   eventNumber BIGINT NOT NULL,
   eventType TEXT,
   data TEXT,
