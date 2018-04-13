@@ -12,6 +12,7 @@ use Prooph\EventStore\ExpectedVersion;
 use Prooph\EventStore\Internal\DateTimeUtil;
 use Prooph\EventStore\UserCredentials;
 use Prooph\EventStore\WriteResult;
+use Ramsey\Uuid\Uuid;
 
 /** @internal */
 class AppendToStreamOperation
@@ -75,6 +76,17 @@ SQL
             $this->throw(WrongExpectedVersion::withCurrentVersion($stream, $currentVersion, $expectedVersion), $connection, $stream);
         }
 
+        if (! $streamData) {
+            $streamId = Uuid::uuid4()->toString();
+            $statement = $connection->prepare(<<<SQL
+INSERT INTO streams (streamId, streamName, markDeleted, deleted) VALUES (?, ?, ?, ?);
+SQL
+            );
+            $statement->execute([$streamId, $stream, false, false]);
+        } else {
+            $streamId = $streamData->streamId;
+        }
+
         $sql = <<<SQL
 INSERT INTO events (eventId, eventNumber, eventType, data, metaData, streamId, isJson, isMetaData, updated) VALUES 
 SQL;
@@ -92,6 +104,7 @@ SQL;
             $params[] = $event->eventType();
             $params[] = $event->data();
             $params[] = $event->metaData();
+            $params[] = $streamId;
             $params[] = $event->isJson();
             $params[] = strlen($event->metaData()) > 0 ? true : false;
             $params[] = $now;

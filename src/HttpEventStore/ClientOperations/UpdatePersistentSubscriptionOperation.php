@@ -50,7 +50,7 @@ class UpdatePersistentSubscriptionOperation extends Operation
                 return new PersistentSubscriptionUpdateResult(
                     $json['correlationId'],
                     $json['reason'],
-                    PersistentSubscriptionUpdateStatus::byName($json['result'])
+                    PersistentSubscriptionUpdateStatus::notFound()
                 );
 
             default:

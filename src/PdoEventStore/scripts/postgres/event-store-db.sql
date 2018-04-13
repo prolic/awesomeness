@@ -9,7 +9,7 @@ CREATE TABLE streams (
 CREATE INDEX ON streams (markDeleted);
 
 CREATE TABLE events (
-  eventId UUID UNIQUE,
+  eventId UUID,
   eventNumber BIGINT NOT NULL,
   eventType TEXT,
   data TEXT,

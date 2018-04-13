@@ -57,7 +57,7 @@ final class PersistentSubscriptionOperations extends Operation implements BasePe
      */
     public function readFromSubscription(int $amount): array
     {
-        $operation = new ReadFromSubscriptionOperation(
+        return (new ReadFromSubscriptionOperation())(
             $this->httpClient,
             $this->requestFactory,
             $this->uriFactory,
@@ -67,8 +67,6 @@ final class PersistentSubscriptionOperations extends Operation implements BasePe
             $amount,
             $this->userCredentials
         );
-
-        return $operation();
     }
 
     public function acknowledge(array $eventIds): void
@@ -92,7 +90,7 @@ final class PersistentSubscriptionOperations extends Operation implements BasePe
             ''
         );
 
-        $response = $this->sendRequest($httpClient, $userCredentials, $request);
+        $response = $this->sendRequest($this->httpClient, $this->userCredentials, $request);
 
         switch ($response->getStatusCode()) {
             case 202:
@@ -126,7 +124,7 @@ final class PersistentSubscriptionOperations extends Operation implements BasePe
             ''
         );
 
-        $response = $this->sendRequest($httpClient, $userCredentials, $request);
+        $response = $this->sendRequest($this->httpClient, $this->userCredentials, $request);
 
         switch ($response->getStatusCode()) {
             case 202:

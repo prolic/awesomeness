@@ -31,10 +31,12 @@ use Prooph\EventStore\SystemSettings;
 use Prooph\EventStore\UserCredentials;
 use Prooph\EventStore\WriteResult;
 use Prooph\PdoEventStore\ClientOperations\AppendToStreamOperation;
+use Prooph\PdoEventStore\ClientOperations\CreatePersistentSubscriptionOperation;
 use Prooph\PdoEventStore\ClientOperations\DeleteStreamOperation;
 use Prooph\PdoEventStore\ClientOperations\ReadEventOperation;
 use Prooph\PdoEventStore\ClientOperations\ReadStreamEventsBackwardOperation;
 use Prooph\PdoEventStore\ClientOperations\ReadStreamEventsForwardOperation;
+use Prooph\PdoEventStore\ClientOperations\UpdatePersistentSubscriptionOperation;
 
 final class PdoEventStoreConnection implements EventStoreSubscriptionConnection, EventStoreTransactionConnection
 {
@@ -271,7 +273,21 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
         PersistentSubscriptionSettings $settings,
         UserCredentials $userCredentials = null
     ): PersistentSubscriptionCreateResult {
-        // TODO: Implement createPersistentSubscription() method.
+        if (empty($stream)) {
+            throw new \InvalidArgumentException('Stream cannot be empty');
+        }
+
+        if (empty($groupName)) {
+            throw new \InvalidArgumentException('Group name cannot be empty');
+        }
+
+        return (new CreatePersistentSubscriptionOperation())(
+            $this->connection,
+            $stream,
+            $groupName,
+            $settings,
+            $userCredentials
+        );
     }
 
     public function updatePersistentSubscription(
@@ -280,7 +296,21 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
         PersistentSubscriptionSettings $settings,
         UserCredentials $userCredentials = null
     ): PersistentSubscriptionUpdateResult {
-        // TODO: Implement updatePersistentSubscription() method.
+        if (empty($stream)) {
+            throw new \InvalidArgumentException('Stream cannot be empty');
+        }
+
+        if (empty($groupName)) {
+            throw new \InvalidArgumentException('Group name cannot be empty');
+        }
+
+        return (new UpdatePersistentSubscriptionOperation())(
+            $this->connection,
+            $stream,
+            $groupName,
+            $settings,
+            $userCredentials
+        );
     }
 
     public function deletePersistentSubscription(
@@ -288,7 +318,13 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
         string $groupName,
         UserCredentials $userCredentials = null
     ): PersistentSubscriptionDeleteResult {
-        // TODO: Implement deletePersistentSubscription() method.
+        if (empty($stream)) {
+            throw new \InvalidArgumentException('Stream cannot be empty');
+        }
+
+        if (empty($groupName)) {
+            throw new \InvalidArgumentException('Group name cannot be empty');
+        }
     }
 
     public function connectToPersistentSubscription(
@@ -300,7 +336,13 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
         bool $autoAck = true,
         UserCredentials $userCredentials = null
     ): EventStorePersistentSubscription {
-        // TODO: Implement connectToPersistentSubscription() method.
+        if (empty($stream)) {
+            throw new \InvalidArgumentException('Stream cannot be empty');
+        }
+
+        if (empty($groupName)) {
+            throw new \InvalidArgumentException('Group name cannot be empty');
+        }
     }
 
     public function replayParked(
@@ -308,6 +350,14 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
         string $groupName,
         UserCredentials $userCredentials = null
     ): ReplayParkedResult {
+        if (empty($stream)) {
+            throw new \InvalidArgumentException('Stream cannot be empty');
+        }
+
+        if (empty($groupName)) {
+            throw new \InvalidArgumentException('Group name cannot be empty');
+        }
+
         // TODO: Implement replayParked() method.
     }
 
@@ -321,6 +371,10 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
         string $stream,
         UserCredentials $userCredentials = null
     ): array {
+        if (empty($stream)) {
+            throw new \InvalidArgumentException('Stream cannot be empty');
+        }
+
         // TODO: Implement getInformationForSubscriptionsWithStream() method.
     }
 
@@ -329,6 +383,14 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
         string $groupName,
         UserCredentials $userCredentials = null
     ): DetailedSubscriptionInformation {
+        if (empty($stream)) {
+            throw new \InvalidArgumentException('Stream cannot be empty');
+        }
+
+        if (empty($groupName)) {
+            throw new \InvalidArgumentException('Group name cannot be empty');
+        }
+
         // TODO: Implement getInformationForSubscription() method.
     }
 
