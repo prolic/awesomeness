@@ -7,6 +7,12 @@ namespace Prooph\EventStore;
 /** @internal */
 interface EventStoreAsyncTransactionConnection
 {
+    public function startTransactionAsync(
+        string $stream,
+        int $expectedVersion,
+        UserCredentials $userCredentials = null
+    ): EventStoreAsyncTransaction;
+
     public function transactionalWriteAsync(
         EventStoreTransaction $transaction,
         array $events,

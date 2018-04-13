@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Prooph\PdoEventStore;
 
 use PDO;
+use Prooph\EventStore\Common\SystemStreams;
 use Prooph\EventStore\DetailedSubscriptionInformation;
 use Prooph\EventStore\EventReadResult;
+use Prooph\EventStore\EventReadStatus;
 use Prooph\EventStore\EventStorePersistentSubscription;
 use Prooph\EventStore\EventStoreSubscriptionConnection;
 use Prooph\EventStore\EventStoreTransaction;
@@ -157,7 +159,38 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
 
     public function getStreamMetadata(string $stream, UserCredentials $userCredentials = null): StreamMetadataResult
     {
-        // TODO: Implement getStreamMetadata() method.
+        if (empty($stream)) {
+            throw new \InvalidArgumentException('Stream cannot be empty');
+        }
+
+        $eventReadResult = $this->readEvent(
+            SystemStreams::metastreamOf($stream),
+            -1,
+            $userCredentials
+        );
+
+        switch ($eventReadResult->status()->value()) {
+            case EventReadStatus::Success:
+                $event = $eventReadResult->event();
+
+                if (null === $event) {
+                    throw new \UnexpectedValueException('Event is null while operation result is Success');
+                }
+
+                return new StreamMetadataResult(
+                    $stream,
+                    false,
+                    $event->eventNumber(),
+                    $event->data()
+                );
+            case EventReadStatus::NotFound:
+            case EventReadStatus::NoStream:
+                return new StreamMetadataResult($stream, false, -1, '');
+            case EventReadStatus::StreamDeleted:
+                return new StreamMetadataResult($stream, true, PHP_INT_MAX, '');
+            default:
+                throw new \OutOfRangeException('Unexpected ReadEventResult: ' . $eventReadResult->status()->value());
+        }
     }
 
     public function setSystemSettings(SystemSettings $settings, UserCredentials $userCredentials = null): WriteResult
@@ -232,17 +265,26 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
         // TODO: Implement getInformationForSubscription() method.
     }
 
+    public function startTransaction(
+        string $stream,
+        int $expectedVersion,
+        UserCredentials $userCredentials = null
+    ): EventStoreTransaction
+    {
+        // TODO: Implement startTransaction() method.
+    }
+
     public function transactionalWrite(
         EventStoreTransaction $transaction,
         array $events,
-        ?UserCredentials $userCredentials
+        UserCredentials $userCredentials = null
     ): void {
         // TODO: Implement transactionalWrite() method.
     }
 
     public function commitTransaction(
         EventStoreTransaction $transaction,
-        ?UserCredentials $userCredentials
+        UserCredentials $userCredentials = null
     ): WriteResult {
         // TODO: Implement commitTransaction() method.
     }

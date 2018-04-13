@@ -6,13 +6,13 @@ namespace Prooph\EventStore;
 
 use Prooph\EventStore\Task\WriteResultTask;
 
-class EventStoreTransaction
+class EventStoreAsyncTransaction
 {
     /** @var int */
     private $transactionId;
     /** @var UserCredentials|null */
     private $userCredentials;
-    /** @var EventStoreTransactionConnection */
+    /** @var EventStoreAsyncTransactionConnection */
     private $connection;
     /** @var bool */
     private $isRolledBack;
@@ -22,14 +22,14 @@ class EventStoreTransaction
     public function __construct(
         int $transactionId,
         ?UserCredentials $userCredentials,
-        EventStoreTransactionConnection $connection
+        EventStoreAsyncTransactionConnection $connection
     ) {
         $this->transactionId = $transactionId;
         $this->userCredentials = $userCredentials;
         $this->connection = $connection;
     }
 
-    public function commit(): WriteResult
+    public function commit(): WriteResultTask
     {
         if ($this->isRolledBack) {
             throw new \RuntimeException('Cannot commit a rolledback transaction');
@@ -39,7 +39,7 @@ class EventStoreTransaction
             throw new \RuntimeException('Transaction is already committed');
         }
 
-        return $this->connection->commitTransaction($this, $this->userCredentials);
+        return $this->connection->commitTransactionAsync($this, $this->userCredentials);
     }
 
     /**
@@ -56,7 +56,7 @@ class EventStoreTransaction
             throw new \RuntimeException('Transaction is already committed');
         }
 
-        $this->connection->transactionalWrite($this, $events, $this->userCredentials);
+        $this->connection->transactionalWriteAsync($this, $events, $this->userCredentials);
     }
 
     public function rollback(): void
