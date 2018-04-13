@@ -43,16 +43,20 @@ class UpdatePersistentSubscriptionOperation extends Operation
 
         $json = json_decode($response->getBody()->getContents(), true);
         switch ($response->getStatusCode()) {
+            case 200:
+                return new PersistentSubscriptionUpdateResult(
+                    $json['correlationId'],
+                    '',
+                    PersistentSubscriptionUpdateStatus::success()
+                );
             case 401:
                 throw AccessDenied::toSubscription($stream, $groupName);
-            case 200:
             case 404:
                 return new PersistentSubscriptionUpdateResult(
                     $json['correlationId'],
                     $json['reason'],
                     PersistentSubscriptionUpdateStatus::notFound()
                 );
-
             default:
                 throw new \UnexpectedValueException('Unexpected status code ' . $response->getStatusCode() . ' returned');
         }
