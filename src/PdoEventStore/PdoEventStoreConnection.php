@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Prooph\PdoEventStore;
 
 use PDO;
+use Prooph\EventStore\Common\SystemEventTypes;
 use Prooph\EventStore\Common\SystemStreams;
 use Prooph\EventStore\DetailedSubscriptionInformation;
 use Prooph\EventStore\EventData;
+use Prooph\EventStore\EventId;
 use Prooph\EventStore\EventReadResult;
 use Prooph\EventStore\EventReadStatus;
 use Prooph\EventStore\EventStorePersistentSubscription;
@@ -15,6 +17,7 @@ use Prooph\EventStore\EventStoreSubscriptionConnection;
 use Prooph\EventStore\EventStoreTransaction;
 use Prooph\EventStore\EventStoreTransactionConnection;
 use Prooph\EventStore\Exception\RuntimeException;
+use Prooph\EventStore\ExpectedVersion;
 use Prooph\EventStore\Internal\Consts;
 use Prooph\EventStore\Internal\PersistentSubscriptionCreateResult;
 use Prooph\EventStore\Internal\PersistentSubscriptionDeleteResult;
@@ -181,12 +184,37 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
 
     public function setStreamMetadata(
         string $stream,
-        int $expectedMetastreamVersion,
+        int $expectedMetaStreamVersion,
         StreamMetadata $metadata,
         UserCredentials $userCredentials = null
     ): WriteResult
     {
-        // TODO: Implement setStreamMetadata() method.
+        if (empty($stream)) {
+            throw new \InvalidArgumentException('Stream cannot be empty');
+        }
+
+        if (SystemStreams::isMetastream($stream)) {
+            throw new \InvalidArgumentException(sprintf(
+                'Setting metadata for metastream \'%s\' is not supported.',
+                $stream
+            ));
+        }
+
+        $metaEvent = new EventData(
+            EventId::generate(),
+            SystemEventTypes::StreamMetadata,
+            true,
+            json_encode($metadata->toArray()),
+            ''
+        );
+
+        return (new AppendToStreamOperation())(
+            $this->connection,
+            SystemStreams::metastreamOf($stream),
+            $expectedMetaStreamVersion,
+            [$metaEvent],
+            $userCredentials
+        );
     }
 
     public function getStreamMetadata(string $stream, UserCredentials $userCredentials = null): StreamMetadataResult
@@ -227,7 +255,20 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
 
     public function setSystemSettings(SystemSettings $settings, UserCredentials $userCredentials = null): WriteResult
     {
-        // TODO: Implement setSystemSettings() method.
+        return $this->appendToStream(
+            SystemStreams::SettingsStream,
+            ExpectedVersion::Any,
+            [
+                new EventData(
+                    EventId::generate(),
+                    SystemEventTypes::Settings,
+                    true,
+                    json_encode($settings->toArray()),
+                    ''
+                ),
+            ],
+            $userCredentials
+        );
     }
 
     public function createPersistentSubscription(

@@ -236,7 +236,7 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
 
     public function setStreamMetadata(
         string $stream,
-        int $expectedMetastreamVersion,
+        int $expectedMetaStreamVersion,
         StreamMetadata $metadata,
         UserCredentials $userCredentials = null
     ): WriteResult {
@@ -251,7 +251,7 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
             ));
         }
 
-        $metaevent = new EventData(
+        $metaEvent = new EventData(
             EventId::generate(),
             SystemEventTypes::StreamMetadata,
             true,
@@ -265,8 +265,8 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
             $this->uriFactory,
             $this->baseUri,
             SystemStreams::metastreamOf($stream),
-            $expectedMetastreamVersion,
-            [$metaevent],
+            $expectedMetaStreamVersion,
+            [$metaEvent],
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
     }
