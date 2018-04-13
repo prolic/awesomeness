@@ -32,6 +32,7 @@ use Prooph\EventStore\UserCredentials;
 use Prooph\EventStore\WriteResult;
 use Prooph\PdoEventStore\ClientOperations\AppendToStreamOperation;
 use Prooph\PdoEventStore\ClientOperations\CreatePersistentSubscriptionOperation;
+use Prooph\PdoEventStore\ClientOperations\DeletePersistentSubscriptionOperation;
 use Prooph\PdoEventStore\ClientOperations\DeleteStreamOperation;
 use Prooph\PdoEventStore\ClientOperations\ReadEventOperation;
 use Prooph\PdoEventStore\ClientOperations\ReadStreamEventsBackwardOperation;
@@ -325,6 +326,13 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
         if (empty($groupName)) {
             throw new \InvalidArgumentException('Group name cannot be empty');
         }
+
+        return (new DeletePersistentSubscriptionOperation())(
+            $this->connection,
+            $stream,
+            $groupName,
+            $userCredentials
+        );
     }
 
     public function connectToPersistentSubscription(
