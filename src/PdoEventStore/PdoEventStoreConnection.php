@@ -61,7 +61,8 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
         string $stream,
         bool $hardDelete,
         UserCredentials $userCredentials = null
-    ): void {
+    ): void
+    {
         if (empty($stream)) {
             throw new \InvalidArgumentException('Stream cannot be empty');
         }
@@ -81,7 +82,8 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
         int $expectedVersion,
         array $events,
         UserCredentials $userCredentials = null
-    ): WriteResult {
+    ): WriteResult
+    {
         if (empty($stream)) {
             throw new \InvalidArgumentException('Stream cannot be empty');
         }
@@ -106,7 +108,8 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
         string $stream,
         int $eventNumber,
         UserCredentials $userCredentials = null
-    ): EventReadResult {
+    ): EventReadResult
+    {
         if (empty($stream)) {
             throw new \InvalidArgumentException('Stream cannot be empty');
         }
@@ -124,7 +127,8 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
         int $count,
         bool $resolveLinkTos = true,
         UserCredentials $userCredentials = null
-    ): StreamEventsSlice {
+    ): StreamEventsSlice
+    {
         if (empty($stream)) {
             throw new \InvalidArgumentException('Stream cannot be empty');
         }
@@ -152,7 +156,8 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
         int $count,
         bool $resolveLinkTos = true,
         UserCredentials $userCredentials = null
-    ): StreamEventsSlice {
+    ): StreamEventsSlice
+    {
         if (empty($stream)) {
             throw new \InvalidArgumentException('Stream cannot be empty');
         }
@@ -179,7 +184,8 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
         int $expectedMetastreamVersion,
         StreamMetadata $metadata,
         UserCredentials $userCredentials = null
-    ): WriteResult {
+    ): WriteResult
+    {
         // TODO: Implement setStreamMetadata() method.
     }
 
@@ -229,7 +235,8 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
         string $groupName,
         PersistentSubscriptionSettings $settings,
         UserCredentials $userCredentials = null
-    ): PersistentSubscriptionCreateResult {
+    ): PersistentSubscriptionCreateResult
+    {
         // TODO: Implement createPersistentSubscription() method.
     }
 
@@ -238,7 +245,8 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
         string $groupName,
         PersistentSubscriptionSettings $settings,
         UserCredentials $userCredentials = null
-    ): PersistentSubscriptionUpdateResult {
+    ): PersistentSubscriptionUpdateResult
+    {
         // TODO: Implement updatePersistentSubscription() method.
     }
 
@@ -246,7 +254,8 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
         string $stream,
         string $groupName,
         UserCredentials $userCredentials = null
-    ): PersistentSubscriptionDeleteResult {
+    ): PersistentSubscriptionDeleteResult
+    {
         // TODO: Implement deletePersistentSubscription() method.
     }
 
@@ -258,7 +267,8 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
         int $bufferSize = 10,
         bool $autoAck = true,
         UserCredentials $userCredentials = null
-    ): EventStorePersistentSubscription {
+    ): EventStorePersistentSubscription
+    {
         // TODO: Implement connectToPersistentSubscription() method.
     }
 
@@ -266,20 +276,23 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
         string $stream,
         string $groupName,
         UserCredentials $userCredentials = null
-    ): ReplayParkedResult {
+    ): ReplayParkedResult
+    {
         // TODO: Implement replayParked() method.
     }
 
     public function getInformationForAllSubscriptions(
         UserCredentials $userCredentials = null
-    ): array {
+    ): array
+    {
         // TODO: Implement getInformationForAllSubscriptions() method.
     }
 
     public function getInformationForSubscriptionsWithStream(
         string $stream,
         UserCredentials $userCredentials = null
-    ): array {
+    ): array
+    {
         // TODO: Implement getInformationForSubscriptionsWithStream() method.
     }
 
@@ -287,7 +300,8 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
         string $stream,
         string $groupName,
         UserCredentials $userCredentials = null
-    ): DetailedSubscriptionInformation {
+    ): DetailedSubscriptionInformation
+    {
         // TODO: Implement getInformationForSubscription() method.
     }
 
@@ -295,7 +309,8 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
         string $stream,
         int $expectedVersion,
         UserCredentials $userCredentials = null
-    ): EventStoreTransaction {
+    ): EventStoreTransaction
+    {
         // TODO: Implement startTransaction() method.
     }
 
@@ -303,14 +318,16 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
         EventStoreTransaction $transaction,
         array $events,
         UserCredentials $userCredentials = null
-    ): void {
+    ): void
+    {
         // TODO: Implement transactionalWrite() method.
     }
 
     public function commitTransaction(
         EventStoreTransaction $transaction,
         UserCredentials $userCredentials = null
-    ): WriteResult {
+    ): WriteResult
+    {
         // TODO: Implement commitTransaction() method.
     }
 }
