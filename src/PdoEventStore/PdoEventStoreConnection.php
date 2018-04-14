@@ -38,26 +38,34 @@ use Prooph\PdoEventStore\Internal\LockData;
 
 final class PdoEventStoreConnection implements EventStoreConnection, EventStoreTransactionConnection
 {
+    /** @var ConnectionSettings */
+    private $settings;
     /** @var PDO */
     private $connection;
 
     /** @var LockData[] */
     private $locks = [];
 
-    public function __construct(PDO $connection)
+    public function __construct(ConnectionSettings $settings)
     {
-        $this->connection = $connection;
-        $this->connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $this->settings = $settings;
     }
 
     public function connect(): void
     {
-        // do nothing
+        if (null === $this->connection) {
+            $this->connection = new PDO(
+                $this->settings->connectionString(),
+                $this->settings->userCredentials()->username(),
+                $this->settings->userCredentials()->password()
+            );
+            $this->connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        }
     }
 
     public function close(): void
     {
-        // do nothing
+        $this->connection = null;
     }
 
     public function deleteStream(
@@ -67,6 +75,10 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
     ): void {
         if (empty($stream)) {
             throw new \InvalidArgumentException('Stream cannot be empty');
+        }
+
+        if (null === $this->connection) {
+            throw new ConnectionException('No connection established');
         }
 
         (new DeleteStreamOperation())($this->connection, $stream, $hardDelete);
@@ -93,6 +105,10 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
             throw new \InvalidArgumentException('Empty stream given');
         }
 
+        if (null === $this->connection) {
+            throw new ConnectionException('No connection established');
+        }
+
         if (isset($this->locks[$stream])) {
             throw new RuntimeException('Lock on stream ' . $stream . ' is already acquired');
         }
@@ -117,6 +133,10 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
 
         if ($eventNumber < -1) {
             throw new \InvalidArgumentException('EventNumber cannot be smaller then -1');
+        }
+
+        if (null === $this->connection) {
+            throw new ConnectionException('No connection established');
         }
 
         return (new ReadEventOperation())($this->connection, $stream, $eventNumber);
@@ -147,6 +167,10 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
             );
         }
 
+        if (null === $this->connection) {
+            throw new ConnectionException('No connection established');
+        }
+
         return (new ReadStreamEventsForwardOperation())($this->connection, $stream, $start, $count);
     }
 
@@ -175,6 +199,10 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
             );
         }
 
+        if (null === $this->connection) {
+            throw new ConnectionException('No connection established');
+        }
+
         return (new ReadStreamEventsBackwardOperation())($this->connection, $stream, $start, $count);
     }
 
@@ -193,6 +221,10 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
                 'Setting metadata for metastream \'%s\' is not supported.',
                 $stream
             ));
+        }
+
+        if (null === $this->connection) {
+            throw new ConnectionException('No connection established');
         }
 
         $metaEvent = new EventData(
@@ -217,6 +249,10 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
     {
         if (empty($stream)) {
             throw new \InvalidArgumentException('Stream cannot be empty');
+        }
+
+        if (null === $this->connection) {
+            throw new ConnectionException('No connection established');
         }
 
         $eventReadResult = $this->readEvent(
@@ -251,6 +287,10 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
 
     public function setSystemSettings(SystemSettings $settings, UserCredentials $userCredentials = null): WriteResult
     {
+        if (null === $this->connection) {
+            throw new ConnectionException('No connection established');
+        }
+
         return $this->appendToStream(
             SystemStreams::SettingsStream,
             ExpectedVersion::Any,
@@ -274,6 +314,10 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
     ): EventStoreTransaction {
         if (empty($stream)) {
             throw new \InvalidArgumentException('Stream cannot be empty');
+        }
+
+        if (null === $this->connection) {
+            throw new ConnectionException('No connection established');
         }
 
         if (isset($this->locks[$stream])) {
@@ -312,6 +356,10 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
         int $transactionId,
         UserCredentials $userCredentials = null
     ): EventStoreTransaction {
+        if (null === $this->connection) {
+            throw new ConnectionException('No connection established');
+        }
+
         $found = false;
 
         foreach ($this->locks as $lock) {
@@ -346,6 +394,10 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
     ): void {
         if (empty($events)) {
             throw new \InvalidArgumentException('Empty stream given');
+        }
+
+        if (null === $this->connection) {
+            throw new ConnectionException('No connection established');
         }
 
         $found = false;
@@ -384,6 +436,10 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
         EventStoreTransaction $transaction,
         UserCredentials $userCredentials = null
     ): WriteResult {
+        if (null === $this->connection) {
+            throw new ConnectionException('No connection established');
+        }
+
         $found = false;
 
         foreach ($this->locks as $stream => $lockData) {
