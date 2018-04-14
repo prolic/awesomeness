@@ -14,7 +14,7 @@ class PostgresConnectionSettings implements ConnectionSettings
     /** @var string */
     private $dbName;
     /** @var UserCredentials */
-    private $userCredentials;
+    private $pdoUserCredentials;
     /** @var bool */
     private $persistent;
     /** @var string|null */
@@ -29,6 +29,8 @@ class PostgresConnectionSettings implements ConnectionSettings
     private $sslcrl;
     /** @var string|null */
     private $applicationName;
+    /** @var UserCredentials|null */
+    private $defaultUserCredentials;
 
     public static function default(): PostgresConnectionSettings
     {
@@ -43,7 +45,8 @@ class PostgresConnectionSettings implements ConnectionSettings
     public function __construct(
         IpEndPoint $endpoint,
         string $dbName,
-        UserCredentials $userCredentials,
+        UserCredentials $pdoUserCredentials,
+        UserCredentials $defaultUserCredentials = null,
         bool $persistent,
         string $sslmode = null,
         string $sslrootcert = null,
@@ -54,7 +57,8 @@ class PostgresConnectionSettings implements ConnectionSettings
     ) {
         $this->endPoint = $endpoint;
         $this->dbName = $dbName;
-        $this->userCredentials = $userCredentials;
+        $this->pdoUserCredentials = $pdoUserCredentials;
+        $this->defaultUserCredentials = $defaultUserCredentials;
         $this->persistent = $persistent;
         $this->sslmode = $sslmode;
         $this->sslrootcert = $sslrootcert;
@@ -105,9 +109,14 @@ class PostgresConnectionSettings implements ConnectionSettings
         return $this->endPoint;
     }
 
-    public function userCredentials(): UserCredentials
+    public function pdoUserCredentials(): UserCredentials
     {
-        return $this->userCredentials;
+        return $this->pdoUserCredentials;
+    }
+
+    public function defaultUserCredentials(): ?UserCredentials
+    {
+        return $this->defaultUserCredentials;
     }
 
     public function persistent(): bool

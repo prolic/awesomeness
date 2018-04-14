@@ -10,11 +10,17 @@ use Prooph\EventStore\EventReadResult;
 use Prooph\EventStore\EventReadStatus;
 use Prooph\EventStore\Internal\DateTimeUtil;
 use Prooph\EventStore\RecordedEvent;
+use Prooph\EventStore\UserCredentials;
 
 /** @internal */
 class ReadEventOperation
 {
-    public function __invoke(PDO $connection, string $stream, int $eventNumber): EventReadResult
+    public function __invoke(
+        PDO $connection,
+        string $stream,
+        int $eventNumber,
+        ?UserCredentials $userCredentials
+    ): EventReadResult
     {
         $statement = $connection->prepare(<<<SQL
 SELECT * FROM streams WHERE streamName = ?

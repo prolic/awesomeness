@@ -6,11 +6,12 @@ namespace Prooph\PdoEventStore\ClientOperations;
 
 use PDO;
 use Prooph\EventStore\Exception\RuntimeException;
+use Prooph\EventStore\UserCredentials;
 
 /** @internal */
 class AcquireStreamLockOperation
 {
-    public function __invoke(PDO $connection, string $stream): void
+    public function __invoke(PDO $connection, string $stream, ?UserCredentials $userCredentials): void
     {
         switch ($connection->getAttribute(PDO::ATTR_DRIVER_NAME)) {
             case 'mysql':

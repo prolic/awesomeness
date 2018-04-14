@@ -11,11 +11,18 @@ use Prooph\EventStore\ReadDirection;
 use Prooph\EventStore\RecordedEvent;
 use Prooph\EventStore\SliceReadStatus;
 use Prooph\EventStore\StreamEventsSlice;
+use Prooph\EventStore\UserCredentials;
 
 /** @internal */
 class ReadStreamEventsForwardOperation
 {
-    public function __invoke(PDO $connection, string $stream, int $start, int $count): StreamEventsSlice
+    public function __invoke(
+        PDO $connection,
+        string $stream,
+        int $start,
+        int $count,
+        ?UserCredentials $userCredentials
+    ): StreamEventsSlice
     {
         $statement = $connection->prepare(<<<SQL
 SELECT * FROM streams WHERE streamName = ?

@@ -21,7 +21,7 @@ class StartTransactionOperation
         int $expectedVersion,
         ?UserCredentials $userCredentials
     ): LockData {
-        (new AcquireStreamLockOperation())($connection, $stream);
+        (new AcquireStreamLockOperation())($connection, $stream, $userCredentials);
 
         /* @var StreamEventsSlice $slice */
         $slice = (new ReadStreamEventsBackwardOperation())(

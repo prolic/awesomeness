@@ -14,13 +14,15 @@ class MySqlConnectionSettings implements ConnectionSettings
     /** @var string */
     private $dbName;
     /** @var UserCredentials */
-    private $userCredentials;
+    private $pdoUserCredentials;
     /** @var string|null */
     private $unixSocket;
     /** @var string|null */
     private $charset;
+    /** @var UserCredentials|null */
+    private $defaultUserCredentials;
 
-    public static function default(): PostgresConnectionSettings
+    public static function default(): MySqlConnectionSettings
     {
         return new self(
             new IpEndPoint('localhost', 3306),
@@ -32,13 +34,15 @@ class MySqlConnectionSettings implements ConnectionSettings
     public function __construct(
         IpEndPoint $endpoint,
         string $dbName,
-        UserCredentials $userCredentials,
+        UserCredentials $pdoUserCredentials,
+        UserCredentials $defaultUserCredentials = null,
         string $unixSocket = null,
         string $charset = null
     ) {
         $this->endPoint = $endpoint;
         $this->dbName = $dbName;
-        $this->userCredentials = $userCredentials;
+        $this->pdoUserCredentials = $pdoUserCredentials;
+        $this->defaultUserCredentials = $defaultUserCredentials;
         $this->unixSocket = $unixSocket;
         $this->charset = $charset;
     }
@@ -68,9 +72,9 @@ class MySqlConnectionSettings implements ConnectionSettings
         return $this->endPoint;
     }
 
-    public function userCredentials(): UserCredentials
+    public function pdoUserCredentials(): UserCredentials
     {
-        return $this->userCredentials;
+        return $this->pdoUserCredentials;
     }
 
     public function unixSocket(): ?string
@@ -81,5 +85,10 @@ class MySqlConnectionSettings implements ConnectionSettings
     public function charset(): ?string
     {
         return $this->charset;
+    }
+
+    public function defaultUserCredentials(): ?UserCredentials
+    {
+        return $this->defaultUserCredentials;
     }
 }

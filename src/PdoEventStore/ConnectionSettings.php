@@ -7,7 +7,12 @@ use Prooph\EventStore\UserCredentials;
 
 interface ConnectionSettings
 {
+    // dsn for pdo connection
     public function connectionString(): string;
 
-    public function userCredentials(): UserCredentials;
+    // credentials used for pdo connection
+    public function pdoUserCredentials(): UserCredentials;
+
+    // credentials used for event store
+    public function defaultUserCredentials(): ?UserCredentials;
 }

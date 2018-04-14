@@ -35,7 +35,7 @@ class AppendToStreamOperation
         array $events,
         ?UserCredentials $userCredentials
     ): WriteResult {
-        (new AcquireStreamLockOperation())($connection, $stream);
+        (new AcquireStreamLockOperation())($connection, $stream, $userCredentials);
 
         $statement = $connection->prepare(<<<SQL
 SELECT * FROM streams WHERE streamName = ?
