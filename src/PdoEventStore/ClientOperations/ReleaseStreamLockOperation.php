@@ -14,10 +14,10 @@ class ReleaseStreamLockOperation
     {
         switch ($connection->getAttribute(PDO::ATTR_DRIVER_NAME)) {
             case 'mysql':
-                $statement = $connection->prepare('SELECT RELEASE_LOCK(?) as streamLock;');
+                $statement = $connection->prepare('SELECT RELEASE_LOCK(?) as stream_lock;');
                 $statement->execute([$stream]);
                 $statement->setFetchMode(PDO::FETCH_OBJ);
-                $lock = $statement->fetch()->streamLock;
+                $lock = $statement->fetch()->stream_lock;
 
                 if (! $lock) {
                     throw new RuntimeException('Could not release lock for stream ' . $stream);
@@ -25,10 +25,10 @@ class ReleaseStreamLockOperation
 
                 break;
             case 'pgsql':
-                $statement = $connection->prepare('SELECT PG_ADVISORY_UNLOCK(HASHTEXT(?)) as streamLock;');
+                $statement = $connection->prepare('SELECT PG_ADVISORY_UNLOCK(HASHTEXT(?)) as stream_lock;');
                 $statement->execute([$stream]);
                 $statement->setFetchMode(PDO::FETCH_OBJ);
-                $lock = $statement->fetch()->streamLock;
+                $lock = $statement->fetch()->stream_lock;
 
                 if (! $lock) {
                     throw new RuntimeException('Could not release lock for stream ' . $stream);

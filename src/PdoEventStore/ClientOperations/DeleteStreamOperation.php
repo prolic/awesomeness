@@ -13,13 +13,13 @@ class DeleteStreamOperation
     public function __invoke(PDO $connection, string $stream, bool $hardDelete, ?UserCredentials $userCredentials): void
     {
         if ($hardDelete) {
-            $statement = $connection->prepare('UPDATE streams SET markDeleted = ?, delete = ? WHERE streamName = ?');
+            $statement = $connection->prepare('UPDATE streams SET mark_deleted = ?, delete = ? WHERE stream_name = ?');
             $statement->execute([false, true, $stream]);
 
-            $statement = $connection->prepare('DELETE FROM events WHERE streamId = ?');
+            $statement = $connection->prepare('DELETE FROM events WHERE stream_id = ?');
             $statement->execute([$stream]);
         } else {
-            $statement = $connection->prepare('UPDATE streams SET markDeleted = ? WHERE streamName = ?');
+            $statement = $connection->prepare('UPDATE streams SET mark_deleted = ? WHERE stream_name = ?');
             $statement->execute([true, $stream]);
         }
     }

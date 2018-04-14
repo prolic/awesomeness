@@ -15,10 +15,10 @@ class AcquireStreamLockOperation
     {
         switch ($connection->getAttribute(PDO::ATTR_DRIVER_NAME)) {
             case 'mysql':
-                $statement = $connection->prepare('SELECT GET_LOCK(?, ?) as streamLock;');
+                $statement = $connection->prepare('SELECT GET_LOCK(?, ?) as stream_lock;');
                 $statement->execute([$stream, -1]);
                 $statement->setFetchMode(PDO::FETCH_OBJ);
-                $lock = $statement->fetch()->streamLock;
+                $lock = $statement->fetch()->stream_lock;
 
                 if (! $lock) {
                     throw new RuntimeException('Could not acquire lock for stream ' . $stream);
@@ -26,14 +26,10 @@ class AcquireStreamLockOperation
 
                 break;
             case 'pgsql':
-                $statement = $connection->prepare('SELECT PG_ADVISORY_LOCK(HASHTEXT(?)) as streamLock;');
+                $statement = $connection->prepare('SELECT PG_ADVISORY_LOCK(HASHTEXT(?)) as stream_lock;');
                 $statement->execute([$stream]);
                 $statement->setFetchMode(PDO::FETCH_OBJ);
-                $lock = $statement->fetch()->streamLock;
-
-                if (! $lock) {
-                    throw new RuntimeException('Could not acquire lock for stream ' . $stream);
-                }
+                $statement->fetch();
 
                 break;
             default:

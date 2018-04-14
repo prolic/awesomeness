@@ -25,7 +25,7 @@ class ReadStreamEventsForwardOperation
     ): StreamEventsSlice
     {
         $statement = $connection->prepare(<<<SQL
-SELECT * FROM streams WHERE streamName = ?
+SELECT * FROM streams WHERE stream_name = ?
 SQL
         );
         $statement->execute([$stream]);
@@ -46,7 +46,7 @@ SQL
 
         $streamData = $statement->fetch();
 
-        if ($streamData->markDeleted || $streamData->deleted) {
+        if ($streamData->mark_deleted || $streamData->deleted) {
             return new StreamEventsSlice(
                 SliceReadStatus::streamDeleted(),
                 $stream,
@@ -61,26 +61,26 @@ SQL
 
         $statement = $connection->prepare(<<<SQL
 SELECT
-    COALESCE(e1.eventId, e2.eventId) as eventId,
-    e1.eventNumber as eventNumber,
-    COALESCE(e1.eventType, e2.eventType) as eventType,
+    COALESCE(e1.event_id, e2.event_id) as event_id,
+    e1.event_number as event_number,
+    COALESCE(e1.event_type, e2.event_type) as event_type,
     COALESCE(e1.data, e2.data) as data,
-    COALESCE(e1.metadata, e2.metadata) as metadata,
-    COALESCE(e1.isJson, e2.isJson) as isJson,
-    COALESCE(e1.isMetaData, e2.isMetaData) as isMetaData,
+    COALESCE(e1.meta_data, e2.meta_data) as meta_data,
+    COALESCE(e1.is_json, e2.is_json) as is_json,
+    COALESCE(e1.is_meta_data, e2.is_meta_data) as is_meta_data,
     COALESCE(e1.updated, e2.updated) as updated
 FROM
     events e1
 LEFT JOIN events e2
-    ON (e1.linkTo = e2.eventId)
-WHERE e1.streamId = ?
-AND e1.eventNumber >= ?
-ORDER BY e1.eventNumber ASC
+    ON (e1.link_to = e2.event_id)
+WHERE e1.stream_id = ?
+AND e1.event_number >= ?
+ORDER BY e1.event_number ASC
 LIMIT ?
 SQL
         );
         $statement->setFetchMode(PDO::FETCH_OBJ);
-        $statement->execute([$streamData->streamId, $start, $count]);
+        $statement->execute([$streamData->stream_id, $start, $count]);
 
         if (0 === $statement->rowCount()) {
             return new StreamEventsSlice(
@@ -101,16 +101,16 @@ SQL
         while ($event = $statement->fetch()) {
             $events[] = new RecordedEvent(
                 $stream,
-                EventId::fromString($event->eventId),
-                $event->eventNumber,
-                $event->eventType,
+                EventId::fromString($event->event_id),
+                $event->event_number,
+                $event->event_type,
                 $event->data,
-                $event->metaData,
-                $event->isJson,
+                $event->meta_data,
+                $event->is_json,
                 DateTimeUtil::create($event->updated)
             );
 
-            $lastEventNumber = $event->eventNumber;
+            $lastEventNumber = $event->event_number;
         }
 
         return new StreamEventsSlice(

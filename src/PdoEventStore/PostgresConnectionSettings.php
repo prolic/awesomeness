@@ -47,7 +47,7 @@ class PostgresConnectionSettings implements ConnectionSettings
         string $dbName,
         UserCredentials $pdoUserCredentials,
         UserCredentials $defaultUserCredentials = null,
-        bool $persistent,
+        bool $persistent = false,
         string $sslmode = null,
         string $sslrootcert = null,
         string $sslcert = null,
