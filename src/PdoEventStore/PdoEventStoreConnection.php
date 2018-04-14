@@ -7,34 +7,26 @@ namespace Prooph\PdoEventStore;
 use PDO;
 use Prooph\EventStore\Common\SystemEventTypes;
 use Prooph\EventStore\Common\SystemStreams;
-use Prooph\EventStore\DetailedSubscriptionInformation;
 use Prooph\EventStore\EventData;
 use Prooph\EventStore\EventId;
 use Prooph\EventStore\EventReadResult;
 use Prooph\EventStore\EventReadStatus;
-use Prooph\EventStore\EventStorePersistentSubscription;
-use Prooph\EventStore\EventStoreSubscriptionConnection;
+use Prooph\EventStore\EventStoreConnection;
 use Prooph\EventStore\EventStoreTransaction;
 use Prooph\EventStore\EventStoreTransactionConnection;
 use Prooph\EventStore\Exception\ConnectionException;
 use Prooph\EventStore\Exception\RuntimeException;
 use Prooph\EventStore\ExpectedVersion;
 use Prooph\EventStore\Internal\Consts;
-use Prooph\EventStore\Internal\PersistentSubscriptionCreateResult;
-use Prooph\EventStore\Internal\PersistentSubscriptionDeleteResult;
-use Prooph\EventStore\Internal\PersistentSubscriptionUpdateResult;
-use Prooph\EventStore\Internal\ReplayParkedResult;
-use Prooph\EventStore\PersistentSubscriptionSettings;
 use Prooph\EventStore\StreamEventsSlice;
 use Prooph\EventStore\StreamMetadata;
 use Prooph\EventStore\StreamMetadataResult;
 use Prooph\EventStore\SystemSettings;
 use Prooph\EventStore\UserCredentials;
 use Prooph\EventStore\WriteResult;
+use Prooph\PdoEventStore\ClientOperations\AcquireStreamLockOperation;
 use Prooph\PdoEventStore\ClientOperations\AppendToStreamOperation;
 use Prooph\PdoEventStore\ClientOperations\CommitTransactionOperation;
-use Prooph\PdoEventStore\ClientOperations\CreatePersistentSubscriptionOperation;
-use Prooph\PdoEventStore\ClientOperations\DeletePersistentSubscriptionOperation;
 use Prooph\PdoEventStore\ClientOperations\DeleteStreamOperation;
 use Prooph\PdoEventStore\ClientOperations\ReadEventOperation;
 use Prooph\PdoEventStore\ClientOperations\ReadStreamEventsBackwardOperation;
@@ -42,14 +34,14 @@ use Prooph\PdoEventStore\ClientOperations\ReadStreamEventsForwardOperation;
 use Prooph\PdoEventStore\ClientOperations\ReleaseStreamLockOperation;
 use Prooph\PdoEventStore\ClientOperations\StartTransactionOperation;
 use Prooph\PdoEventStore\ClientOperations\TransactionalWriteOperation;
-use Prooph\PdoEventStore\ClientOperations\UpdatePersistentSubscriptionOperation;
+use Prooph\PdoEventStore\Internal\LockData;
 
-final class PdoEventStoreConnection implements EventStoreSubscriptionConnection, EventStoreTransactionConnection
+final class PdoEventStoreConnection implements EventStoreConnection, EventStoreTransactionConnection
 {
     /** @var PDO */
     private $connection;
 
-    /** @var array */
+    /** @var LockData[] */
     private $locks = [];
 
     public function __construct(PDO $connection)
@@ -275,140 +267,6 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
         );
     }
 
-    public function createPersistentSubscription(
-        string $stream,
-        string $groupName,
-        PersistentSubscriptionSettings $settings,
-        UserCredentials $userCredentials = null
-    ): PersistentSubscriptionCreateResult {
-        if (empty($stream)) {
-            throw new \InvalidArgumentException('Stream cannot be empty');
-        }
-
-        if (empty($groupName)) {
-            throw new \InvalidArgumentException('Group name cannot be empty');
-        }
-
-        return (new CreatePersistentSubscriptionOperation())(
-            $this->connection,
-            $stream,
-            $groupName,
-            $settings,
-            $userCredentials
-        );
-    }
-
-    public function updatePersistentSubscription(
-        string $stream,
-        string $groupName,
-        PersistentSubscriptionSettings $settings,
-        UserCredentials $userCredentials = null
-    ): PersistentSubscriptionUpdateResult {
-        if (empty($stream)) {
-            throw new \InvalidArgumentException('Stream cannot be empty');
-        }
-
-        if (empty($groupName)) {
-            throw new \InvalidArgumentException('Group name cannot be empty');
-        }
-
-        return (new UpdatePersistentSubscriptionOperation())(
-            $this->connection,
-            $stream,
-            $groupName,
-            $settings,
-            $userCredentials
-        );
-    }
-
-    public function deletePersistentSubscription(
-        string $stream,
-        string $groupName,
-        UserCredentials $userCredentials = null
-    ): PersistentSubscriptionDeleteResult {
-        if (empty($stream)) {
-            throw new \InvalidArgumentException('Stream cannot be empty');
-        }
-
-        if (empty($groupName)) {
-            throw new \InvalidArgumentException('Group name cannot be empty');
-        }
-
-        return (new DeletePersistentSubscriptionOperation())(
-            $this->connection,
-            $stream,
-            $groupName,
-            $userCredentials
-        );
-    }
-
-    public function connectToPersistentSubscription(
-        string $stream,
-        string $groupName,
-        callable $eventAppeared,
-        callable $subscriptionDropped = null,
-        int $bufferSize = 10,
-        bool $autoAck = true,
-        UserCredentials $userCredentials = null
-    ): EventStorePersistentSubscription {
-        if (empty($stream)) {
-            throw new \InvalidArgumentException('Stream cannot be empty');
-        }
-
-        if (empty($groupName)) {
-            throw new \InvalidArgumentException('Group name cannot be empty');
-        }
-    }
-
-    public function replayParked(
-        string $stream,
-        string $groupName,
-        UserCredentials $userCredentials = null
-    ): ReplayParkedResult {
-        if (empty($stream)) {
-            throw new \InvalidArgumentException('Stream cannot be empty');
-        }
-
-        if (empty($groupName)) {
-            throw new \InvalidArgumentException('Group name cannot be empty');
-        }
-
-        // TODO: Implement replayParked() method.
-    }
-
-    public function getInformationForAllSubscriptions(
-        UserCredentials $userCredentials = null
-    ): array {
-        // TODO: Implement getInformationForAllSubscriptions() method.
-    }
-
-    public function getInformationForSubscriptionsWithStream(
-        string $stream,
-        UserCredentials $userCredentials = null
-    ): array {
-        if (empty($stream)) {
-            throw new \InvalidArgumentException('Stream cannot be empty');
-        }
-
-        // TODO: Implement getInformationForSubscriptionsWithStream() method.
-    }
-
-    public function getInformationForSubscription(
-        string $stream,
-        string $groupName,
-        UserCredentials $userCredentials = null
-    ): DetailedSubscriptionInformation {
-        if (empty($stream)) {
-            throw new \InvalidArgumentException('Stream cannot be empty');
-        }
-
-        if (empty($groupName)) {
-            throw new \InvalidArgumentException('Group name cannot be empty');
-        }
-
-        // TODO: Implement getInformationForSubscription() method.
-    }
-
     public function startTransaction(
         string $stream,
         int $expectedVersion,
@@ -427,6 +285,7 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
         }
 
         try {
+            /* @var LockData $lockData */
             $lockData = (new StartTransactionOperation())(
                 $this->connection,
                 $stream,
@@ -443,10 +302,39 @@ final class PdoEventStoreConnection implements EventStoreSubscriptionConnection,
         $this->locks[$stream] = $lockData;
 
         return new EventStoreTransaction(
-            $lockData['id'],
+            $lockData->transactionId(),
             $userCredentials,
             $this
         );
+    }
+
+    public function continueTransaction(
+        int $transactionId,
+        UserCredentials $userCredentials = null
+    ): EventStoreTransaction {
+        $found = false;
+
+        foreach ($this->locks as $lock) {
+            if ($lock->transactionId() === $transactionId) {
+                $found = true;
+                break;
+            }
+        }
+
+        if (! $found) {
+            throw new ConnectionException('No lock with id ' . $transactionId . ' found');
+        }
+
+        (new AcquireStreamLockOperation())($this->connection, $lock->stream());
+
+        $this->locks[$lock->stream()] = new LockData(
+            $lock->stream(),
+            $transactionId,
+            $lock->expectedVersion(),
+            $lock->lockCounter() + 1
+        );
+
+        return new EventStoreTransaction($transactionId, $userCredentials, $this);
     }
 
     public function transactionalWrite(

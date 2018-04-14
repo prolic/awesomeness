@@ -10,6 +10,7 @@ use Prooph\EventStore\ExpectedVersion;
 use Prooph\EventStore\SliceReadStatus;
 use Prooph\EventStore\StreamEventsSlice;
 use Prooph\EventStore\UserCredentials;
+use Prooph\PdoEventStore\Internal\LockData;
 
 /** @internal */
 class StartTransactionOperation
@@ -19,7 +20,7 @@ class StartTransactionOperation
         string $stream,
         int $expectedVersion,
         ?UserCredentials $userCredentials
-    ): array {
+    ): LockData {
         (new AcquireStreamLockOperation())($connection, $stream);
 
         /* @var StreamEventsSlice $slice */
@@ -67,9 +68,6 @@ class StartTransactionOperation
 
         $connection->beginTransaction();
 
-        return [
-            'id' => random_int(0, PHP_INT_MAX),
-            'expectedVersion' => $slice->lastEventNumber(),
-        ];
+        return new LockData($stream, random_int(0, PHP_INT_MAX), $slice->lastEventNumber(), 1);
     }
 }

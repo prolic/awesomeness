@@ -13,6 +13,11 @@ interface EventStoreTransactionConnection
         UserCredentials $userCredentials = null
     ): EventStoreTransaction;
 
+    public function continueTransaction(
+        int $transactionId,
+        UserCredentials $userCredentials = null
+    ): EventStoreTransaction;
+
     public function transactionalWrite(
         EventStoreTransaction $transaction,
         array $events,
