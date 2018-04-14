@@ -322,7 +322,9 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
         }
 
         if (! $found) {
-            throw new ConnectionException('No lock with id ' . $transactionId . ' found');
+            throw new ConnectionException(
+                'No lock for transaction with id ' . $transactionId . ' found'
+            );
         }
 
         (new AcquireStreamLockOperation())($this->connection, $lock->stream());
@@ -348,9 +350,9 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
 
         $found = false;
 
-        foreach ($this->locks as $stream => $data) {
-            if ($data['id'] === $transaction->transactionId()) {
-                $expectedVersion = $data['expectedVersion'];
+        foreach ($this->locks as $stream => $lockData) {
+            if ($lockData->transactionId() === $transaction->transactionId()) {
+                $expectedVersion = $lockData->expectedVersion();
                 $found = true;
                 break;
             }
@@ -370,7 +372,12 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
             $userCredentials
         );
 
-        $this->locks[$stream]['expectedVersion'] += count($events);
+        $this->locks[$stream] = new LockData(
+            $stream,
+            $lockData->transactionId(),
+            $lockData->expectedVersion() + count($events),
+            $lockData->lockCounter()
+        );
     }
 
     public function commitTransaction(
