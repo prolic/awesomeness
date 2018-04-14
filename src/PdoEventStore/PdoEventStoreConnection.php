@@ -404,7 +404,7 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
         if ($lockData->lockCounter() > 1) {
             $releaseLockOperation = new ReleaseStreamLockOperation();
 
-            for ($i = 2; $i <= $lockData->lockCounter(), $i++) {
+            for ($i = 2; $i <= $lockData->lockCounter(); $i++) {
                 $releaseLockOperation($this->connection, $stream);
             }
         }
