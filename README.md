@@ -109,6 +109,13 @@ HttpEventStore
 - [x] HttpEventStoreStats
 - [x] HttpUserManagement
 
+PdoEventStore
+- [x] PdoEventStoreConnection
+- [x] Transaction Handling
+- [ ] PdoProjectionManagement
+- [ ] PdoUserManagement
+- [ ] ACL Integration
+
 EventSourcing
 
 - [x] Use connection interface

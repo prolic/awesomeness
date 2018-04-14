@@ -494,4 +494,9 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
 
         return $writeResult;
     }
+
+    public function settings(): ConnectionSettings
+    {
+        return $this->settings;
+    }
 }
