@@ -379,8 +379,8 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
     ): WriteResult {
         $found = false;
 
-        foreach ($this->locks as $stream => $data) {
-            if ($data['id'] === $transaction->transactionId()) {
+        foreach ($this->locks as $stream => $lockData) {
+            if ($lockData->transactionId() === $transaction->transactionId()) {
                 $found = true;
                 break;
             }
@@ -392,8 +392,18 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
             );
         }
 
+        $writeResult = (new CommitTransactionOperation())($this->connection, $stream);
+
+        if ($lockData->lockCounter() > 1) {
+            $releaseLockOperation = new ReleaseStreamLockOperation();
+
+            for ($i = 2; $i <= $lockData->lockCounter(), $i++) {
+                $releaseLockOperation($this->connection, $stream);
+            }
+        }
+
         unset($this->locks[$stream]);
 
-        return (new CommitTransactionOperation())($this->connection, $stream);
+        return $writeResult;
     }
 }
