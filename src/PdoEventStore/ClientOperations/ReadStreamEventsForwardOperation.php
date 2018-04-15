@@ -19,47 +19,15 @@ class ReadStreamEventsForwardOperation
     public function __invoke(
         PDO $connection,
         string $stream,
+        string $streamId,
         int $start,
         int $count,
+        bool $resolveLinkTos,
         ?UserCredentials $userCredentials
     ): StreamEventsSlice
     {
-        $statement = $connection->prepare(<<<SQL
-SELECT * FROM streams WHERE stream_name = ?
-SQL
-        );
-        $statement->execute([$stream]);
-        $statement->setFetchMode(PDO::FETCH_OBJ);
-
-        if (0 === $statement->rowCount()) {
-            return new StreamEventsSlice(
-                SliceReadStatus::streamNotFound(),
-                $stream,
-                $start,
-                ReadDirection::forward(),
-                [],
-                0,
-                0,
-                true
-            );
-        }
-
-        $streamData = $statement->fetch();
-
-        if ($streamData->mark_deleted || $streamData->deleted) {
-            return new StreamEventsSlice(
-                SliceReadStatus::streamDeleted(),
-                $stream,
-                $start,
-                ReadDirection::forward(),
-                [],
-                0,
-                0,
-                true
-            );
-        }
-
-        $statement = $connection->prepare(<<<SQL
+        if ($resolveLinkTos) {
+            $sql = <<<SQL
 SELECT
     COALESCE(e1.event_id, e2.event_id) as event_id,
     e1.event_number as event_number,
@@ -77,10 +45,31 @@ WHERE e1.stream_id = ?
 AND e1.event_number >= ?
 ORDER BY e1.event_number ASC
 LIMIT ?
-SQL
-        );
+SQL;
+        } else {
+            $sql = <<<SQL
+SELECT
+    e.event_id.
+    e.event_number,
+    e.event_type,
+    e.data,
+    e.meta_data,
+    e.is_json,
+    e.is_meta_data,
+    e.updated
+FROM
+    events e
+WHERE e.stream_id = ?
+AND e.event_number >= ?
+ORDER BY e.event_number ASC
+LIMIT ?
+SQL;
+
+        }
+
+        $statement = $connection->prepare($sql);
         $statement->setFetchMode(PDO::FETCH_OBJ);
-        $statement->execute([$streamData->stream_id, $start, $count]);
+        $statement->execute([$streamId, $start, $count]);
 
         if (0 === $statement->rowCount()) {
             return new StreamEventsSlice(

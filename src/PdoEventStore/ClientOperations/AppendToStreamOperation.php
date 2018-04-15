@@ -20,6 +20,7 @@ class AppendToStreamOperation
     /**
      * @param PDO $connection
      * @param string $stream
+     * @param string|null $streamId
      * @param int $expectedVersion
      * @param EventData[] $events
      * @param UserCredentials|null $userCredentials
@@ -31,45 +32,31 @@ class AppendToStreamOperation
     public function __invoke(
         PDO $connection,
         string $stream,
+        ?string $streamId,
         int $expectedVersion,
         array $events,
         ?UserCredentials $userCredentials
     ): WriteResult {
         (new AcquireStreamLockOperation())($connection, $stream, $userCredentials);
 
-        $statement = $connection->prepare(<<<SQL
-SELECT * FROM streams WHERE stream_name = ?
-SQL
-        );
-        $statement->execute([$stream]);
-        $statement->setFetchMode(PDO::FETCH_OBJ);
-
-        $streamData = $statement->fetch();
-
-        if (! $streamData && $expectedVersion === ExpectedVersion::StreamExists) {
+        if (! $streamId && $expectedVersion === ExpectedVersion::StreamExists) {
             $this->throw(WrongExpectedVersion::withExpectedVersion($stream, $expectedVersion), $connection, $stream);
         }
 
-        if ($streamData && ($streamData->mark_deleted || $streamData->deleted)) {
-            $this->throw(StreamDeleted::with($stream), $connection, $stream);
-        }
-
-        if ($streamData && $expectedVersion === ExpectedVersion::NoStream) {
+        if ($streamId && $expectedVersion === ExpectedVersion::NoStream) {
             $this->throw(WrongExpectedVersion::withExpectedVersion($stream, $expectedVersion), $connection, $stream);
         }
 
-        if ($streamData) {
+        if ($streamId) {
             $statement = $connection->prepare(<<<SQL
 SELECT MAX(event_number) as current_version FROM events WHERE stream_id = ?
 SQL
             );
-            $statement->execute([$streamData->stream_id]);
+            $statement->execute([$streamId]);
             $statement->setFetchMode(PDO::FETCH_OBJ);
 
             $currentVersion = $statement->fetch()->current_version;
-            $streamId = $streamData->stream_id;
         } else {
-            $streamId = Uuid::uuid4()->toString();
             $currentVersion = -1;
         }
 
@@ -85,7 +72,8 @@ SQL
             $this->throw(WrongExpectedVersion::withCurrentVersion($stream, $currentVersion, $expectedVersion), $connection, $stream);
         }
 
-        if (! $streamData) {
+        if (! $streamId) {
+            $streamId = Uuid::uuid4()->toString();
             $statement = $connection->prepare(<<<SQL
 INSERT INTO streams (stream_id, stream_name, mark_deleted, deleted) VALUES (?, ?, ?, ?);
 SQL

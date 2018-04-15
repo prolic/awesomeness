@@ -6,6 +6,14 @@ namespace Prooph\EventStore\Exception;
 
 class AccessDenied extends RuntimeException
 {
+    public static function login(string $username): AccessDenied
+    {
+        return new self(sprintf(
+            'Access to event store with username \'%s\' is denied',
+            $username
+        ));
+    }
+
     public static function toStream(string $stream): AccessDenied
     {
         return new self(sprintf(

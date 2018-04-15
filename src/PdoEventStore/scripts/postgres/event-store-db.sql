@@ -9,7 +9,7 @@ CREATE TABLE streams (
 CREATE INDEX ON streams (mark_deleted);
 
 CREATE TABLE events (
-  event_id UUID,
+  event_id UUID NOT NULL,
   event_number BIGINT NOT NULL,
   event_type TEXT,
   data TEXT,
@@ -48,7 +48,7 @@ CREATE TABLE stream_acl (
     stream_id UUID NOT NULL,
     operation smallint NOT NULL,
     role VARCHAR(50),
-    PRIMARY KEY (stream_id, operation)
+    PRIMARY KEY (stream_id, operation, role)
 );
 
 INSERT INTO users (username, full_name, password_hash) VALUES ('admin', 'Event Store Administrator', '$2y$10$z0a0JV9SByKIeeDy4lXjGuHPpCgXcd5WYS/Hps3.dow28SvqnfGAS');
@@ -60,9 +60,3 @@ INSERT INTO user_roles (rolename, username) VALUES ('$ops', 'ops');
 
 -- @todo write user stream acl into event-store
 -- @todo make this a script executed from php (setup_event_store.php)
-
--- test-data
--- insert into streams VALUES ('e77e969a-25e8-4c7f-b3fe-663ac6ac4cc6', 'sasap');
--- insert into streams VALUES ('e77e969a-21e8-4c7f-b3fe-663ac6ac4cc0', 'projected');
--- insert into events VALUES ('e77e969d-25e8-4c7f-b3fe-663ac6ac4cc6', 0, 'test-event', 'data', 'metadata', 'e77e969a-25e8-4c7f-b3fe-663ac6ac4cc6', false, true, '2018-04-12T20:39:43.025366Z', null);
--- insert into events VALUES (null, 0, null, null, null, 'e77e969a-21e8-4c7f-b3fe-663ac6ac4cc0', null, null, null, 'e77e969d-25e8-4c7f-b3fe-663ac6ac4cc6');

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
+use Prooph\EventStore\Common\SystemEventTypes;
+use Prooph\EventStore\Common\SystemRoles;
+
 class SystemSettings
 {
     /**
@@ -17,6 +20,26 @@ class SystemSettings
      * @var StreamAcl
      */
     private $systemStreamAcl;
+
+    public static function default(): SystemSettings
+    {
+        return new self(
+            new StreamAcl(
+                [SystemRoles::All],
+                [SystemRoles::All],
+                [SystemRoles::All],
+                [SystemRoles::All],
+                [SystemRoles::All]
+            ),
+            new StreamAcl(
+                [SystemRoles::Admins],
+                [SystemRoles::Admins],
+                [SystemRoles::Admins],
+                [SystemRoles::Admins],
+                [SystemRoles::Admins]
+            )
+        );
+    }
 
     public function __construct(StreamAcl $userStreamAcl, StreamAcl $systemStreamAcl)
     {

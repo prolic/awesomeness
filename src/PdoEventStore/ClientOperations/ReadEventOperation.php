@@ -18,27 +18,11 @@ class ReadEventOperation
     public function __invoke(
         PDO $connection,
         string $stream,
+        ?string $streamId,
         int $eventNumber,
         ?UserCredentials $userCredentials
     ): EventReadResult
     {
-        $statement = $connection->prepare(<<<SQL
-SELECT * FROM streams WHERE stream_name = ?
-SQL
-        );
-        $statement->execute([$stream]);
-        $statement->setFetchMode(PDO::FETCH_OBJ);
-
-        if (0 === $statement->rowCount()) {
-            return new EventReadResult(EventReadStatus::noStream(), $stream, $eventNumber, null);
-        }
-
-        $streamData = $statement->fetch();
-
-        if ($streamData->mark_deleted || $streamData->deleted) {
-            return new EventReadResult(EventReadStatus::streamDeleted(), $stream, $eventNumber, null);
-        }
-
         $statement = $connection->prepare(<<<SQL
 SELECT
     COALESCE(e1.event_id, e2.event_id) as event_id,
@@ -58,7 +42,7 @@ AND e1.event_number = ?
 SQL
         );
         $statement->setFetchMode(PDO::FETCH_OBJ);
-        $statement->execute([$streamData->stream_id, $eventNumber]);
+        $statement->execute([$streamId, $eventNumber]);
 
         if (0 === $statement->rowCount()) {
             return new EventReadResult(EventReadStatus::notFound(), $stream, $eventNumber, null);

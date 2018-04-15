@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Prooph\PdoEventStore;
 
+use MongoDB\Driver\Exception\AuthenticationException;
 use PDO;
 use Prooph\EventStore\Common\SystemEventTypes;
+use Prooph\EventStore\Common\SystemRoles;
 use Prooph\EventStore\Common\SystemStreams;
 use Prooph\EventStore\EventData;
 use Prooph\EventStore\EventId;
@@ -16,8 +18,11 @@ use Prooph\EventStore\EventStoreTransaction;
 use Prooph\EventStore\EventStoreTransactionConnection;
 use Prooph\EventStore\Exception\ConnectionException;
 use Prooph\EventStore\Exception\RuntimeException;
+use Prooph\EventStore\Exception\StreamDeleted;
 use Prooph\EventStore\ExpectedVersion;
 use Prooph\EventStore\Internal\Consts;
+use Prooph\EventStore\ReadDirection;
+use Prooph\EventStore\SliceReadStatus;
 use Prooph\EventStore\StreamEventsSlice;
 use Prooph\EventStore\StreamMetadata;
 use Prooph\EventStore\StreamMetadataResult;
@@ -26,8 +31,11 @@ use Prooph\EventStore\UserCredentials;
 use Prooph\EventStore\WriteResult;
 use Prooph\PdoEventStore\ClientOperations\AcquireStreamLockOperation;
 use Prooph\PdoEventStore\ClientOperations\AppendToStreamOperation;
+use Prooph\PdoEventStore\ClientOperations\AuthenticateOperation;
 use Prooph\PdoEventStore\ClientOperations\CommitTransactionOperation;
 use Prooph\PdoEventStore\ClientOperations\DeleteStreamOperation;
+use Prooph\PdoEventStore\ClientOperations\LoadStreamIdOperation;
+use Prooph\PdoEventStore\ClientOperations\LoadSystemSettingsOperation;
 use Prooph\PdoEventStore\ClientOperations\ReadEventOperation;
 use Prooph\PdoEventStore\ClientOperations\ReadStreamEventsBackwardOperation;
 use Prooph\PdoEventStore\ClientOperations\ReadStreamEventsForwardOperation;
@@ -35,6 +43,7 @@ use Prooph\PdoEventStore\ClientOperations\ReleaseStreamLockOperation;
 use Prooph\PdoEventStore\ClientOperations\StartTransactionOperation;
 use Prooph\PdoEventStore\ClientOperations\TransactionalWriteOperation;
 use Prooph\PdoEventStore\Internal\LockData;
+use Prooph\PdoEventStore\Internal\StreamOperation;
 
 final class PdoEventStoreConnection implements EventStoreConnection, EventStoreTransactionConnection
 {
@@ -42,9 +51,12 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
     private $settings;
     /** @var PDO */
     private $connection;
-
     /** @var LockData[] */
     private $locks = [];
+    /** @var SystemSettings */
+    private $systemSettings;
+    /** @var array */
+    private $userRoles = [];
 
     public function __construct(ConnectionSettings $settings)
     {
@@ -60,6 +72,13 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
                 $this->settings->pdoUserCredentials()->password()
             );
             $this->connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $this->systemSettings = (new LoadSystemSettingsOperation())($this->connection);
+
+            if ($this->settings->defaultUserCredentials()) {
+                $this->userRoles[
+                    $this->settings->defaultUserCredentials()->username()
+                ] = (new AuthenticationException())($this->connection, $this->settings->defaultUserCredentials());
+            }
         }
     }
 
@@ -77,9 +96,15 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
             throw new \InvalidArgumentException('Stream cannot be empty');
         }
 
-        if (null === $this->connection) {
-            throw new ConnectionException('No connection established');
-        }
+        $this->checkConnection($userCredentials);
+
+        (new LoadStreamIdOperation())(
+            $this->connection,
+            $stream,
+            StreamOperation::Delete,
+            $this->systemSettings,
+            $this->userRoles($userCredentials)
+        );
 
         (new DeleteStreamOperation())(
             $this->connection,
@@ -110,17 +135,24 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
             throw new \InvalidArgumentException('Empty stream given');
         }
 
-        if (null === $this->connection) {
-            throw new ConnectionException('No connection established');
-        }
-
         if (isset($this->locks[$stream])) {
             throw new RuntimeException('Lock on stream ' . $stream . ' is already acquired');
         }
 
+        $this->checkConnection($userCredentials);
+
+        $streamId = (new LoadStreamIdOperation())(
+            $this->connection,
+            $stream,
+            StreamOperation::Delete,
+            $this->systemSettings,
+            $this->userRoles($userCredentials)
+        );
+
         return (new AppendToStreamOperation())(
             $this->connection,
             $stream,
+            $streamId,
             $expectedVersion,
             $events,
             $userCredentials ?? $this->settings->defaultUserCredentials()
@@ -140,13 +172,24 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
             throw new \InvalidArgumentException('EventNumber cannot be smaller then -1');
         }
 
-        if (null === $this->connection) {
-            throw new ConnectionException('No connection established');
+        $this->checkConnection($userCredentials);
+
+        try {
+            $streamId = (new LoadStreamIdOperation())(
+                $this->connection,
+                $stream,
+                SystemStreams::isMetastream($stream) ? StreamOperation::MetaRead : StreamOperation::Read,
+                $this->systemSettings,
+                $this->userRoles($userCredentials)
+            );
+        } catch (StreamDeleted $e) {
+            return new EventReadResult(EventReadStatus::streamDeleted(), $stream, $eventNumber, null);
         }
 
         return (new ReadEventOperation())(
             $this->connection,
             $stream,
+            $streamId,
             $eventNumber,
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
@@ -177,13 +220,46 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
             );
         }
 
-        if (null === $this->connection) {
-            throw new ConnectionException('No connection established');
+        $this->checkConnection($userCredentials);
+
+        try {
+            $streamId = (new LoadStreamIdOperation())(
+                $this->connection,
+                $stream,
+                SystemStreams::isMetastream($stream) ? StreamOperation::MetaRead : StreamOperation::Read,
+                $this->systemSettings,
+                $this->userRoles($userCredentials)
+            );
+        } catch (StreamDeleted $e) {
+            return new StreamEventsSlice(
+                SliceReadStatus::streamDeleted(),
+                $stream,
+                $start,
+                ReadDirection::forward(),
+                [],
+                0,
+                0,
+                true
+            );
+        }
+
+        if (null === $streamId) {
+            return new StreamEventsSlice(
+                SliceReadStatus::streamNotFound(),
+                $stream,
+                $start,
+                ReadDirection::forward(),
+                [],
+                0,
+                0,
+                true
+            );
         }
 
         return (new ReadStreamEventsForwardOperation())(
             $this->connection,
             $stream,
+            $streamId,
             $start,
             $count,
             $userCredentials ?? $this->settings->defaultUserCredentials()
@@ -215,13 +291,46 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
             );
         }
 
-        if (null === $this->connection) {
-            throw new ConnectionException('No connection established');
+        $this->checkConnection($userCredentials);
+
+        try {
+            $streamId = (new LoadStreamIdOperation())(
+                $this->connection,
+                $stream,
+                SystemStreams::isMetastream($stream) ? StreamOperation::MetaRead : StreamOperation::Read,
+                $this->systemSettings,
+                $this->userRoles($userCredentials)
+            );
+        } catch (StreamDeleted $e) {
+            return new StreamEventsSlice(
+                SliceReadStatus::streamDeleted(),
+                $stream,
+                $start,
+                ReadDirection::backward(),
+                [],
+                0,
+                0,
+                true
+            );
+        }
+
+        if (null === $streamId) {
+            return new StreamEventsSlice(
+                SliceReadStatus::streamNotFound(),
+                $stream,
+                $start,
+                ReadDirection::backward(),
+                [],
+                0,
+                0,
+                true
+            );
         }
 
         return (new ReadStreamEventsBackwardOperation())(
             $this->connection,
             $stream,
+            $streamId,
             $start,
             $count,
             $userCredentials ?? $this->settings->defaultUserCredentials()
@@ -245,9 +354,15 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
             ));
         }
 
-        if (null === $this->connection) {
-            throw new ConnectionException('No connection established');
-        }
+        $this->checkConnection($userCredentials);
+
+        $streamId = (new LoadStreamIdOperation())(
+            $this->connection,
+            $stream,
+            StreamOperation::MetaWrite,
+            $this->systemSettings,
+            $this->userRoles($userCredentials)
+        );
 
         $metaEvent = new EventData(
             EventId::generate(),
@@ -260,6 +375,7 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
         return (new AppendToStreamOperation())(
             $this->connection,
             SystemStreams::metastreamOf($stream),
+            $streamId,
             $expectedMetaStreamVersion,
             [$metaEvent],
             $userCredentials ?? $this->settings->defaultUserCredentials()
@@ -272,9 +388,7 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
             throw new \InvalidArgumentException('Stream cannot be empty');
         }
 
-        if (null === $this->connection) {
-            throw new ConnectionException('No connection established');
-        }
+        $this->checkConnection($userCredentials);
 
         $eventReadResult = $this->readEvent(
             SystemStreams::metastreamOf($stream),
@@ -308,10 +422,6 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
 
     public function setSystemSettings(SystemSettings $settings, UserCredentials $userCredentials = null): WriteResult
     {
-        if (null === $this->connection) {
-            throw new ConnectionException('No connection established');
-        }
-
         return $this->appendToStream(
             SystemStreams::SettingsStream,
             ExpectedVersion::Any,
@@ -337,17 +447,17 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
             throw new \InvalidArgumentException('Stream cannot be empty');
         }
 
-        if (null === $this->connection) {
-            throw new ConnectionException('No connection established');
-        }
-
         if (isset($this->locks[$stream])) {
             throw new ConnectionException('Lock on stream ' . $stream . ' is already acquired');
         }
 
+        $this->checkConnection($userCredentials);
+
         if ($this->connection->inTransaction()) {
             throw new ConnectionException('PDO connection is already in transaction');
         }
+
+        // @todo check loadStreamIdOperation
 
         try {
             /* @var LockData $lockData */
@@ -377,9 +487,9 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
         int $transactionId,
         UserCredentials $userCredentials = null
     ): EventStoreTransaction {
-        if (null === $this->connection) {
-            throw new ConnectionException('No connection established');
-        }
+        $this->checkConnection($userCredentials);
+
+        // @todo check loadStreamIdOperation
 
         $found = false;
 
@@ -421,9 +531,9 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
             throw new \InvalidArgumentException('Empty stream given');
         }
 
-        if (null === $this->connection) {
-            throw new ConnectionException('No connection established');
-        }
+        $this->checkConnection($userCredentials);
+
+        // @todo check loadStreamIdOperation
 
         $found = false;
 
@@ -465,6 +575,8 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
             throw new ConnectionException('No connection established');
         }
 
+        // @todo check loadStreamIdOperation
+
         $found = false;
 
         foreach ($this->locks as $stream => $lockData) {
@@ -498,5 +610,32 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
     public function settings(): ConnectionSettings
     {
         return $this->settings;
+    }
+
+    private function checkConnection(?UserCredentials $userCredentials): void
+    {
+        if (null === $this->connection) {
+            throw new ConnectionException('No connection established');
+        }
+
+        if ($userCredentials && ! isset($this->userRoles[$userCredentials->username()])) {
+            $this->userRoles[$userCredentials->username()] = (new AuthenticateOperation())(
+                $this->connection,
+                $this->settings->defaultUserCredentials()
+            );
+        }
+    }
+
+    private function userRoles(?UserCredentials $userCredentials): array
+    {
+        if ($userCredentials) {
+            return $this->userRoles[$userCredentials->username()];
+        }
+
+        if ($this->settings->defaultUserCredentials()) {
+            return $this->userRoles[$this->settings->defaultUserCredentials()->username()];
+        }
+
+        return [SystemRoles::All];
     }
 }
