@@ -21,8 +21,7 @@ class ReadEventOperation
         ?string $streamId,
         int $eventNumber,
         ?UserCredentials $userCredentials
-    ): EventReadResult
-    {
+    ): EventReadResult {
         $statement = $connection->prepare(<<<SQL
 SELECT
     COALESCE(e1.event_id, e2.event_id) as event_id,

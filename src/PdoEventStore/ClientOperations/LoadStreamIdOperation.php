@@ -22,8 +22,7 @@ class LoadStreamIdOperation
         int $operation,
         SystemSettings $systemSettings,
         array $userRoles
-    ): LoadStreamIdResult
-    {
+    ): LoadStreamIdResult {
         switch ($connection->getAttribute(PDO::ATTR_DRIVER_NAME)) {
             case 'mysql':
                 $concat = "GROUP_CONCAT(stream_acl.role SEPARATOR ',')";

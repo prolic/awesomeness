@@ -24,8 +24,7 @@ class ReadStreamEventsForwardOperation
         int $count,
         bool $resolveLinkTos,
         ?UserCredentials $userCredentials
-    ): StreamEventsSlice
-    {
+    ): StreamEventsSlice {
         if ($resolveLinkTos) {
             $sql = <<<SQL
 SELECT
@@ -64,7 +63,6 @@ AND e.event_number >= ?
 ORDER BY e.event_number ASC
 LIMIT ?
 SQL;
-
         }
 
         $statement = $connection->prepare($sql);

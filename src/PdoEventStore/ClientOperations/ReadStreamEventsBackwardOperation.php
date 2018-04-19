@@ -24,8 +24,7 @@ class ReadStreamEventsBackwardOperation
         int $count,
         bool $resolveLinkTos,
         ?UserCredentials $userCredentials
-    ): StreamEventsSlice
-    {
+    ): StreamEventsSlice {
         if ($resolveLinkTos) {
             $sql = <<<SQL
 SELECT

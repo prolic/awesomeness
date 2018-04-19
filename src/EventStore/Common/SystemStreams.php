@@ -27,6 +27,6 @@ class SystemStreams
 
     public static function isSystemStream(string $streamId): bool
     {
-        return strlen($streamId) !== 0 && $streamId[0] == '$';
+        return strlen($streamId) !== 0 && $streamId[0] === '$';
     }
 }
