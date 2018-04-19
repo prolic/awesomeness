@@ -42,6 +42,7 @@ use Prooph\PdoEventStore\ClientOperations\ReadStreamEventsForwardOperation;
 use Prooph\PdoEventStore\ClientOperations\ReleaseStreamLockOperation;
 use Prooph\PdoEventStore\ClientOperations\StartTransactionOperation;
 use Prooph\PdoEventStore\ClientOperations\TransactionalWriteOperation;
+use Prooph\PdoEventStore\Internal\LoadStreamIdResult;
 use Prooph\PdoEventStore\Internal\LockData;
 use Prooph\PdoEventStore\Internal\StreamOperation;
 
@@ -141,7 +142,8 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
 
         $this->checkConnection($userCredentials);
 
-        $streamId = (new LoadStreamIdOperation())(
+        /* @var LoadStreamIdResult $loadStreamIdResult */
+        $loadStreamIdResult = (new LoadStreamIdOperation())(
             $this->connection,
             $stream,
             StreamOperation::Delete,
@@ -152,7 +154,7 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
         return (new AppendToStreamOperation())(
             $this->connection,
             $stream,
-            $streamId,
+            $loadStreamIdResult->streamId(),
             $expectedVersion,
             $events,
             $userCredentials ?? $this->settings->defaultUserCredentials()
@@ -175,7 +177,8 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
         $this->checkConnection($userCredentials);
 
         try {
-            $streamId = (new LoadStreamIdOperation())(
+            /* @var LoadStreamIdResult $loadStreamIdResult */
+            $loadStreamIdResult = (new LoadStreamIdOperation())(
                 $this->connection,
                 $stream,
                 SystemStreams::isMetastream($stream) ? StreamOperation::MetaRead : StreamOperation::Read,
@@ -186,10 +189,14 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
             return new EventReadResult(EventReadStatus::streamDeleted(), $stream, $eventNumber, null);
         }
 
+        if (! $loadStreamIdResult->found()) {
+            return new EventReadResult(EventReadStatus::notFound(), $stream, $eventNumber, null);
+        }
+
         return (new ReadEventOperation())(
             $this->connection,
             $stream,
-            $streamId,
+            $loadStreamIdResult->streamId(),
             $eventNumber,
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
@@ -223,7 +230,8 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
         $this->checkConnection($userCredentials);
 
         try {
-            $streamId = (new LoadStreamIdOperation())(
+            /* @var LoadStreamIdResult $loadStreamIdResult */
+            $loadStreamIdResult = (new LoadStreamIdOperation())(
                 $this->connection,
                 $stream,
                 SystemStreams::isMetastream($stream) ? StreamOperation::MetaRead : StreamOperation::Read,
@@ -243,7 +251,7 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
             );
         }
 
-        if (null === $streamId) {
+        if (! $loadStreamIdResult->found()) {
             return new StreamEventsSlice(
                 SliceReadStatus::streamNotFound(),
                 $stream,
@@ -259,7 +267,7 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
         return (new ReadStreamEventsForwardOperation())(
             $this->connection,
             $stream,
-            $streamId,
+            $loadStreamIdResult->streamId(),
             $start,
             $count,
             $userCredentials ?? $this->settings->defaultUserCredentials()
@@ -356,7 +364,8 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
 
         $this->checkConnection($userCredentials);
 
-        $streamId = (new LoadStreamIdOperation())(
+        /* @var LoadStreamIdResult $loadStreamIdResult */
+        $loadStreamIdResult = (new LoadStreamIdOperation())(
             $this->connection,
             $stream,
             StreamOperation::MetaWrite,
@@ -375,7 +384,7 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
         return (new AppendToStreamOperation())(
             $this->connection,
             SystemStreams::metastreamOf($stream),
-            $streamId,
+            $loadStreamIdResult->streamId(),
             $expectedMetaStreamVersion,
             [$metaEvent],
             $userCredentials ?? $this->settings->defaultUserCredentials()
@@ -457,7 +466,13 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
             throw new ConnectionException('PDO connection is already in transaction');
         }
 
-        // @todo check loadStreamIdOperation
+        (new LoadStreamIdOperation())(
+            $this->connection,
+            $stream,
+            SystemStreams::isMetastream($stream) ? StreamOperation::MetaRead : StreamOperation::Read,
+            $this->systemSettings,
+            $this->userRoles($userCredentials)
+        );
 
         try {
             /* @var LockData $lockData */
@@ -488,8 +503,6 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
         UserCredentials $userCredentials = null
     ): EventStoreTransaction {
         $this->checkConnection($userCredentials);
-
-        // @todo check loadStreamIdOperation
 
         $found = false;
 
@@ -533,8 +546,6 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
 
         $this->checkConnection($userCredentials);
 
-        // @todo check loadStreamIdOperation
-
         $found = false;
 
         foreach ($this->locks as $stream => $lockData) {
@@ -574,8 +585,6 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
         if (null === $this->connection) {
             throw new ConnectionException('No connection established');
         }
-
-        // @todo check loadStreamIdOperation
 
         $found = false;
 

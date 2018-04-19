@@ -10,6 +10,7 @@ use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Exception\RuntimeException;
 use Prooph\EventStore\Exception\StreamDeleted;
 use Prooph\EventStore\SystemSettings;
+use Prooph\PdoEventStore\Internal\LoadStreamIdResult;
 use Prooph\PdoEventStore\Internal\StreamOperation;
 
 /** @internal */
@@ -21,7 +22,7 @@ class LoadStreamIdOperation
         int $operation,
         SystemSettings $systemSettings,
         array $userRoles
-    ): ?string
+    ): LoadStreamIdResult
     {
         switch ($connection->getAttribute(PDO::ATTR_DRIVER_NAME)) {
             case 'mysql':
@@ -95,6 +96,10 @@ SQL
             throw AccessDenied::toStream($stream);
         }
 
-        return $data ? $data->stream_id : null;
+        if (null === $data) {
+            return new LoadStreamIdResult(false, null);
+        }
+
+        return new LoadStreamIdResult(true, $data->stream_id);
     }
 }

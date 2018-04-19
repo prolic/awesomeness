@@ -6,7 +6,6 @@ namespace Prooph\PdoEventStore\ClientOperations;
 
 use PDO;
 use Prooph\EventStore\EventData;
-use Prooph\EventStore\Exception\StreamDeleted;
 use Prooph\EventStore\Exception\WrongExpectedVersion;
 use Prooph\EventStore\ExpectedVersion;
 use Prooph\EventStore\Internal\DateTimeUtil;
