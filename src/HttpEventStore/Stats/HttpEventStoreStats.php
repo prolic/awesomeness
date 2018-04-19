@@ -60,7 +60,7 @@ final class HttpEventStoreStats implements EventStoreStats
 
     public function getTcp(UserCredentials $userCredentials = null): array
     {
-        return $this->fetchStats('/proc/tcp', $userCredentials);
+        return $this->fetchStats('/tcp', $userCredentials);
     }
 
     public function getSys(UserCredentials $userCredentials = null): array
