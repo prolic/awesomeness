@@ -32,7 +32,6 @@ use Prooph\EventStore\WriteResult;
 use Prooph\PdoEventStore\ClientOperations\AcquireStreamLockOperation;
 use Prooph\PdoEventStore\ClientOperations\AppendToStreamOperation;
 use Prooph\PdoEventStore\ClientOperations\AuthenticateOperation;
-use Prooph\PdoEventStore\ClientOperations\CommitTransactionOperation;
 use Prooph\PdoEventStore\ClientOperations\DeleteStreamOperation;
 use Prooph\PdoEventStore\ClientOperations\LoadStreamIdOperation;
 use Prooph\PdoEventStore\ClientOperations\LoadSystemSettingsOperation;
@@ -41,10 +40,10 @@ use Prooph\PdoEventStore\ClientOperations\ReadStreamEventsBackwardOperation;
 use Prooph\PdoEventStore\ClientOperations\ReadStreamEventsForwardOperation;
 use Prooph\PdoEventStore\ClientOperations\ReleaseStreamLockOperation;
 use Prooph\PdoEventStore\ClientOperations\StartTransactionOperation;
-use Prooph\PdoEventStore\ClientOperations\TransactionalWriteOperation;
 use Prooph\PdoEventStore\Internal\LoadStreamIdResult;
 use Prooph\PdoEventStore\Internal\LockData;
 use Prooph\PdoEventStore\Internal\StreamOperation;
+use Prooph\PdoEventStore\Internal\TransactionData;
 
 final class PdoEventStoreConnection implements EventStoreConnection, EventStoreTransactionConnection
 {
@@ -54,6 +53,8 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
     private $connection;
     /** @var LockData[] */
     private $locks = [];
+    /** @var array */
+    private $transactionData = [];
     /** @var SystemSettings */
     private $systemSettings;
     /** @var array */
@@ -562,18 +563,23 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
             );
         }
 
-        (new TransactionalWriteOperation())(
-            $this->connection,
-            $stream,
-            $expectedVersion,
+        $this->transactionData[$transaction->transactionId()][] = new TransactionData(
             $events,
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
 
+        if ($expectedVersion === ExpectedVersion::Any) {
+            $newExpectedVersion = ExpectedVersion::Any;
+        } elseif ($expectedVersion < 0) {
+            $newExpectedVersion = count($events) - 1;
+        } else {
+            $newExpectedVersion = $expectedVersion + count($events);
+        }
+
         $this->locks[$stream] = new LockData(
             $stream,
             $lockData->transactionId(),
-            $lockData->expectedVersion() + count($events),
+            $newExpectedVersion,
             $lockData->lockCounter()
         );
     }
@@ -601,19 +607,28 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
             );
         }
 
-        $writeResult = (new CommitTransactionOperation())($this->connection, $stream);
+        $this->connection->beginTransaction();
 
-        if ($lockData->lockCounter() > 1) {
-            $releaseLockOperation = new ReleaseStreamLockOperation();
-
-            for ($i = 2; $i <= $lockData->lockCounter(); $i++) {
-                $releaseLockOperation($this->connection, $stream);
-            }
+        foreach ($this->transactionData[$lockData->transactionId()] as $transactionData) {
+            /* @var TransactionData $transactionData */
+            (new AppendToStreamOperation())(
+                $this->connection,
+                $stream,
+                $lockData->expectedVersion(),
+                $transactionData->events(),
+                $transactionData->userCredentials(),
+                false
+            );
         }
 
-        unset($this->locks[$stream]);
+        $this->connection->commit();
 
-        return $writeResult;
+        (new ReleaseStreamLockOperation())($this->connection, $stream, $lockData->lockCounter());
+
+        unset($this->locks[$stream]);
+        unset($this->transactionData[$lockData->transactionId()]);
+
+        return new WriteResult();
     }
 
     public function settings(): ConnectionSettings

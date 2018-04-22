@@ -10,11 +10,12 @@ use Prooph\EventStore\Exception\RuntimeException;
 /** @internal */
 class ReleaseStreamLockOperation
 {
-    public function __invoke(PDO $connection, string $stream): void
+    public function __invoke(PDO $connection, string $stream, int $count = 1): void
     {
         switch ($connection->getAttribute(PDO::ATTR_DRIVER_NAME)) {
             case 'mysql':
-                $statement = $connection->prepare('SELECT RELEASE_LOCK(?) as stream_lock;');
+                $sql = 'SELECT RELEASE_LOCK(?) as stream_lock;';
+                $statement = $connection->prepare(str_repeat($sql, $count));
                 $statement->execute([$stream]);
                 $statement->setFetchMode(PDO::FETCH_OBJ);
                 $lock = $statement->fetch()->stream_lock;
@@ -25,7 +26,8 @@ class ReleaseStreamLockOperation
 
                 break;
             case 'pgsql':
-                $statement = $connection->prepare('SELECT PG_ADVISORY_UNLOCK(HASHTEXT(?)) as stream_lock;');
+                $sql = 'SELECT PG_ADVISORY_UNLOCK(HASHTEXT(?)) as stream_lock;';
+                $statement = $connection->prepare(str_repeat($sql));
                 $statement->execute([$stream]);
                 $statement->setFetchMode(PDO::FETCH_OBJ);
                 $lock = $statement->fetch()->stream_lock;
