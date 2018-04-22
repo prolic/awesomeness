@@ -22,6 +22,14 @@ class AccessDenied extends RuntimeException
         ));
     }
 
+    public static function toProjection(string $name): AccessDenied
+    {
+        return new self(sprintf(
+            'Access to projection \'%s\' is denied',
+            $name
+        ));
+    }
+
     public static function toSubscription(string $stream, string $groupName): AccessDenied
     {
         return new self(sprintf(

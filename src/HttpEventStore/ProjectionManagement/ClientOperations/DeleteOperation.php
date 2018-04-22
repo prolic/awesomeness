@@ -8,10 +8,10 @@ use Http\Client\HttpClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
 use Prooph\EventStore\Exception\AccessDenied;
+use Prooph\EventStore\ProjectionManagement\ProjectionNotFound;
 use Prooph\EventStore\UserCredentials;
 use Prooph\HttpEventStore\ClientOperations\Operation;
 use Prooph\HttpEventStore\Http\RequestMethod;
-use Prooph\HttpEventStore\ProjectionManagement\ProjectionNotFound;
 
 /** @internal */
 class DeleteOperation extends Operation
@@ -44,9 +44,9 @@ class DeleteOperation extends Operation
             case 204:
                 return;
             case 401:
-                throw AccessDenied::toUserManagementOperation();
+                throw AccessDenied::toProjection($name);
             case 404:
-                throw new ProjectionNotFound();
+                throw ProjectionNotFound::withName($name);
             default:
                 throw new \UnexpectedValueException('Unexpected status code ' . $response->getStatusCode() . ' returned');
         }
