@@ -34,7 +34,7 @@ class GetArrayOperation extends Operation
 
         switch ($response->getStatusCode()) {
             case 200:
-                return json_decode($response->getBody()->getContents()) ?? [];
+                return json_decode($response->getBody()->getContents(), true) ?? [];
             case 401:
                 throw AccessDenied::toUserManagementOperation();
             case 404:

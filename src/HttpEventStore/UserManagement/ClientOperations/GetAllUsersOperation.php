@@ -24,12 +24,11 @@ class GetAllUsersOperation extends Operation
         RequestFactory $requestFactory,
         UriFactory $uriFactory,
         string $baseUri,
-        string $login,
         ?UserCredentials $userCredentials
     ): array {
         $request = $requestFactory->createRequest(
-            RequestMethod::Post,
-            $uriFactory->createUri($baseUri . '/users/' . urlencode($stream))
+            RequestMethod::Get,
+            $uriFactory->createUri($baseUri . '/users/')
         );
 
         $response = $this->sendRequest($httpClient, $userCredentials, $request);
@@ -44,8 +43,7 @@ class GetAllUsersOperation extends Operation
                         $user['login'],
                         $user['fullName'],
                         $user['groups'],
-                        $user['disabled'],
-                        $json['links']
+                        $user['disabled']
                     );
                 }
 

@@ -35,7 +35,9 @@ SQL
         $statement->setFetchMode(PDO::FETCH_OBJ);
         $data = $statement->fetch();
 
-        if (! password_verify($userCredentials->password(), $data->password_hash)) {
+        if ($data->disabled
+            || ! password_verify($userCredentials->password(), $data->password_hash)
+        ) {
             throw AccessDenied::login($userCredentials->username());
         }
 

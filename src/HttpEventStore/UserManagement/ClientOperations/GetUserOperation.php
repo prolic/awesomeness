@@ -40,8 +40,7 @@ class GetUserOperation extends Operation
                     $json['data']['login'],
                     $json['data']['fullName'],
                     $json['data']['groups'],
-                    $json['data']['disabled'],
-                    $json['data']['links']
+                    $json['data']['disabled']
                 );
             case 401:
                 throw AccessDenied::toUserManagementOperation();

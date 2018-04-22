@@ -34,7 +34,7 @@ class GetProjectionConfigOperation extends Operation
 
         switch ($response->getStatusCode()) {
             case 200:
-                $json = json_decode($response->getBody()->getContents());
+                $json = json_decode($response->getBody()->getContents(), true);
 
                 return new ProjectionConfig(
                     $json['emitEnabled'],

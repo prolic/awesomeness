@@ -35,7 +35,7 @@ class LoadStreamIdOperation
         }
 
         $statement = $connection->prepare(<<<SQL
-SELECT streams.stream_id, streams.mark_deleted, streams.deleted,  $concat as stream_roles
+SELECT streams.stream_id, streams.mark_deleted, streams.deleted, $concat as stream_roles
     FROM streams
     LEFT JOIN stream_acl ON streams.stream_id = stream_acl.stream_id AND stream_acl.operation = ?
     WHERE streams.stream_name = ?

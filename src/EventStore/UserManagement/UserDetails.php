@@ -14,17 +14,14 @@ final class UserDetails
     private $groups;
     /** @var bool */
     private $disabled;
-    /** @var array */
-    private $links;
 
     /** @internal */
-    public function __construct(string $login, string $fullName, array $groups, bool $disabled, array $links)
+    public function __construct(string $login, string $fullName, array $groups, bool $disabled)
     {
         $this->login = $login;
         $this->fullName = $fullName;
         $this->groups = $groups;
         $this->disabled = $disabled;
-        $this->links = $links;
     }
 
     public function login(): string
@@ -48,10 +45,5 @@ final class UserDetails
     public function disabled(): bool
     {
         return $this->disabled;
-    }
-
-    public function links(): array
-    {
-        return $this->links;
     }
 }

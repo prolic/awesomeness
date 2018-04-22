@@ -29,12 +29,8 @@ CREATE TABLE users (
     username VARCHAR(50) NOT NULL,
     full_name TEXT NOT NULL,
     password_hash TEXT NOT NULL,
+    disabled BOOLEAN NOT NULL,
     PRIMARY KEY (username)
-);
-
-CREATE TABLE roles (
-    rolename VARCHAR(50) NOT NULL,
-    PRIMARY KEY (rolename)
 );
 
 CREATE TABLE user_roles (
@@ -43,6 +39,7 @@ CREATE TABLE user_roles (
 );
 
 CREATE INDEX ON user_roles (username);
+CREATE INDEX ON user_roles (rolename);
 
 CREATE TABLE stream_acl (
     stream_id UUID NOT NULL,
