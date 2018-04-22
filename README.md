@@ -20,10 +20,6 @@ requires the following php-extensions:
 
 - pdo_mysql or pdo_pgsql
 
-## MySQL / MariaDB EventStore
-
-Later...
-
 ## InMemory EventStore
 
 Not now...
