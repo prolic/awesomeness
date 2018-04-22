@@ -37,7 +37,7 @@ class DisableUserOperation extends Operation
             case 401:
                 throw AccessDenied::toUserManagementOperation();
             case 404:
-                throw new UserNotFound();
+                throw UserNotFound::withLogin($login);
             default:
                 throw new \UnexpectedValueException('Unexpected status code ' . $response->getStatusCode() . ' returned');
         }

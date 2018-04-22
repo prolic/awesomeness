@@ -32,7 +32,7 @@ class GetUserOperation
         }
 
         if (! $streamEventsSlice->status()->equals(SliceReadStatus::success())) {
-            throw new UserNotFound();
+            throw UserNotFound::withLogin($login);
         }
 
         $data = json_decode($streamEventsSlice->events()[0]->data(), true);

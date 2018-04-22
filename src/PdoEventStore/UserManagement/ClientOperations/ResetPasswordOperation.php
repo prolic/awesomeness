@@ -37,7 +37,7 @@ class ResetPasswordOperation
         }
 
         if (! $streamEventsSlice->status()->equals(SliceReadStatus::success())) {
-            throw new UserNotFound();
+            throw UserNotFound::withLogin($login);
         }
 
         $passwordHash = password_hash($newPassword, PASSWORD_DEFAULT);
