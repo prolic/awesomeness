@@ -81,10 +81,6 @@ Default login credentials are `admin` with pwd `changeit`.
 
 ## Todos
 
-General
-
-- [ ] Calculate next expected version after writing
-
 EventStore
 
 - [x] EventStoreConnection interface
@@ -108,13 +104,16 @@ HttpEventStore
 - [x] HttpProjectionManagement
 - [x] HttpEventStoreStats
 - [x] HttpUserManagement
+- [ ] HTTP-LongPoll-Header
+- [ ] Scavenging
 
 PdoEventStore
 - [x] PdoEventStoreConnection
 - [x] Transaction Handling
 - [ ] PdoProjectionManagement
-- [ ] PdoUserManagement
-- [ ] ACL Integration
+- [x] PdoUserManagement
+- [x] ACL Integration
+- [ ] Scavenging
 
 EventSourcing
 
