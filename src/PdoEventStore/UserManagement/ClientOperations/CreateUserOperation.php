@@ -24,6 +24,8 @@ class CreateUserOperation
         array $groups,
         ?UserCredentials $userCredentials
     ): void {
+        $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+
         $connection->beginTransaction();
 
         try {
@@ -38,7 +40,7 @@ class CreateUserOperation
                         json_encode([
                             'login' => $login,
                             'fullName' => $fullName,
-                            'password' => $password,
+                            'hash' => $passwordHash,
                             'groups' => $groups,
                         ]),
                         ''
@@ -66,7 +68,7 @@ class CreateUserOperation
             $statement->execute([
                 $login,
                 $fullName,
-                password_hash($password, PASSWORD_DEFAULT),
+                $passwordHash,
                 false,
             ]);
 

@@ -9,6 +9,7 @@ use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\UserCredentials;
+use Prooph\EventStore\UserManagement\UserNotFound;
 use Prooph\HttpEventStore\ClientOperations\Operation;
 use Prooph\HttpEventStore\Http\RequestMethod;
 
@@ -26,7 +27,7 @@ class ChangePasswordOperation extends Operation
         ?UserCredentials $userCredentials
     ): void {
         $string = json_encode([
-            'oldPassword' => $oldPassword,
+            'currentPassword' => $oldPassword,
             'newPassword' => $newPassword,
         ]);
 
