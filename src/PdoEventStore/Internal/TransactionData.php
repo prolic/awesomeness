@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 namespace Prooph\PdoEventStore\Internal;
+
 use Prooph\EventStore\EventData;
 use Prooph\EventStore\UserCredentials;
 

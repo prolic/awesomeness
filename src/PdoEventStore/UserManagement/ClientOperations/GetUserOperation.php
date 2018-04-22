@@ -9,7 +9,6 @@ use Prooph\EventStore\SliceReadStatus;
 use Prooph\EventStore\UserCredentials;
 use Prooph\EventStore\UserManagement\UserDetails;
 use Prooph\EventStore\UserManagement\UserNotFound;
-use Prooph\PdoEventStore\Http\RequestMethod;
 use Prooph\PdoEventStore\PdoEventStoreConnection;
 
 /** @internal */

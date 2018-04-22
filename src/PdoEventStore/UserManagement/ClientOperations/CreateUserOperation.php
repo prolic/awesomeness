@@ -57,7 +57,7 @@ class CreateUserOperation
                         false,
                         $login,
                         ''
-                    )
+                    ),
                 ]
             );
 
@@ -67,7 +67,7 @@ class CreateUserOperation
                 $login,
                 $fullName,
                 password_hash($password, PASSWORD_DEFAULT),
-                false
+                false,
             ]);
 
             $sql = 'INSERT INTO user_roles (rolename, username) VALUES ' . implode(', ', array_fill(0, count($groups), '(?, ?)'));

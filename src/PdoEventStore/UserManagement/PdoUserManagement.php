@@ -4,16 +4,10 @@ declare(strict_types=1);
 
 namespace Prooph\PdoEventStore\UserManagement;
 
-use MongoDB\Driver\Exception\AuthenticationException;
 use PDO;
-use Prooph\EventStore\Common\SystemRoles;
-use Prooph\EventStore\SystemSettings;
 use Prooph\EventStore\UserCredentials;
 use Prooph\EventStore\UserManagement\UserDetails;
 use Prooph\EventStore\UserManagement\UserManagement;
-use Prooph\PdoEventStore\ClientOperations\LoadStreamIdOperation;
-use Prooph\PdoEventStore\ClientOperations\LoadSystemSettingsOperation;
-use Prooph\PdoEventStore\Internal\StreamOperation;
 use Prooph\PdoEventStore\PdoEventStoreConnection;
 use Prooph\PdoEventStore\UserManagement\ClientOperations\ChangePasswordOperation;
 use Prooph\PdoEventStore\UserManagement\ClientOperations\CreateUserOperation;

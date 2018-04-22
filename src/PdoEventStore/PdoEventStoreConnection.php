@@ -625,8 +625,7 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
 
         (new ReleaseStreamLockOperation())($this->connection, $stream, $lockData->lockCounter());
 
-        unset($this->locks[$stream]);
-        unset($this->transactionData[$lockData->transactionId()]);
+        unset($this->locks[$stream], $this->transactionData[$lockData->transactionId()]);
 
         return new WriteResult();
     }

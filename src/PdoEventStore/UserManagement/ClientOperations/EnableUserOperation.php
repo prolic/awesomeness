@@ -52,7 +52,7 @@ class EnableUserOperation
                         true,
                         json_encode($data),
                         ''
-                    )
+                    ),
                 ]
             );
 

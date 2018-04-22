@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Prooph\PdoEventStore\UserManagement\ClientOperations;
 
-use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\UserCredentials;
 use Prooph\PdoEventStore\PdoEventStoreConnection;
 
