@@ -271,6 +271,7 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
             $loadStreamIdResult->streamId(),
             $start,
             $count,
+            $resolveLinkTos,
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
     }
