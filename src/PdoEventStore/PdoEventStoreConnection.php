@@ -369,7 +369,7 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
         /* @var LoadStreamIdResult $loadStreamIdResult */
         $loadStreamIdResult = (new LoadStreamIdOperation())(
             $this->connection,
-            $stream,
+            SystemStreams::metastreamOf($stream),
             StreamOperation::MetaWrite,
             $this->systemSettings,
             $this->userRoles($userCredentials)
