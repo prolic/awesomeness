@@ -33,17 +33,15 @@ $writeResult = $connection->appendToStream(
     ]
 );
 
-var_dump($writeResult);
-die;
-
 $streamEventsSlice = $connection->readStreamEventsForward(
     'sasastream',
     0,
     100,
-    true
+    false
 );
 
 var_dump($streamEventsSlice);
+die;
 
 $writeResult = $connection->setStreamMetadata(
     'sasastream',

@@ -48,7 +48,7 @@ SQL;
         } else {
             $sql = <<<SQL
 SELECT
-    e.event_id.
+    e.event_id,
     e.event_number,
     e.event_type,
     e.data,
@@ -105,7 +105,7 @@ SQL;
             $stream,
             $start,
             ReadDirection::forward(),
-            [],
+            $events,
             $lastEventNumber + 1,
             $lastEventNumber,
             true
