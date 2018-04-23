@@ -27,7 +27,7 @@ class ReleaseStreamLockOperation
                 break;
             case 'pgsql':
                 $sql = 'SELECT PG_ADVISORY_UNLOCK(HASHTEXT(?)) as stream_lock;';
-                $statement = $connection->prepare(str_repeat($sql));
+                $statement = $connection->prepare(str_repeat($sql, $count));
                 $statement->execute([$stream]);
                 $statement->setFetchMode(PDO::FETCH_OBJ);
                 $lock = $statement->fetch()->stream_lock;
