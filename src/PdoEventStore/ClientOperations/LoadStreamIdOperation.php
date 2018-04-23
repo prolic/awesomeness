@@ -46,8 +46,7 @@ SQL
         $statement->execute([$operation, $stream]);
         $statement->setFetchMode(PDO::FETCH_OBJ);
         $data = $statement->fetch();
-
-        if (null === $data) {
+        if (false === $data) {
             if (! SystemStreams::isSystemStream($stream)) {
                 switch ($operation) {
                     case StreamOperation::Read:
@@ -95,7 +94,7 @@ SQL
             throw AccessDenied::toStream($stream);
         }
 
-        if (null === $data) {
+        if (false === $data) {
             return new LoadStreamIdResult(false, null);
         }
 
