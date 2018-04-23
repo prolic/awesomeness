@@ -12,6 +12,7 @@ use Prooph\EventStore\Exception\StreamDeleted;
 use Prooph\EventStore\SystemSettings;
 use Prooph\PdoEventStore\Internal\LoadStreamIdResult;
 use Prooph\PdoEventStore\Internal\StreamOperation;
+use Prooph\EventStore\Common\SystemRoles;
 
 /** @internal */
 class LoadStreamIdOperation
@@ -87,7 +88,7 @@ SQL
                 throw StreamDeleted::with($stream);
             }
 
-            $toCheck = [];
+            $toCheck = [SystemRoles::All];
             if (is_string($data->stream_roles)) {
                 $toCheck = explode(',', $data->stream_roles);
             }
