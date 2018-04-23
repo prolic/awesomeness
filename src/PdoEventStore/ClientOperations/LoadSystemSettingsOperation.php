@@ -20,7 +20,7 @@ SQL
         $statement->execute([SystemStreams::SettingsStream]);
 
         if (0 === $statement->rowCount()) {
-            SystemSettings::default();
+            return SystemSettings::default();
         }
 
         $statement->setFetchMode(PDO::FETCH_OBJ);
@@ -49,7 +49,7 @@ SQL
         $statement->execute([$streamData->stream_id]);
 
         if (0 === $statement->rowCount()) {
-            SystemSettings::default();
+            return SystemSettings::default();
         }
 
         $event = $statement->fetch();
