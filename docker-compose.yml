@@ -1,14 +1,26 @@
 version: '2'
-services:
-  php:
-    image: prooph/php:7.2-cli
-    volumes:
-      - .:/app
 
-  eventstore:
-    image: eventstore/eventstore
-    ports:
-      - 2113:2113
-      - 1113:1113
-    environment:
-      - EVENTSTORE_RUN_PROJECTIONS=all
+services:
+    php:
+        image: prooph/php:7.2-cli-xdebug
+        volumes:
+            - .:/app
+
+    eventstore:
+        image: eventstore/eventstore
+        ports:
+            - 2113:2113
+            - 1113:1113
+        environment:
+            - EVENTSTORE_RUN_PROJECTIONS=all
+
+    postgres:
+        image: postgres:10-alpine
+        environment:
+            POSTGRES_PASSWORD: example
+
+    adminer:
+        image: adminer
+        restart: always
+        ports:
+            - 8080:8080
