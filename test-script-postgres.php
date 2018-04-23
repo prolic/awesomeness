@@ -41,7 +41,6 @@ $streamEventsSlice = $connection->readStreamEventsForward(
 );
 
 var_dump($streamEventsSlice);
-die;
 
 $writeResult = $connection->setStreamMetadata(
     'sasastream',
@@ -57,4 +56,4 @@ $streamMetadataResult = $connection->getStreamMetadata('sasastream');
 
 var_dump($streamMetadataResult);
 
-$connection->deleteStream('foo', false);
+$connection->deleteStream('sasastream', false);
