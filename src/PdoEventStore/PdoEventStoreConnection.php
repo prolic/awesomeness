@@ -172,7 +172,7 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
         }
 
         if ($eventNumber < -1) {
-            throw new \InvalidArgumentException('EventNumber cannot be smaller then -1');
+            throw new \InvalidArgumentException('Event number cannot be smaller then -1');
         }
 
         $this->checkConnection($userCredentials);
