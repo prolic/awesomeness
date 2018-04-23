@@ -78,14 +78,6 @@ INSERT INTO streams (stream_id, stream_name, mark_deleted, deleted) VALUES (?, ?
 SQL
             );
             $statement->execute([$streamId, $stream, 0, 0]);
-
-            $statement = $connection->prepare(<<<SQL
-INSERT INTO stream_acl (stream_id, operation, role) VALUES (?, ?, ?);
-SQL
-            );
-            $statement->execute([$streamId, 0, '$all']);
-            $statement->execute([$streamId, 1, '$all']);
-            $statement->execute([$streamId, 2, '$all']);
         }
 
         $sql = <<<SQL

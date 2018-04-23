@@ -87,7 +87,10 @@ SQL
                 throw StreamDeleted::with($stream);
             }
 
-            $toCheck = explode(',', $data->stream_roles);
+            $toCheck = [];
+            if (is_string($data->stream_roles)) {
+                $toCheck = explode(',', $data->stream_roles);
+            }
         }
 
         if (empty(array_intersect($userRoles, $toCheck))) {
