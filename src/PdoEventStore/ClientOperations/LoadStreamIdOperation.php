@@ -61,25 +61,25 @@ SQL
                         break;
                 }
             } else {
-                $isMetaStream = SystemStreams::isMetastream($stream);
-
                 switch ($operation) {
                     case StreamOperation::Read:
-                        if ($isMetaStream) {
-                            $toCheck = $systemSettings->systemStreamAcl()->metaReadRoles();
-                        } else {
-                            $toCheck = $systemSettings->systemStreamAcl()->readRoles();
-                        }
+                        $toCheck = $systemSettings->systemStreamAcl()->readRoles();
                         break;
+
                     case StreamOperation::Write:
-                        if ($isMetaStream) {
-                            $toCheck = $systemSettings->systemStreamAcl()->metaWriteRoles();
-                        } else {
-                            $toCheck = $systemSettings->systemStreamAcl()->writeRoles();
-                        }
+                        $toCheck = $systemSettings->systemStreamAcl()->writeRoles();
                         break;
+
                     case StreamOperation::Delete:
                         $toCheck = $systemSettings->systemStreamAcl()->deleteRoles();
+                        break;
+
+                    case StreamOperation::MetaRead:
+                        $toCheck = $systemSettings->systemStreamAcl()->metaReadRoles();
+                        break;
+
+                    case StreamOperation::MetaWrite:
+                        $toCheck = $systemSettings->systemStreamAcl()->metaWriteRoles();
                         break;
                 }
             }
