@@ -31,11 +31,11 @@ class SystemSettings
                 [SystemRoles::All]
             ),
             new StreamAcl(
-                [SystemRoles::Admins],
-                [SystemRoles::Admins],
-                [SystemRoles::Admins],
-                [SystemRoles::Admins],
-                [SystemRoles::Admins]
+                [SystemRoles::All, SystemRoles::Admins],
+                [SystemRoles::All, SystemRoles::Admins],
+                [SystemRoles::All, SystemRoles::Admins],
+                [SystemRoles::All, SystemRoles::Admins],
+                [SystemRoles::All, SystemRoles::Admins]
             )
         );
     }
