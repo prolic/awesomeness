@@ -16,7 +16,6 @@ CREATE TABLE events (
   meta_data TEXT,
   stream_id UUID NOT NULL,
   is_json BOOLEAN,
-  is_meta_data BOOLEAN,
   updated CHAR(27),
   link_to UUID,
   PRIMARY KEY (stream_id, event_number)

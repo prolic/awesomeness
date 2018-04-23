@@ -81,9 +81,9 @@ SQL
         }
 
         $sql = <<<SQL
-INSERT INTO events (event_id, event_number, event_type, data, meta_data, stream_id, is_json, is_meta_data, updated) VALUES 
+INSERT INTO events (event_id, event_number, event_type, data, meta_data, stream_id, is_json, updated) VALUES
 SQL;
-        $sql .= str_repeat('(?, ?, ?, ?, ?, ?, ?, ?, ?), ', count($events));
+        $sql .= str_repeat('(?, ?, ?, ?, ?, ?, ?, ?), ', count($events));
         $sql = substr($sql, 0, -2);
 
         $now = new \DateTimeImmutable('NOW', new \DateTimeZone('UTC'));
@@ -99,7 +99,6 @@ SQL;
             $params[] = $event->metaData();
             $params[] = $streamId;
             $params[] = $event->isJson() ? 1 : 0;
-            $params[] = strlen($event->metaData()) > 0 ? 1 : 0;
             $params[] = $now;
         }
 

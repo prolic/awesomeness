@@ -30,7 +30,6 @@ SELECT
     COALESCE(e1.data, e2.data) as data,
     COALESCE(e1.meta_data, e2.meta_data) as meta_data,
     COALESCE(e1.is_json, e2.is_json) as is_json,
-    COALESCE(e1.is_meta_data, e2.is_meta_data) as is_meta_data,
     COALESCE(e1.updated, e2.updated) as updated
 FROM
     events e1 
