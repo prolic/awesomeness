@@ -4,7 +4,11 @@ declare(strict_types=1);
 require 'vendor/autoload.php';
 
 $connection = new \Prooph\PdoEventStore\PdoEventStoreConnection(
-    Prooph\PdoEventStore\PostgresConnectionSettings::default()
+    new \Prooph\PdoEventStore\PostgresConnectionSettings(
+        new \Prooph\EventStore\IpEndPoint('postgres', 5432),
+        'postgres',
+        new \Prooph\EventStore\UserCredentials('postgres', 'example')
+    )
 );
 
 $connection->connect();

@@ -22,7 +22,7 @@ class ReadEventOperation
         int $eventNumber,
         ?UserCredentials $userCredentials
     ): EventReadResult {
-        $statement = $connection->prepare(<<<SQL
+        $sql = <<<SQL
 SELECT
     COALESCE(e1.event_id, e2.event_id) as event_id,
     e1.event_number as event_number,
@@ -36,11 +36,21 @@ FROM
 LEFT JOIN events e2 
     ON (e1.link_to = e2.event_id)
 WHERE e1.stream_id = ?
-AND e1.event_number = ?
-SQL
-        );
+SQL;
+        if (-1 === $eventNumber) {
+            $sql .= <<<SQL
+ORDER BY e1.event_number DESC
+LIMIT 1
+SQL;
+            $params = [$streamId];
+        } else {
+            $sql .= ' AND e1.event_number = ?';
+            $params = [$streamId, $eventNumber];
+        }
+
+        $statement = $connection->prepare($sql);
         $statement->setFetchMode(PDO::FETCH_OBJ);
-        $statement->execute([$streamId, $eventNumber]);
+        $statement->execute($params);
 
         if (0 === $statement->rowCount()) {
             return new EventReadResult(EventReadStatus::notFound(), $stream, $eventNumber, null);
