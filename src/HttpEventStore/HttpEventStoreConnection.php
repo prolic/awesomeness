@@ -16,6 +16,9 @@ use Prooph\EventStore\EventReadResult;
 use Prooph\EventStore\EventReadStatus;
 use Prooph\EventStore\EventStorePersistentSubscription;
 use Prooph\EventStore\EventStoreSubscriptionConnection;
+use Prooph\EventStore\Exception\InvalidArgumentException;
+use Prooph\EventStore\Exception\OutOfRangeException;
+use Prooph\EventStore\Exception\UnexpectedValueException;
 use Prooph\EventStore\ExpectedVersion;
 use Prooph\EventStore\Internal\Consts;
 use Prooph\EventStore\Internal\PersistentSubscriptionCreateResult;
@@ -91,7 +94,7 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
         UserCredentials $userCredentials = null
     ): void {
         if (empty($stream)) {
-            throw new \InvalidArgumentException('Stream cannot be empty');
+            throw new InvalidArgumentException('Stream cannot be empty');
         }
 
         (new DeleteStreamOperation())(
@@ -119,7 +122,7 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
         UserCredentials $userCredentials = null
     ): WriteResult {
         if (empty($stream)) {
-            throw new \InvalidArgumentException('Stream cannot be empty');
+            throw new InvalidArgumentException('Stream cannot be empty');
         }
 
         return (new AppendToStreamOperation())(
@@ -140,11 +143,11 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
         UserCredentials $userCredentials = null
     ): EventReadResult {
         if (empty($stream)) {
-            throw new \InvalidArgumentException('Stream cannot be empty');
+            throw new InvalidArgumentException('Stream cannot be empty');
         }
 
         if ($eventNumber < -1) {
-            throw new \InvalidArgumentException('EventNumber cannot be smaller then -1');
+            throw new InvalidArgumentException('EventNumber cannot be smaller then -1');
         }
 
         return (new ReadEventOperation())(
@@ -166,19 +169,19 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
         UserCredentials $userCredentials = null
     ): StreamEventsSlice {
         if (empty($stream)) {
-            throw new \InvalidArgumentException('Stream cannot be empty');
+            throw new InvalidArgumentException('Stream cannot be empty');
         }
 
         if ($start < 0) {
-            throw new \InvalidArgumentException('Start cannot be negative');
+            throw new InvalidArgumentException('Start cannot be negative');
         }
 
         if ($count < 0) {
-            throw new \InvalidArgumentException('Count cannot be negative');
+            throw new InvalidArgumentException('Count cannot be negative');
         }
 
         if ($count > Consts::MaxReadSize) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 'Count should be less than ' . Consts::MaxReadSize . '. For larger reads you should page.'
             );
         }
@@ -204,19 +207,19 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
         UserCredentials $userCredentials = null
     ): StreamEventsSlice {
         if (empty($stream)) {
-            throw new \InvalidArgumentException('Stream cannot be empty');
+            throw new InvalidArgumentException('Stream cannot be empty');
         }
 
         if ($start < 0) {
-            throw new \InvalidArgumentException('Start cannot be negative');
+            throw new InvalidArgumentException('Start cannot be negative');
         }
 
         if ($count < 0) {
-            throw new \InvalidArgumentException('Count cannot be negative');
+            throw new InvalidArgumentException('Count cannot be negative');
         }
 
         if ($count > Consts::MaxReadSize) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 'Count should be less than ' . Consts::MaxReadSize . '. For larger reads you should page.'
             );
         }
@@ -241,11 +244,11 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
         UserCredentials $userCredentials = null
     ): WriteResult {
         if (empty($stream)) {
-            throw new \InvalidArgumentException('Stream cannot be empty');
+            throw new InvalidArgumentException('Stream cannot be empty');
         }
 
         if (SystemStreams::isMetastream($stream)) {
-            throw new \InvalidArgumentException(sprintf(
+            throw new InvalidArgumentException(sprintf(
                 'Setting metadata for metastream \'%s\' is not supported.',
                 $stream
             ));
@@ -274,7 +277,7 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
     public function getStreamMetadata(string $stream, UserCredentials $userCredentials = null): StreamMetadataResult
     {
         if (empty($stream)) {
-            throw new \InvalidArgumentException('Stream cannot be empty');
+            throw new InvalidArgumentException('Stream cannot be empty');
         }
 
         $eventReadResult = $this->readEvent(
@@ -288,7 +291,7 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
                 $event = $eventReadResult->event();
 
                 if (null === $event) {
-                    throw new \UnexpectedValueException('Event is null while operation result is Success');
+                    throw new UnexpectedValueException('Event is null while operation result is Success');
                 }
 
                 return new StreamMetadataResult(
@@ -303,7 +306,7 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
             case EventReadStatus::StreamDeleted:
                 return new StreamMetadataResult($stream, true, PHP_INT_MAX, '');
             default:
-                throw new \OutOfRangeException('Unexpected ReadEventResult: ' . $eventReadResult->status()->value());
+                throw new OutOfRangeException('Unexpected ReadEventResult: ' . $eventReadResult->status()->value());
         }
     }
 
@@ -332,11 +335,11 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
         UserCredentials $userCredentials = null
     ): PersistentSubscriptionCreateResult {
         if (empty($stream)) {
-            throw new \InvalidArgumentException('Stream cannot be empty');
+            throw new InvalidArgumentException('Stream cannot be empty');
         }
 
         if (empty($groupName)) {
-            throw new \InvalidArgumentException('Group name cannot be empty');
+            throw new InvalidArgumentException('Group name cannot be empty');
         }
 
         return (new CreatePersistentSubscriptionOperation())(
@@ -358,11 +361,11 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
         UserCredentials $userCredentials = null
     ): PersistentSubscriptionUpdateResult {
         if (empty($stream)) {
-            throw new \InvalidArgumentException('Stream cannot be empty');
+            throw new InvalidArgumentException('Stream cannot be empty');
         }
 
         if (empty($groupName)) {
-            throw new \InvalidArgumentException('Group name cannot be empty');
+            throw new InvalidArgumentException('Group name cannot be empty');
         }
 
         return (new UpdatePersistentSubscriptionOperation())(
@@ -383,11 +386,11 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
         UserCredentials $userCredentials = null
     ): PersistentSubscriptionDeleteResult {
         if (empty($stream)) {
-            throw new \InvalidArgumentException('Stream cannot be empty');
+            throw new InvalidArgumentException('Stream cannot be empty');
         }
 
         if (empty($groupName)) {
-            throw new \InvalidArgumentException('Group name cannot be empty');
+            throw new InvalidArgumentException('Group name cannot be empty');
         }
 
         return (new DeletePersistentSubscriptionOperation())(
@@ -422,11 +425,11 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
         UserCredentials $userCredentials = null
     ): EventStorePersistentSubscription {
         if (empty($stream)) {
-            throw new \InvalidArgumentException('Stream cannot be empty');
+            throw new InvalidArgumentException('Stream cannot be empty');
         }
 
         if (empty($groupName)) {
-            throw new \InvalidArgumentException('Group name cannot be empty');
+            throw new InvalidArgumentException('Group name cannot be empty');
         }
 
         return new EventStorePersistentSubscription(
@@ -454,11 +457,11 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
         UserCredentials $userCredentials = null
     ): ReplayParkedResult {
         if (empty($stream)) {
-            throw new \InvalidArgumentException('Stream cannot be empty');
+            throw new InvalidArgumentException('Stream cannot be empty');
         }
 
         if (empty($groupName)) {
-            throw new \InvalidArgumentException('Group name cannot be empty');
+            throw new InvalidArgumentException('Group name cannot be empty');
         }
 
         return (new ReplayParkedOperation())(
@@ -495,7 +498,7 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
         UserCredentials $userCredentials = null
     ): array {
         if (empty($stream)) {
-            throw new \InvalidArgumentException('Stream cannot be empty');
+            throw new InvalidArgumentException('Stream cannot be empty');
         }
 
         return (new GetInformationForSubscriptionsWithStreamOperation())(
@@ -514,11 +517,11 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
         UserCredentials $userCredentials = null
     ): DetailedSubscriptionInformation {
         if (empty($stream)) {
-            throw new \InvalidArgumentException('Stream cannot be empty');
+            throw new InvalidArgumentException('Stream cannot be empty');
         }
 
         if (empty($groupName)) {
-            throw new \InvalidArgumentException('Group name cannot be empty');
+            throw new InvalidArgumentException('Group name cannot be empty');
         }
 
         return (new GetInformationForSubscriptionOperation())(

@@ -48,7 +48,8 @@
   "autoload-dev": {
     "psr-4": {
       "ProophTest\\EventStore\\": "tests/EventStore/",
-      "ProophTest\\HttpEventStore\\": "tests/HttpEventStore/"
+      "ProophTest\\HttpEventStore\\": "tests/HttpEventStore/",
+      "ProophTest\\PdoEventStore\\": "tests/PdoEventStore/"
     }
   },
   "scripts": {

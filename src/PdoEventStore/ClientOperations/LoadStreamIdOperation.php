@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Prooph\PdoEventStore\ClientOperations;
 
 use PDO;
+use Prooph\EventStore\Common\SystemRoles;
 use Prooph\EventStore\Common\SystemStreams;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Exception\RuntimeException;
@@ -12,7 +13,6 @@ use Prooph\EventStore\Exception\StreamDeleted;
 use Prooph\EventStore\SystemSettings;
 use Prooph\PdoEventStore\Internal\LoadStreamIdResult;
 use Prooph\PdoEventStore\Internal\StreamOperation;
-use Prooph\EventStore\Common\SystemRoles;
 
 /** @internal */
 class LoadStreamIdOperation

@@ -17,8 +17,11 @@ use Prooph\EventStore\EventStoreConnection;
 use Prooph\EventStore\EventStoreTransaction;
 use Prooph\EventStore\EventStoreTransactionConnection;
 use Prooph\EventStore\Exception\ConnectionException;
+use Prooph\EventStore\Exception\InvalidArgumentException;
+use Prooph\EventStore\Exception\OutOfRangeException;
 use Prooph\EventStore\Exception\RuntimeException;
 use Prooph\EventStore\Exception\StreamDeleted;
+use Prooph\EventStore\Exception\UnexpectedValueException;
 use Prooph\EventStore\ExpectedVersion;
 use Prooph\EventStore\Internal\Consts;
 use Prooph\EventStore\ReadDirection;
@@ -95,7 +98,7 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
         UserCredentials $userCredentials = null
     ): void {
         if (empty($stream)) {
-            throw new \InvalidArgumentException('Stream cannot be empty');
+            throw new InvalidArgumentException('Stream cannot be empty');
         }
 
         $this->checkConnection($userCredentials);
@@ -130,11 +133,11 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
         UserCredentials $userCredentials = null
     ): WriteResult {
         if (empty($stream)) {
-            throw new \InvalidArgumentException('Stream cannot be empty');
+            throw new InvalidArgumentException('Stream cannot be empty');
         }
 
         if (empty($events)) {
-            throw new \InvalidArgumentException('Empty stream given');
+            throw new InvalidArgumentException('Empty stream given');
         }
 
         if (isset($this->locks[$stream])) {
@@ -168,11 +171,11 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
         UserCredentials $userCredentials = null
     ): EventReadResult {
         if (empty($stream)) {
-            throw new \InvalidArgumentException('Stream cannot be empty');
+            throw new InvalidArgumentException('Stream cannot be empty');
         }
 
         if ($eventNumber < -1) {
-            throw new \InvalidArgumentException('Event number cannot be smaller then -1');
+            throw new InvalidArgumentException('Event number cannot be smaller then -1');
         }
 
         $this->checkConnection($userCredentials);
@@ -211,19 +214,19 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
         UserCredentials $userCredentials = null
     ): StreamEventsSlice {
         if (empty($stream)) {
-            throw new \InvalidArgumentException('Stream cannot be empty');
+            throw new InvalidArgumentException('Stream cannot be empty');
         }
 
         if ($start < 0) {
-            throw new \InvalidArgumentException('Start cannot be negative');
+            throw new InvalidArgumentException('Start cannot be negative');
         }
 
         if ($count < 0) {
-            throw new \InvalidArgumentException('Count cannot be negative');
+            throw new InvalidArgumentException('Count cannot be negative');
         }
 
         if ($count > Consts::MaxReadSize) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 'Count should be less than ' . Consts::MaxReadSize . '. For larger reads you should page.'
             );
         }
@@ -284,19 +287,19 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
         UserCredentials $userCredentials = null
     ): StreamEventsSlice {
         if (empty($stream)) {
-            throw new \InvalidArgumentException('Stream cannot be empty');
+            throw new InvalidArgumentException('Stream cannot be empty');
         }
 
         if ($start < 0) {
-            throw new \InvalidArgumentException('Start cannot be negative');
+            throw new InvalidArgumentException('Start cannot be negative');
         }
 
         if ($count < 0) {
-            throw new \InvalidArgumentException('Count cannot be negative');
+            throw new InvalidArgumentException('Count cannot be negative');
         }
 
         if ($count > Consts::MaxReadSize) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 'Count should be less than ' . Consts::MaxReadSize . '. For larger reads you should page.'
             );
         }
@@ -354,11 +357,11 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
         UserCredentials $userCredentials = null
     ): WriteResult {
         if (empty($stream)) {
-            throw new \InvalidArgumentException('Stream cannot be empty');
+            throw new InvalidArgumentException('Stream cannot be empty');
         }
 
         if (SystemStreams::isMetastream($stream)) {
-            throw new \InvalidArgumentException(sprintf(
+            throw new InvalidArgumentException(sprintf(
                 'Setting metadata for metastream \'%s\' is not supported.',
                 $stream
             ));
@@ -396,7 +399,7 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
     public function getStreamMetadata(string $stream, UserCredentials $userCredentials = null): StreamMetadataResult
     {
         if (empty($stream)) {
-            throw new \InvalidArgumentException('Stream cannot be empty');
+            throw new InvalidArgumentException('Stream cannot be empty');
         }
 
         $this->checkConnection($userCredentials);
@@ -412,7 +415,7 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
                 $event = $eventReadResult->event();
 
                 if (null === $event) {
-                    throw new \UnexpectedValueException('Event is null while operation result is Success');
+                    throw new UnexpectedValueException('Event is null while operation result is Success');
                 }
 
                 return new StreamMetadataResult(
@@ -427,7 +430,7 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
             case EventReadStatus::StreamDeleted:
                 return new StreamMetadataResult($stream, true, PHP_INT_MAX, '');
             default:
-                throw new \OutOfRangeException('Unexpected ReadEventResult: ' . $eventReadResult->status()->value());
+                throw new OutOfRangeException('Unexpected ReadEventResult: ' . $eventReadResult->status()->value());
         }
     }
 
@@ -455,7 +458,7 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
         UserCredentials $userCredentials = null
     ): EventStoreTransaction {
         if (empty($stream)) {
-            throw new \InvalidArgumentException('Stream cannot be empty');
+            throw new InvalidArgumentException('Stream cannot be empty');
         }
 
         if (isset($this->locks[$stream])) {
@@ -543,7 +546,7 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
         UserCredentials $userCredentials = null
     ): void {
         if (empty($events)) {
-            throw new \InvalidArgumentException('Empty stream given');
+            throw new InvalidArgumentException('Empty stream given');
         }
 
         $this->checkConnection($userCredentials);

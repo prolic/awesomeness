@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+        backupGlobals="false"
+        backupStaticAttributes="false"
+        colors="true"
+        convertErrorsToExceptions="true"
+        convertNoticesToExceptions="true"
+        convertWarningsToExceptions="true"
+        processIsolation="false"
+        stopOnFailure="false"
+        bootstrap="vendor/autoload.php"
+>
+    <testsuite name="Awesomeness Test Suite">
+        <directory>./tests/</directory>
+    </testsuite>
+
+    <php>
+        <!-- for http testing -->
+        <env name="HTTP_HOST" value="127.0.0.1"/>
+        <env name="HTTP_PORT" value="2113"/>
+        <env name="HTTP_USERNAME" value="admin"/>
+        <env name="HTTP_PASSWORD" value="changeit"/>
+        <!-- for postgres testing -->
+        <env name="PG_HOST" value="127.0.0.1"/>
+        <env name="PG_PORT" value="5432"/>
+        <env name="PG_DBNAME" value="event_store_tests"/>
+        <env name="PG_USERNAME" value="postgres"/>
+        <env name="PG_PASSWORD" value=""/>
+    </php>
+</phpunit>
