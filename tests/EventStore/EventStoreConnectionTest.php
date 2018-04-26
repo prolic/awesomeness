@@ -8,12 +8,24 @@ use PHPUnit\Framework\TestCase;
 use Prooph\EventStore\EventStoreConnection;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Exception\InvalidArgumentException;
+use PHPUnit\Exception;
 
 abstract class EventStoreConnectionTest extends TestCase
 {
     /** @test */
     public function it_connects(): void
     {
+        $connection = $this->getEventStoreConnection();
+        $connection->connect();
+
+        try {
+            $this->assertAttributeInstanceOf(\PDO::class, 'connection', $connection);
+        } catch (Exception $e) {
+            if ('Attribute "connection" not found in object.' === $e->getMessage()) {
+                $this->markTestSkipped();
+            }
+            throw $e;
+        }
     }
 
     /** @test */

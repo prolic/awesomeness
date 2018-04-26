@@ -15,8 +15,9 @@ services:
             - EVENTSTORE_RUN_PROJECTIONS=all
 
     postgres:
-        image: postgres:10-alpine
+        build: ./pgsql/
         environment:
+            POSTGRES_DB: event_store
             POSTGRES_PASSWORD: example
 
     adminer:

@@ -16,7 +16,8 @@ class PdoEventStoreConnectionTest extends EventStoreConnectionTest
                 new \Prooph\EventStore\IpEndPoint(getenv('PG_HOST'), (int) getenv('PG_PORT')),
                 getenv('PG_DBNAME'),
                 new \Prooph\EventStore\UserCredentials(getenv('PG_USERNAME'), getenv('PG_PASSWORD')),
-                new \Prooph\EventStore\UserCredentials(getenv('admin'), getenv('changeit'))
+                null,
+                false
             )
         );
     }
