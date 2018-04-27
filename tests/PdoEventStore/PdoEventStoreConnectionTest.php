@@ -21,4 +21,43 @@ class PdoEventStoreConnectionTest extends EventStoreConnectionTest
             )
         );
     }
+
+    protected function cleanEventStore(): void
+    {
+        $connection = $this->getConnection();
+
+        $queries = [
+            'TRUNCATE streams',
+            'TRUNCATE events',
+        ];
+
+        foreach ($queries as $query) {
+            $stmt = $connection->prepare($query);
+            $stmt->execute();
+        }
+    }
+
+    protected function getStream(string $name): array
+    {
+        $connection = $this->getConnection();
+
+        $stmt = $connection->prepare('SELECT * FROM streams WHERE stream_name = ? LIMIT 1');
+        $stmt->execute([$name]);
+
+        return $stmt->fetch();
+    }
+
+    private function getConnection(): \PDO
+    {
+        $dsn = sprintf(
+            'pgsql:host=%s;port=%d;dbname=%s;user=%s;password=%s',
+            getenv('PG_HOST'),
+            getenv('PG_PORT'),
+            getenv('PG_DBNAME'),
+            getenv('PG_USERNAME'),
+            getenv('PG_PASSWORD')
+        );
+
+        return new \PDO($dsn);
+    }
 }
