@@ -31,6 +31,18 @@ abstract class EventStoreConnectionTest extends TestCase
     /** @test */
     public function it_closes(): void
     {
+        $connection = $this->getEventStoreConnection();
+        $connection->connect();
+        $connection->close();
+
+        try {
+            $this->assertAttributeSame(null, 'connection', $connection);
+        } catch (Exception $e) {
+            if ('Attribute "connection" not found in object.' === $e->getMessage()) {
+                $this->markTestSkipped();
+            }
+            throw $e;
+        }
     }
 
     /** @test */
