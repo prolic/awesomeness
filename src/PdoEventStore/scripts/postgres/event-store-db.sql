@@ -47,10 +47,8 @@ CREATE TABLE stream_acl (
     PRIMARY KEY (stream_id, operation, role)
 );
 
-INSERT INTO users (username, full_name, password_hash) VALUES ('admin', 'Event Store Administrator', '$2y$10$z0a0JV9SByKIeeDy4lXjGuHPpCgXcd5WYS/Hps3.dow28SvqnfGAS');
-INSERT INTO users (username, full_name, password_hash) VALUES ('ops', 'Event Store Operations', '$2y$10$eI5BgCvXMUdMoynwyF1PguKpzL9lWSK7GSDt71jOaRyOwrXG70N46');
-INSERT INTO roles (rolename) VALUES ('$admins');
-INSERT INTO roles (rolename) VALUES ('$ops');
+INSERT INTO users (username, full_name, password_hash, disabled) VALUES ('admin', 'Event Store Administrator', '$2y$10$z0a0JV9SByKIeeDy4lXjGuHPpCgXcd5WYS/Hps3.dow28SvqnfGAS', false);
+INSERT INTO users (username, full_name, password_hash, disabled) VALUES ('ops', 'Event Store Operations', '$2y$10$eI5BgCvXMUdMoynwyF1PguKpzL9lWSK7GSDt71jOaRyOwrXG70N46', false);
 INSERT INTO user_roles (rolename, username) VALUES ('$admins', 'admin');
 INSERT INTO user_roles (rolename, username) VALUES ('$ops', 'ops');
 
