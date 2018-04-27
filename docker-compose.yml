@@ -16,7 +16,10 @@ services:
 
     postgres:
         image: postgres:10-alpine
+        volumes:
+            - ./src/PdoEventStore/scripts/postgres/:/docker-entrypoint-initdb.d/
         environment:
+            POSTGRES_DB: event_store
             POSTGRES_PASSWORD: example
 
     adminer:

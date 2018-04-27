@@ -24,4 +24,13 @@ class HttpEventStoreConnectionTest extends EventStoreConnectionTest
             )
         );
     }
+
+    protected function cleanEventStore(): void
+    {
+    }
+
+    protected function getStream(string $name): array
+    {
+        return [];
+    }
 }
