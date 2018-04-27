@@ -44,7 +44,20 @@ class PdoEventStoreConnectionTest extends EventStoreConnectionTest
         $stmt = $connection->prepare('SELECT * FROM streams WHERE stream_name = ? LIMIT 1');
         $stmt->execute([$name]);
 
-        return $stmt->fetch();
+        $stream = $stmt->fetch();
+        if (false === $stream) {
+            throw new \InvalidArgumentException(sprintf(
+                'Stream "%s" could not be found.',
+                $name
+            ));
+        }
+
+        $stmt = $connection->prepare('SELECT * FROM events WHERE stream_id IN (SELECT stream_id from streams WHERE stream_name = ?) ORDER BY event_number');
+        $stmt->execute([$name]);
+
+        $stream['events'] = $stmt->fetchAll();
+
+        return $stream;
     }
 
     private function getConnection(): \PDO
@@ -58,6 +71,9 @@ class PdoEventStoreConnectionTest extends EventStoreConnectionTest
             getenv('PG_PASSWORD')
         );
 
-        return new \PDO($dsn);
+        $pdo = new \PDO($dsn);
+        $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+
+        return $pdo;
     }
 }

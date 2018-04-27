@@ -20,10 +20,10 @@ class DeleteStreamOperation
             $statement = $connection->prepare('DELETE FROM events WHERE stream_id = ?');
             $statement->execute([$stream]);
         } elseif ($hardDelete) {
-            $statement = $connection->prepare('UPDATE streams SET mark_deleted = ?, delete = ? WHERE stream_name = ?');
-            $statement->execute([false, true, $stream]);
+            $statement = $connection->prepare('UPDATE streams SET mark_deleted = ?, deleted = ? WHERE stream_name = ?');
+            $statement->execute([0, 1, $stream]);
 
-            $statement = $connection->prepare('DELETE FROM events WHERE stream_id = ?');
+            $statement = $connection->prepare('DELETE FROM events WHERE stream_id IN (SELECT stream_id FROM streams WHERE stream_name = ?);');
             $statement->execute([$stream]);
         } else {
             $statement = $connection->prepare('UPDATE streams SET mark_deleted = ? WHERE stream_name = ?');

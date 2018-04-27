@@ -66,8 +66,28 @@ abstract class EventStoreConnectionTest extends TestCase
         $connection->appendToStream('test_stream', ExpectedVersion::NoStream, [$this->getEvent()]);
         $connection->deleteStream('test_stream', false);
 
-        $this->assertEquals(true, $this->getStream('test_stream')['mark_deleted']);
-        $this->assertEquals(false, $this->getStream('test_stream')['deleted']);
+        $stream = $this->getStream('test_stream');
+        $this->assertEquals(true, $stream['mark_deleted']);
+        $this->assertEquals(false, $stream['deleted']);
+        $this->assertEquals(1, count($stream['events']));
+    }
+
+    /** @test */
+    public function it_hard_deletes_stream(): void
+    {
+        $connection = $this->getEventStoreConnection();
+        if (!$connection instanceof PdoEventStoreConnection) {
+            $this->markTestSkipped(sprintf('The "%s" implementation is not tested yet.', get_class($connection)));
+        }
+
+        $connection->connect();
+        $connection->appendToStream('test_stream', ExpectedVersion::NoStream, [$this->getEvent()]);
+        $connection->deleteStream('test_stream', true);
+
+        $stream = $this->getStream('test_stream');
+        $this->assertEquals(false, $stream['mark_deleted']);
+        $this->assertEquals(true, $stream['deleted']);
+        $this->assertEquals(0, count($stream['events']));
     }
 
     /** @test */
