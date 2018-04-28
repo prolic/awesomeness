@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
+use Prooph\EventStore\Common\SystemMetadata;
 use Prooph\EventStore\Common\SystemRoles;
 
 class SystemSettings
@@ -59,21 +60,24 @@ class SystemSettings
     public function toArray(): array
     {
         return [
-            '$userStreamAcl' => $this->userStreamAcl->toArray(),
-            '$systemStreamAcl' => $this->systemStreamAcl->toArray(),
+            SystemMetadata::UserStreamAcl => $this->userStreamAcl->toArray(),
+            SystemMetadata::SystemStreamAcl => $this->systemStreamAcl->toArray(),
         ];
     }
 
     public static function fromArray(array $data): SystemSettings
     {
-        if (! isset($data['$userStreamAcl'])) {
-            throw new \InvalidArgumentException('$userStreamAcl is missing');
+        if (! isset($data[SystemMetadata::UserStreamAcl])) {
+            throw new \InvalidArgumentException(SystemMetadata::UserStreamAcl . ' is missing');
         }
 
-        if (! isset($data['$systemStreamAcl'])) {
-            throw new \InvalidArgumentException('$systemStreamAcl is missing');
+        if (! isset($data[SystemMetadata::SystemStreamAcl])) {
+            throw new \InvalidArgumentException(SystemMetadata::SystemStreamAcl . ' is missing');
         }
 
-        return new self(StreamAcl::fromArray($data['$userStreamAcl']), StreamAcl::fromArray($data['$systemStreamAcl']));
+        return new self(
+            StreamAcl::fromArray($data[SystemMetadata::UserStreamAcl]),
+            StreamAcl::fromArray($data[SystemMetadata::SystemStreamAcl])
+        );
     }
 }

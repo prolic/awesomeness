@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
+use Prooph\EventStore\Common\SystemMetadata;
 use Webmozart\Assert\Assert;
 
 class StreamAcl
@@ -96,22 +97,22 @@ class StreamAcl
     public function toArray(): array
     {
         return [
-            '$r' => $this->readRoles,
-            '$w' => $this->writeRoles,
-            '$d' => $this->deleteRoles,
-            '$mr' => $this->metaReadRoles,
-            '$mw' => $this->metaWriteRoles,
+            SystemMetadata::AclRead => $this->readRoles,
+            SystemMetadata::AclWrite => $this->writeRoles,
+            SystemMetadata::AclDelete => $this->deleteRoles,
+            SystemMetadata::AclMetaRead => $this->metaReadRoles,
+            SystemMetadata::AclMetaWrite => $this->metaWriteRoles,
         ];
     }
 
     public static function fromArray(array $data): StreamAcl
     {
         $values = [
-            '$r',
-            '$w',
-            '$d',
-            '$mr',
-            '$mw',
+            SystemMetadata::AclRead,
+            SystemMetadata::AclWrite,
+            SystemMetadata::AclDelete,
+            SystemMetadata::AclMetaRead,
+            SystemMetadata::AclMetaWrite,
         ];
 
         foreach ($values as $value) {
@@ -124,6 +125,12 @@ class StreamAcl
             }
         }
 
-        return new self($data['$r'], $data['$w'], $data['$d'], $data['$mr'], $data['$mw']);
+        return new self(
+            $data[SystemMetadata::AclRead],
+            $data[SystemMetadata::AclWrite],
+            $data[SystemMetadata::AclDelete],
+            $data[SystemMetadata::AclMetaRead],
+            $data[SystemMetadata::AclMetaWrite]
+        );
     }
 }
