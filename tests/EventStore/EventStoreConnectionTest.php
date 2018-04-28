@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace ProophTest\EventStore;
 
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Exception;
+use PHPUnit\Framework\TestCase;
 use Prooph\EventStore\EventData;
 use Prooph\EventStore\EventId;
 use Prooph\EventStore\EventStoreConnection;
@@ -58,7 +58,7 @@ abstract class EventStoreConnectionTest extends TestCase
     public function it_deletes_stream(): void
     {
         $connection = $this->getEventStoreConnection();
-        if (!$connection instanceof PdoEventStoreConnection) {
+        if (! $connection instanceof PdoEventStoreConnection) {
             $this->markTestSkipped(sprintf('The "%s" implementation is not tested yet.', get_class($connection)));
         }
 
@@ -76,7 +76,7 @@ abstract class EventStoreConnectionTest extends TestCase
     public function it_hard_deletes_stream(): void
     {
         $connection = $this->getEventStoreConnection();
-        if (!$connection instanceof PdoEventStoreConnection) {
+        if (! $connection instanceof PdoEventStoreConnection) {
             $this->markTestSkipped(sprintf('The "%s" implementation is not tested yet.', get_class($connection)));
         }
 

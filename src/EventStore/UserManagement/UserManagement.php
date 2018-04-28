@@ -9,6 +9,15 @@ use Prooph\EventStore\UserCredentials;
 /** @internal */
 interface UserManagement
 {
+    public const UserUpdated = '$UserUpdated';
+    public const PasswordChanged = '$PasswordChanged';
+    public const UserPasswordNotificationsStreamId = '$users-password-notifications';
+    public const UsersStream = '$users';
+    public const UsersStreamType = '$user';
+
+    public const UserEventType = '$User';
+    public const UserStreamPrefix = '$user-';
+
     public function changePassword(
         string $login,
         string $oldPassword,

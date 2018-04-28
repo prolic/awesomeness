@@ -11,6 +11,7 @@ use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\ExpectedVersion;
 use Prooph\EventStore\SliceReadStatus;
 use Prooph\EventStore\UserCredentials;
+use Prooph\EventStore\UserManagement\UserManagement;
 use Prooph\EventStore\UserManagement\UserNotFound;
 use Prooph\PdoEventStore\PdoEventStoreConnection;
 
@@ -55,7 +56,7 @@ class UpdateUserOperation
                 [
                     new EventData(
                         EventId::generate(),
-                        '$UserUpdated',
+                        UserManagement::UserUpdated,
                         true,
                         json_encode($data),
                         ''

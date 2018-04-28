@@ -9,6 +9,7 @@ use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Exception\RuntimeException;
 use Prooph\EventStore\UserCredentials;
 use Prooph\EventStore\UserManagement\UserDetails;
+use Prooph\EventStore\UserManagement\UserManagement;
 use Prooph\PdoEventStore\PdoEventStoreConnection;
 
 /** @internal */
@@ -24,7 +25,7 @@ class GetAllUsersOperation
     ): array {
         try {
             $eventStoreConnection->readStreamEventsBackward(
-                '$users',
+                UserManagement::UsersStream,
                 PHP_INT_MAX,
                 1,
                 true,

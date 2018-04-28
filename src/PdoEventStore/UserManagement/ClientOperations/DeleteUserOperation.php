@@ -7,6 +7,7 @@ namespace Prooph\PdoEventStore\UserManagement\ClientOperations;
 use PDO;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\UserCredentials;
+use Prooph\EventStore\UserManagement\UserManagement;
 use Prooph\PdoEventStore\PdoEventStoreConnection;
 
 /** @internal */
@@ -22,7 +23,7 @@ class DeleteUserOperation
 
         try {
             $eventStoreConnection->deleteStream(
-                '$user-' . $login,
+                UserManagement::UserStreamPrefix . $login,
                 true,
                 $userCredentials
             );

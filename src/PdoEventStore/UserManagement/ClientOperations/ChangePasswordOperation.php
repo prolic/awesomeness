@@ -11,6 +11,7 @@ use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\ExpectedVersion;
 use Prooph\EventStore\SliceReadStatus;
 use Prooph\EventStore\UserCredentials;
+use Prooph\EventStore\UserManagement\UserManagement;
 use Prooph\EventStore\UserManagement\UserNotFound;
 use Prooph\PdoEventStore\PdoEventStoreConnection;
 
@@ -27,7 +28,7 @@ class ChangePasswordOperation
     ): void {
         try {
             $streamEventsSlice = $eventStoreConnection->readStreamEventsBackward(
-                '$user-' . $login,
+                UserManagement::UserStreamPrefix . $login,
                 PHP_INT_MAX,
                 1,
                 true,
@@ -54,12 +55,12 @@ class ChangePasswordOperation
 
         try {
             $eventStoreConnection->appendToStream(
-                '$user-' . $login,
+                UserManagement::UserStreamPrefix . $login,
                 ExpectedVersion::Any,
                 [
                     new EventData(
                         EventId::generate(),
-                        '$UserUpdated',
+                        UserManagement::UserUpdated,
                         true,
                         json_encode($data),
                         ''

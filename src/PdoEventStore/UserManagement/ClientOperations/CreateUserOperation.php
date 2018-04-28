@@ -5,11 +5,15 @@ declare(strict_types=1);
 namespace Prooph\PdoEventStore\UserManagement\ClientOperations;
 
 use PDO;
+use Prooph\EventStore\Common\SystemEventTypes;
+use Prooph\EventStore\Common\SystemStreams;
 use Prooph\EventStore\EventData;
 use Prooph\EventStore\EventId;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\ExpectedVersion;
+use Prooph\EventStore\StreamMetadata;
 use Prooph\EventStore\UserCredentials;
+use Prooph\EventStore\UserManagement\UserManagement;
 use Prooph\PdoEventStore\PdoEventStoreConnection;
 
 /** @internal */
@@ -30,8 +34,30 @@ class CreateUserOperation
 
         try {
             $eventStoreConnection->appendToStream(
-                '$user-' . $login,
-                ExpectedVersion::NoStream,
+                SystemStreams::metastreamOf(UserManagement::UserStreamPrefix . $login),
+                ExpectedVersion::Any,
+                [
+                    new EventData(
+                        EventId::generate(),
+                        SystemEventTypes::StreamMetadata,
+                        true,
+                        json_encode([
+                            '$acl' => [
+                                '$w' => '$admins',
+                                '$d' => '$admins',
+                                '$mw' => '$admins',
+                            ],
+                            '$tb' => 1,
+                        ]),
+                        ''
+                    ),
+                ],
+                $userCredentials
+            );
+
+            $eventStoreConnection->appendToStream(
+                UserManagement::UserStreamPrefix . $login,
+                ExpectedVersion::Any,
                 [
                     new EventData(
                         EventId::generate(),
@@ -50,12 +76,12 @@ class CreateUserOperation
             );
 
             $eventStoreConnection->appendToStream(
-                '$users',
+                UserManagement::UsersStream,
                 ExpectedVersion::Any,
                 [
                     new EventData(
                         EventId::generate(),
-                        '$User',
+                        UserManagement::UserEventType,
                         false,
                         $login,
                         ''

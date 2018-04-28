@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
+use Prooph\EventStore\Common\SystemMetadata;
+
 class StreamMetadata
 {
     /**
@@ -126,23 +128,23 @@ class StreamMetadata
         $data = [];
 
         if (null !== $this->maxCount) {
-            $data['$maxCount'] = $this->maxCount;
+            $data[SystemMetadata::MaxCount] = $this->maxCount;
         }
 
         if (null !== $this->maxAge) {
-            $data['$maxAge'] = $this->maxAge;
+            $data[SystemMetadata::MaxAge] = $this->maxAge;
         }
 
         if (null !== $this->truncateBefore) {
-            $data['$truncateBefore'] = $this->truncateBefore;
+            $data[SystemMetadata::TruncateBefore] = $this->truncateBefore;
         }
 
         if (null !== $this->cacheControl) {
-            $data['$cacheControl'] = $this->cacheControl;
+            $data[SystemMetadata::CacheControl] = $this->cacheControl;
         }
 
         if (null !== $this->acl) {
-            $data['$acl'] = $this->acl->toArray();
+            $data[SystemMetadata::Acl] = $this->acl->toArray();
         }
 
         foreach ($this->customMetadata as $key => $value) {
@@ -155,10 +157,10 @@ class StreamMetadata
     public static function fromArray(array $data): StreamMetadata
     {
         $internal = [
-            '$maxCount',
-            '$maxAge',
-            '$truncateBefore',
-            '$cacheControl',
+            SystemMetadata::MaxCount,
+            SystemMetadata::MaxAge,
+            SystemMetadata::TruncateBefore,
+            SystemMetadata::CacheControl,
         ];
 
         $params = [];
@@ -166,19 +168,19 @@ class StreamMetadata
         foreach ($data as $key => $value) {
             if (in_array($key, $internal, true)) {
                 $params[$key] = $value;
-            } elseif ($key === '$acl') {
-                $params['$acl'] = StreamAcl::fromArray($value);
+            } elseif ($key === SystemMetadata::Acl) {
+                $params[SystemMetadata::Acl] = StreamAcl::fromArray($value);
             } else {
                 $params['customMetadata'][$key] = $value;
             }
         }
 
         return new self(
-            $params['$maxCount'] ?? null,
-            $params['$maxAge'] ?? null,
-            $params['$truncateBefore'] ?? null,
-            $params['$cacheControl'] ?? null,
-            $params['$acl'] ?? null,
+            $params[SystemMetadata::MaxCount] ?? null,
+            $params[SystemMetadata::MaxAge] ?? null,
+            $params[SystemMetadata::TruncateBefore] ?? null,
+            $params[SystemMetadata::CacheControl] ?? null,
+            $params[SystemMetadata::Acl] ?? null,
             $params['customMetadata'] ?? []
         );
     }

@@ -8,6 +8,7 @@ use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\SliceReadStatus;
 use Prooph\EventStore\UserCredentials;
 use Prooph\EventStore\UserManagement\UserDetails;
+use Prooph\EventStore\UserManagement\UserManagement;
 use Prooph\EventStore\UserManagement\UserNotFound;
 use Prooph\PdoEventStore\PdoEventStoreConnection;
 
@@ -21,7 +22,7 @@ class GetUserOperation
     ): UserDetails {
         try {
             $streamEventsSlice = $connection->readStreamEventsBackward(
-                '$user-' . $login,
+                UserManagement::UserStreamPrefix . $login,
                 PHP_INT_MAX,
                 1,
                 true,
