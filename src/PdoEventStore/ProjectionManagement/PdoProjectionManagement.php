@@ -21,6 +21,7 @@ use Prooph\EventStore\Projections\ProjectionNames;
 use Prooph\EventStore\Projections\StandardProjections;
 use Prooph\EventStore\UserCredentials;
 use Prooph\PdoEventStore\PdoEventStoreConnection;
+use Ramsey\Uuid\Uuid;
 use ReflectionMethod;
 
 final class PdoProjectionManagement implements ProjectionManagement
@@ -280,8 +281,11 @@ final class PdoProjectionManagement implements ProjectionManagement
         $roles = $this->userRolesMethod->invoke($this->pdoEventStoreConnection, $cred);
 
         try {
-            $statement = $this->connection->prepare('INSERT INTO projections (projection_name) VALUES (?);');
-            $statement->execute($name);
+            $statement = $this->connection->prepare('INSERT INTO projections (projection_name, projection_id) VALUES (?, ?);');
+            $statement->execute([
+                $name,
+                str_replace('-', '', Uuid::uuid4()->toString()),
+            ]);
         } catch (PDOException $e) {
             return CreateProjectionResult::conflict();
         }

@@ -48,14 +48,21 @@ CREATE TABLE stream_acl (
 );
 
 CREATE TABLE projections (
-    projection_name TEXT PRIMARY KEY
+    projection_name TEXT PRIMARY KEY,
+    projection_id CHAR(32) NOT NULL
 );
 
-INSERT INTO users (username, full_name, password_hash, disabled) VALUES ('admin', 'Event Store Administrator', '$2y$10$z0a0JV9SByKIeeDy4lXjGuHPpCgXcd5WYS/Hps3.dow28SvqnfGAS', false);
-INSERT INTO users (username, full_name, password_hash, disabled) VALUES ('ops', 'Event Store Operations', '$2y$10$eI5BgCvXMUdMoynwyF1PguKpzL9lWSK7GSDt71jOaRyOwrXG70N46', false);
-INSERT INTO user_roles (rolename, username) VALUES ('$admins', 'admin');
-INSERT INTO user_roles (rolename, username) VALUES ('$ops', 'ops');
-INSERT INTO projections (projection_name) VALUES ('$streams'), ('$stream_by_category'), ('$by_category'), ('$by_event_type');
+INSERT INTO users (username, full_name, password_hash, disabled) VALUES
+    ('admin', 'Event Store Administrator', '$2y$10$z0a0JV9SByKIeeDy4lXjGuHPpCgXcd5WYS/Hps3.dow28SvqnfGAS', false),
+    ('ops', 'Event Store Operations', '$2y$10$eI5BgCvXMUdMoynwyF1PguKpzL9lWSK7GSDt71jOaRyOwrXG70N46', false);
+INSERT INTO user_roles (rolename, username) VALUES
+    ('$admins', 'admin'),
+    ('$ops', 'ops');
+INSERT INTO projections (projection_name, projection_id) VALUES
+    ('$streams', '2eca01afe77e497b82cd60d8804bcd7d'),
+    ('$stream_by_category', '8128b078465d493b84ebf643bce6c0f5'),
+    ('$by_category', '3ef042a59e4747898955b39db8c5e4a1'),
+    ('$by_event_type', '7cf319276a8340e9abafa4df7aa60e5c');
 
 -- @todo write user stream acl into event-store
 -- @todo make this a script executed from php (setup_event_store.php)
