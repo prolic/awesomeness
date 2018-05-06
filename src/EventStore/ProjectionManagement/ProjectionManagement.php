@@ -19,7 +19,7 @@ interface ProjectionManagement
         bool $emit,
         bool $trackEmittedStreams,
         UserCredentials $userCredentials = null
-    ): void;
+    ): CreateProjectionResult;
 
     public function createContinuous(
         string $name,

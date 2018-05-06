@@ -43,4 +43,9 @@ class AccessDenied extends RuntimeException
     {
         return new self('Access to user management operation denied');
     }
+
+    public static function toProjectionManagementOperation(): AccessDenied
+    {
+        return new self('Access to projection management operation denied');
+    }
 }

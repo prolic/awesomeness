@@ -263,6 +263,18 @@ final class HttpProjectionManagement implements ProjectionManagement
         );
     }
 
+    public function getAllQueries(UserCredentials $userCredentials = null): array
+    {
+        return (new GetMultipleProjectionDetailsOperation())(
+            $this->httpClient,
+            $this->requestFactory,
+            $this->uriFactory,
+            $this->baseUri,
+            'transient',
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
+    }
+
     public function getConfig(string $name, UserCredentials $userCredentials = null): ProjectionConfig
     {
         return (new GetProjectionConfigOperation())(

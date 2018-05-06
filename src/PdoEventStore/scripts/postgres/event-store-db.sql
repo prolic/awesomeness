@@ -47,10 +47,15 @@ CREATE TABLE stream_acl (
     PRIMARY KEY (stream_id, operation, role)
 );
 
+CREATE TABLE projections (
+    projection_name TEXT PRIMARY KEY
+);
+
 INSERT INTO users (username, full_name, password_hash, disabled) VALUES ('admin', 'Event Store Administrator', '$2y$10$z0a0JV9SByKIeeDy4lXjGuHPpCgXcd5WYS/Hps3.dow28SvqnfGAS', false);
 INSERT INTO users (username, full_name, password_hash, disabled) VALUES ('ops', 'Event Store Operations', '$2y$10$eI5BgCvXMUdMoynwyF1PguKpzL9lWSK7GSDt71jOaRyOwrXG70N46', false);
 INSERT INTO user_roles (rolename, username) VALUES ('$admins', 'admin');
 INSERT INTO user_roles (rolename, username) VALUES ('$ops', 'ops');
+INSERT INTO projections (projection_name) VALUES ('$streams'), ('$stream_by_category'), ('$by_category'), ('$by_event_type');
 
 -- @todo write user stream acl into event-store
 -- @todo make this a script executed from php (setup_event_store.php)

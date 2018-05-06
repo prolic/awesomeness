@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Prooph\PdoEventStore;
 
-use MongoDB\Driver\Exception\AuthenticationException;
 use PDO;
 use Prooph\EventStore\Common\SystemEventTypes;
 use Prooph\EventStore\Common\SystemRoles;
@@ -82,7 +81,7 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
             if ($this->settings->defaultUserCredentials()) {
                 $this->userRoles[
                     $this->settings->defaultUserCredentials()->username()
-                ] = (new AuthenticationException())($this->connection, $this->settings->defaultUserCredentials());
+                ] = (new AuthenticateOperation())($this->connection, $this->settings->defaultUserCredentials());
             }
         }
     }
@@ -656,6 +655,10 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
     private function userRoles(?UserCredentials $userCredentials): array
     {
         if ($userCredentials) {
+            if (! isset($this->userRoles[$userCredentials->username()])) {
+                $this->userRoles[$userCredentials->username()] = (new AuthenticateOperation())($this->connection, $userCredentials);
+            }
+
             return $this->userRoles[$userCredentials->username()];
         }
 
