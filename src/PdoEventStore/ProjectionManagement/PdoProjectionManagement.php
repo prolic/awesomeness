@@ -280,11 +280,13 @@ final class PdoProjectionManagement implements ProjectionManagement
 
         $roles = $this->userRolesMethod->invoke($this->pdoEventStoreConnection, $cred);
 
+        $projectionId = str_replace('-', '', Uuid::uuid4()->toString());
+
         try {
             $statement = $this->connection->prepare('INSERT INTO projections (projection_name, projection_id) VALUES (?, ?);');
             $statement->execute([
                 $name,
-                str_replace('-', '', Uuid::uuid4()->toString()),
+                $projectionId,
             ]);
         } catch (PDOException $e) {
             return CreateProjectionResult::conflict();
@@ -331,6 +333,23 @@ final class PdoProjectionManagement implements ProjectionManagement
                 ],
             ];
         }
+
+        $this->pdoEventStoreConnection->appendToStream(
+            ProjectionNames::ProjectionsMasterStream,
+            ExpectedVersion::Any,
+            [
+                new EventData(
+                    EventId::generate(),
+                    '$prepared',
+                    true,
+                    json_encode([
+                        'id' => $projectionId,
+                    ]),
+                    ''
+                ),
+            ],
+            $userCredentials
+        );
 
         $this->pdoEventStoreConnection->appendToStream(
             ProjectionNames::ProjectionsStreamPrefix . $name,
