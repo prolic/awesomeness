@@ -15,6 +15,7 @@ use Amp\Success;
 use Error;
 use Generator;
 use Prooph\EventStore\Exception\ProjectionNotFound;
+use Prooph\EventStore\Exception\RuntimeException;
 use Psr\Log\LoggerInterface as PsrLogger;
 use Throwable;
 use function assert;
@@ -73,9 +74,18 @@ class ProjectionManager
 
         try {
             /** @var Statement $statement */
-            $statement = yield $this->postgresPool->prepare('SELECT projection_id, projection_name from projections');
+            $statement = yield $this->postgresPool->prepare('SELECT PG_TRY_ADVISORY_LOCK(HASHTEXT(:name)) as stream_lock;');
+            $result = yield $statement->execute(['name' => 'projection-manager']);
+            yield $result->advance(ResultSet::FETCH_OBJECT);
+            $lock = $result->getCurrent()->stream_lock;
+            $this->logger->debug(var_export($lock, true));
+
+            if (! $lock) {
+                throw new RuntimeException('Could not acquire lock for projection manager');
+            }
+
             /** @var ResultSet $result */
-            $result = yield $statement->execute();
+            $result = yield $this->postgresPool->execute('SELECT projection_id, projection_name from projections;');
         } catch (Throwable $e) {
             $this->logger->error($e->getMessage());
             Loop::stop();
@@ -133,7 +143,10 @@ class ProjectionManager
         assert($this->logger->debug('Stopping') || true);
         $this->state = self::STOPPING;
 
-        // @todo stop all projections
+        foreach ($this->projectors as $projector) {
+            yield $projector->stop();
+        }
+
         yield new Success();
 
         assert($this->logger->debug('Stopped') || true);

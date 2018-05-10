@@ -15,7 +15,7 @@ use Amp\Http\Status;
 use Amp\Log\ConsoleFormatter;
 use Amp\Log\StreamHandler;
 use Amp\Loop;
-use Amp\Postgres\ConnectionPool;
+use Amp\Postgres\Pool as PostgresPool;
 use Amp\Socket;
 use Monolog\Logger;
 use Prooph\PostgresProjectionManager\Http\RequestHandler;
@@ -28,7 +28,7 @@ Loop::run(function () {
     $logger = new Logger('projection-manager');
     $logger->pushHandler($logHandler);
 
-    $postgresPool = new ConnectionPool('host=localhost user=postgres dbname=new_event_store password=postgres');
+    $postgresPool = new PostgresPool('host=localhost user=postgres dbname=new_event_store password=postgres');
     $projectionManager = new ProjectionManager($postgresPool, $logger);
 
     yield $projectionManager->start();
@@ -56,7 +56,8 @@ Loop::run(function () {
     yield $server->start();
 
     // Stop the server when SIGINT is received (this is technically optional, but it is best to call Server::stop()).
-    Loop::onSignal(SIGINT, function (string $watcherId) use ($server, $projectionManager) {
+    Loop::onSignal(SIGINT, function (string $watcherId) use ($server, $projectionManager, $logger) {
+        $logger->info('Receive SIGINT - shutting down');
         Loop::cancel($watcherId);
         yield $server->stop();
         yield $projectionManager->stop();

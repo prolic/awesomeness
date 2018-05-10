@@ -23,7 +23,7 @@
     "amphp/http-server": "^0.8.2",
     "amphp/http-server-router": "^1.0.0",
     "amphp/mysql": "^0.3.1",
-    "amphp/postgres": "^0.2.1"
+    "amphp/postgres": "dev-master"
   },
   "require-dev": {
     "amphp/amp": "^2.0.6",

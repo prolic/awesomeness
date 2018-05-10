@@ -146,10 +146,8 @@ class Projector
         $this->state = ProjectionState::initial();
 
         try {
-            /** @var Statement $statement */
-            $statement = yield $this->postgresPool->prepare('SELECT projection_id, projection_name from projections');
             /** @var ResultSet $result */
-            $result = yield $statement->execute();
+            $result = yield $this->postgresPool->execute('SELECT projection_id, projection_name from projections');
         } catch (Throwable $e) {
             $this->logger->error($e->getMessage());
             yield $this->stop();
@@ -163,16 +161,16 @@ class Projector
             $projectionIds[] = $projectionId;
         }
 
-        if ('$streams' === $this->name) {
-            Loop::repeat(100, function (string $watcherId) {
-                if ($this->projectionState->equals(ProjectionState::stopping())) {
-                    Loop::cancel($watcherId);
-                    $this->projectionState = ProjectionState::stopped();
-                } else {
+        Loop::repeat(100, function (string $watcherId) {
+            if ($this->projectionState->equals(ProjectionState::stopping())) {
+                Loop::cancel($watcherId);
+                $this->projectionState = ProjectionState::stopped();
+            } else {
+                if ('$streams' === $this->name) {
                     $this->logger->debug($this->name . ' Still running');
                 }
-            });;
-        }
+            }
+        });;
 
         $this->logger->debug('Started projection "' . $this->name .'"');
 
