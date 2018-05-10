@@ -17,7 +17,13 @@
   "prefer-stable": true,
   "require": {
     "php": "^7.2",
-    "ramsey/uuid": "^3.7.3"
+    "ramsey/uuid": "^3.7.3",
+    "amphp/amp": "^2.0.7",
+    "amphp/log": "^1.0.0",
+    "amphp/http-server": "^0.8.2",
+    "amphp/http-server-router": "^1.0.0",
+    "amphp/mysql": "^0.3.1",
+    "amphp/postgres": "^0.2.1"
   },
   "require-dev": {
     "amphp/amp": "^2.0.6",
@@ -42,6 +48,7 @@
       "Prooph\\EventStore\\": "src/EventStore/",
       "Prooph\\HttpEventStore\\": "src/HttpEventStore/",
       "Prooph\\PdoEventStore\\": "src/PdoEventStore/",
+      "Prooph\\PostgresProjectionManager\\": "src/PostgresProjectionManager/",
       "Prooph\\Common\\": "src/Common/"
     }
   },
@@ -49,7 +56,8 @@
     "psr-4": {
       "ProophTest\\EventStore\\": "tests/EventStore/",
       "ProophTest\\HttpEventStore\\": "tests/HttpEventStore/",
-      "ProophTest\\PdoEventStore\\": "tests/PdoEventStore/"
+      "ProophTest\\PdoEventStore\\": "tests/PdoEventStore/",
+      "ProophTest\\PostgresProjectionManager\\": "tests/PostgresProjectionManager/"
     }
   },
   "scripts": {

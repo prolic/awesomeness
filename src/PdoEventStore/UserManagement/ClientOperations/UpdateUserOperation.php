@@ -8,11 +8,11 @@ use PDO;
 use Prooph\EventStore\EventData;
 use Prooph\EventStore\EventId;
 use Prooph\EventStore\Exception\AccessDenied;
+use Prooph\EventStore\Exception\UserNotFound;
 use Prooph\EventStore\ExpectedVersion;
 use Prooph\EventStore\SliceReadStatus;
 use Prooph\EventStore\UserCredentials;
 use Prooph\EventStore\UserManagement\UserManagement;
-use Prooph\EventStore\UserManagement\UserNotFound;
 use Prooph\PdoEventStore\PdoEventStoreConnection;
 
 /** @internal */
