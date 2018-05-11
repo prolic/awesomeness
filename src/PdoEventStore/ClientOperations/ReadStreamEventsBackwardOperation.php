@@ -38,7 +38,7 @@ SELECT
 FROM
     events e1
 LEFT JOIN events e2
-    ON (e1.link_to = e2.eventId)
+    ON (e1.link_to = e2.event_id)
 WHERE e1.stream_id = ?
 AND e1.event_number >= ?
 ORDER BY e1.event_number DESC
