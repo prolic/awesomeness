@@ -4,15 +4,13 @@ declare(strict_types=1);
 
 namespace Prooph\PostgresProjectionManager\Http\RequestHandler;
 
-use function Amp\call;
-use Amp\Coroutine;
 use Amp\Http\Server\Request;
 use Amp\Http\Server\RequestHandler;
 use Amp\Http\Server\Response;
 use Amp\Http\Server\Router;
 use Amp\Promise;
-use Amp\Success;
 use Prooph\PostgresProjectionManager\ProjectionManager;
+use function Amp\call;
 
 class StopProjectionRequestHandler implements RequestHandler
 {

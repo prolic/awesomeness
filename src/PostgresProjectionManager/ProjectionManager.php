@@ -14,8 +14,10 @@ use Amp\Promise;
 use Amp\Success;
 use Error;
 use Generator;
+use Prooph\EventStore\Common\SystemStreams;
 use Prooph\EventStore\Exception\ProjectionNotFound;
 use Prooph\EventStore\Exception\RuntimeException;
+use Prooph\EventStore\SystemSettings;
 use Psr\Log\LoggerInterface as PsrLogger;
 use Throwable;
 use function assert;
@@ -44,6 +46,8 @@ class ProjectionManager
     private $logger;
     /** @var Projector[] */
     private $projectors = [];
+    /** @var SystemSettings */
+    private $settings;
 
     public function __construct(PostgresPool $pool, PsrLogger $logger)
     {
@@ -75,6 +79,7 @@ class ProjectionManager
         try {
             /** @var Statement $statement */
             $statement = yield $this->postgresPool->prepare('SELECT PG_TRY_ADVISORY_LOCK(HASHTEXT(:name)) as stream_lock;');
+            /** @var ResultSet $result */
             $result = yield $statement->execute(['name' => 'projection-manager']);
             yield $result->advance(ResultSet::FETCH_OBJECT);
             $lock = $result->getCurrent()->stream_lock;
@@ -84,28 +89,96 @@ class ProjectionManager
                 throw new RuntimeException('Could not acquire lock for projection manager');
             }
 
+            yield new Coroutine($this->loadSystemSettings());
+
             /** @var ResultSet $result */
             $result = yield $this->postgresPool->execute('SELECT projection_id, projection_name from projections;');
+
+            while (yield $result->advance(ResultSet::FETCH_OBJECT)) {
+                $projectionName = $result->getCurrent()->projection_name;
+                $projectionId = $result->getCurrent()->projection_id;
+
+                $projector = new Projector($this->postgresPool, $projectionName, $projectionId, $this->logger, $this->settings);
+                $this->projectors[$projectionName] = $projector;
+
+                yield $projector->tryStart();
+            }
+
+            $this->state = self::STARTED;
+            assert($this->logger->debug('Started') || true);
         } catch (Throwable $e) {
             $this->logger->error($e->getMessage());
             Loop::stop();
             yield new Failure($e);
         }
+    }
 
-        while (yield $result->advance(ResultSet::FETCH_OBJECT)) {
-            $projectionName = $result->getCurrent()->projection_name;
-            $projectionId = $result->getCurrent()->projection_id;
+    private function loadSystemSettings(): Generator
+    {
+        try {
+            /** @var Statement $statement */
+            $statement = yield $this->postgresPool->prepare(<<<SQL
+SELECT * FROM streams WHERE stream_name = ?
+SQL
+            );
+            /** @var ResultSet $result */
+            $result = yield $statement->execute([SystemStreams::SettingsStream]);
 
-            $this->logger->debug('Found projection ' . $projectionName);
+            if (! yield $result->advance(ResultSet::FETCH_OBJECT)) {
+                $this->settings = SystemSettings::default();
 
-            $projector = new Projector($this->postgresPool, $projectionName, $projectionId, $this->logger);
-            $this->projectors[$projectionName] = $projector;
+                return new Success();
+            }
 
-            yield $projector->start();
+            $streamData = $result->getCurrent();
+
+            /** @var Statement $statement */
+            $statement = yield $this->postgresPool->prepare(<<<SQL
+SELECT
+    COALESCE(e1.event_id, e2.event_id) as event_id,
+    e1.event_number as event_number,
+    COALESCE(e1.event_type, e2.event_type) as event_type,
+    COALESCE(e1.data, e2.data) as data,
+    COALESCE(e1.meta_data, e2.meta_data) as meta_data,
+    COALESCE(e1.is_json, e2.is_json) as is_json,
+    COALESCE(e1.updated, e2.updated) as updated
+FROM
+    events e1
+LEFT JOIN events e2
+    ON (e1.link_to = e2.event_id)
+WHERE e1.stream_id = ?
+ORDER BY e1.event_number DESC
+LIMIT 1
+SQL
+            );
+            /** @var ResultSet $result */
+            $result = yield $statement->execute([$streamData->stream_id]);
+
+            if (! yield $result->advance(ResultSet::FETCH_OBJECT)) {
+                $this->settings = SystemSettings::default();
+
+                return new Success();
+            }
+
+            $event = $result->getCurrent();
+
+            $data = json_decode($event->data, true);
+
+            if (0 !== json_last_error()) {
+                $message = 'Could not json decode system settings';
+                $this->logger->error($message);
+
+                return new Failure(new Error($message));
+            }
+
+            $this->settings = SystemSettings::fromArray($data);
+
+            return new Success();
+        } catch (Throwable $e) {
+            $this->logger->error($e);
+
+            return new Failure($e);
         }
-
-        $this->state = self::STARTED;
-        assert($this->logger->debug('Started') || true);
     }
 
     /**

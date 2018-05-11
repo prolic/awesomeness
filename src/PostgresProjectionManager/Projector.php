@@ -15,12 +15,14 @@ use Amp\Success;
 use Closure;
 use DateTimeImmutable;
 use DateTimeZone;
-use EmptyIterator;
+use Error;
+use Generator;
 use Iterator;
 use PDO;
 use PDOException;
 use Prooph\Common\Messaging\Message;
 use Prooph\EventStore\Common\SystemEventTypes;
+use Prooph\EventStore\Common\SystemRoles;
 use Prooph\EventStore\EventData;
 use Prooph\EventStore\EventId;
 use Prooph\EventStore\EventStoreConnection;
@@ -28,9 +30,12 @@ use Prooph\EventStore\Exception;
 use Prooph\EventStore\ExpectedVersion;
 use Prooph\EventStore\Pdo\Exception\ProjectionNotCreatedException;
 use Prooph\EventStore\Pdo\Exception\RuntimeException;
-use Prooph\EventStore\Pdo\PdoEventStore;
+use Prooph\EventStore\Projections\ProjectionEventTypes;
+use Prooph\EventStore\Projections\ProjectionNames;
 use Prooph\EventStore\Projections\ProjectionState;
 use Prooph\EventStore\RecordedEvent;
+use Prooph\EventStore\SystemSettings;
+use Prooph\PdoEventStore\Internal\StreamOperation;
 use Psr\Log\LoggerInterface as PsrLogger;
 use Throwable;
 
@@ -71,14 +76,11 @@ class Projector
     /** @var int */
     private $updateLockThreshold;
     /** @var array|null */
-    private $query;
+    //private $query;
     /** @var string */
     private $vendor;
     /** @var DateTimeImmutable */
     private $lastLockUpdate;
-
-
-
 
     /** @var PostgresPool */
     private $postgresPool;
@@ -88,40 +90,205 @@ class Projector
     private $id;
     /** @var PsrLogger */
     private $logger;
+    /** @var SystemSettings */
+    private $settings;
     /** @var ProjectionState */
     private $projectionState;
+    /** @var string */
+    private $handlerType;
+    /** @var string */
+    private $query;
+    /** @var string */
+    private $mode;
+    /** @var bool */
+    private $enabled;
+    /** @var bool */
+    private $emitEnabled;
+    /** @var bool */
+    private $checkpointsDisabled;
+    /** @var bool */
+    private $trackEmittedStreams;
+    /** @var int */
+    private $checkpointAfterMs = 0;
+    /** @var int */
+    private $checkpointHandledThreshold = 4000;
+    /** @var int */
+    private $checkpointUnhandledBytesThreshold = 10000000;
+    /** @var int */
+    private $pendingEventsThreshold = 5000;
+    /** @var int */
+    private $maxWriteBatchLength = 500;
+    /** @var int|null */
+    private $maxAllowedWritesInFlight = null;
+    /** @var array */
+    private $runAs;
 
     public function __construct(
         PostgresPool $postgresPool,
         string $name,
         string $id,
-        PsrLogger $logger
+        PsrLogger $logger,
+        SystemSettings $settings
     ) {
         $this->postgresPool = $postgresPool;
         $this->name = $name;
         $this->id = $id;
         $this->logger = $logger;
         $this->projectionState = ProjectionState::stopped();
+        $this->settings = $settings;
+    }
 
-/*
-        $this->eventStoreConnection = $eventStore;
-        $this->connection = $connection;
-        $this->name = $name;
-        $this->eventStreamsTable = $eventStreamsTable;
-        $this->projectionsTable = $projectionsTable;
-        $this->lockTimeoutMs = $lockTimeoutMs;
-        $this->persistBlockSize = $persistBlockSize;
-        $this->sleep = $sleep;
-        $this->status = ProjectionStatus::IDLE();
-        $this->updateLockThreshold = $updateLockThreshold;
-        $this->vendor = $this->connection->getAttribute(PDO::ATTR_DRIVER_NAME);
-        while ($eventStore instanceof EventStoreDecorator) {
-            $eventStore = $eventStore->getInnerEventStore();
+    public function tryStart(): Promise
+    {
+        try {
+            return new Coroutine($this->doTryStart());
+        } catch (Throwable $e) {
+            $this->logger->error($e->getMessage());
+
+            return new Failure($e);
         }
-        if (! $eventStore instanceof PdoEventStore) {
-            throw new Exception\InvalidArgumentException('Unknown event store instance given');
+    }
+
+    private function doTryStart(): Generator
+    {
+        yield new Coroutine($this->doLoad());
+
+        if ($this->enabled) {
+            yield $this->start();
         }
-*/
+    }
+
+    private function doLoad(): Generator
+    {
+        try {
+            /** @var Statement $statement */
+            $statement = yield $this->postgresPool->prepare(<<<SQL
+SELECT streams.stream_id, streams.mark_deleted, streams.deleted, STRING_AGG(stream_acl.role, ',') as stream_roles
+    FROM streams
+    LEFT JOIN stream_acl ON streams.stream_id = stream_acl.stream_id AND stream_acl.operation = ?
+    WHERE streams.stream_name = ?
+    GROUP BY streams.stream_id, streams.mark_deleted, streams.deleted
+    LIMIT 1;
+SQL
+            );
+
+            /** @var ResultSet $result */
+            $result = yield $statement->execute([
+                StreamOperation::Read,
+                ProjectionNames::ProjectionsStreamPrefix . $this->name,
+            ]);
+
+            if (! yield $result->advance(ResultSet::FETCH_OBJECT)) {
+                $message = 'Stream id for projection "' . $this->name .'" not found';
+                $this->logger->error($message);
+
+                return new Failure(new Error($message));
+            }
+
+            $data = $result->getCurrent();
+        } catch (Throwable $e) {
+            $this->logger->error($e->getMessage());
+
+            return new Failure($e);
+        }
+
+        if ($data->mark_deleted || $data->deleted) {
+            $e = Exception\StreamDeleted::with(ProjectionNames::ProjectionsStreamPrefix . $this->name);
+            $this->logger->error($e->getMessage());
+
+            return new Failure($e);
+        }
+
+        $toCheck = [SystemRoles::All];
+        if (is_string($data->stream_roles)) {
+            $toCheck = explode(',', $data->stream_roles);
+        }
+
+        $sql = <<<SQL
+SELECT
+    e2.event_id as event_id,
+    e1.event_number as event_number,
+    COALESCE(e1.event_type, e2.event_type) as event_type,
+    COALESCE(e1.data, e2.data) as data,
+    COALESCE(e1.meta_data, e2.meta_data) as meta_data,
+    COALESCE(e1.is_json, e2.is_json) as is_json,
+    COALESCE(e1.updated, e2.updated) as updated
+FROM
+    events e1
+LEFT JOIN events e2
+    ON (e1.link_to = e2.event_id)
+WHERE e1.stream_id = ?
+ORDER BY e1.event_number DESC
+SQL;
+        try {
+            /** @var Statement $statement */
+            $statement = yield $this->postgresPool->prepare($sql);
+
+            /** @var ResultSet $result */
+            $result = yield $statement->execute([$data->stream_id]);
+
+            while (yield $result->advance(ResultSet::FETCH_OBJECT)) {
+                $event = $result->getCurrent();
+                switch ($event->event_type) {
+                    case ProjectionEventTypes::ProjectionUpdated:
+                        $data = json_decode($event->data, true);
+                        if (0 !== json_last_error()) {
+                            $message = 'Could not json decode event data for projection "' . $this->name . '"';
+                            $this->logger->error($message);
+
+                            return new Failure(new Error($message));
+                        }
+
+                        $this->handlerType = $data['handlerType'];
+                        $this->query = $data['query'];
+                        $this->mode = $data['mode'];
+                        $this->enabled = $data['enabled'] ?? false;
+                        $this->emitEnabled = $data['emitEnabled'];
+                        $this->checkpointsDisabled = $data['checkpointsDisabled'];
+                        $this->trackEmittedStreams = $data['trackEmittedStreams'];
+                        if (isset($data['checkpointAfterMs'])) {
+                            $this->checkpointAfterMs = $data['checkpointAfterMs'];
+                        }
+                        if (isset($data['checkpointHandledThreshold'])) {
+                            $this->checkpointHandledThreshold = $data['checkpointHandledThreshold'];
+                        }
+                        if (isset($data['checkpointUnhandledBytesThreshold'])) {
+                            $this->checkpointUnhandledBytesThreshold = $data['checkpointUnhandledBytesThreshold'];
+                        }
+                        if (isset($data['pendingEventsThreshold'])) {
+                            $this->pendingEventsThreshold = $data['pendingEventsThreshold'];
+                        }
+                        if (isset($data['maxWriteBatchLength'])) {
+                            $this->maxWriteBatchLength = $data['maxWriteBatchLength'];
+                        }
+                        if (isset($data['maxAllowedWritesInFlight'])) {
+                            $this->maxAllowedWritesInFlight = $data['maxAllowedWritesInFlight'];
+                        }
+                        $this->runAs = $data['runAs'];
+                        break;
+                    case '$stopped':
+                        $this->enabled = false;
+                        break;
+                    case '$started':
+                        $this->enabled = true;
+                        break;
+                }
+            }
+
+            if ('$system' !== $this->runAs['name']
+                && ! in_array($this->runAs['name'], $toCheck)
+                && (! isset($this->runAs['roles']) || empty(array_intersect($this->runAs['roles'], $toCheck)))
+            ) {
+                $e = Exception\AccessDenied::toStream(ProjectionNames::ProjectionsStreamPrefix . $this->name);
+                $this->logger->error($e->getMessage());
+
+                return new Failure($e);
+            }
+        } catch (Throwable $e) {
+            $this->logger->error($e->getMessage());
+
+            return new Failure($e);
+        }
     }
 
     public function start(): Promise
@@ -131,231 +298,220 @@ class Projector
                 return new Coroutine($this->doStart());
             }
 
-            return new Failure(new \Error(
-                'Cannot start projection "' . $this->name . '": already ' . $this->projectionState->name()
-            ));
-        } catch (\Throwable $e) {
+            $message = 'Cannot start projection "' . $this->name . '": already ' . $this->projectionState->name();
+            $this->logger->error($message);
+
+            return new Failure(new Error($message));
+        } catch (Throwable $e) {
+            $this->logger->error($e->getMessage());
+
             return new Failure($e);
         }
     }
 
-    private function doStart(): \Generator
+    private function doStart(): Generator
     {
-        $this->logger->debug('Checking status of projection "' . $this->name . '"');
-
+        $this->enabled = true;
         $this->state = ProjectionState::initial();
 
         try {
-            /** @var ResultSet $result */
-            $result = yield $this->postgresPool->execute('SELECT projection_id, projection_name from projections');
+            yield new Success();
         } catch (Throwable $e) {
             $this->logger->error($e->getMessage());
-            yield $this->stop();
             yield new Failure($e);
-        }
-
-        $projectionIds = [];
-        while (yield $result->advance(ResultSet::FETCH_OBJECT)) {
-            $projectionName = $result->getCurrent()->projection_name;
-            $projectionId = $result->getCurrent()->projection_id;
-            $projectionIds[] = $projectionId;
         }
 
         Loop::repeat(100, function (string $watcherId) {
             if ($this->projectionState->equals(ProjectionState::stopping())) {
                 Loop::cancel($watcherId);
                 $this->projectionState = ProjectionState::stopped();
-            } else {
-                if ('$streams' === $this->name) {
-                    $this->logger->debug($this->name . ' Still running');
-                }
             }
-        });;
-
-        $this->logger->debug('Started projection "' . $this->name .'"');
+        });
 
         $this->projectionState = ProjectionState::running();
-    }
-/*
-    public function init(Closure $callback): Projector
-    {
-        if (null !== $this->initCallback) {
-            throw new Exception\RuntimeException('Projection already initialized');
-        }
-        $callback = Closure::bind($callback, $this->createHandlerContext($this->currentStreamName));
-        $result = $callback();
-        if (is_array($result)) {
-            $this->state = $result;
-        }
-        $this->initCallback = $callback;
-
-        return $this;
+        $this->logger->debug('Started projection "' . $this->name .'"');
     }
 
-    public function fromStream(string $streamName): Projector
-    {
-        if (null !== $this->query) {
-            throw new Exception\RuntimeException('From was already called');
-        }
-        $this->query['streams'][] = $streamName;
-
-        return $this;
-    }
-
-    public function fromStreams(string ...$streamNames): Projector
-    {
-        if (null !== $this->query) {
-            throw new Exception\RuntimeException('From was already called');
-        }
-        foreach ($streamNames as $streamName) {
-            $this->query['streams'][] = $streamName;
-        }
-
-        return $this;
-    }
-
-    public function fromCategory(string $name): Projector
-    {
-        if (null !== $this->query) {
-            throw new Exception\RuntimeException('From was already called');
-        }
-        $this->query['categories'][] = $name;
-
-        return $this;
-    }
-
-    public function fromCategories(string ...$names): Projector
-    {
-        if (null !== $this->query) {
-            throw new Exception\RuntimeException('From was already called');
-        }
-        foreach ($names as $name) {
-            $this->query['categories'][] = $name;
-        }
-
-        return $this;
-    }
-
-    public function fromAll(): Projector
-    {
-        if (null !== $this->query) {
-            throw new Exception\RuntimeException('From was already called');
-        }
-        $this->query['all'] = true;
-
-        return $this;
-    }
-
-    public function when(array $handlers): Projector
-    {
-        if (null !== $this->handler || ! empty($this->handlers)) {
-            throw new Exception\RuntimeException('When was already called');
-        }
-        foreach ($handlers as $eventName => $handler) {
-            if (! is_string($eventName)) {
-                throw new Exception\InvalidArgumentException('Invalid event name given, string expected');
+    /*
+        public function init(Closure $callback): Projector
+        {
+            if (null !== $this->initCallback) {
+                throw new Exception\RuntimeException('Projection already initialized');
             }
-            if (! $handler instanceof Closure) {
-                throw new Exception\InvalidArgumentException('Invalid handler given, Closure expected');
-            }
-            $this->handlers[$eventName] = Closure::bind($handler, $this->createHandlerContext($this->currentStreamName));
-        }
-
-        return $this;
-    }
-
-    public function whenAny(Closure $handler): Projector
-    {
-        if (null !== $this->handler || ! empty($this->handlers)) {
-            throw new Exception\RuntimeException('When was already called');
-        }
-        $this->handler = Closure::bind($handler, $this->createHandlerContext($this->currentStreamName));
-
-        return $this;
-    }
-
-    public function emit(string $stream, string $eventType, string $eventBody, string $metadata): void
-    {
-        $isJson = false;
-        json_decode($eventBody);
-
-        if (0 === json_last_error()) {
-            $isJson = true;
-        }
-
-        $this->eventStoreConnection->appendToStream(
-            $stream,
-            ExpectedVersion::Any,
-            [
-                new EventData(
-                    EventId::generate(),
-                    $eventType,
-                    $isJson,
-                    $eventBody,
-                    $metadata
-                ),
-            ]
-        );
-    }
-
-    public function linkTo(string $stream, RecordedEvent $event, string $metadata = ''): void
-    {
-        $this->eventStoreConnection->appendToStream(
-            $stream,
-            ExpectedVersion::Any,
-            [
-                // @todo link to real event
-                new EventData(
-                    EventId::generate(),
-                    SystemEventTypes::LinkTo,
-                    false,
-                    $event->eventNumber() . '@' . $event->streamId(),
-                    $metadata
-                ),
-            ]
-        );
-    }
-
-    public function reset(): void
-    {
-        $this->streamPositions = [];
-        $callback = $this->initCallback;
-        $this->state = [];
-
-        if (is_callable($callback)) {
+            $callback = Closure::bind($callback, $this->createHandlerContext($this->currentStreamName));
             $result = $callback();
             if (is_array($result)) {
                 $this->state = $result;
             }
+            $this->initCallback = $callback;
+    
+            return $this;
         }
-
-        $projectionsTable = $this->quoteTableName($this->projectionsTable);
-
-        $sql = <<<EOT
-UPDATE $projectionsTable SET position = ?, state = ?, status = ?
-WHERE name = ?
-EOT;
-        $statement = $this->connection->prepare($sql);
-        try {
-            $statement->execute([
-                json_encode($this->streamPositions),
-                json_encode($this->state),
-                $this->status->getValue(),
-                $this->name,
-            ]);
-        } catch (PDOException $exception) {
-            // ignore and check error code
+    
+        public function fromStream(string $streamName): Projector
+        {
+            if (null !== $this->query) {
+                throw new Exception\RuntimeException('From was already called');
+            }
+            $this->query['streams'][] = $streamName;
+    
+            return $this;
         }
-        if ($statement->errorCode() !== '00000') {
-            throw RuntimeException::fromStatementErrorInfo($statement->errorInfo());
+    
+        public function fromStreams(string ...$streamNames): Projector
+        {
+            if (null !== $this->query) {
+                throw new Exception\RuntimeException('From was already called');
+            }
+            foreach ($streamNames as $streamName) {
+                $this->query['streams'][] = $streamName;
+            }
+    
+            return $this;
         }
-        try {
-            $this->eventStoreConnection->delete(new StreamName($this->name));
-        } catch (Exception\StreamNotFound $exception) {
-            // ignore
+    
+        public function fromCategory(string $name): Projector
+        {
+            if (null !== $this->query) {
+                throw new Exception\RuntimeException('From was already called');
+            }
+            $this->query['categories'][] = $name;
+    
+            return $this;
         }
-    }
-*/
+    
+        public function fromCategories(string ...$names): Projector
+        {
+            if (null !== $this->query) {
+                throw new Exception\RuntimeException('From was already called');
+            }
+            foreach ($names as $name) {
+                $this->query['categories'][] = $name;
+            }
+    
+            return $this;
+        }
+    
+        public function fromAll(): Projector
+        {
+            if (null !== $this->query) {
+                throw new Exception\RuntimeException('From was already called');
+            }
+            $this->query['all'] = true;
+    
+            return $this;
+        }
+    
+        public function when(array $handlers): Projector
+        {
+            if (null !== $this->handler || ! empty($this->handlers)) {
+                throw new Exception\RuntimeException('When was already called');
+            }
+            foreach ($handlers as $eventName => $handler) {
+                if (! is_string($eventName)) {
+                    throw new Exception\InvalidArgumentException('Invalid event name given, string expected');
+                }
+                if (! $handler instanceof Closure) {
+                    throw new Exception\InvalidArgumentException('Invalid handler given, Closure expected');
+                }
+                $this->handlers[$eventName] = Closure::bind($handler, $this->createHandlerContext($this->currentStreamName));
+            }
+    
+            return $this;
+        }
+    
+        public function whenAny(Closure $handler): Projector
+        {
+            if (null !== $this->handler || ! empty($this->handlers)) {
+                throw new Exception\RuntimeException('When was already called');
+            }
+            $this->handler = Closure::bind($handler, $this->createHandlerContext($this->currentStreamName));
+    
+            return $this;
+        }
+    
+        public function emit(string $stream, string $eventType, string $eventBody, string $metadata): void
+        {
+            $isJson = false;
+            json_decode($eventBody);
+    
+            if (0 === json_last_error()) {
+                $isJson = true;
+            }
+    
+            $this->eventStoreConnection->appendToStream(
+                $stream,
+                ExpectedVersion::Any,
+                [
+                    new EventData(
+                        EventId::generate(),
+                        $eventType,
+                        $isJson,
+                        $eventBody,
+                        $metadata
+                    ),
+                ]
+            );
+        }
+    
+        public function linkTo(string $stream, RecordedEvent $event, string $metadata = ''): void
+        {
+            $this->eventStoreConnection->appendToStream(
+                $stream,
+                ExpectedVersion::Any,
+                [
+                    // @todo link to real event
+                    new EventData(
+                        EventId::generate(),
+                        SystemEventTypes::LinkTo,
+                        false,
+                        $event->eventNumber() . '@' . $event->streamId(),
+                        $metadata
+                    ),
+                ]
+            );
+        }
+    
+        public function reset(): void
+        {
+            $this->streamPositions = [];
+            $callback = $this->initCallback;
+            $this->state = [];
+    
+            if (is_callable($callback)) {
+                $result = $callback();
+                if (is_array($result)) {
+                    $this->state = $result;
+                }
+            }
+    
+            $projectionsTable = $this->quoteTableName($this->projectionsTable);
+    
+            $sql = <<<EOT
+    UPDATE $projectionsTable SET position = ?, state = ?, status = ?
+    WHERE name = ?
+    EOT;
+            $statement = $this->connection->prepare($sql);
+            try {
+                $statement->execute([
+                    json_encode($this->streamPositions),
+                    json_encode($this->state),
+                    $this->status->getValue(),
+                    $this->name,
+                ]);
+            } catch (PDOException $exception) {
+                // ignore and check error code
+            }
+            if ($statement->errorCode() !== '00000') {
+                throw RuntimeException::fromStatementErrorInfo($statement->errorInfo());
+            }
+            try {
+                $this->eventStoreConnection->delete(new StreamName($this->name));
+            } catch (Exception\StreamNotFound $exception) {
+                // ignore
+            }
+        }
+    */
     public function stop(): Promise
     {
         if (! $this->projectionState->equals(ProjectionState::running())) {
@@ -363,419 +519,403 @@ EOT;
         }
 
         $this->logger->debug('Stopping projection "' . $this->name . '"');
+        $this->enabled = false;
         $this->projectionState = ProjectionState::stopping();
 
         return new Success();
-        /*
-        $this->persist();
-        $this->isStopped = true;
-        $projectionsTable = $this->quoteTableName($this->projectionsTable);
-        $stopProjectionSql = <<<EOT
-UPDATE $projectionsTable SET status = ? WHERE name = ?;
-EOT;
-        $statement = $this->connection->prepare($stopProjectionSql);
-        try {
-            $statement->execute([ProjectionStatus::IDLE()->getValue(), $this->name]);
-        } catch (PDOException $exception) {
-            // ignore and check error code
-        }
-        if ($statement->errorCode() !== '00000') {
-            throw RuntimeException::fromStatementErrorInfo($statement->errorInfo());
-        }
-        $this->status = ProjectionStatus::IDLE();
-        */
-    }
-/*
-    public function getState(): array
-    {
-        return $this->state;
     }
 
-    public function getName(): string
-    {
-        return $this->name;
-    }
-
-    public function delete(bool $deleteEmittedEvents): void
-    {
-        $projectionsTable = $this->quoteTableName($this->projectionsTable);
-        $deleteProjectionSql = <<<EOT
-DELETE FROM $projectionsTable WHERE name = ?;
-EOT;
-        $statement = $this->connection->prepare($deleteProjectionSql);
-        try {
-            $statement->execute([$this->name]);
-        } catch (PDOException $exception) {
-            // ignore and check error code
+    /*
+        public function getState(): array
+        {
+            return $this->state;
         }
-        if ($statement->errorCode() !== '00000') {
-            throw RuntimeException::fromStatementErrorInfo($statement->errorInfo());
+    
+        public function getName(): string
+        {
+            return $this->name;
         }
-        if ($deleteEmittedEvents) {
+    
+        public function delete(bool $deleteEmittedEvents): void
+        {
+            $projectionsTable = $this->quoteTableName($this->projectionsTable);
+            $deleteProjectionSql = <<<EOT
+    DELETE FROM $projectionsTable WHERE name = ?;
+    EOT;
+            $statement = $this->connection->prepare($deleteProjectionSql);
             try {
-                $this->eventStoreConnection->delete(new StreamName($this->name));
-            } catch (Exception\StreamNotFound $e) {
-                // ignore
+                $statement->execute([$this->name]);
+            } catch (PDOException $exception) {
+                // ignore and check error code
             }
-        }
-        $this->isStopped = true;
-        $callback = $this->initCallback;
-        $this->state = [];
-        if (is_callable($callback)) {
-            $result = $callback();
-            if (is_array($result)) {
-                $this->state = $result;
+            if ($statement->errorCode() !== '00000') {
+                throw RuntimeException::fromStatementErrorInfo($statement->errorInfo());
             }
+            if ($deleteEmittedEvents) {
+                try {
+                    $this->eventStoreConnection->delete(new StreamName($this->name));
+                } catch (Exception\StreamNotFound $e) {
+                    // ignore
+                }
+            }
+            $this->isStopped = true;
+            $callback = $this->initCallback;
+            $this->state = [];
+            if (is_callable($callback)) {
+                $result = $callback();
+                if (is_array($result)) {
+                    $this->state = $result;
+                }
+            }
+            $this->streamPositions = [];
         }
-        $this->streamPositions = [];
-    }
-
-    public function run(bool $keepRunning = true): void
-    {
-        if (null === $this->query
-            || (null === $this->handler && empty($this->handlers))
-        ) {
-            throw new Exception\RuntimeException('No handlers configured');
-        }
-        switch ($this->fetchRemoteStatus()) {
-            case ProjectionStatus::STOPPING():
-                $this->stop();
-
-                return;
-            case ProjectionStatus::DELETING():
-                $this->delete(false);
-
-                return;
-            case ProjectionStatus::DELETING_INCL_EMITTED_EVENTS():
-                $this->delete(true);
-
-                return;
-            case ProjectionStatus::RESETTING():
-                $this->reset();
-                break;
-            default:
-                break;
-        }
-        $this->createProjection();
-        $this->acquireLock();
-        $this->prepareStreamPositions();
-        $this->load();
-        $singleHandler = null !== $this->handler;
-        $this->isStopped = false;
-        try {
-            do {
-                foreach ($this->streamPositions as $streamName => $position) {
-                    try {
-                        $streamEvents = $this->eventStoreConnection->load(new StreamName($streamName), $position + 1);
-                    } catch (Exception\StreamNotFound $e) {
-                        // ignore
-                        continue;
+    
+        public function run(bool $keepRunning = true): void
+        {
+            if (null === $this->query
+                || (null === $this->handler && empty($this->handlers))
+            ) {
+                throw new Exception\RuntimeException('No handlers configured');
+            }
+            switch ($this->fetchRemoteStatus()) {
+                case ProjectionStatus::STOPPING():
+                    $this->stop();
+    
+                    return;
+                case ProjectionStatus::DELETING():
+                    $this->delete(false);
+    
+                    return;
+                case ProjectionStatus::DELETING_INCL_EMITTED_EVENTS():
+                    $this->delete(true);
+    
+                    return;
+                case ProjectionStatus::RESETTING():
+                    $this->reset();
+                    break;
+                default:
+                    break;
+            }
+            $this->createProjection();
+            $this->acquireLock();
+            $this->prepareStreamPositions();
+            $this->load();
+            $singleHandler = null !== $this->handler;
+            $this->isStopped = false;
+            try {
+                do {
+                    foreach ($this->streamPositions as $streamName => $position) {
+                        try {
+                            $streamEvents = $this->eventStoreConnection->load(new StreamName($streamName), $position + 1);
+                        } catch (Exception\StreamNotFound $e) {
+                            // ignore
+                            continue;
+                        }
+                        if ($singleHandler) {
+                            $this->handleStreamWithSingleHandler($streamName, $streamEvents);
+                        } else {
+                            $this->handleStreamWithHandlers($streamName, $streamEvents);
+                        }
+                        if ($this->isStopped) {
+                            break;
+                        }
                     }
-                    if ($singleHandler) {
-                        $this->handleStreamWithSingleHandler($streamName, $streamEvents);
+                    if (0 === $this->eventCounter) {
+                        usleep($this->sleep);
+                        $this->updateLock();
                     } else {
-                        $this->handleStreamWithHandlers($streamName, $streamEvents);
+                        $this->persist();
                     }
-                    if ($this->isStopped) {
-                        break;
+                    $this->eventCounter = 0;
+    
+                    switch ($this->fetchRemoteStatus()) {
+                        case ProjectionStatus::STOPPING():
+                            $this->stop();
+                            break;
+                        case ProjectionStatus::DELETING():
+                            $this->delete(false);
+                            break;
+                        case ProjectionStatus::DELETING_INCL_EMITTED_EVENTS():
+                            $this->delete(true);
+                            break;
+                        case ProjectionStatus::RESETTING():
+                            $this->reset();
+                            break;
+                        default:
+                            break;
                     }
+                    $this->prepareStreamPositions();
+                } while ($keepRunning && ! $this->isStopped);
+            } finally {
+                $this->releaseLock();
+            }
+        }
+    
+        private function fetchRemoteStatus(): ProjectionStatus
+        {
+            $projectionsTable = $this->quoteTableName($this->projectionsTable);
+            $sql = <<<EOT
+    SELECT status FROM $projectionsTable WHERE name = ? LIMIT 1;
+    EOT;
+            $statement = $this->connection->prepare($sql);
+            try {
+                $statement->execute([$this->name]);
+            } catch (PDOException $exception) {
+                // ignore and check error code
+            }
+            if ($statement->errorCode() !== '00000') {
+                $errorCode = $statement->errorCode();
+                $errorInfo = $statement->errorInfo()[2];
+                throw new RuntimeException(
+                    "Error $errorCode. Maybe the projection table is not setup?\nError-Info: $errorInfo"
+                );
+            }
+            $result = $statement->fetch(PDO::FETCH_OBJ);
+            if (false === $result) {
+                return ProjectionStatus::RUNNING();
+            }
+    
+            return ProjectionStatus::byValue($result->status);
+        }
+    
+        private function handleStreamWithSingleHandler(string $streamName, Iterator $events): void
+        {
+            $this->currentStreamName = $streamName;
+            $handler = $this->handler;
+            foreach ($events as $key => $event) {
+                $this->streamPositions[$streamName] = $key;
+                $this->eventCounter++;
+                $result = $handler($this->state, $event);
+                if (is_array($result)) {
+                    $this->state = $result;
                 }
-                if (0 === $this->eventCounter) {
-                    usleep($this->sleep);
-                    $this->updateLock();
-                } else {
+                if ($this->eventCounter === $this->persistBlockSize) {
                     $this->persist();
+                    $this->eventCounter = 0;
                 }
-                $this->eventCounter = 0;
-
-                switch ($this->fetchRemoteStatus()) {
-                    case ProjectionStatus::STOPPING():
-                        $this->stop();
-                        break;
-                    case ProjectionStatus::DELETING():
-                        $this->delete(false);
-                        break;
-                    case ProjectionStatus::DELETING_INCL_EMITTED_EVENTS():
-                        $this->delete(true);
-                        break;
-                    case ProjectionStatus::RESETTING():
-                        $this->reset();
-                        break;
-                    default:
-                        break;
+                if ($this->isStopped) {
+                    break;
                 }
-                $this->prepareStreamPositions();
-            } while ($keepRunning && ! $this->isStopped);
-        } finally {
-            $this->releaseLock();
-        }
-    }
-
-    private function fetchRemoteStatus(): ProjectionStatus
-    {
-        $projectionsTable = $this->quoteTableName($this->projectionsTable);
-        $sql = <<<EOT
-SELECT status FROM $projectionsTable WHERE name = ? LIMIT 1;
-EOT;
-        $statement = $this->connection->prepare($sql);
-        try {
-            $statement->execute([$this->name]);
-        } catch (PDOException $exception) {
-            // ignore and check error code
-        }
-        if ($statement->errorCode() !== '00000') {
-            $errorCode = $statement->errorCode();
-            $errorInfo = $statement->errorInfo()[2];
-            throw new RuntimeException(
-                "Error $errorCode. Maybe the projection table is not setup?\nError-Info: $errorInfo"
-            );
-        }
-        $result = $statement->fetch(PDO::FETCH_OBJ);
-        if (false === $result) {
-            return ProjectionStatus::RUNNING();
-        }
-
-        return ProjectionStatus::byValue($result->status);
-    }
-
-    private function handleStreamWithSingleHandler(string $streamName, Iterator $events): void
-    {
-        $this->currentStreamName = $streamName;
-        $handler = $this->handler;
-        foreach ($events as $key => $event) {
-            $this->streamPositions[$streamName] = $key;
-            $this->eventCounter++;
-            $result = $handler($this->state, $event);
-            if (is_array($result)) {
-                $this->state = $result;
-            }
-            if ($this->eventCounter === $this->persistBlockSize) {
-                $this->persist();
-                $this->eventCounter = 0;
-            }
-            if ($this->isStopped) {
-                break;
             }
         }
-    }
-
-    private function handleStreamWithHandlers(string $streamName, Iterator $events): void
-    {
-        $this->currentStreamName = $streamName;
-        foreach ($events as $key => $event) {
-            $this->streamPositions[$streamName] = $key;
-            if (! isset($this->handlers[$event->messageName()])) {
-                continue;
-            }
-            $this->eventCounter++;
-            $handler = $this->handlers[$event->messageName()];
-            $result = $handler($this->state, $event);
-            if (is_array($result)) {
-                $this->state = $result;
-            }
-            if ($this->eventCounter === $this->persistBlockSize) {
-                $this->persist();
-                $this->eventCounter = 0;
-            }
-            if ($this->isStopped) {
-                break;
-            }
-        }
-    }
-
-    private function createHandlerContext(?string &$streamName)
-    {
-        return new class($this, $streamName) {
-            private $projector;
-            private $streamName;
-
-            public function __construct(Projector $projector, ?string &$streamName)
-            {
-                $this->projector = $projector;
-                $this->streamName = &$streamName;
-            }
-
-            public function stop(): void
-            {
-                $this->projector->stop();
-            }
-
-            public function linkTo(string $streamName, Message $event): void
-            {
-                $this->projector->linkTo($streamName, $event);
-            }
-
-            public function emit(Message $event): void
-            {
-                $this->projector->emit($event);
-            }
-
-            public function streamName(): ?string
-            {
-                return $this->streamName;
-            }
-        };
-    }
-
-    private function load(): void
-    {
-        $projectionsTable = $this->quoteTableName($this->projectionsTable);
-        $sql = <<<EOT
-SELECT position, state FROM $projectionsTable WHERE name = ? LIMIT 1;
-EOT;
-        $statement = $this->connection->prepare($sql);
-        try {
-            $statement->execute([$this->name]);
-        } catch (PDOException $exception) {
-            // ignore and check error code
-        }
-        if ($statement->errorCode() !== '00000') {
-            throw RuntimeException::fromStatementErrorInfo($statement->errorInfo());
-        }
-        $result = $statement->fetch(PDO::FETCH_OBJ);
-        $this->streamPositions = array_merge($this->streamPositions, json_decode($result->position, true));
-        $state = json_decode($result->state, true);
-        if (! empty($state)) {
-            $this->state = $state;
-        }
-    }
-
-    private function createProjection(): void
-    {
-        $projectionsTable = $this->quoteTableName($this->projectionsTable);
-        $sql = <<<EOT
-INSERT INTO $projectionsTable (name, position, state, status, locked_until)
-VALUES (?, '{}', '{}', ?, NULL);
-EOT;
-        $statement = $this->connection->prepare($sql);
-        try {
-            $statement->execute([$this->name, $this->status->getValue()]);
-        } catch (PDOException $exception) {
-            // ignore and check error code
-        }
-        if ($statement->errorCode() !== '00000') {
-            // we ignore duplicate projection errors
-            $driver = $this->connection->getAttribute(PDO::ATTR_DRIVER_NAME);
-            if (! isset(self::UNIQUE_VIOLATION_ERROR_CODES[$driver]) || self::UNIQUE_VIOLATION_ERROR_CODES[$driver] !== $statement->errorCode()) {
-                throw ProjectionNotCreatedException::with($this->name);
+    
+        private function handleStreamWithHandlers(string $streamName, Iterator $events): void
+        {
+            $this->currentStreamName = $streamName;
+            foreach ($events as $key => $event) {
+                $this->streamPositions[$streamName] = $key;
+                if (! isset($this->handlers[$event->messageName()])) {
+                    continue;
+                }
+                $this->eventCounter++;
+                $handler = $this->handlers[$event->messageName()];
+                $result = $handler($this->state, $event);
+                if (is_array($result)) {
+                    $this->state = $result;
+                }
+                if ($this->eventCounter === $this->persistBlockSize) {
+                    $this->persist();
+                    $this->eventCounter = 0;
+                }
+                if ($this->isStopped) {
+                    break;
+                }
             }
         }
-    }
-
-    private function persist(): void
-    {
-        $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
-        $lockUntilString = $this->createLockUntilString($now);
-        $projectionsTable = $this->quoteTableName($this->projectionsTable);
-        $sql = <<<EOT
-UPDATE $projectionsTable SET position = ?, state = ?, locked_until = ? 
-WHERE name = ?
-EOT;
-        $statement = $this->connection->prepare($sql);
-        try {
-            $statement->execute([
-                json_encode($this->streamPositions),
-                json_encode($this->state),
-                $lockUntilString,
-                $this->name,
-            ]);
-        } catch (PDOException $exception) {
-            // ignore and check error code
+    
+        private function createHandlerContext(?string &$streamName)
+        {
+            return new class($this, $streamName) {
+                private $projector;
+                private $streamName;
+    
+                public function __construct(Projector $projector, ?string &$streamName)
+                {
+                    $this->projector = $projector;
+                    $this->streamName = &$streamName;
+                }
+    
+                public function stop(): void
+                {
+                    $this->projector->stop();
+                }
+    
+                public function linkTo(string $streamName, Message $event): void
+                {
+                    $this->projector->linkTo($streamName, $event);
+                }
+    
+                public function emit(Message $event): void
+                {
+                    $this->projector->emit($event);
+                }
+    
+                public function streamName(): ?string
+                {
+                    return $this->streamName;
+                }
+            };
         }
-        if ($statement->errorCode() !== '00000') {
-            throw RuntimeException::fromStatementErrorInfo($statement->errorInfo());
-        }
-    }
-
-    private function prepareStreamPositions(): void
-    {
-        $streamPositions = [];
-        if (isset($this->query['all'])) {
-            $eventStreamsTable = $this->quoteTableName($this->eventStreamsTable);
+    
+        private function load(): void
+        {
+            $projectionsTable = $this->quoteTableName($this->projectionsTable);
             $sql = <<<EOT
-SELECT real_stream_name FROM $eventStreamsTable WHERE real_stream_name NOT LIKE '$%';
-EOT;
+    SELECT position, state FROM $projectionsTable WHERE name = ? LIMIT 1;
+    EOT;
             $statement = $this->connection->prepare($sql);
             try {
-                $statement->execute();
+                $statement->execute([$this->name]);
             } catch (PDOException $exception) {
                 // ignore and check error code
             }
             if ($statement->errorCode() !== '00000') {
                 throw RuntimeException::fromStatementErrorInfo($statement->errorInfo());
             }
-            while ($row = $statement->fetch(PDO::FETCH_OBJ)) {
-                $streamPositions[$row->real_stream_name] = 0;
+            $result = $statement->fetch(PDO::FETCH_OBJ);
+            $this->streamPositions = array_merge($this->streamPositions, json_decode($result->position, true));
+            $state = json_decode($result->state, true);
+            if (! empty($state)) {
+                $this->state = $state;
             }
-            $this->streamPositions = array_merge($streamPositions, $this->streamPositions);
-
-            return;
         }
-        if (isset($this->query['categories'])) {
-            $rowPlaces = implode(', ', array_fill(0, count($this->query['categories']), '?'));
-            $eventStreamsTable = $this->quoteTableName($this->eventStreamsTable);
+    
+        private function createProjection(): void
+        {
+            $projectionsTable = $this->quoteTableName($this->projectionsTable);
             $sql = <<<EOT
-SELECT real_stream_name FROM $eventStreamsTable WHERE category IN ($rowPlaces);
-EOT;
+    INSERT INTO $projectionsTable (name, position, state, status, locked_until)
+    VALUES (?, '{}', '{}', ?, NULL);
+    EOT;
             $statement = $this->connection->prepare($sql);
             try {
-                $statement->execute($this->query['categories']);
+                $statement->execute([$this->name, $this->status->getValue()]);
+            } catch (PDOException $exception) {
+                // ignore and check error code
+            }
+            if ($statement->errorCode() !== '00000') {
+                // we ignore duplicate projection errors
+                $driver = $this->connection->getAttribute(PDO::ATTR_DRIVER_NAME);
+                if (! isset(self::UNIQUE_VIOLATION_ERROR_CODES[$driver]) || self::UNIQUE_VIOLATION_ERROR_CODES[$driver] !== $statement->errorCode()) {
+                    throw ProjectionNotCreatedException::with($this->name);
+                }
+            }
+        }
+    
+        private function persist(): void
+        {
+            $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
+            $lockUntilString = $this->createLockUntilString($now);
+            $projectionsTable = $this->quoteTableName($this->projectionsTable);
+            $sql = <<<EOT
+    UPDATE $projectionsTable SET position = ?, state = ?, locked_until = ?
+    WHERE name = ?
+    EOT;
+            $statement = $this->connection->prepare($sql);
+            try {
+                $statement->execute([
+                    json_encode($this->streamPositions),
+                    json_encode($this->state),
+                    $lockUntilString,
+                    $this->name,
+                ]);
             } catch (PDOException $exception) {
                 // ignore and check error code
             }
             if ($statement->errorCode() !== '00000') {
                 throw RuntimeException::fromStatementErrorInfo($statement->errorInfo());
             }
-            while ($row = $statement->fetch(PDO::FETCH_OBJ)) {
-                $streamPositions[$row->real_stream_name] = 0;
+        }
+    
+        private function prepareStreamPositions(): void
+        {
+            $streamPositions = [];
+            if (isset($this->query['all'])) {
+                $eventStreamsTable = $this->quoteTableName($this->eventStreamsTable);
+                $sql = <<<EOT
+    SELECT real_stream_name FROM $eventStreamsTable WHERE real_stream_name NOT LIKE '$%';
+    EOT;
+                $statement = $this->connection->prepare($sql);
+                try {
+                    $statement->execute();
+                } catch (PDOException $exception) {
+                    // ignore and check error code
+                }
+                if ($statement->errorCode() !== '00000') {
+                    throw RuntimeException::fromStatementErrorInfo($statement->errorInfo());
+                }
+                while ($row = $statement->fetch(PDO::FETCH_OBJ)) {
+                    $streamPositions[$row->real_stream_name] = 0;
+                }
+                $this->streamPositions = array_merge($streamPositions, $this->streamPositions);
+    
+                return;
+            }
+            if (isset($this->query['categories'])) {
+                $rowPlaces = implode(', ', array_fill(0, count($this->query['categories']), '?'));
+                $eventStreamsTable = $this->quoteTableName($this->eventStreamsTable);
+                $sql = <<<EOT
+    SELECT real_stream_name FROM $eventStreamsTable WHERE category IN ($rowPlaces);
+    EOT;
+                $statement = $this->connection->prepare($sql);
+                try {
+                    $statement->execute($this->query['categories']);
+                } catch (PDOException $exception) {
+                    // ignore and check error code
+                }
+                if ($statement->errorCode() !== '00000') {
+                    throw RuntimeException::fromStatementErrorInfo($statement->errorInfo());
+                }
+                while ($row = $statement->fetch(PDO::FETCH_OBJ)) {
+                    $streamPositions[$row->real_stream_name] = 0;
+                }
+                $this->streamPositions = array_merge($streamPositions, $this->streamPositions);
+    
+                return;
+            }
+            // stream names given
+            foreach ($this->query['streams'] as $streamName) {
+                $streamPositions[$streamName] = 0;
             }
             $this->streamPositions = array_merge($streamPositions, $this->streamPositions);
-
-            return;
         }
-        // stream names given
-        foreach ($this->query['streams'] as $streamName) {
-            $streamPositions[$streamName] = 0;
+    
+        private function createLockUntilString(DateTimeImmutable $from): string
+        {
+            $micros = (string) ((int) $from->format('u') + ($this->lockTimeoutMs * 1000));
+            $secs = substr($micros, 0, -6);
+            if ('' === $secs) {
+                $secs = 0;
+            }
+            $resultMicros = substr($micros, -6);
+    
+            return $from->modify('+' . $secs .' seconds')->format('Y-m-d\TH:i:s') . '.' . $resultMicros;
         }
-        $this->streamPositions = array_merge($streamPositions, $this->streamPositions);
-    }
-
-    private function createLockUntilString(DateTimeImmutable $from): string
-    {
-        $micros = (string) ((int) $from->format('u') + ($this->lockTimeoutMs * 1000));
-        $secs = substr($micros, 0, -6);
-        if ('' === $secs) {
-            $secs = 0;
+    
+        private function shouldUpdateLock(DateTimeImmutable $now): bool
+        {
+            if ($this->lastLockUpdate === null || $this->updateLockThreshold === 0) {
+                return true;
+            }
+            $intervalSeconds = floor($this->updateLockThreshold / 1000);
+            //Create an interval based on seconds
+            $updateLockThreshold = new \DateInterval("PT{$intervalSeconds}S");
+            //and manually add split seconds
+            $updateLockThreshold->f = ($this->updateLockThreshold % 1000) / 1000;
+            $threshold = $this->lastLockUpdate->add($updateLockThreshold);
+    
+            return $threshold <= $now;
         }
-        $resultMicros = substr($micros, -6);
-
-        return $from->modify('+' . $secs .' seconds')->format('Y-m-d\TH:i:s') . '.' . $resultMicros;
-    }
-
-    private function shouldUpdateLock(DateTimeImmutable $now): bool
-    {
-        if ($this->lastLockUpdate === null || $this->updateLockThreshold === 0) {
-            return true;
+    
+        private function quoteTableName(string $tableName): string
+        {
+            switch ($this->vendor) {
+                case 'pgsql':
+                    return '"'.$tableName.'"';
+                default:
+                    return "`$tableName`";
+            }
         }
-        $intervalSeconds = floor($this->updateLockThreshold / 1000);
-        //Create an interval based on seconds
-        $updateLockThreshold = new \DateInterval("PT{$intervalSeconds}S");
-        //and manually add split seconds
-        $updateLockThreshold->f = ($this->updateLockThreshold % 1000) / 1000;
-        $threshold = $this->lastLockUpdate->add($updateLockThreshold);
-
-        return $threshold <= $now;
-    }
-
-    private function quoteTableName(string $tableName): string
-    {
-        switch ($this->vendor) {
-            case 'pgsql':
-                return '"'.$tableName.'"';
-            default:
-                return "`$tableName`";
-        }
-    }
-
-*/
+    
+    */
 }
