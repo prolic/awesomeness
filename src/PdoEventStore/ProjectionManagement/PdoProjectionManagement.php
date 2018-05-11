@@ -487,10 +487,10 @@ SELECT
 FROM
     events e1
 LEFT JOIN events e2
-    ON (e1.link_to = e2.eventId)
+    ON (e1.link_to = e2.event_id)
 LEFT JOIN streams
     ON streams.stream_id = e1.stream_id
-WHERE streams.name = ?
+WHERE streams.stream_name = ?
 AND e1.event_type >= ?
 ORDER BY e1.event_number DESC
 LIMIT ?
