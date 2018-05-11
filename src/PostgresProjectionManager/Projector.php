@@ -138,17 +138,13 @@ class Projector
         $this->settings = $settings;
     }
 
+    /** @throws Throwable */
     public function tryStart(): Promise
     {
-        try {
-            return new Coroutine($this->doTryStart());
-        } catch (Throwable $e) {
-            $this->logger->error($e->getMessage());
-
-            return new Failure($e);
-        }
+        return new Coroutine($this->doTryStart());
     }
 
+    /** @throws Throwable */
     private function doTryStart(): Generator
     {
         yield new Coroutine($this->doLoad());
@@ -158,11 +154,11 @@ class Projector
         }
     }
 
+    /** @throws Throwable */
     private function doLoad(): Generator
     {
-        try {
-            /** @var Statement $statement */
-            $statement = yield $this->postgresPool->prepare(<<<SQL
+        /** @var Statement $statement */
+        $statement = yield $this->postgresPool->prepare(<<<SQL
 SELECT streams.stream_id, streams.mark_deleted, streams.deleted, STRING_AGG(stream_acl.role, ',') as stream_roles
     FROM streams
     LEFT JOIN stream_acl ON streams.stream_id = stream_acl.stream_id AND stream_acl.operation = ?
@@ -170,33 +166,22 @@ SELECT streams.stream_id, streams.mark_deleted, streams.deleted, STRING_AGG(stre
     GROUP BY streams.stream_id, streams.mark_deleted, streams.deleted
     LIMIT 1;
 SQL
-            );
+        );
 
-            /** @var ResultSet $result */
-            $result = yield $statement->execute([
-                StreamOperation::Read,
-                ProjectionNames::ProjectionsStreamPrefix . $this->name,
-            ]);
+        /** @var ResultSet $result */
+        $result = yield $statement->execute([
+            StreamOperation::Read,
+            ProjectionNames::ProjectionsStreamPrefix . $this->name,
+        ]);
 
-            if (! yield $result->advance(ResultSet::FETCH_OBJECT)) {
-                $message = 'Stream id for projection "' . $this->name .'" not found';
-                $this->logger->error($message);
-
-                return new Failure(new Error($message));
-            }
-
-            $data = $result->getCurrent();
-        } catch (Throwable $e) {
-            $this->logger->error($e->getMessage());
-
-            return new Failure($e);
+        if (! yield $result->advance(ResultSet::FETCH_OBJECT)) {
+            throw new Error('Stream id for projection "' . $this->name .'" not found');
         }
 
-        if ($data->mark_deleted || $data->deleted) {
-            $e = Exception\StreamDeleted::with(ProjectionNames::ProjectionsStreamPrefix . $this->name);
-            $this->logger->error($e->getMessage());
+        $data = $result->getCurrent();
 
-            return new Failure($e);
+        if ($data->mark_deleted || $data->deleted) {
+            throw Exception\StreamDeleted::with(ProjectionNames::ProjectionsStreamPrefix . $this->name);
         }
 
         $toCheck = [SystemRoles::All];
@@ -220,101 +205,79 @@ LEFT JOIN events e2
 WHERE e1.stream_id = ?
 ORDER BY e1.event_number DESC
 SQL;
-        try {
-            /** @var Statement $statement */
-            $statement = yield $this->postgresPool->prepare($sql);
+        /** @var Statement $statement */
+        $statement = yield $this->postgresPool->prepare($sql);
 
-            /** @var ResultSet $result */
-            $result = yield $statement->execute([$data->stream_id]);
+        /** @var ResultSet $result */
+        $result = yield $statement->execute([$data->stream_id]);
 
-            while (yield $result->advance(ResultSet::FETCH_OBJECT)) {
-                $event = $result->getCurrent();
-                switch ($event->event_type) {
-                    case ProjectionEventTypes::ProjectionUpdated:
-                        $data = json_decode($event->data, true);
-                        if (0 !== json_last_error()) {
-                            $message = 'Could not json decode event data for projection "' . $this->name . '"';
-                            $this->logger->error($message);
+        while (yield $result->advance(ResultSet::FETCH_OBJECT)) {
+            $event = $result->getCurrent();
+            switch ($event->event_type) {
+                case ProjectionEventTypes::ProjectionUpdated:
+                    $data = json_decode($event->data, true);
+                    if (0 !== json_last_error()) {
+                        throw new Error('Could not json decode event data for projection "' . $this->name . '"');
+                    }
 
-                            return new Failure(new Error($message));
-                        }
-
-                        $this->handlerType = $data['handlerType'];
-                        $this->query = $data['query'];
-                        $this->mode = $data['mode'];
-                        $this->enabled = $data['enabled'] ?? false;
-                        $this->emitEnabled = $data['emitEnabled'];
-                        $this->checkpointsDisabled = $data['checkpointsDisabled'];
-                        $this->trackEmittedStreams = $data['trackEmittedStreams'];
-                        if (isset($data['checkpointAfterMs'])) {
-                            $this->checkpointAfterMs = $data['checkpointAfterMs'];
-                        }
-                        if (isset($data['checkpointHandledThreshold'])) {
-                            $this->checkpointHandledThreshold = $data['checkpointHandledThreshold'];
-                        }
-                        if (isset($data['checkpointUnhandledBytesThreshold'])) {
-                            $this->checkpointUnhandledBytesThreshold = $data['checkpointUnhandledBytesThreshold'];
-                        }
-                        if (isset($data['pendingEventsThreshold'])) {
-                            $this->pendingEventsThreshold = $data['pendingEventsThreshold'];
-                        }
-                        if (isset($data['maxWriteBatchLength'])) {
-                            $this->maxWriteBatchLength = $data['maxWriteBatchLength'];
-                        }
-                        if (isset($data['maxAllowedWritesInFlight'])) {
-                            $this->maxAllowedWritesInFlight = $data['maxAllowedWritesInFlight'];
-                        }
-                        $this->runAs = $data['runAs'];
-                        break;
-                    case '$stopped':
-                        $this->enabled = false;
-                        break;
-                    case '$started':
-                        $this->enabled = true;
-                        break;
-                }
+                    $this->handlerType = $data['handlerType'];
+                    $this->query = $data['query'];
+                    $this->mode = $data['mode'];
+                    $this->enabled = $data['enabled'] ?? false;
+                    $this->emitEnabled = $data['emitEnabled'];
+                    $this->checkpointsDisabled = $data['checkpointsDisabled'];
+                    $this->trackEmittedStreams = $data['trackEmittedStreams'];
+                    if (isset($data['checkpointAfterMs'])) {
+                        $this->checkpointAfterMs = $data['checkpointAfterMs'];
+                    }
+                    if (isset($data['checkpointHandledThreshold'])) {
+                        $this->checkpointHandledThreshold = $data['checkpointHandledThreshold'];
+                    }
+                    if (isset($data['checkpointUnhandledBytesThreshold'])) {
+                        $this->checkpointUnhandledBytesThreshold = $data['checkpointUnhandledBytesThreshold'];
+                    }
+                    if (isset($data['pendingEventsThreshold'])) {
+                        $this->pendingEventsThreshold = $data['pendingEventsThreshold'];
+                    }
+                    if (isset($data['maxWriteBatchLength'])) {
+                        $this->maxWriteBatchLength = $data['maxWriteBatchLength'];
+                    }
+                    if (isset($data['maxAllowedWritesInFlight'])) {
+                        $this->maxAllowedWritesInFlight = $data['maxAllowedWritesInFlight'];
+                    }
+                    $this->runAs = $data['runAs'];
+                    break;
+                case '$stopped':
+                    $this->enabled = false;
+                    break;
+                case '$started':
+                    $this->enabled = true;
+                    break;
             }
+        }
 
-            if ('$system' !== $this->runAs['name']
-                && ! in_array($this->runAs['name'], $toCheck)
-                && (! isset($this->runAs['roles']) || empty(array_intersect($this->runAs['roles'], $toCheck)))
-            ) {
-                $e = Exception\AccessDenied::toStream(ProjectionNames::ProjectionsStreamPrefix . $this->name);
-                $this->logger->error($e->getMessage());
-
-                return new Failure($e);
-            }
-        } catch (Throwable $e) {
-            $this->logger->error($e->getMessage());
-
-            return new Failure($e);
+        if ('$system' !== $this->runAs['name']
+            && ! in_array($this->runAs['name'], $toCheck)
+            && (! isset($this->runAs['roles']) || empty(array_intersect($this->runAs['roles'], $toCheck)))
+        ) {
+            throw Exception\AccessDenied::toStream(ProjectionNames::ProjectionsStreamPrefix . $this->name);
         }
     }
 
+    /** @throws Throwable */
     public function start(): Promise
     {
-        try {
-            if ($this->projectionState->equals(ProjectionState::stopped())) {
-                return new Coroutine($this->doStart());
-            }
-
-            $message = 'Cannot start projection "' . $this->name . '": already ' . $this->projectionState->name();
-            $this->logger->error($message);
-
-            return new Failure(new Error($message));
-        } catch (Throwable $e) {
-            $this->logger->error($e->getMessage());
-
-            return new Failure($e);
+        if (! $this->projectionState->equals(ProjectionState::stopped())) {
+            throw new Error('Cannot start projection "' . $this->name . '": already ' . $this->projectionState->name());
         }
+
+        return new Coroutine($this->doStart());
     }
 
     private function doStart(): Generator
     {
         $this->enabled = true;
         $this->state = ProjectionState::initial();
-
-        yield new Success();
 
         Loop::repeat(100, function (string $watcherId) {
             if ($this->projectionState->equals(ProjectionState::stopping())) {
@@ -325,6 +288,8 @@ SQL;
 
         $this->projectionState = ProjectionState::running();
         $this->logger->debug('Started projection "' . $this->name .'"');
+
+        yield new Success();
     }
 
     /*
