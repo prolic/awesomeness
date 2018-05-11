@@ -314,12 +314,7 @@ SQL;
         $this->enabled = true;
         $this->state = ProjectionState::initial();
 
-        try {
-            yield new Success();
-        } catch (Throwable $e) {
-            $this->logger->error($e->getMessage());
-            yield new Failure($e);
-        }
+        yield new Success();
 
         Loop::repeat(100, function (string $watcherId) {
             if ($this->projectionState->equals(ProjectionState::stopping())) {
