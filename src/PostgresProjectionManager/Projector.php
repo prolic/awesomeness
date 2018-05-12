@@ -885,7 +885,7 @@ SQL;
         $params[] = ++$expectedVersion;
         $params[] = ProjectionEventTypes::ProjectionCheckpoint;
         $params[] = json_encode([
-            '$s' => $this->streamPositions
+            '$s' => $this->streamPositions,
         ]);
         $params[] = '';
         $params[] = $streamId;
