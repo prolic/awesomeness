@@ -38,6 +38,7 @@ use Prooph\PdoEventStore\Internal\StreamOperation;
 use Psr\Log\LoggerInterface as PsrLogger;
 use SplQueue;
 use Throwable;
+use function current;
 
 class Projector
 {
@@ -905,12 +906,12 @@ SQL;
     private function determineReader(): EventReader
     {
         if (isset($this->evaledQuery['streams']) && 1 === count($this->evaledQuery['streams'])) {
-            $streamName = first($this->evaledQuery['streams']);
+            $streamName = current($this->evaledQuery['streams']);
 
             return new StreamEventReader(
                 $this->pool,
                 new SplQueueEventPublisher($this->queue),
-                'Continous' !== $this->mode,
+                'Continuous' !== $this->mode,
                 $streamName,
                 $this->determineStreamId($streamName),
                 0 // @todo check last checkpoint
