@@ -7,6 +7,7 @@ namespace Prooph\PostgresProjectionManager;
 use Amp\Coroutine;
 use Amp\Failure;
 use Amp\Loop;
+use Amp\Postgres\Connection;
 use Amp\Postgres\Pool as PostgresPool;
 use Amp\Postgres\ResultSet;
 use Amp\Postgres\Statement;
@@ -48,6 +49,8 @@ class ProjectionManager
     private $projectors = [];
     /** @var SystemSettings */
     private $settings;
+    /** @var Connection */
+    private $lockConnection;
 
     public function __construct(PostgresPool $pool, PsrLogger $logger)
     {
@@ -77,8 +80,9 @@ class ProjectionManager
         $this->state = self::STARTING;
 
         try {
+            $this->lockConnection = yield $this->postgresPool->extractConnection();
             /** @var Statement $statement */
-            $statement = yield $this->postgresPool->prepare('SELECT PG_TRY_ADVISORY_LOCK(HASHTEXT(:name)) as stream_lock;');
+            $statement = yield $this->lockConnection->prepare('SELECT PG_TRY_ADVISORY_LOCK(HASHTEXT(:name)) as stream_lock;');
             /** @var ResultSet $result */
             $result = yield $statement->execute(['name' => 'projection-manager']);
             yield $result->advance(ResultSet::FETCH_OBJECT);
@@ -86,7 +90,9 @@ class ProjectionManager
             $this->logger->debug(var_export($lock, true));
 
             if (! $lock) {
-                throw new RuntimeException('Could not acquire lock for projection manager');
+                throw new RuntimeException(
+                    'Could not acquire lock for projection manager, another process already running?'
+                );
             }
 
             yield new Coroutine($this->loadSystemSettings());

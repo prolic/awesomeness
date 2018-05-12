@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace Prooph\PostgresProjectionManager;
 
 use Amp\Coroutine;
-use Amp\Failure;
 use Amp\Loop;
-use Amp\Postgres\Pool as PostgresPool;
+use Amp\Postgres\Pool;
 use Amp\Postgres\ResultSet;
 use Amp\Postgres\Statement;
 use Amp\Promise;
@@ -37,6 +36,7 @@ use Prooph\EventStore\RecordedEvent;
 use Prooph\EventStore\SystemSettings;
 use Prooph\PdoEventStore\Internal\StreamOperation;
 use Psr\Log\LoggerInterface as PsrLogger;
+use SplQueue;
 use Throwable;
 
 class Projector
@@ -82,8 +82,10 @@ class Projector
     /** @var DateTimeImmutable */
     private $lastLockUpdate;
 
-    /** @var PostgresPool */
-    private $postgresPool;
+    /** @var SplQueue */
+    private $queue;
+    /** @var Pool */
+    private $pool;
     /** @var string */
     private $name;
     /** @var string */
@@ -122,15 +124,17 @@ class Projector
     private $maxAllowedWritesInFlight = null;
     /** @var array */
     private $runAs;
+    /** @var array */
+    private $evaledQuery = [];
 
     public function __construct(
-        PostgresPool $postgresPool,
+        Pool $pool,
         string $name,
         string $id,
         PsrLogger $logger,
         SystemSettings $settings
     ) {
-        $this->postgresPool = $postgresPool;
+        $this->pool = $pool;
         $this->name = $name;
         $this->id = $id;
         $this->logger = $logger;
@@ -158,7 +162,7 @@ class Projector
     private function doLoad(): Generator
     {
         /** @var Statement $statement */
-        $statement = yield $this->postgresPool->prepare(<<<SQL
+        $statement = yield $this->pool->prepare(<<<SQL
 SELECT streams.stream_id, streams.mark_deleted, streams.deleted, STRING_AGG(stream_acl.role, ',') as stream_roles
     FROM streams
     LEFT JOIN stream_acl ON streams.stream_id = stream_acl.stream_id AND stream_acl.operation = ?
@@ -206,7 +210,7 @@ WHERE e1.stream_id = ?
 ORDER BY e1.event_number DESC
 SQL;
         /** @var Statement $statement */
-        $statement = yield $this->postgresPool->prepare($sql);
+        $statement = yield $this->pool->prepare($sql);
 
         /** @var ResultSet $result */
         $result = yield $statement->execute([$data->stream_id]);
@@ -283,6 +287,7 @@ SQL;
             if ($this->projectionState->equals(ProjectionState::stopping())) {
                 Loop::cancel($watcherId);
                 $this->projectionState = ProjectionState::stopped();
+                $this->logger->debug('Projection "' . $this->name . '" stopped');
             }
         });
 
@@ -304,64 +309,12 @@ SQL;
                 $this->state = $result;
             }
             $this->initCallback = $callback;
-    
+
             return $this;
         }
-    
-        public function fromStream(string $streamName): Projector
-        {
-            if (null !== $this->query) {
-                throw new Exception\RuntimeException('From was already called');
-            }
-            $this->query['streams'][] = $streamName;
-    
-            return $this;
-        }
-    
-        public function fromStreams(string ...$streamNames): Projector
-        {
-            if (null !== $this->query) {
-                throw new Exception\RuntimeException('From was already called');
-            }
-            foreach ($streamNames as $streamName) {
-                $this->query['streams'][] = $streamName;
-            }
-    
-            return $this;
-        }
-    
-        public function fromCategory(string $name): Projector
-        {
-            if (null !== $this->query) {
-                throw new Exception\RuntimeException('From was already called');
-            }
-            $this->query['categories'][] = $name;
-    
-            return $this;
-        }
-    
-        public function fromCategories(string ...$names): Projector
-        {
-            if (null !== $this->query) {
-                throw new Exception\RuntimeException('From was already called');
-            }
-            foreach ($names as $name) {
-                $this->query['categories'][] = $name;
-            }
-    
-            return $this;
-        }
-    
-        public function fromAll(): Projector
-        {
-            if (null !== $this->query) {
-                throw new Exception\RuntimeException('From was already called');
-            }
-            $this->query['all'] = true;
-    
-            return $this;
-        }
-    
+
+
+
         public function when(array $handlers): Projector
         {
             if (null !== $this->handler || ! empty($this->handlers)) {
@@ -376,29 +329,29 @@ SQL;
                 }
                 $this->handlers[$eventName] = Closure::bind($handler, $this->createHandlerContext($this->currentStreamName));
             }
-    
+
             return $this;
         }
-    
+
         public function whenAny(Closure $handler): Projector
         {
             if (null !== $this->handler || ! empty($this->handlers)) {
                 throw new Exception\RuntimeException('When was already called');
             }
             $this->handler = Closure::bind($handler, $this->createHandlerContext($this->currentStreamName));
-    
+
             return $this;
         }
-    
+
         public function emit(string $stream, string $eventType, string $eventBody, string $metadata): void
         {
             $isJson = false;
             json_decode($eventBody);
-    
+
             if (0 === json_last_error()) {
                 $isJson = true;
             }
-    
+
             $this->eventStoreConnection->appendToStream(
                 $stream,
                 ExpectedVersion::Any,
@@ -413,7 +366,7 @@ SQL;
                 ]
             );
         }
-    
+
         public function linkTo(string $stream, RecordedEvent $event, string $metadata = ''): void
         {
             $this->eventStoreConnection->appendToStream(
@@ -431,22 +384,22 @@ SQL;
                 ]
             );
         }
-    
+
         public function reset(): void
         {
             $this->streamPositions = [];
             $callback = $this->initCallback;
             $this->state = [];
-    
+
             if (is_callable($callback)) {
                 $result = $callback();
                 if (is_array($result)) {
                     $this->state = $result;
                 }
             }
-    
+
             $projectionsTable = $this->quoteTableName($this->projectionsTable);
-    
+
             $sql = <<<EOT
     UPDATE $projectionsTable SET position = ?, state = ?, status = ?
     WHERE name = ?
@@ -490,12 +443,12 @@ SQL;
         {
             return $this->state;
         }
-    
+
         public function getName(): string
         {
             return $this->name;
         }
-    
+
         public function delete(bool $deleteEmittedEvents): void
         {
             $projectionsTable = $this->quoteTableName($this->projectionsTable);
@@ -529,7 +482,7 @@ SQL;
             }
             $this->streamPositions = [];
         }
-    
+
         public function run(bool $keepRunning = true): void
         {
             if (null === $this->query
@@ -540,15 +493,15 @@ SQL;
             switch ($this->fetchRemoteStatus()) {
                 case ProjectionStatus::STOPPING():
                     $this->stop();
-    
+
                     return;
                 case ProjectionStatus::DELETING():
                     $this->delete(false);
-    
+
                     return;
                 case ProjectionStatus::DELETING_INCL_EMITTED_EVENTS():
                     $this->delete(true);
-    
+
                     return;
                 case ProjectionStatus::RESETTING():
                     $this->reset();
@@ -587,7 +540,7 @@ SQL;
                         $this->persist();
                     }
                     $this->eventCounter = 0;
-    
+
                     switch ($this->fetchRemoteStatus()) {
                         case ProjectionStatus::STOPPING():
                             $this->stop();
@@ -610,7 +563,7 @@ SQL;
                 $this->releaseLock();
             }
         }
-    
+
         private function fetchRemoteStatus(): ProjectionStatus
         {
             $projectionsTable = $this->quoteTableName($this->projectionsTable);
@@ -634,10 +587,10 @@ SQL;
             if (false === $result) {
                 return ProjectionStatus::RUNNING();
             }
-    
+
             return ProjectionStatus::byValue($result->status);
         }
-    
+
         private function handleStreamWithSingleHandler(string $streamName, Iterator $events): void
         {
             $this->currentStreamName = $streamName;
@@ -658,7 +611,7 @@ SQL;
                 }
             }
         }
-    
+
         private function handleStreamWithHandlers(string $streamName, Iterator $events): void
         {
             $this->currentStreamName = $streamName;
@@ -682,41 +635,41 @@ SQL;
                 }
             }
         }
-    
+
         private function createHandlerContext(?string &$streamName)
         {
             return new class($this, $streamName) {
                 private $projector;
                 private $streamName;
-    
+
                 public function __construct(Projector $projector, ?string &$streamName)
                 {
                     $this->projector = $projector;
                     $this->streamName = &$streamName;
                 }
-    
+
                 public function stop(): void
                 {
                     $this->projector->stop();
                 }
-    
+
                 public function linkTo(string $streamName, Message $event): void
                 {
                     $this->projector->linkTo($streamName, $event);
                 }
-    
+
                 public function emit(Message $event): void
                 {
                     $this->projector->emit($event);
                 }
-    
+
                 public function streamName(): ?string
                 {
                     return $this->streamName;
                 }
             };
         }
-    
+
         private function load(): void
         {
             $projectionsTable = $this->quoteTableName($this->projectionsTable);
@@ -739,7 +692,7 @@ SQL;
                 $this->state = $state;
             }
         }
-    
+
         private function createProjection(): void
         {
             $projectionsTable = $this->quoteTableName($this->projectionsTable);
@@ -761,7 +714,7 @@ SQL;
                 }
             }
         }
-    
+
         private function persist(): void
         {
             $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
@@ -786,7 +739,7 @@ SQL;
                 throw RuntimeException::fromStatementErrorInfo($statement->errorInfo());
             }
         }
-    
+
         private function prepareStreamPositions(): void
         {
             $streamPositions = [];
@@ -808,7 +761,7 @@ SQL;
                     $streamPositions[$row->real_stream_name] = 0;
                 }
                 $this->streamPositions = array_merge($streamPositions, $this->streamPositions);
-    
+
                 return;
             }
             if (isset($this->query['categories'])) {
@@ -830,7 +783,7 @@ SQL;
                     $streamPositions[$row->real_stream_name] = 0;
                 }
                 $this->streamPositions = array_merge($streamPositions, $this->streamPositions);
-    
+
                 return;
             }
             // stream names given
@@ -839,7 +792,7 @@ SQL;
             }
             $this->streamPositions = array_merge($streamPositions, $this->streamPositions);
         }
-    
+
         private function createLockUntilString(DateTimeImmutable $from): string
         {
             $micros = (string) ((int) $from->format('u') + ($this->lockTimeoutMs * 1000));
@@ -848,10 +801,10 @@ SQL;
                 $secs = 0;
             }
             $resultMicros = substr($micros, -6);
-    
+
             return $from->modify('+' . $secs .' seconds')->format('Y-m-d\TH:i:s') . '.' . $resultMicros;
         }
-    
+
         private function shouldUpdateLock(DateTimeImmutable $now): bool
         {
             if ($this->lastLockUpdate === null || $this->updateLockThreshold === 0) {
@@ -863,10 +816,10 @@ SQL;
             //and manually add split seconds
             $updateLockThreshold->f = ($this->updateLockThreshold % 1000) / 1000;
             $threshold = $this->lastLockUpdate->add($updateLockThreshold);
-    
+
             return $threshold <= $now;
         }
-    
+
         private function quoteTableName(string $tableName): string
         {
             switch ($this->vendor) {
@@ -876,6 +829,101 @@ SQL;
                     return "`$tableName`";
             }
         }
-    
+
     */
+
+    private function runQuery(): Generator
+    {
+        eval($this->query);
+
+        $reader = $this->determineReader();
+        yield $reader->requestEvents();
+
+        $paused = false;
+
+        while ($this->enabled) {
+            if (! $this->queue->isEmpty()) {
+                /** @var RecordedEvent $event */
+                $event = $this->queue->dequeue();
+                yield $this->handle($event);
+            }
+
+            if ($this->queue->count() > $this->pendingEventsThreshold) {
+                $reader->pause();
+                $paused = true;
+            } elseif ($paused) {
+                yield $reader->requestEvents();
+            }
+        }
+
+        if (! $paused) {
+            $reader->pause();
+
+            while (! $this->queue->isEmpty()) {
+                /** @var RecordedEvent $event */
+                $event = $this->queue->dequeue();
+                yield $this->handle($event);
+            }
+        }
+    }
+
+    private function fromStream(string $streamName): Projector
+    {
+        $this->evaledQuery = ['streams' => [$streamName]];
+
+        return $this;
+    }
+
+    private function fromStreams(string ...$streamNames): Projector
+    {
+        $this->evaledQuery = ['streams' => $streamNames];
+
+        return $this;
+    }
+
+    private function fromCategory(string $name): Projector
+    {
+        $this->evaledQuery = ['categories' => [$name]];
+
+        return $this;
+    }
+
+    private function fromCategories(string ...$names): Projector
+    {
+        $this->evaledQuery = ['categories' => $names];
+
+        return $this;
+    }
+
+    private function fromAll(): Projector
+    {
+        $this->evaledQuery = ['all' => true];
+
+        return $this;
+    }
+
+    private function determineReader(): EventReader
+    {
+        if (isset($this->evaledQuery['streams']) && 1 === count($this->evaledQuery['streams'])) {
+            $streamName = first($this->evaledQuery['streams']);
+
+            return new StreamEventReader(
+                $this->pool,
+                new SplQueueEventPublisher($this->queue),
+                'Continous' !== $this->mode,
+                $streamName,
+                $this->determineStreamId($streamName),
+                0 // @todo check last checkpoint
+            );
+        }
+
+        // @todo implement
+        throw new Exception\RuntimeException('Not implemented');
+    }
+
+    private function determineStreamId(string $streamName): string
+    {
+        // @todo implement
+        return 'ff';
+    }
 }
