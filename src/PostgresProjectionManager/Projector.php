@@ -100,6 +100,8 @@ class Projector
     private $currentBatchSize = 0;
     /** @var int */
     private $lastCheckPointMs;
+    /** @var string */
+    private $checkPointStreamId;
 
     public function __construct(
         Pool $pool,
@@ -181,7 +183,7 @@ FROM
 LEFT JOIN events e2
     ON (e1.link_to = e2.event_id)
 WHERE e1.stream_id = ?
-ORDER BY e1.event_number DESC
+ORDER BY e1.event_number ASC
 SQL;
         /** @var Statement $statement */
         $statement = yield $this->pool->prepare($sql);
@@ -239,6 +241,44 @@ SQL;
             && (! isset($this->runAs['roles']) || empty(array_intersect($this->runAs['roles'], $toCheck)))
         ) {
             throw Exception\AccessDenied::toStream(ProjectionNames::ProjectionsStreamPrefix . $this->name);
+        }
+
+        $checkpointStream = ProjectionNames::ProjectionsStreamPrefix . $this->name . ProjectionNames::ProjectionCheckpointStreamSuffix;
+
+        $streamId = $this->checkPointStreamId ?? yield $this->determineStreamId($checkpointStream);
+
+        $sql = <<<SQL
+SELECT
+    e2.event_id as event_id,
+    e1.event_number as event_number,
+    COALESCE(e1.event_type, e2.event_type) as event_type,
+    COALESCE(e1.data, e2.data) as data,
+    COALESCE(e1.meta_data, e2.meta_data) as meta_data,
+    COALESCE(e1.is_json, e2.is_json) as is_json,
+    COALESCE(e1.updated, e2.updated) as updated
+FROM
+    events e1
+LEFT JOIN events e2
+    ON (e1.link_to = e2.event_id)
+WHERE e1.stream_id = ?
+ORDER BY e1.event_number DESC
+LIMIT 1;
+SQL;
+        /** @var Statement $statement */
+        $statement = yield $this->pool->prepare($sql);
+
+        /** @var ResultSet $result */
+        $result = yield $statement->execute([$streamId]);
+
+        if (yield $result->advance(ResultSet::FETCH_OBJECT)) {
+            $data = $result->getCurrent();
+            $streamPositions = json_decode($data, true);
+
+            if (0 !== json_last_error()) {
+                throw new Exception\RuntimeException('Could not json decode checkpoint for ' . $this->name);
+            }
+
+            $this->streamPositions = $streamPositions['$s'];
         }
     }
 
@@ -841,7 +881,7 @@ SQL;
         $connection = yield $this->pool->extractConnection();
 
         try {
-            $streamId = yield $this->determineStreamId($checkpointStream);
+            $streamId = $this->checkPointStreamId ?? yield $this->determineStreamId($checkpointStream);
         } catch (StreamNotFound $e) {
             $streamId = Uuid::uuid4()->toString();
             /** @var Statement $statement */
