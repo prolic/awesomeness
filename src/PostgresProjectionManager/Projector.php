@@ -13,6 +13,7 @@ use Amp\Postgres\ResultSet;
 use Amp\Postgres\Statement;
 use Amp\Promise;
 use Amp\Success;
+use Closure;
 use DateTimeImmutable;
 use DateTimeZone;
 use Error;
@@ -323,11 +324,8 @@ SQL;
                 throw new Exception\RuntimeException('Invalid argument passed to when()');
             }
 
-            // @todo check this
-            //$this->handlers[$name] = Closure::bind($callback, $this->createHandlerContext($this->currentStreamName));
+            $this->handlers[$name] = Closure::bind($callback, $this->createHandlerContext());
         }
-
-        $this->handlers = $handlers;
 
         return $this;
     }
@@ -1082,5 +1080,32 @@ SQL
         if (! $lock) {
             throw new Exception\RuntimeException('Could not release lock for ' . $name);
         }
+    }
+
+    private function createHandlerContext(): object
+    {
+        return new class($this) {
+            private $projector;
+
+            public function __construct(Projector $projector)
+            {
+                $this->projector = $projector;
+            }
+
+            public function stop(): void
+            {
+                $this->projector->stop();
+            }
+
+            public function linkTo(string $streamName, RecordedEvent $event, string $metadata = ''): void
+            {
+                $this->projector->linkTo($streamName, $event, $metadata);
+            }
+
+            public function emit(string $streamName, string $eventType, string $data, string $metadata = ''): void
+            {
+                $this->projector->emit($streamName, $eventType, $data, $metadata);
+            }
+        };
     }
 }
