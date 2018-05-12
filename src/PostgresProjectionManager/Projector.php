@@ -13,6 +13,7 @@ use Amp\Postgres\ResultSet;
 use Amp\Postgres\Statement;
 use Amp\Promise;
 use Amp\Success;
+use cash\LRUCache;
 use Closure;
 use DateTimeImmutable;
 use DateTimeZone;
@@ -101,8 +102,8 @@ class Projector
     private $currentBatchSize = 0;
     /** @var int */
     private $lastCheckPointMs;
-    /** @var string */
-    private $checkPointStreamId;
+    /** @var LRUCache */
+    private $knownStreamIds;
 
     public function __construct(
         Pool $pool,
@@ -117,6 +118,7 @@ class Projector
         $this->logger = $logger;
         $this->projectionState = ProjectionState::stopped();
         $this->settings = $settings;
+        $this->knownStreamIds = new LRUCache(1000);
     }
 
     /** @throws Throwable */
@@ -246,9 +248,10 @@ SQL;
 
         $checkpointStream = ProjectionNames::ProjectionsStreamPrefix . $this->name . ProjectionNames::ProjectionCheckpointStreamSuffix;
 
-        $streamId = $this->checkPointStreamId ?? yield $this->determineStreamId($checkpointStream);
+        try {
+            $streamId = $this->knownStreamIds->get($checkpointStream) ?? yield $this->determineStreamId($checkpointStream);
 
-        $sql = <<<SQL
+            $sql = <<<SQL
 SELECT
     e2.event_id as event_id,
     e1.event_number as event_number,
@@ -265,21 +268,24 @@ WHERE e1.stream_id = ?
 ORDER BY e1.event_number DESC
 LIMIT 1;
 SQL;
-        /** @var Statement $statement */
-        $statement = yield $this->pool->prepare($sql);
+            /** @var Statement $statement */
+            $statement = yield $this->pool->prepare($sql);
 
-        /** @var ResultSet $result */
-        $result = yield $statement->execute([$streamId]);
+            /** @var ResultSet $result */
+            $result = yield $statement->execute([$streamId]);
 
-        if (yield $result->advance(ResultSet::FETCH_OBJECT)) {
-            $data = $result->getCurrent();
-            $streamPositions = json_decode($data, true);
+            if (yield $result->advance(ResultSet::FETCH_OBJECT)) {
+                $data = $result->getCurrent();
+                $streamPositions = json_decode($data, true);
 
-            if (0 !== json_last_error()) {
-                throw new Exception\RuntimeException('Could not json decode checkpoint for ' . $this->name);
+                if (0 !== json_last_error()) {
+                    throw new Exception\RuntimeException('Could not json decode checkpoint for ' . $this->name);
+                }
+
+                $this->streamPositions = $streamPositions['$s'];
             }
-
-            $this->streamPositions = $streamPositions['$s'];
+        } catch (StreamNotFound $e) {
+            // ignore, no checkpoint found
         }
     }
 
@@ -317,6 +323,89 @@ SQL;
         return yield new Success();
     }
 
+    public function emit(string $stream, string $eventType, string $data, string $metadata): Promise
+    {
+        return new Coroutine($this->doEmit($stream, $eventType, $data, $metadata));
+    }
+
+    private function doEmit(string $stream, string $eventType, string $data, string $metadata): Generator
+    {
+        $isJson = false;
+        json_decode($data);
+
+        if (0 === json_last_error()) {
+            $isJson = true;
+        }
+
+        $connection = yield $this->pool->extractConnection();
+
+        yield new Coroutine($this->acquireLock($connection, $stream));
+
+        $expectedVersion = ExpectedVersion::NoStream;
+
+        try {
+            $streamId = yield $this->determineStreamId($stream);
+
+            /** @var Statement $statement */
+            $statement = yield $connection->prepare(<<<SQL
+SELECT MAX(event_number) as current_version FROM events WHERE stream_id = ?
+SQL
+            );
+            /** @var ResultSet $result */
+            $result = yield $statement->execute([$streamId]);
+
+            while (yield $result->advance(ResultSet::FETCH_OBJECT)) {
+                $data = $result->getCurrent();
+                $expectedVersion = $data->current_version;
+            }
+        } catch (StreamNotFound $e) {
+            $streamId = Uuid::uuid4()->toString();
+            /** @var Statement $statement */
+            $statement = yield $connection->prepare(<<<SQL
+INSERT INTO streams (stream_id, stream_name, mark_deleted, deleted) VALUES (?, ?, ?, ?);
+SQL
+            );
+            /** @var CommandResult $result */
+            $result = yield $statement->execute([$streamId, $stream, 0, 0]);
+
+            if (0 === $result->affectedRows()) {
+                throw new Exception\RuntimeException('Could not create stream id for ' . $stream);
+            }
+        }
+
+        $sql = <<<SQL
+INSERT INTO events (event_id, event_number, event_type, data, meta_data, stream_id, is_json, updated)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+SQL;
+        $now = new DateTimeImmutable('NOW', new DateTimeZone('UTC'));
+        $now = DateTimeUtil::format($now);
+
+        $params[] = EventId::generate();
+        $params[] = ++$expectedVersion;
+        $params[] = $eventType;
+        $params[] = $data;
+        $params[] = $metadata;
+        $params[] = $streamId;
+        $params[] = $isJson;
+        $params[] = $now;
+
+        /** @var Statement $statement */
+        $statement = yield $connection->prepare($sql);
+        /** @var CommandResult $result */
+        $result = yield $statement->execute($params);
+
+        if (0 === $result->affectedRows()) {
+            throw new Exception\RuntimeException('Could not emit to stream ' . $streamId);
+        }
+
+        yield new Coroutine($this->releaseLock($connection, $stream));
+    }
+
+    public function linkTo(string $stream, RecordedEvent $event, string $metadata = ''): Promise
+    {
+        //@todo implement
+    }
+
     private function when(array $handlers): Projector
     {
         foreach ($handlers as $name => $callback) {
@@ -331,48 +420,6 @@ SQL;
     }
 
     /*
-        public function emit(string $stream, string $eventType, string $eventBody, string $metadata): void
-        {
-            $isJson = false;
-            json_decode($eventBody);
-
-            if (0 === json_last_error()) {
-                $isJson = true;
-            }
-
-            $this->eventStoreConnection->appendToStream(
-                $stream,
-                ExpectedVersion::Any,
-                [
-                    new EventData(
-                        EventId::generate(),
-                        $eventType,
-                        $isJson,
-                        $eventBody,
-                        $metadata
-                    ),
-                ]
-            );
-        }
-
-        public function linkTo(string $stream, RecordedEvent $event, string $metadata = ''): void
-        {
-            $this->eventStoreConnection->appendToStream(
-                $stream,
-                ExpectedVersion::Any,
-                [
-                    // @todo link to real event
-                    new EventData(
-                        EventId::generate(),
-                        SystemEventTypes::LinkTo,
-                        false,
-                        $event->eventNumber() . '@' . $event->streamId(),
-                        $metadata
-                    ),
-                ]
-            );
-        }
-
         public function reset(): void
         {
             $this->streamPositions = [];
@@ -568,7 +615,7 @@ SQL;
         $connection = yield $this->pool->extractConnection();
 
         try {
-            $streamId = $this->checkPointStreamId ?? yield $this->determineStreamId($checkpointStream);
+            $streamId = $this->knownStreamIds->get($checkpointStream) ?? yield $this->determineStreamId($checkpointStream);
         } catch (StreamNotFound $e) {
             $streamId = Uuid::uuid4()->toString();
             /** @var Statement $statement */
@@ -684,7 +731,7 @@ SQL;
                 $this->streamPositions[$streamName] = 0;
             }
 
-            $streamId = yield $this->determineStreamId($streamName);
+            $streamId = $this->knownStreamIds->get($streamName) ?? yield $this->determineStreamId($streamName);
 
             return yield new Success(new StreamEventReader(
                 $this->pool,
