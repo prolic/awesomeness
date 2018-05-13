@@ -19,6 +19,7 @@ use DateTimeImmutable;
 use DateTimeZone;
 use Error;
 use Generator;
+use Prooph\EventStore\Common\SystemEventTypes;
 use Prooph\EventStore\Common\SystemRoles;
 use Prooph\EventStore\EventId;
 use Prooph\EventStore\Exception;
@@ -119,6 +120,7 @@ class Projector
         $this->projectionState = ProjectionState::stopped();
         $this->settings = $settings;
         $this->knownStreamIds = new LRUCache(1000);
+        $this->queue = new SplQueue();
     }
 
     /** @throws Throwable */
@@ -229,6 +231,7 @@ SQL;
                         $this->maxAllowedWritesInFlight = $data['maxAllowedWritesInFlight'];
                     }
                     $this->runAs = $data['runAs'];
+                    $this->runAs['roles'][] = '$all';
                     break;
                 case '$stopped':
                     $this->enabled = false;
@@ -249,7 +252,12 @@ SQL;
         $checkpointStream = ProjectionNames::ProjectionsStreamPrefix . $this->name . ProjectionNames::ProjectionCheckpointStreamSuffix;
 
         try {
-            $streamId = $this->knownStreamIds->get($checkpointStream) ?? yield $this->determineStreamId($checkpointStream);
+            $streamId = $this->knownStreamIds->get($checkpointStream);
+
+            if (! $streamId) {
+                $streamId = yield $this->determineStreamId($checkpointStream);
+                $this->knownStreamIds->put($checkpointStream, $streamId);
+            }
 
             $sql = <<<SQL
 SELECT
@@ -315,12 +323,12 @@ SQL;
 
         $this->lastCheckPointMs = microtime(true) * 10000;
 
-        yield from $this->runQuery();
+        yield new Coroutine($this->runQuery());
 
         $this->projectionState = ProjectionState::running();
         $this->logger->debug('Started projection "' . $this->name .'"');
 
-        return yield new Success();
+        return null;
     }
 
     public function emit(string $stream, string $eventType, string $data, string $metadata): Promise
@@ -344,7 +352,12 @@ SQL;
         $expectedVersion = ExpectedVersion::NoStream;
 
         try {
-            $streamId = yield $this->determineStreamId($stream);
+            $streamId = $this->knownStreamIds->get($stream);
+
+            if (! $streamId) {
+                $streamId = yield $this->determineStreamId($stream);
+                $this->knownStreamIds->put($stream, $streamId);
+            }
 
             /** @var Statement $statement */
             $statement = yield $connection->prepare(<<<SQL
@@ -355,8 +368,7 @@ SQL
             $result = yield $statement->execute([$streamId]);
 
             while (yield $result->advance(ResultSet::FETCH_OBJECT)) {
-                $data = $result->getCurrent();
-                $expectedVersion = $data->current_version;
+                $expectedVersion = $result->getCurrent()->current_version;
             }
         } catch (StreamNotFound $e) {
             $streamId = Uuid::uuid4()->toString();
@@ -395,7 +407,7 @@ SQL;
         $result = yield $statement->execute($params);
 
         if (0 === $result->affectedRows()) {
-            throw new Exception\RuntimeException('Could not emit to stream ' . $streamId);
+            throw new Exception\RuntimeException('Could not emit to stream ' . $stream);
         }
 
         yield new Coroutine($this->releaseLock($connection, $stream));
@@ -403,7 +415,78 @@ SQL;
 
     public function linkTo(string $stream, RecordedEvent $event, string $metadata = ''): Promise
     {
-        //@todo implement
+        return new Coroutine($this->doLinkTo($stream, $event, $metadata));
+    }
+
+    public function doLinkTo(string $stream, RecordedEvent $event, string $metadata = ''): Generator
+    {
+        $connection = yield $this->pool->extractConnection();
+
+        yield new Coroutine($this->acquireLock($connection, $stream));
+
+        $expectedVersion = ExpectedVersion::NoStream;
+
+        try {
+            $streamId = $this->knownStreamIds->get($stream);
+
+            if (! $streamId) {
+                $streamId = yield $this->determineStreamId($stream);
+                $this->knownStreamIds->put($stream, $streamId);
+            }
+
+            /** @var Statement $statement */
+            $statement = yield $connection->prepare(<<<SQL
+SELECT MAX(event_number) as current_version FROM events WHERE stream_id = ?
+SQL
+            );
+            /** @var ResultSet $result */
+            $result = yield $statement->execute([$streamId]);
+
+            while (yield $result->advance(ResultSet::FETCH_OBJECT)) {
+                $expectedVersion = $result->getCurrent()->current_version;
+            }
+        } catch (StreamNotFound $e) {
+            $streamId = Uuid::uuid4()->toString();
+            /** @var Statement $statement */
+            $statement = yield $connection->prepare(<<<SQL
+INSERT INTO streams (stream_id, stream_name, mark_deleted, deleted) VALUES (?, ?, ?, ?);
+SQL
+            );
+            /** @var CommandResult $result */
+            $result = yield $statement->execute([$streamId, $stream, 0, 0]);
+
+            if (0 === $result->affectedRows()) {
+                throw new Exception\RuntimeException('Could not create stream id for ' . $stream);
+            }
+        }
+
+        $sql = <<<SQL
+INSERT INTO events (event_id, event_number, event_type, data, meta_data, stream_id, is_json, updated, link_to)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+SQL;
+        $now = new DateTimeImmutable('NOW', new DateTimeZone('UTC'));
+        $now = DateTimeUtil::format($now);
+
+        $params[] = EventId::generate();
+        $params[] = ++$expectedVersion;
+        $params[] = SystemEventTypes::LinkTo;
+        $params[] = $expectedVersion . '@' . $stream;
+        $params[] = '';
+        $params[] = $streamId;
+        $params[] = $event->isJson();
+        $params[] = $now;
+        $params[] = $event->eventId()->toString();
+
+        /** @var Statement $statement */
+        $statement = yield $connection->prepare($sql);
+        /** @var CommandResult $result */
+        $result = yield $statement->execute($params);
+
+        if (0 === $result->affectedRows()) {
+            throw new Exception\RuntimeException('Could not link to stream ' . $stream);
+        }
+
+        yield new Coroutine($this->releaseLock($connection, $stream));
     }
 
     private function when(array $handlers): Projector
@@ -562,6 +645,10 @@ SQL;
                 yield $this->handle($event);
             }
         }
+
+        if ($this->currentBatchSize > 0) {
+            yield from $this->writeCheckPoint();
+        }
     }
 
     /** @throws Throwable */
@@ -615,7 +702,12 @@ SQL;
         $connection = yield $this->pool->extractConnection();
 
         try {
-            $streamId = $this->knownStreamIds->get($checkpointStream) ?? yield $this->determineStreamId($checkpointStream);
+            $streamId = $this->knownStreamIds->get($checkpointStream);
+
+            if (! $streamId) {
+                $streamId = yield $this->determineStreamId($checkpointStream);
+                $this->knownStreamIds->put($checkpointStream, $streamId);
+            }
         } catch (StreamNotFound $e) {
             $streamId = Uuid::uuid4()->toString();
             /** @var Statement $statement */
@@ -731,7 +823,12 @@ SQL;
                 $this->streamPositions[$streamName] = 0;
             }
 
-            $streamId = $this->knownStreamIds->get($streamName) ?? yield $this->determineStreamId($streamName);
+            $streamId = $this->knownStreamIds->get($streamName);
+
+            if (! $streamId) {
+                $streamId = yield $this->determineStreamId($streamName);
+                $this->knownStreamIds->put($streamName, $streamId);
+            }
 
             return yield new Success(new StreamEventReader(
                 $this->pool,

@@ -200,13 +200,22 @@ SQL
         }
     }
 
-    public function stopProjection(string $name): Promise
+    public function disableProjection(string $name): Promise
     {
         if (! isset($this->projectors[$name])) {
             return new Failure(ProjectionNotFound::withName($name));
         }
 
         return $this->projectors[$name]->stop();
+    }
+
+    public function enableProjection(string $name): Promise
+    {
+        if (! isset($this->projectors[$name])) {
+            return new Failure(ProjectionNotFound::withName($name));
+        }
+
+        return $this->projectors[$name]->start();
     }
 
     private function doStop(int $timeout): Generator

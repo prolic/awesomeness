@@ -17,15 +17,19 @@ use Amp\Log\StreamHandler;
 use Amp\Loop;
 use Amp\Postgres\Pool as PostgresPool;
 use Amp\Socket;
+use DateTimeZone;
 use Monolog\Logger;
 use Prooph\PostgresProjectionManager\Http\RequestHandler;
+
+Logger::setTimezone(new DateTimeZone('UTC'));
 
 Loop::run(function () {
     // start projection manager
     $logHandler = new StreamHandler(new ResourceOutputStream(\STDOUT));
     $logHandler->setFormatter(new ConsoleFormatter());
+    $logHandler->setLevel(Logger::DEBUG);
 
-    $logger = new Logger('projection-manager');
+    $logger = new Logger('PROJECTIONS');
     $logger->pushHandler($logHandler);
 
     $postgresPool = new PostgresPool('host=localhost user=postgres dbname=new_event_store password=postgres');
@@ -41,16 +45,17 @@ Loop::run(function () {
 
     $logHandler = new StreamHandler(new ResourceOutputStream(\STDOUT));
     $logHandler->setFormatter(new ConsoleFormatter());
+    $logHandler->setLevel(Logger::DEBUG);
 
-    $logger = new Logger('http-server');
+    $logger = new Logger('HTTP');
     $logger->pushHandler($logHandler);
 
     $router = new Router();
     $router->addRoute('GET', '/', new CallableRequestHandler(function () {
         return new Response(Status::OK, ['content-type' => 'text/plain'], 'Prooph PDO Projection Manager');
     }));
-    $router->addRoute('GET', '/projection/{name}/command/stop', new RequestHandler\StopProjectionRequestHandler($projectionManager));
-    // @todo add other routes
+    $router->addRoute('GET', '/projection/{name}/command/disable', new RequestHandler\DisableProjectionRequestHandler($projectionManager));
+    $router->addRoute('GET', '/projection/{name}/command/enable', new RequestHandler\EnableProjectionRequestHandler($projectionManager));
 
     $server = new Server($servers, $router, $logger);
     yield $server->start();

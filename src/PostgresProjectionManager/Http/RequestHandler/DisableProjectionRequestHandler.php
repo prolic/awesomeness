@@ -12,7 +12,7 @@ use Amp\Promise;
 use Prooph\PostgresProjectionManager\ProjectionManager;
 use function Amp\call;
 
-class StopProjectionRequestHandler implements RequestHandler
+class DisableProjectionRequestHandler implements RequestHandler
 {
     /** @var ProjectionManager */
     private $projectionManager;
@@ -29,7 +29,7 @@ class StopProjectionRequestHandler implements RequestHandler
 
         return call(function () use ($name) {
             try {
-                yield $this->projectionManager->stopProjection($name);
+                yield $this->projectionManager->disableProjection($name);
             } catch (\Throwable $e) {
                 return new Response(404, ['Content-Type' => 'text/html'], 'Not found');
             }
