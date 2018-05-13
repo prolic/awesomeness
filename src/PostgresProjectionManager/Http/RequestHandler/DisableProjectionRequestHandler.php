@@ -9,7 +9,7 @@ use Amp\Http\Server\RequestHandler;
 use Amp\Http\Server\Response;
 use Amp\Http\Server\Router;
 use Amp\Promise;
-use Prooph\PostgresProjectionManager\ProjectionManager;
+use Prooph\PostgresProjectionManager\Internal\ProjectionManager;
 use function Amp\call;
 
 class DisableProjectionRequestHandler implements RequestHandler

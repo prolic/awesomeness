@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Prooph\PostgresProjectionManager;
+namespace Prooph\PostgresProjectionManager\Internal;
 
 use Amp\Coroutine;
 use Amp\Failure;
@@ -45,7 +45,7 @@ class ProjectionManager
     private $postgresPool;
     /** @var PsrLogger */
     private $logger;
-    /** @var Projector[] */
+    /** @var array */
     private $projectors = [];
     /** @var SystemSettings */
     private $settings;

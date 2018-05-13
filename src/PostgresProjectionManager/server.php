@@ -33,7 +33,7 @@ Loop::run(function () {
     $logger->pushHandler($logHandler);
 
     $postgresPool = new PostgresPool('host=localhost user=postgres dbname=new_event_store password=postgres');
-    $projectionManager = new ProjectionManager($postgresPool, $logger);
+    $projectionManager = new Internal\ProjectionManager($postgresPool, $logger);
 
     yield $projectionManager->start();
 

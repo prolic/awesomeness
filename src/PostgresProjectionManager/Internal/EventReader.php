@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Prooph\PostgresProjectionManager;
+namespace Prooph\PostgresProjectionManager\Internal;
 
 use Amp\Coroutine;
 use Amp\Postgres\Pool;
