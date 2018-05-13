@@ -93,6 +93,16 @@ EventStore
 - [x] AsyncUserManagement interface
 - [ ] Remove Write Result classes (if no use-case found)
 - [ ] Scavenging
+- [ ] By Correlation ID Stream (https://github.com/EventStore/EventStore/pull/1622)
+      in JS:
+      fromAll().
+        when({
+            $any : function(s,e) {
+                if(e.metadata.correlationId) {
+                    linkTo("MyCorrelationId-" + e.metadata.correlationId, e);
+                }
+        })
+
 
 HttpEventStore
 
