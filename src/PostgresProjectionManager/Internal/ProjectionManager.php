@@ -8,7 +8,7 @@ use Amp\Coroutine;
 use Amp\Failure;
 use Amp\Loop;
 use Amp\Postgres\Connection;
-use Amp\Postgres\Pool as PostgresPool;
+use Amp\Postgres\Pool;
 use Amp\Postgres\ResultSet;
 use Amp\Postgres\Statement;
 use Amp\Promise;
@@ -41,8 +41,8 @@ class ProjectionManager
 
     /** @var int */
     private $state = self::STOPPED;
-    /** @var PostgresPool */
-    private $postgresPool;
+    /** @var Pool */
+    private $pool;
     /** @var PsrLogger */
     private $logger;
     /** @var array */
@@ -52,9 +52,9 @@ class ProjectionManager
     /** @var Connection */
     private $lockConnection;
 
-    public function __construct(PostgresPool $pool, PsrLogger $logger)
+    public function __construct(Pool $pool, PsrLogger $logger)
     {
-        $this->postgresPool = $pool;
+        $this->pool = $pool;
         $this->logger = $logger;
     }
 
@@ -80,7 +80,7 @@ class ProjectionManager
         $this->state = self::STARTING;
 
         try {
-            $this->lockConnection = yield $this->postgresPool->extractConnection();
+            $this->lockConnection = yield $this->pool->extractConnection();
             /** @var Statement $statement */
             $statement = yield $this->lockConnection->prepare('SELECT PG_TRY_ADVISORY_LOCK(HASHTEXT(:name)) as stream_lock;');
             /** @var ResultSet $result */
@@ -98,13 +98,13 @@ class ProjectionManager
             yield new Coroutine($this->loadSystemSettings());
 
             /** @var ResultSet $result */
-            $result = yield $this->postgresPool->execute('SELECT projection_id, projection_name from projections;');
+            $result = yield $this->pool->execute('SELECT projection_id, projection_name from projections;');
 
             while (yield $result->advance(ResultSet::FETCH_OBJECT)) {
                 $projectionName = $result->getCurrent()->projection_name;
                 $projectionId = $result->getCurrent()->projection_id;
 
-                $projector = new Projector($this->postgresPool, $projectionName, $projectionId, $this->logger, $this->settings);
+                $projector = new Projector($this->pool, $projectionName, $projectionId, $this->logger, $this->settings);
                 $this->projectors[$projectionName] = $projector;
 
                 yield $projector->tryStart();
@@ -123,7 +123,7 @@ class ProjectionManager
     private function loadSystemSettings(): Generator
     {
         /** @var Statement $statement */
-        $statement = yield $this->postgresPool->prepare(<<<SQL
+        $statement = yield $this->pool->prepare(<<<SQL
 SELECT * FROM streams WHERE stream_name = ?
 SQL
         );
@@ -139,7 +139,7 @@ SQL
         $streamData = $result->getCurrent();
 
         /** @var Statement $statement */
-        $statement = yield $this->postgresPool->prepare(<<<SQL
+        $statement = yield $this->pool->prepare(<<<SQL
 SELECT
     COALESCE(e1.event_id, e2.event_id) as event_id,
     e1.event_number as event_number,
