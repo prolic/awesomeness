@@ -119,27 +119,27 @@ class ProjectionManager
         }
     }
 
+    /** @throws Throwable */
     private function loadSystemSettings(): Generator
     {
-        try {
-            /** @var Statement $statement */
-            $statement = yield $this->postgresPool->prepare(<<<SQL
+        /** @var Statement $statement */
+        $statement = yield $this->postgresPool->prepare(<<<SQL
 SELECT * FROM streams WHERE stream_name = ?
 SQL
-            );
-            /** @var ResultSet $result */
-            $result = yield $statement->execute([SystemStreams::SettingsStream]);
+        );
+        /** @var ResultSet $result */
+        $result = yield $statement->execute([SystemStreams::SettingsStream]);
 
-            if (! yield $result->advance(ResultSet::FETCH_OBJECT)) {
-                $this->settings = SystemSettings::default();
+        if (! yield $result->advance(ResultSet::FETCH_OBJECT)) {
+            $this->settings = SystemSettings::default();
 
-                return new Success();
-            }
+            return null;
+        }
 
-            $streamData = $result->getCurrent();
+        $streamData = $result->getCurrent();
 
-            /** @var Statement $statement */
-            $statement = yield $this->postgresPool->prepare(<<<SQL
+        /** @var Statement $statement */
+        $statement = yield $this->postgresPool->prepare(<<<SQL
 SELECT
     COALESCE(e1.event_id, e2.event_id) as event_id,
     e1.event_number as event_number,
@@ -156,35 +156,27 @@ WHERE e1.stream_id = ?
 ORDER BY e1.event_number DESC
 LIMIT 1
 SQL
-            );
-            /** @var ResultSet $result */
-            $result = yield $statement->execute([$streamData->stream_id]);
+        );
+        /** @var ResultSet $result */
+        $result = yield $statement->execute([$streamData->stream_id]);
 
-            if (! yield $result->advance(ResultSet::FETCH_OBJECT)) {
-                $this->settings = SystemSettings::default();
+        if (! yield $result->advance(ResultSet::FETCH_OBJECT)) {
+            $this->settings = SystemSettings::default();
 
-                return new Success();
-            }
-
-            $event = $result->getCurrent();
-
-            $data = json_decode($event->data, true);
-
-            if (0 !== json_last_error()) {
-                $message = 'Could not json decode system settings';
-                $this->logger->error($message);
-
-                return new Failure(new Error($message));
-            }
-
-            $this->settings = SystemSettings::fromArray($data);
-
-            return new Success();
-        } catch (Throwable $e) {
-            $this->logger->error($e);
-
-            return new Failure($e);
+            return null;
         }
+
+        $event = $result->getCurrent();
+
+        $data = json_decode($event->data, true);
+
+        if (0 !== json_last_error()) {
+            throw new Error('Could not json decode system settings');
+        }
+
+        $this->settings = SystemSettings::fromArray($data);
+
+        return null;
     }
 
     /**
