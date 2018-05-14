@@ -29,7 +29,6 @@ use Prooph\EventStore\Projections\ProjectionEventTypes;
 use Prooph\EventStore\Projections\ProjectionNames;
 use Prooph\EventStore\Projections\ProjectionState;
 use Prooph\EventStore\RecordedEvent;
-use Prooph\EventStore\SystemSettings;
 use Prooph\PdoEventStore\Internal\StreamOperation;
 use Prooph\PostgresProjectionManager\Internal\Exception\StreamNotFound;
 use Psr\Log\LoggerInterface as PsrLogger;
@@ -59,8 +58,6 @@ class Projector
     private $id;
     /** @var PsrLogger */
     private $logger;
-    /** @var SystemSettings */
-    private $settings;
     /** @var ProjectionState */
     private $projectionState;
     /** @var string */
@@ -110,15 +107,13 @@ class Projector
         Pool $pool,
         string $name,
         string $id,
-        PsrLogger $logger,
-        SystemSettings $settings
+        PsrLogger $logger
     ) {
         $this->pool = $pool;
         $this->name = $name;
         $this->id = $id;
         $this->logger = $logger;
         $this->projectionState = ProjectionState::stopped();
-        $this->settings = $settings;
         $this->knownStreamIds = new LRUCache(1000);
         $this->queue = new SplQueue();
     }
@@ -142,6 +137,7 @@ class Projector
     /** @throws Throwable */
     private function doLoad(): Generator
     {
+        $this->logger->debug('begin load');
         /** @var Statement $statement */
         $statement = yield $this->pool->prepare(<<<SQL
 SELECT streams.stream_id, streams.mark_deleted, streams.deleted, STRING_AGG(stream_acl.role, ',') as stream_roles
@@ -197,6 +193,7 @@ SQL;
         $result = yield $statement->execute([$data->stream_id]);
 
         while (yield $result->advance(ResultSet::FETCH_OBJECT)) {
+            $this->logger->debug('found projection config');
             $event = $result->getCurrent();
             switch ($event->event_type) {
                 case ProjectionEventTypes::ProjectionUpdated:
@@ -241,6 +238,8 @@ SQL;
                     break;
             }
         }
+
+        $this->logger->debug('checking ACL');
 
         if ('$system' !== $this->runAs['name']
             && ! in_array($this->runAs['name'], $toCheck)
@@ -295,6 +294,8 @@ SQL;
         } catch (StreamNotFound $e) {
             // ignore, no checkpoint found
         }
+
+        $this->logger->debug('loaded');
     }
 
     /** @throws Throwable */
@@ -331,11 +332,13 @@ SQL;
         return null;
     }
 
+    /** @throws Throwable */
     public function emit(string $stream, string $eventType, string $data, string $metadata): Promise
     {
         return new Coroutine($this->doEmit($stream, $eventType, $data, $metadata));
     }
 
+    /** @throws Throwable */
     private function doEmit(string $stream, string $eventType, string $data, string $metadata): Generator
     {
         $isJson = false;
@@ -345,6 +348,7 @@ SQL;
             $isJson = true;
         }
 
+        /** @var Connection $connection */
         $connection = yield $this->pool->extractConnection();
 
         yield new Coroutine($this->acquireLock($connection, $stream));
@@ -411,19 +415,25 @@ SQL;
         }
 
         yield new Coroutine($this->releaseLock($connection, $stream));
+
+        $connection->close();
     }
 
+    /** @throws Throwable */
     public function linkTo(string $stream, RecordedEvent $event, string $metadata = ''): Promise
     {
         return new Coroutine($this->doLinkTo($stream, $event, $metadata));
     }
 
+    /** @throws Throwable */
     public function doLinkTo(string $stream, RecordedEvent $event, string $metadata = ''): Generator
     {
+        $this->logger->debug('do link to');
+        /** @var Connection $connection */
         $connection = yield $this->pool->extractConnection();
-
+        $this->logger->debug('acquiring lock');
         yield new Coroutine($this->acquireLock($connection, $stream));
-
+        $this->logger->debug('locked');
         $expectedVersion = ExpectedVersion::NoStream;
 
         try {
@@ -433,7 +443,7 @@ SQL;
                 $streamId = yield $this->determineStreamId($stream);
                 $this->knownStreamIds->put($stream, $streamId);
             }
-
+            $this->logger->debug('stream id found');
             /** @var Statement $statement */
             $statement = yield $connection->prepare(<<<SQL
 SELECT MAX(event_number) as current_version FROM events WHERE stream_id = ?
@@ -441,11 +451,12 @@ SQL
             );
             /** @var ResultSet $result */
             $result = yield $statement->execute([$streamId]);
-
+            $this->logger->debug('expected version found');
             while (yield $result->advance(ResultSet::FETCH_OBJECT)) {
                 $expectedVersion = $result->getCurrent()->current_version;
             }
         } catch (StreamNotFound $e) {
+            $this->logger->debug('creating stream');
             $streamId = Uuid::uuid4()->toString();
             /** @var Statement $statement */
             $statement = yield $connection->prepare(<<<SQL
@@ -454,12 +465,13 @@ SQL
             );
             /** @var CommandResult $result */
             $result = yield $statement->execute([$streamId, $stream, 0, 0]);
-
+            $this->logger->debug('creating stream done');
             if (0 === $result->affectedRows()) {
                 throw new Exception\RuntimeException('Could not create stream id for ' . $stream);
             }
         }
 
+        $this->logger->debug('linking....');
         $sql = <<<SQL
 INSERT INTO events (event_id, event_number, event_type, data, meta_data, stream_id, is_json, updated, link_to)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
@@ -486,7 +498,10 @@ SQL;
             throw new Exception\RuntimeException('Could not link to stream ' . $stream);
         }
 
+        $this->logger->debug('linking done.');
         yield new Coroutine($this->releaseLock($connection, $stream));
+
+        $connection->close();
     }
 
     private function when(array $handlers): Projector
@@ -600,12 +615,15 @@ SQL;
     /** @throws Throwable */
     private function runQuery(): Generator
     {
+        $this->logger->debug('eval query');
+        $this->logger->debug($this->query);
         eval($this->query);
-
+        $this->logger->debug('evaled query');
         /** @var EventReader $reader */
         $reader = yield $this->determineReader();
-        yield $reader->requestEvents();
-
+        $this->logger->debug('created reader');
+        yield $reader->resume();
+        $this->logger->debug('resumed reader');
         $paused = false;
 
         $init = true;
@@ -629,10 +647,12 @@ SQL;
             }
 
             if ($this->queue->count() > $this->pendingEventsThreshold) {
+                $this->logger->debug('pausing reader');
                 $reader->pause();
                 $paused = true;
             } elseif ($paused) {
-                yield $reader->requestEvents();
+                $this->logger->debug('resuming reader');
+                yield $reader->resume();
             }
         }
 
@@ -640,6 +660,7 @@ SQL;
             $reader->pause();
 
             while (! $this->queue->isEmpty()) {
+                $this->logger->debug('handling rest of messages');
                 /** @var RecordedEvent $event */
                 $event = $this->queue->dequeue();
                 yield $this->handle($event);
@@ -647,6 +668,7 @@ SQL;
         }
 
         if ($this->currentBatchSize > 0) {
+            $this->logger->debug('write checkpoint');
             yield from $this->writeCheckPoint();
         }
     }
@@ -654,7 +676,10 @@ SQL;
     /** @throws Throwable */
     private function handle(RecordedEvent $event): Promise
     {
-        $handle = static function (callable $handler, RecordedEvent $event): void {
+        $this->logger->debug('handling event');
+        $handle = function (callable $handler, RecordedEvent $event): void {
+            $this->logger->debug($event->eventType());
+            $this->logger->debug($event->data());
             $state = $handler($this->state, $event);
 
             if (is_array($state)) {
@@ -665,12 +690,14 @@ SQL;
         $handled = false;
 
         if (isset($this->handlers['$any'])) {
+            $this->logger->debug('$any handle');
             $handler = $this->handlers['$any'];
             $handle($handler, $event);
             $handled = true;
         }
 
         if (isset($this->handlers[$event->eventType()])) {
+            $this->logger->debug('event type handle');
             $handler = $this->handlers[$event->eventType()];
             $handle($handler, $event);
             $handled = true;
@@ -770,6 +797,8 @@ SQL;
         $this->lastCheckPointMs = microtime(true) * 10000;
 
         yield new Coroutine($this->releaseLock($connection, $checkpointStream));
+
+        $connection->close();
     }
 
     private function fromStream(string $streamName): Projector
@@ -826,17 +855,19 @@ SQL;
             $streamId = $this->knownStreamIds->get($streamName);
 
             if (! $streamId) {
+                // @todo remove yield from here
                 $streamId = yield $this->determineStreamId($streamName);
                 $this->knownStreamIds->put($streamName, $streamId);
             }
 
             return yield new Success(new StreamEventReader(
                 $this->pool,
-                new SplQueueEventPublisher($this->queue),
+                $this->queue,
                 'Continuous' !== $this->mode,
                 $streamName,
                 $streamId,
-                $this->streamPositions[$streamName]
+                $this->streamPositions[$streamName],
+                $this->logger
             ));
         }
 
@@ -892,6 +923,7 @@ SQL
         throw StreamNotFound::with($streamName);
     }
 
+    /** @throws Throwable */
     private function acquireLock(Connection $connection, string $name): Generator
     {
         /** @var Statement $statement */
@@ -901,6 +933,7 @@ SQL
         yield $result->advance(ResultSet::FETCH_OBJECT);
     }
 
+    /** @throws Throwable */
     private function releaseLock(Connection $connection, string $name): Generator
     {
         /** @var Statement $statement */
@@ -917,12 +950,16 @@ SQL
 
     private function createHandlerContext(): object
     {
-        return new class($this) {
-            private $projector;
+        $logger = $this->logger;
 
-            public function __construct(Projector $projector)
+        return new class($this, $logger) {
+            private $projector;
+            private $logger;
+
+            public function __construct(Projector $projector, $logger)
             {
                 $this->projector = $projector;
+                $this->logger = $logger;
             }
 
             public function stop(): void
@@ -932,7 +969,11 @@ SQL
 
             public function linkTo(string $streamName, RecordedEvent $event, string $metadata = ''): void
             {
-                $this->projector->linkTo($streamName, $event, $metadata);
+                $this->logger->debug('call link to');
+                $promise = $this->projector->linkTo($streamName, $event, $metadata);
+                $this->logger->debug('waiting for promise...');
+                Promise\wait($promise);
+                $this->logger->debug('promise ok');
             }
 
             public function emit(string $streamName, string $eventType, string $data, string $metadata = ''): void

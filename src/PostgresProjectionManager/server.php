@@ -15,7 +15,6 @@ use Amp\Http\Status;
 use Amp\Log\ConsoleFormatter;
 use Amp\Log\StreamHandler;
 use Amp\Loop;
-use Amp\Postgres\Pool;
 use Amp\Socket;
 use DateTimeZone;
 use Monolog\Logger;
@@ -27,18 +26,21 @@ Loop::run(function () {
     // start projection manager
     $logHandler = new StreamHandler(new ResourceOutputStream(\STDOUT));
     $logHandler->setFormatter(new ConsoleFormatter());
+    // @todo make configurable
     $logHandler->setLevel(Logger::DEBUG);
 
     $logger = new Logger('PROJECTIONS');
     $logger->pushHandler($logHandler);
 
-    $postgresPool = new Pool('host=localhost user=postgres dbname=new_event_store password=postgres');
-    $projectionManager = new Internal\ProjectionManager($postgresPool, $logger);
+    // @todo make configurable
+    $connectionString = 'host=localhost user=postgres dbname=new_event_store password=postgres';
+    $projectionManager = new Internal\ProjectionManager($connectionString, $logger);
 
     yield $projectionManager->start();
 
     // start http server
     $servers = [
+        // @todo make configurable
         Socket\listen('0.0.0.0:1337'),
         Socket\listen('[::]:1337'),
     ];

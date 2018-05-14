@@ -12,6 +12,7 @@ use Amp\Promise;
 use Prooph\PostgresProjectionManager\Internal\ProjectionManager;
 use function Amp\call;
 
+/** @internal */
 class EnableProjectionRequestHandler implements RequestHandler
 {
     /** @var ProjectionManager */

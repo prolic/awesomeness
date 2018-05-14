@@ -9,59 +9,44 @@ use Amp\Postgres\Pool;
 use Amp\Promise;
 use Generator;
 use Prooph\EventStore\Exception\RuntimeException;
+use SplQueue;
 
+/** @internal */
 abstract class EventReader
 {
     /** @var Pool */
     protected $pool;
-    /** @var EventPublisher */
-    protected $publisher;
+    /** @var SplQueue */
+    protected $queue;
     /** @var bool */
-    protected $paused;
-    /** @var bool */
-    protected $pauseRequested;
+    protected $paused = true;
     /** @var bool */
     protected $stopOnEof;
 
-    public function __construct(Pool $pool, EventPublisher $publisher, bool $stopOnEof)
+    public function __construct(Pool $pool, SplQueue $queue, bool $stopOnEof)
     {
         $this->pool = $pool;
-        $this->publisher = $publisher;
-        $this->paused = false;
-        $this->pauseRequested = false;
+        $this->queue = $queue;
         $this->stopOnEof = $stopOnEof;
     }
 
-    public function resume(): void
+    public function resume(): Promise
     {
-        if (! $this->pauseRequested) {
+        if (! $this->paused) {
             throw new RuntimeException('Is not paused');
         }
 
-        if (! $this->paused) {
-            $this->pauseRequested = false;
-
-            return;
-        }
-
         $this->paused = false;
-        $this->pauseRequested = false;
 
-        //RequestEvents();
+        return $this->requestEvents();
     }
 
     public function pause(): void
     {
-        if ($this->pauseRequested) {
-            throw new RuntimeException('Pause has been already requested');
-        }
-
-        $this->pauseRequested = true;
-        //if (!AreEventsRequested())
-        //    _paused = true;
+        $this->paused = true;
     }
 
-    public function requestEvents(): Promise
+    private function requestEvents(): Promise
     {
         return new Coroutine($this->doRequestEvents());
     }

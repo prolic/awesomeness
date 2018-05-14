@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Prooph\PostgresProjectionManager\Internal;
 
 use Amp\Coroutine;
+use Amp\Delayed;
 use Amp\Failure;
 use Amp\Loop;
+use Amp\Parallel\Context\Process;
 use Amp\Postgres\Connection;
 use Amp\Postgres\Pool;
 use Amp\Postgres\ResultSet;
@@ -23,6 +25,7 @@ use Psr\Log\LoggerInterface as PsrLogger;
 use Throwable;
 use function assert;
 
+/** @internal */
 class ProjectionManager
 {
     private const STOPPED = 0;
@@ -39,22 +42,25 @@ class ProjectionManager
 
     private const DEFAULT_SHUTDOWN_TIMEOUT = 3000;
 
+    /** @var string */
+    private $connectionString;
     /** @var int */
     private $state = self::STOPPED;
     /** @var Pool */
     private $pool;
     /** @var PsrLogger */
     private $logger;
-    /** @var array */
+    /** @var Process[] */
     private $projectors = [];
     /** @var SystemSettings */
     private $settings;
     /** @var Connection */
     private $lockConnection;
 
-    public function __construct(Pool $pool, PsrLogger $logger)
+    public function __construct(string $connectionString, PsrLogger $logger)
     {
-        $this->pool = $pool;
+        $this->connectionString = $connectionString;
+        $this->pool = new Pool($connectionString);
         $this->logger = $logger;
     }
 
@@ -104,10 +110,17 @@ class ProjectionManager
                 $projectionName = $result->getCurrent()->projection_name;
                 $projectionId = $result->getCurrent()->projection_id;
 
-                $projector = new Projector($this->pool, $projectionName, $projectionId, $this->logger, $this->settings);
-                $this->projectors[$projectionName] = $projector;
+                $context = Process::run(__DIR__ . '/projector-process.php', null, [
+                    'prooph_connection_string' => $this->connectionString,
+                    'prooph_projection_id' => $projectionId,
+                    'prooph_projection_name' => $projectionName,
+                    'prooph_log_level' => 'DEBUG', //@todo make configurable
+                ]);
+                $this->projectors[$projectionName] = $context;
 
-                yield $projector->tryStart();
+                yield new Delayed(100); // waiting for the projection to start
+
+                yield $context->send('tryStart');
             }
 
             $this->state = self::STARTED;
@@ -120,7 +133,7 @@ class ProjectionManager
     }
 
     /** @throws Throwable */
-    private function loadSystemSettings(): Generator
+    private function loadSystemSettings(): Generator // @todo do we really need this here?
     {
         /** @var Statement $statement */
         $statement = yield $this->pool->prepare(<<<SQL
@@ -206,7 +219,7 @@ SQL
             return new Failure(ProjectionNotFound::withName($name));
         }
 
-        return $this->projectors[$name]->stop();
+        return $this->projectors[$name]->send('disable');
     }
 
     public function enableProjection(string $name): Promise
@@ -215,7 +228,7 @@ SQL
             return new Failure(ProjectionNotFound::withName($name));
         }
 
-        return $this->projectors[$name]->start();
+        return $this->projectors[$name]->send('enable');
     }
 
     private function doStop(int $timeout): Generator
@@ -224,10 +237,9 @@ SQL
         $this->state = self::STOPPING;
 
         foreach ($this->projectors as $projector) {
-            yield $projector->stop();
+            yield $projector->send('disable'); // @todo distinguish stop & disable!
+            yield $projector->join();
         }
-
-        yield new Success();
 
         assert($this->logger->debug('Stopped') || true);
         $this->state = self::STOPPED;
