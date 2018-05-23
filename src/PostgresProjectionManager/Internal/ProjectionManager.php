@@ -23,6 +23,7 @@ use Prooph\EventStore\Exception\RuntimeException;
 use Prooph\EventStore\SystemSettings;
 use Psr\Log\LoggerInterface as PsrLogger;
 use Throwable;
+use function Amp\call;
 use function assert;
 
 /** @internal */
@@ -93,7 +94,6 @@ class ProjectionManager
             $result = yield $statement->execute(['name' => 'projection-manager']);
             yield $result->advance(ResultSet::FETCH_OBJECT);
             $lock = $result->getCurrent()->stream_lock;
-            $this->logger->debug(var_export($lock, true));
 
             if (! $lock) {
                 throw new RuntimeException(
@@ -116,11 +116,14 @@ class ProjectionManager
                     'prooph_projection_name' => $projectionName,
                     'prooph_log_level' => 'DEBUG', //@todo make configurable
                 ]);
+
+                $pid = yield $context->getPid();
+
+                $this->logger->debug($projectionName . ' :: ' . $pid);
+
                 $this->projectors[$projectionName] = $context;
 
                 yield new Delayed(100); // waiting for the projection to start
-
-                yield $context->send('tryStart');
             }
 
             $this->state = self::STARTED;
@@ -203,7 +206,27 @@ SQL
     {
         switch ($this->state) {
             case self::STARTED:
-                return new Coroutine($this->doStop($timeout));
+                return call(function () use ($timeout): Generator {
+                    assert($this->logger->debug('Stopping') || true);
+                    $this->state = self::STOPPING;
+
+                    foreach ($this->projectors as $name => $projector) {
+                        if (! $projector->isRunning()) {
+                            $this->logger->debug($name . ' already dead');
+                            unset($this->projectors[$name]);
+                        } else {
+                            $this->logger->debug($name . ' sending shutdown signal');
+                            yield $projector->send('shutdown');
+                            $this->logger->debug($name . ' sent shutdown signal');
+                            yield $projector->join();
+                            $this->logger->debug($name . ' ended');
+                            unset($this->projectors[$name]);
+                        }
+                    }
+
+                    assert($this->logger->debug('Stopped') || true);
+                    $this->state = self::STOPPED;
+                });
             case self::STOPPED:
                 return new Success();
             default:
@@ -229,19 +252,5 @@ SQL
         }
 
         return $this->projectors[$name]->send('enable');
-    }
-
-    private function doStop(int $timeout): Generator
-    {
-        assert($this->logger->debug('Stopping') || true);
-        $this->state = self::STOPPING;
-
-        foreach ($this->projectors as $projector) {
-            yield $projector->send('disable'); // @todo distinguish stop & disable!
-            yield $projector->join();
-        }
-
-        assert($this->logger->debug('Stopped') || true);
-        $this->state = self::STOPPED;
     }
 }

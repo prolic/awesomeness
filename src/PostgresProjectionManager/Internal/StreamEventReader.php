@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Prooph\PostgresProjectionManager\Internal;
 
-use Amp\Coroutine;
 use Amp\Loop;
 use Amp\Postgres\Pool;
 use Amp\Postgres\ResultSet;
 use Amp\Postgres\Statement;
-use Amp\Promise;
 use Generator;
 use Prooph\EventStore\EventId;
 use Prooph\EventStore\Internal\DateTimeUtil;
@@ -36,28 +34,18 @@ class StreamEventReader extends EventReader
         string $streamName,
         string $streamId,
         int $fromSequenceNumber,
-        $logger
+        int $pendingEventsThreshold
     ) {
-        parent::__construct($pool, $queue, $stopOnEof);
+        parent::__construct($pool, $queue, $stopOnEof, $pendingEventsThreshold);
 
         $this->streamName = $streamName;
         $this->streamId = $streamId;
         $this->fromSequenceNumber = $fromSequenceNumber;
-        $this->logger = $logger;
     }
 
     /** @throws Throwable */
-    public function requestEvents(): Promise
+    protected function doRequestEvents(string $watcherId): Generator
     {
-        $this->logger->debug('request events');
-
-        return new Coroutine($this->doRequestEvents());
-    }
-
-    /** @throws Throwable */
-    protected function doRequestEvents(): Generator
-    {
-        $this->logger->debug('do request events');
         $sql = <<<SQL
 SELECT
     COALESCE(e1.event_id, e2.event_id) as event_id,
@@ -79,16 +67,13 @@ SQL;
 
         /** @var Statement $statement */
         $statement = yield $this->pool->prepare($sql);
-        $this->logger->debug('executing fetch query');
         /** @var ResultSet $result */
         $result = yield $statement->execute([$this->streamId, $this->fromSequenceNumber, self::MaxReads]);
 
         $readEvents = 0;
 
         while (yield $result->advance(ResultSet::FETCH_OBJECT)) {
-            $this->logger->debug('found event, enqueue');
             $row = $result->getCurrent();
-            $this->logger->debug(json_encode($row));
             ++$readEvents;
             $this->queue->enqueue(new RecordedEvent(
                 $this->streamName,
@@ -105,13 +90,7 @@ SQL;
         }
 
         if (0 === $readEvents && $this->stopOnEof) {
-            $this->logger->debug('pausing');
-            $this->pause();
-        }
-
-        if (! $this->paused) {
-            $this->logger->debug('next run');
-            Loop::delay(0, [$this, 'requestEvents']);
+            Loop::cancel($watcherId);
         }
     }
 }

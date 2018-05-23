@@ -5,10 +5,9 @@ declare(strict_types=1);
 namespace Prooph\PostgresProjectionManager\Internal;
 
 use Amp\Coroutine;
+use Amp\Loop;
 use Amp\Postgres\Pool;
-use Amp\Promise;
 use Generator;
-use Prooph\EventStore\Exception\RuntimeException;
 use SplQueue;
 
 /** @internal */
@@ -19,37 +18,28 @@ abstract class EventReader
     /** @var SplQueue */
     protected $queue;
     /** @var bool */
-    protected $paused = true;
-    /** @var bool */
     protected $stopOnEof;
+    /** @var int */
+    protected $pendingEventsThreshold;
 
-    public function __construct(Pool $pool, SplQueue $queue, bool $stopOnEof)
+    public function __construct(Pool $pool, SplQueue $queue, bool $stopOnEof, int $pendingEventsThreshold)
     {
         $this->pool = $pool;
         $this->queue = $queue;
         $this->stopOnEof = $stopOnEof;
+        $this->pendingEventsThreshold = $pendingEventsThreshold;
     }
 
-    public function resume(): Promise
+    public function run(): string
     {
-        if (! $this->paused) {
-            throw new RuntimeException('Is not paused');
-        }
+        return Loop::repeat(0, function (string $watcherId): Generator {
+            yield new Coroutine($this->doRequestEvents($watcherId));
 
-        $this->paused = false;
-
-        return $this->requestEvents();
+            if ($this->queue->count() > $this->pendingEventsThreshold) {
+                Loop::disable($watcherId);
+            }
+        });
     }
 
-    public function pause(): void
-    {
-        $this->paused = true;
-    }
-
-    private function requestEvents(): Promise
-    {
-        return new Coroutine($this->doRequestEvents());
-    }
-
-    abstract protected function doRequestEvents(): Generator;
+    abstract protected function doRequestEvents(string $watcherId): Generator;
 }

@@ -54,7 +54,7 @@ SQL
             $statement->execute([$streamId]);
             $statement->setFetchMode(PDO::FETCH_OBJ);
 
-            $currentVersion = $statement->fetch()->current_version;
+            $currentVersion = $statement->fetch()->current_version ?? -1;
         } else {
             $currentVersion = -1;
         }
