@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Prooph\PostgresProjectionManager\Internal;
 
-use Amp\Loop;
 use Amp\Postgres\Pool;
 use Amp\Postgres\ResultSet;
 use Amp\Postgres\Statement;
@@ -33,10 +32,9 @@ class StreamEventReader extends EventReader
         bool $stopOnEof,
         string $streamName,
         string $streamId,
-        int $fromSequenceNumber,
-        int $pendingEventsThreshold
+        int $fromSequenceNumber
     ) {
-        parent::__construct($pool, $queue, $stopOnEof, $pendingEventsThreshold);
+        parent::__construct($pool, $queue, $stopOnEof);
 
         $this->streamName = $streamName;
         $this->streamId = $streamId;
@@ -44,7 +42,7 @@ class StreamEventReader extends EventReader
     }
 
     /** @throws Throwable */
-    protected function doRequestEvents(string $watcherId): Generator
+    protected function doRequestEvents(): Generator
     {
         $sql = <<<SQL
 SELECT
@@ -90,7 +88,7 @@ SQL;
         }
 
         if (0 === $readEvents && $this->stopOnEof) {
-            Loop::cancel($watcherId);
+            $this->eof = true;
         }
     }
 }

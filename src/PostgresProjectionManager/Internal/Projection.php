@@ -450,7 +450,7 @@ SQL;
 
         /** @var EventReader $reader */
         $reader = yield $this->determineReader();
-        $readerWatcherId = $reader->run();
+        $reader->run();
 
         $init = true;
         foreach ($this->streamPositions as $streamName => $position) {
@@ -465,76 +465,59 @@ SQL;
             $this->state = $initHandler();
         }
 
-        Loop::delay(100, function (): Generator {
-            yield new Coroutine($this->write());
+        Loop::delay(100, function (): Generator { // write up to 10 times per second
+            yield from $this->write();
         });
 
-        $checkpointWatcher = Loop::repeat($this->checkpointAfterMs, function (): Generator {
-            $this->logger->info(__LINE__);
-            if ($this->currentBatchSize > $this->checkpointHandledThreshold) {
-                if (0 === $this->checkpointAfterMs
-                    || (floor(microtime(true) * 1000 - $this->lastCheckPointMs) > $this->checkpointAfterMs)
-                ) {
-                    yield from $this->writeCheckPoint();
-                }
-            }
+        Loop::delay($this->checkpointAfterMs, function (): Generator {
+            yield from $this->writeCheckPoint();
         });
 
-        Loop::repeat(0, function (string $watcherId) use ($readerWatcherId) {
-            $this->logger->info(__LINE__ . ' - ' . $this->projectionState->name());
-
+        while (! $reader->eof()) {
             if (! $this->queue->isEmpty()) {
                 /** @var RecordedEvent $event */
                 $event = $this->queue->dequeue();
-                $this->handle($event);
-                $this->logger->info('handled');
+                yield $this->handle($event);
             }
 
             if (! $this->projectionState->equals(ProjectionState::running())) {
-                Loop::cancel($watcherId);
-                Loop::cancel($readerWatcherId);
-                $this->logger->info('cancelled');
-            } elseif ($this->queue->isEmpty()) {
-                Loop::enable($readerWatcherId);
-                $this->logger->info('enabled reader');
+                $reader->pause();
+                break;
             }
 
-            if (! $this->queue->isEmpty()) {
-                $this->logger->debug('rr');
-            } else {
-                $this->logger->debug('rree');
+            if ($this->queue->count() > $this->pendingEventsThreshold) {
+                $reader->pause();
             }
 
-            $this->logger->info('nothing new, rinse & repeat');
-        });
+            if ($this->queue->count() < $this->pendingEventsThreshold
+                && $reader->paused()
+            ) {
+                $reader->run();
+            }
+        }
 
         while (! $this->queue->isEmpty()) {
             /** @var RecordedEvent $event */
             $event = $this->queue->dequeue();
-            $this->handle($event);
-            $this->logger->info('handled rest');
+            yield $this->handle($event);
         }
-
-        Loop::cancel($checkpointWatcher);
 
         if ($this->currentBatchSize > 0) {
             yield from $this->writeCheckPoint();
         }
+
         $this->logger->info('written checkpoint');
     }
 
     /** @throws Throwable */
-    private function handle(RecordedEvent $event): void
+    private function handle(RecordedEvent $event): Promise
     {
         $handle = function (callable $handler, RecordedEvent $event): void {
-            $this->logger->debug('handle called');
             $state = $handler($this->state, $event);
 
             if (is_array($state)) {
                 $this->state = $state;
             }
-
-            $this->logger->debug('handle called 2');
         };
 
         $handled = false;
@@ -542,28 +525,42 @@ SQL;
         if (isset($this->handlers['$any'])) {
             $handler = $this->handlers['$any'];
             $handle($handler, $event);
-            $this->logger->debug('handle called any');
             $handled = true;
         }
 
         if (isset($this->handlers[$event->eventType()])) {
             $handler = $this->handlers[$event->eventType()];
             $handle($handler, $event);
-            $this->logger->debug('handle called by event type');
             $handled = true;
         }
 
         $this->streamPositions[$event->streamId()] = $event->eventNumber();
-        $this->logger->debug('inc stream positions');
+
         if ($handled) {
             ++$this->currentBatchSize;
         }
-        $this->logger->debug('inc curr batch size');
+
+        return new Success();
     }
 
     /** @throws Throwable */
     private function writeCheckPoint(): Generator
     {
+        if ($this->currentBatchSize < $this->checkpointHandledThreshold
+            || (
+                0 !== $this->checkpointAfterMs
+                || (floor(microtime(true) * 1000 - $this->lastCheckPointMs) < $this->checkpointAfterMs)
+            )
+        ) {
+            if ($this->projectionState->equals(ProjectionState::running())) {
+                Loop::delay($this->checkpointAfterMs, function (): Generator {
+                    yield from $this->writeCheckPoint();
+                });
+            }
+
+            return null;
+        }
+
         $checkpointStream = ProjectionNames::ProjectionsStreamPrefix . $this->name . ProjectionNames::ProjectionCheckpointStreamSuffix;
 
         try {
@@ -630,6 +627,12 @@ SQL;
         $this->lastCheckPointMs = microtime(true) * 10000;
 
         yield new Coroutine($this->releaseLock($this->lockConnection, $checkpointStream));
+
+        if ($this->projectionState->equals(ProjectionState::running())) {
+            Loop::delay($this->checkpointAfterMs, function (): Generator {
+                yield from $this->writeCheckPoint();
+            });
+        }
     }
 
     /** @throws Throwable */

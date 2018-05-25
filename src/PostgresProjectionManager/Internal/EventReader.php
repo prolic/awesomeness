@@ -19,27 +19,46 @@ abstract class EventReader
     protected $queue;
     /** @var bool */
     protected $stopOnEof;
-    /** @var int */
-    protected $pendingEventsThreshold;
+    /** @var bool */
+    protected $paused = true;
+    protected $eof = false;
 
-    public function __construct(Pool $pool, SplQueue $queue, bool $stopOnEof, int $pendingEventsThreshold)
+    public function __construct(Pool $pool, SplQueue $queue, bool $stopOnEof)
     {
         $this->pool = $pool;
         $this->queue = $queue;
         $this->stopOnEof = $stopOnEof;
-        $this->pendingEventsThreshold = $pendingEventsThreshold;
     }
 
-    public function run(): string
+    public function run(): void
     {
-        return Loop::repeat(0, function (string $watcherId): Generator {
-            yield new Coroutine($this->doRequestEvents($watcherId));
+        $this->paused = false;
 
-            if ($this->queue->count() > $this->pendingEventsThreshold) {
-                Loop::disable($watcherId);
+        $run = function () use (&$run): Generator {
+            yield new Coroutine($this->doRequestEvents());
+
+            if (! $this->eof && ! $this->paused) {
+                Loop::defer($run);
             }
-        });
+        };
+
+        Loop::defer($run);
     }
 
-    abstract protected function doRequestEvents(string $watcherId): Generator;
+    public function pause(): void
+    {
+        $this->paused = true;
+    }
+
+    public function paused(): bool
+    {
+        return $this->paused;
+    }
+
+    public function eof(): bool
+    {
+        return $this->eof;
+    }
+
+    abstract protected function doRequestEvents(): Generator;
 }
