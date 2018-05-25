@@ -211,15 +211,11 @@ SQL
                     $this->state = self::STOPPING;
 
                     foreach ($this->projectors as $name => $projector) {
-                        if (! $projector->isRunning()) {
-                            $this->logger->debug($name . ' already dead');
+                        if (! $projector->isRunning()) { // @todo: find out why this can happen
                             unset($this->projectors[$name]);
                         } else {
-                            $this->logger->debug($name . ' sending shutdown signal');
                             yield $projector->send('shutdown');
-                            $this->logger->debug($name . ' sent shutdown signal');
                             yield $projector->join();
-                            $this->logger->debug($name . ' ended');
                             unset($this->projectors[$name]);
                         }
                     }
