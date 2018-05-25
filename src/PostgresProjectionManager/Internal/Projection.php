@@ -47,7 +47,7 @@ use function is_string;
 use function microtime;
 
 /** @internal  */
-class Projector
+class Projection
 {
     /** @var SplQueue */
     private $queue;
@@ -111,8 +111,6 @@ class Projector
     private $toWrite = [];
     /** @var int */
     private $toWriteCount = 0;
-    /** @var bool */
-    private $writing = false;
 
     public function __construct(
         Pool $pool,
@@ -256,12 +254,7 @@ SQL;
         $checkpointStream = ProjectionNames::ProjectionsStreamPrefix . $this->name . ProjectionNames::ProjectionCheckpointStreamSuffix;
 
         try {
-            $streamId = $this->knownStreamIds->get($checkpointStream);
-
-            if (! $streamId) {
-                $streamId = yield $this->determineStreamId($checkpointStream);
-                $this->knownStreamIds->put($checkpointStream, $streamId);
-            }
+            $streamId = yield $this->determineStreamId($checkpointStream);
 
             $sql = <<<SQL
 SELECT
@@ -350,8 +343,6 @@ SQL;
             return null;
         }
 
-        $this->writing = true;
-
         $streams = $this->toWriteStreams;
         $data = $this->toWrite;
         $count = $this->toWriteCount;
@@ -362,23 +353,17 @@ SQL;
         $this->toWriteCount = 0;
 
         foreach ($streams as $stream) {
-            $this->logger->debug('acqu lock for ' . $stream);
+            $this->logger->debug('acquire lock for ' . $stream);
             yield new Coroutine($this->acquireLock($this->lockConnection, $stream));
-            $this->logger->debug('acqu lock for ' . $stream . ' done');
+            $this->logger->debug('acquire lock for ' . $stream . ' done');
         }
 
         foreach ($streams as $stream) {
             $expectedVersion = ExpectedVersion::NoStream;
 
             try {
-                $streamId = $this->knownStreamIds->get($stream);
+                $streamId = yield $this->determineStreamId($stream);
 
-                if (! $streamId) {
-                    $this->logger->debug('looking for id for ' . $stream);
-                    $streamId = yield $this->determineStreamId($stream);
-                    $this->logger->debug('locked for id for ' . $stream);
-                    $this->knownStreamIds->put($stream, $streamId);
-                }
                 $this->logger->debug('preparing sql');
                 /** @var Statement $statement */
                 $statement = yield $this->pool->prepare(<<<SQL
@@ -445,12 +430,16 @@ SQL;
         }
 
         $this->logger->debug('releasing locks');
+
         foreach ($streams as $stream) {
             yield new Coroutine($this->releaseLock($this->lockConnection, $stream));
         }
+
         $this->logger->debug('releasing locks done');
-        $this->writing = false;
-        yield new Success();
+
+        Loop::defer(100, function (): Generator {
+            yield new Coroutine($this->write());
+        });
     }
 
     /** @throws Throwable */
@@ -476,11 +465,7 @@ SQL;
             $this->state = $initHandler();
         }
 
-        Loop::repeat(100, function (): Generator {
-            if ($this->writing) {
-                return null;
-            }
-
+        Loop::delay(100, function (): Generator {
             yield new Coroutine($this->write());
         });
 
@@ -582,12 +567,7 @@ SQL;
         $checkpointStream = ProjectionNames::ProjectionsStreamPrefix . $this->name . ProjectionNames::ProjectionCheckpointStreamSuffix;
 
         try {
-            $streamId = $this->knownStreamIds->get($checkpointStream);
-
-            if (! $streamId) {
-                $streamId = yield $this->determineStreamId($checkpointStream);
-                $this->knownStreamIds->put($checkpointStream, $streamId);
-            }
+            $streamId = yield $this->determineStreamId($checkpointStream);
         } catch (StreamNotFound $e) {
             $streamId = Uuid::uuid4()->toString();
             /** @var Statement $statement */
@@ -663,13 +643,7 @@ SQL;
                     $this->streamPositions[$streamName] = 0;
                 }
 
-                $streamId = $this->knownStreamIds->get($streamName);
-
-                if (! $streamId) {
-                    // @todo remove yield from here
-                    $streamId = yield $this->determineStreamId($streamName);
-                    $this->knownStreamIds->put($streamName, $streamId);
-                }
+                $streamId = yield $this->determineStreamId($streamName);
 
                 return yield new Success(new StreamEventReader(
                     $this->pool,
@@ -690,6 +664,12 @@ SQL;
     /** @throws Throwable */
     private function determineStreamId(string $streamName): Promise
     {
+        $streamId = $this->knownStreamIds->get($streamName);
+
+        if (null !== $streamId) {
+            return new Success($streamId);
+        }
+
         return call(function () use ($streamName): Generator {
             /** @var Statement $statement */
             $statement = yield $this->pool->prepare(<<<SQL
@@ -724,6 +704,8 @@ SQL
                 ) {
                     throw Exception\AccessDenied::toStream($streamName);
                 }
+
+                $this->knownStreamIds->put($streamName, $data->stream_id);
 
                 return $data->stream_id;
             }
@@ -776,12 +758,7 @@ SQL
             $expectedVersion = ExpectedVersion::NoStream;
 
             try {
-                $streamId = $this->knownStreamIds->get($stream);
-
-                if (! $streamId) {
-                    $streamId = yield $this->determineStreamId($stream);
-                    $this->knownStreamIds->put($stream, $streamId);
-                }
+                $streamId = yield $this->determineStreamId($stream);
 
                 /** @var Statement $statement */
                 $statement = yield $this->pool->prepare(<<<SQL
@@ -854,7 +831,7 @@ SQL;
         ];
     }
 
-    private function when(array $handlers): Projector
+    private function when(array $handlers): Projection
     {
         foreach ($handlers as $name => $callback) {
             if (! is_string($name) || ! is_callable($callback)) {
@@ -950,35 +927,35 @@ SQL;
         }
     */
 
-    private function fromStream(string $streamName): Projector
+    private function fromStream(string $streamName): Projection
     {
         $this->evaledQuery = ['streams' => [$streamName]];
 
         return $this;
     }
 
-    private function fromStreams(string ...$streamNames): Projector
+    private function fromStreams(string ...$streamNames): Projection
     {
         $this->evaledQuery = ['streams' => $streamNames];
 
         return $this;
     }
 
-    private function fromCategory(string $name): Projector
+    private function fromCategory(string $name): Projection
     {
         $this->evaledQuery = ['categories' => [$name]];
 
         return $this;
     }
 
-    private function fromCategories(string ...$names): Projector
+    private function fromCategories(string ...$names): Projection
     {
         $this->evaledQuery = ['categories' => $names];
 
         return $this;
     }
 
-    private function fromAll(): Projector
+    private function fromAll(): Projection
     {
         $this->evaledQuery = ['all' => true];
 
@@ -990,7 +967,7 @@ SQL;
         return new class($this) {
             private $projector;
 
-            public function __construct(Projector $projector)
+            public function __construct(Projection $projector)
             {
                 $this->projector = $projector;
             }

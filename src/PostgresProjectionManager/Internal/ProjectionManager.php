@@ -110,7 +110,7 @@ class ProjectionManager
                 $projectionName = $result->getCurrent()->projection_name;
                 $projectionId = $result->getCurrent()->projection_id;
 
-                $context = Process::run(__DIR__ . '/projector-process.php', null, [
+                $context = Process::run(__DIR__ . '/projection-process.php', null, [
                     'prooph_connection_string' => $this->connectionString,
                     'prooph_projection_id' => $projectionId,
                     'prooph_projection_name' => $projectionName,
