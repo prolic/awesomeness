@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Prooph\PostgresProjectionManager\Internal;
 
 use Amp\Coroutine;
+use Amp\Delayed;
 use Amp\Loop;
 use Amp\Postgres\CommandResult;
 use Amp\Postgres\Connection;
@@ -109,8 +110,6 @@ class Projection
     private $toWriteStreams = [];
     /** @var array */
     private $toWrite = [];
-    /** @var int */
-    private $toWriteCount = 0;
 
     public function __construct(
         Pool $pool,
@@ -306,7 +305,6 @@ SQL;
             $this->projectionState = ProjectionState::initial();
 
             Loop::repeat(100, function (string $watcherId) {
-                $this->logger->info(__LINE__);
                 if ($this->projectionState->equals(ProjectionState::stopping())) {
                     Loop::cancel($watcherId);
                     $this->projectionState = ProjectionState::stopped();
@@ -317,6 +315,8 @@ SQL;
 
             yield new Coroutine($this->runQuery());
         });
+
+        $this->logger->debug('started');
     }
 
     public function disable(): void
@@ -327,6 +327,7 @@ SQL;
 
         $this->enabled = false;
         $this->projectionState = ProjectionState::stopping();
+        $this->logger->debug('disabled');
     }
 
     public function shutdown(): void
@@ -337,7 +338,7 @@ SQL;
     /** @throws Throwable */
     private function write(): Generator
     {
-        if (0 === $this->toWriteCount) {
+        if (0 === $this->currentBatchSize) {
             $this->logger->debug('nothing to write');
 
             return null;
@@ -345,12 +346,10 @@ SQL;
 
         $streams = $this->toWriteStreams;
         $data = $this->toWrite;
-        $count = $this->toWriteCount;
         $streamInfos = [];
 
         $this->toWriteStreams = [];
         $this->toWrite = [];
-        $this->toWriteCount = 0;
 
         foreach ($streams as $stream) {
             $this->logger->debug('acquire lock for ' . $stream);
@@ -400,7 +399,7 @@ SQL
 INSERT INTO events (event_id, event_number, event_type, data, meta_data, stream_id, is_json, updated, link_to)
 VALUES 
 SQL;
-        $sql .= str_repeat('(?, ?, ?, ?, ?, ?, ?, ?, ?), ', $count);
+        $sql .= str_repeat('(?, ?, ?, ?, ?, ?, ?, ?, ?), ', count($data));
         $sql = substr($sql, 0, -2) . ';';
 
         $now = new DateTimeImmutable('NOW', new DateTimeZone('UTC'));
@@ -437,20 +436,27 @@ SQL;
 
         $this->logger->debug('releasing locks done');
 
-        Loop::defer(100, function (): Generator {
+        Loop::defer(function (): Generator {
+            $this->logger->debug('next write loop called');
             yield new Coroutine($this->write());
         });
+
+        $this->logger->debug('writing ok');
     }
 
     /** @throws Throwable */
     private function runQuery(): Generator
     {
+        $this->logger->debug('eval query');
+
         eval($this->query);
         $this->projectionState = ProjectionState::running();
 
         /** @var EventReader $reader */
         $reader = yield $this->determineReader();
         $reader->run();
+
+        $this->logger->debug('reader run');
 
         $init = true;
         foreach ($this->streamPositions as $streamName => $position) {
@@ -474,10 +480,11 @@ SQL;
         });
 
         while (! $reader->eof()) {
+            $this->logger->debug('handle loop');
             if (! $this->queue->isEmpty()) {
                 /** @var RecordedEvent $event */
                 $event = $this->queue->dequeue();
-                yield $this->handle($event);
+                $this->handle($event);
             }
 
             if (! $this->projectionState->equals(ProjectionState::running())) {
@@ -494,12 +501,16 @@ SQL;
             ) {
                 $reader->run();
             }
+
+            yield new Delayed(0); // let some other work be done, too
         }
 
         while (! $this->queue->isEmpty()) {
             /** @var RecordedEvent $event */
             $event = $this->queue->dequeue();
-            yield $this->handle($event);
+            $this->handle($event);
+
+            yield new Delayed(0); // let some other work be done, too
         }
 
         if ($this->currentBatchSize > 0) {
@@ -510,7 +521,7 @@ SQL;
     }
 
     /** @throws Throwable */
-    private function handle(RecordedEvent $event): Promise
+    private function handle(RecordedEvent $event): void
     {
         $handle = function (callable $handler, RecordedEvent $event): void {
             $state = $handler($this->state, $event);
@@ -540,7 +551,7 @@ SQL;
             ++$this->currentBatchSize;
         }
 
-        return new Success();
+        $this->logger->debug('handled event ' . $event->eventNumber());
     }
 
     /** @throws Throwable */
@@ -821,8 +832,6 @@ SQL;
     /** @throws Throwable */
     public function linkTo(string $stream, RecordedEvent $event, string $metadata = ''): void
     {
-        ++$this->toWriteCount;
-
         if (! in_array($stream, $this->toWriteStreams, true)) {
             $this->toWriteStreams[] = $stream;
         }
