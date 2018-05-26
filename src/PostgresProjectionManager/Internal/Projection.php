@@ -687,8 +687,7 @@ SQL;
                     'Continuous' !== $this->mode,
                     $streamName,
                     $streamId,
-                    $this->streamPositions[$streamName],
-                    $this->pendingEventsThreshold
+                    $this->streamPositions[$streamName]
                 ));
             }
 
