@@ -13,6 +13,7 @@ use function json_decode;
 use function json_encode;
 use function json_last_error;
 
+/** @internal */
 class ProjectionEvaluator
 {
     /** @var EventProcessor */

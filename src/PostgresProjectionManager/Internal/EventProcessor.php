@@ -6,6 +6,7 @@ namespace Prooph\PostgresProjectionManager\Internal;
 
 use Prooph\EventStore\RecordedEvent;
 
+/** @internal */
 class EventProcessor
 {
     /** @var callable */
