@@ -67,7 +67,7 @@ Loop::run(function () use ($argc, $argv) {
         $logger = new Logger('PROJECTOR-' . $projectionName . ' - ' . posix_getpid());
         $logger->pushHandler($logHandler);
 
-        $projector = new Projection($pool, $projectionName, $projectionId, $logger);
+        $projector = new ProjectionRunner($pool, $projectionName, $projectionId, $logger);
         yield $projector->bootstrap();
 
         $logger->debug('bootstrapped');

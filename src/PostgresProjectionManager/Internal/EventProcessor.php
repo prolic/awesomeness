@@ -162,4 +162,22 @@ class EventProcessor
         $handler = $this->notify;
         $handler($streamName, $eventType, $data, $metadata, $isJson);
     }
+
+    public function initState(): void
+    {
+        if (null === $this->projectionState) {
+            $handler = $this->initStateHandler;
+            $this->projectionState = $handler();
+        }
+    }
+
+    public function getState(): array
+    {
+        return $this->projectionState;
+    }
+
+    public function sources(): array
+    {
+        return $this->sources;
+    }
 }

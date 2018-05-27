@@ -15,7 +15,6 @@ use Amp\Postgres\Statement;
 use Amp\Promise;
 use Amp\Success;
 use cash\LRUCache;
-use Closure;
 use DateTimeImmutable;
 use DateTimeZone;
 use Error;
@@ -42,17 +41,14 @@ use function current;
 use function explode;
 use function floor;
 use function in_array;
-use function is_array;
 use function is_callable;
 use function is_string;
 use function microtime;
 
 /**
  * @internal
- * @see EventStore/src/EventStore.Projections.Core/Prelude/1Prelude.js
- * @see EventStore/src/EventStore.Projections.Core/Prelude/Projections.js
  */
-class Projection
+class ProjectionRunner
 {
     /** @var SplQueue */
     private $queue;
@@ -67,7 +63,7 @@ class Projection
     /** @var PsrLogger */
     private $logger;
     /** @var ProjectionState */
-    private $projectionState;
+    private $state;
     /** @var string */
     private $handlerType;
     /** @var string */
@@ -97,15 +93,9 @@ class Projection
     /** @var array */
     private $runAs;
     /** @var array */
-    private $evaledQuery = [];
-    /** @var array */
     private $handlers = [];
     /** @var array */
     private $streamPositions = [];
-    /** @var array */
-    private $state = [];
-    /** @var int */
-    private $currentBatchSize = 0;
     /** @var int */
     private $lastCheckPointMs;
     /** @var LRUCache */
@@ -125,7 +115,7 @@ class Projection
         $this->name = $name;
         $this->id = $id;
         $this->logger = $logger;
-        $this->projectionState = ProjectionState::stopped();
+        $this->state = ProjectionState::stopped();
         $this->knownStreamIds = new LRUCache(1000);
         $this->queue = new SplQueue();
     }
@@ -300,18 +290,18 @@ SQL;
     /** @throws Throwable */
     public function start(): Promise
     {
-        if (! $this->projectionState->equals(ProjectionState::stopped())) {
-            throw new Error('Cannot start projection "' . $this->name . '": already ' . $this->projectionState->name());
+        if (! $this->state->equals(ProjectionState::stopped())) {
+            throw new Error('Cannot start projection "' . $this->name . '": already ' . $this->state->name());
         }
 
         return call(function (): Generator {
             $this->enabled = true;
-            $this->projectionState = ProjectionState::initial();
+            $this->state = ProjectionState::initial();
 
             Loop::repeat(100, function (string $watcherId) {
-                if ($this->projectionState->equals(ProjectionState::stopping())) {
+                if ($this->state->equals(ProjectionState::stopping())) {
                     Loop::cancel($watcherId);
-                    $this->projectionState = ProjectionState::stopped();
+                    $this->state = ProjectionState::stopped();
                 }
             });
 
@@ -325,24 +315,24 @@ SQL;
 
     public function disable(): void
     {
-        if (! $this->projectionState->equals(ProjectionState::running())) {
+        if (! $this->state->equals(ProjectionState::running())) {
             return;
         }
 
         $this->enabled = false;
-        $this->projectionState = ProjectionState::stopping();
+        $this->state = ProjectionState::stopping();
         $this->logger->debug('disabled');
     }
 
     public function shutdown(): void
     {
-        $this->projectionState = ProjectionState::stopping();
+        $this->state = ProjectionState::stopping();
     }
 
     /** @throws Throwable */
     private function write(): Generator
     {
-        if (0 === $this->currentBatchSize) {
+        if (0 === count($this->toWrite)) {
             $this->logger->debug('nothing to write');
 
             return null;
@@ -453,11 +443,18 @@ SQL;
     {
         $this->logger->debug('eval query');
 
-        eval($this->query);
-        $this->projectionState = ProjectionState::running();
+        $notify = function (string $streamName, string $eventType, string $data, string $metadata = '', bool $isJson = false): void {
+            $this->emit($streamName, $eventType, $data, $metadata, $isJson);
+        };
+
+        $evaluator = new ProjectionEvaluator($notify);
+        $processor = $evaluator->evaluate($this->query);
+        $processor->initState();
+
+        $this->state = ProjectionState::running();
 
         /** @var EventReader $reader */
-        $reader = yield $this->determineReader();
+        $reader = yield $this->determineReader($processor);
         $reader->run();
 
         $this->logger->debug('reader run');
@@ -468,11 +465,6 @@ SQL;
                 $init = false;
                 break;
             }
-        }
-
-        if ($init && isset($this->handlers['$init'])) {
-            $initHandler = $this->handlers['$init'];
-            $this->state = $initHandler();
         }
 
         Loop::delay(100, function (): Generator { // write up to 10 times per second
@@ -488,10 +480,11 @@ SQL;
             if (! $this->queue->isEmpty()) {
                 /** @var RecordedEvent $event */
                 $event = $this->queue->dequeue();
-                $this->handle($event);
+                $processor->processEvent($event);
+                $this->streamPositions[$event->streamId()] = $event->eventNumber();
             }
 
-            if (! $this->projectionState->equals(ProjectionState::running())) {
+            if (! $this->state->equals(ProjectionState::running())) {
                 $reader->pause();
                 break;
             }
@@ -512,12 +505,13 @@ SQL;
         while (! $this->queue->isEmpty()) {
             /** @var RecordedEvent $event */
             $event = $this->queue->dequeue();
-            $this->handle($event);
+            $processor->processEvent($event);
+            $this->streamPositions[$event->streamId()] = $event->eventNumber();
 
             yield new Delayed(0); // let some other work be done, too
         }
 
-        if ($this->currentBatchSize > 0) {
+        if (count($this->toWrite) > 0) {
             yield from $this->writeCheckPoint();
         }
 
@@ -525,67 +519,15 @@ SQL;
     }
 
     /** @throws Throwable */
-    private function handle(RecordedEvent $event): void
-    {
-        $handle = function (callable $handler, RecordedEvent $event): void {
-            $state = $handler($this->state, $event);
-
-            if (is_array($state)) {
-                $this->state = $state;
-            }
-        };
-
-        $handled = false;
-
-        /**
-         for (var name in handlers) {
-             if (name == 0 || name === "$init") {
-                 eventProcessor.on_init_state(handlers[name]);
-             } else if (name === "$initShared") {
-                 eventProcessor.on_init_shared_state(handlers[name]);
-             } else if (name === "$any") {
-                 eventProcessor.on_any(handlers[name]);
-             } else if (name === "$deleted") {
-                 eventProcessor.on_deleted_notification(handlers[name]);
-             } else if (name === "$created") {
-                 eventProcessor.on_created_notification(handlers[name]);
-             } else {
-                 eventProcessor.on_event(name, handlers[name]);
-             }
-         }
-         */
-
-        if (isset($this->handlers['$any'])) {
-            $handler = $this->handlers['$any'];
-            $handle($handler, $event);
-            $handled = true;
-        }
-
-        if (isset($this->handlers[$event->eventType()])) {
-            $handler = $this->handlers[$event->eventType()];
-            $handle($handler, $event);
-            $handled = true;
-        }
-
-        $this->streamPositions[$event->streamId()] = $event->eventNumber();
-
-        if ($handled) {
-            ++$this->currentBatchSize;
-        }
-
-        $this->logger->debug('handled event ' . $event->eventNumber());
-    }
-
-    /** @throws Throwable */
     private function writeCheckPoint(): Generator
     {
-        if ($this->currentBatchSize < $this->checkpointHandledThreshold
+        if (count($this->toWrite) < $this->checkpointHandledThreshold
             || (
                 0 !== $this->checkpointAfterMs
                 || (floor(microtime(true) * 1000 - $this->lastCheckPointMs) < $this->checkpointAfterMs)
             )
         ) {
-            if ($this->projectionState->equals(ProjectionState::running())) {
+            if ($this->state->equals(ProjectionState::running())) {
                 Loop::delay($this->checkpointAfterMs, function (): Generator {
                     yield from $this->writeCheckPoint();
                 });
@@ -661,7 +603,7 @@ SQL;
 
         yield new Coroutine($this->releaseLock($this->lockConnection, $checkpointStream));
 
-        if ($this->projectionState->equals(ProjectionState::running())) {
+        if ($this->state->equals(ProjectionState::running())) {
             Loop::delay($this->checkpointAfterMs, function (): Generator {
                 yield from $this->writeCheckPoint();
             });
@@ -669,11 +611,11 @@ SQL;
     }
 
     /** @throws Throwable */
-    private function determineReader(): Promise
+    private function determineReader(EventProcessor $processor): Promise
     {
-        return call(function (): Generator {
-            if (isset($this->evaledQuery['streams']) && 1 === count($this->evaledQuery['streams'])) {
-                $streamName = current($this->evaledQuery['streams']);
+        return call(function () use ($processor): Generator {
+            if (count($processor->sources()['streams']) === 1) {
+                $streamName = current($processor->sources()['streams']);
 
                 if (! isset($this->streamPositions[$streamName])) {
                     $this->streamPositions[$streamName] = 0;
@@ -774,10 +716,8 @@ SQL
         }
     }
 
-    // following is stuff executable from within projection query
-
     /** @throws Throwable */
-    public function emit(string $stream, string $eventType, string $data, string $metadata): Promise
+    public function emit(string $stream, string $eventType, string $data, string $metadata, bool $isJson = false): Promise
     {
         // @todo refactor must return void, not a promise
         return call(function () use ($stream, $eventType, $data, $metadata): Generator {
@@ -864,58 +804,6 @@ SQL;
         ];
     }
 
-    // Allows only the given events of a particular to pass through.
-    // expects array with key = event-type, and value = function (array $state, RecordedEvent $event): array|void
-    // about keys:
-    // $init - Provide the initialization for a projection.
-    // $any - Event type pattern match that will match any event type.
-    // @todo: implementation detail of original is:
-    // When using fromAll() and 2 or more event type handlers are specified and the $by_event_type projection
-    // is enabled and running, the projection will start as a fromStreams('$et-event-type-foo', $et-event-type-bar)
-    // until the projection has caught up and then will move over to reading from the transaction log (i.e. from $all).
-    private function when(array $handlers): Projection
-    {
-        /*
-        function translateOn(handlers) {
-            for (var name in handlers) {
-                if (name == 0 || name === "$init") {
-                    eventProcessor.on_init_state(handlers[name]);
-                } else if (name === "$initShared") {
-                    eventProcessor.on_init_shared_state(handlers[name]);
-                } else if (name === "$any") {
-                    eventProcessor.on_any(handlers[name]);
-                } else if (name === "$deleted") {
-                    eventProcessor.on_deleted_notification(handlers[name]);
-                } else if (name === "$created") {
-                    eventProcessor.on_created_notification(handlers[name]);
-                } else {
-                    eventProcessor.on_event(name, handlers[name]);
-                }
-            }
-        }
-
-        function when(handlers) {
-            translateOn(handlers);
-            return {
-                $defines_state_transform: $defines_state_transform,
-                transformBy: transformBy,
-                filterBy: filterBy,
-                outputTo: outputTo,
-                outputState: outputState,
-            };
-        }
-         */
-        foreach ($handlers as $name => $callback) {
-            if (! is_string($name) || ! is_callable($callback)) {
-                throw new Exception\RuntimeException('Invalid argument passed to when()');
-            }
-
-            $this->handlers[$name] = Closure::bind($callback, $this->createHandlerContext());
-        }
-
-        return $this;
-    }
-
     /*
         public function reset(): void
         {
@@ -998,217 +886,4 @@ SQL;
             $this->streamPositions = [];
         }
     */
-
-    private function fromStream(string $streamName): Projection
-    {
-        /*
-        function fromStream(stream) {
-            eventProcessor.fromStream(stream);
-            return {
-                partitionBy: partitionBy,
-                when: when,
-                outputState: outputState,
-            };
-        }
-         */
-        $this->evaledQuery = ['streams' => [$streamName]];
-
-        return $this;
-    }
-
-    private function fromStreams(string ...$streamNames): Projection
-    {
-        /*
-        function fromStreams(streams) {
-            var arr = Array.isArray(streams) ? streams : arguments;
-            for (var i = 0; i < arr.length; i++)
-                eventProcessor.fromStream(arr[i]);
-
-            return {
-                partitionBy: partitionBy,
-                when: when,
-                outputState: outputState,
-            };
-        }
-         */
-        $this->evaledQuery = ['streams' => $streamNames];
-
-        return $this;
-    }
-
-    private function fromCategory(string $name): Projection
-    {
-        /*
-        function fromCategory(category) {
-            eventProcessor.fromCategory(category);
-            return {
-                partitionBy: partitionBy,
-                foreachStream: foreachStream,
-                when: when,
-                outputState: outputState,
-            };
-        }
-         */
-        $this->evaledQuery = ['categories' => [$name]];
-
-        return $this;
-    }
-
-    private function fromCategories(string ...$names): Projection
-    {
-        /**
-        function fromCategories(categories) {
-            var arr = Array.isArray(categories) ? categories : Array.prototype.slice.call(arguments);
-            arr = arr.map(function (x) {
-                return '$ce-' + x;
-            });
-            return fromStreams(arr);
-        }
-         */
-        $this->evaledQuery = ['categories' => $names];
-
-        return $this;
-    }
-
-    private function fromAll(): Projection
-    {
-        /*
-        function fromAll() {
-            eventProcessor.fromAll();
-            return {
-                partitionBy: partitionBy,
-                when: when,
-                foreachStream: foreachStream,
-                outputState: outputState,
-            };
-        }
-         */
-        $this->evaledQuery = ['all' => true];
-
-        return $this;
-    }
-
-    // Partitions the state for each of the streams provided.
-    private function foreachStream(): Projection
-    {
-        // @todo implement
-        /*
-        function foreachStream() {
-            eventProcessor.byStream();
-            return {
-                when: when,
-            };
-        }
-         */
-    }
-
-    // Selects events from the $all stream that returns true for the given filter.
-    private function fromStreamsMatching(callable $filter): Projection
-    {
-        // @todo implement
-        /*
-        function fromStreamsMatching(filter) {
-            eventProcessor.fromStreamsMatching(filter);
-            return {
-                when: when,
-            };
-        }
-         */
-    }
-
-    // requires a callable with: function (array $state): array
-    // Provides the ability to transform the state of a projection by the provided handler.
-    private function transformBy(callable $transformer): Projection
-    {
-        // @todo implement
-        /*
-        function transformBy(by) {
-            eventProcessor.chainTransformBy(by);
-            return {
-                transformBy: transformBy,
-                filterBy: filterBy,
-                outputState: outputState,
-                outputTo: outputTo,
-            };
-        }
-         */
-    }
-
-    // Causes projection results to be null for any state that returns a falsey value from the given predicate.
-    private function filterBy(callable $by): Projection
-    {
-        // @todo implement
-        /*
-        function filterBy(by) {
-            eventProcessor.chainTransformBy(function (s) {
-                var result = by(s);
-                return result ? s : null;
-            });
-            return {
-                transformBy: transformBy,
-                filterBy: filterBy,
-                outputState: outputState,
-                outputTo: outputTo,
-            };
-        }
-         */
-    }
-
-    /*
-     function outputTo(resultStream, partitionResultStreamPattern) {
-        eventProcessor.$defines_state_transform();
-        eventProcessor.options({
-            resultStreamName: resultStream,
-            partitionResultStreamNamePattern: partitionResultStreamPattern,
-        });
-    }
-
-    function outputState() {
-        eventProcessor.$outputState();
-        return {
-            transformBy: transformBy,
-            filterBy: filterBy,
-            outputTo: outputTo,
-        };
-    }
-     */
-
-    private function createHandlerContext(): object
-    {
-        return new class($this) {
-            private $projector;
-
-            public function __construct(Projection $projector)
-            {
-                $this->projector = $projector;
-            }
-
-            public function stop(): void
-            {
-                $this->projector->disable();
-            }
-
-            public function linkTo(string $streamName, RecordedEvent $event, string $metadata = ''): void
-            {
-                /*
-                function linkTo(streamId, event, metadata) {
-                    var message = { streamId: streamId, eventName: "$>", body: event.sequenceNumber + "@" + event.streamId, metadata: metadata, isJson: false };
-                    eventProcessor.emit(message);
-                }
-                 */
-                $this->projector->linkTo($streamName, $event, $metadata);
-            }
-
-            public function emit(string $streamName, string $eventType, string $data, string $metadata = ''): void
-            {
-                /*
-                function emit(streamId, eventName, eventBody, metadata) {
-                    var message = { streamId: streamId, eventName: eventName , body: JSON.stringify(eventBody), metadata: metadata, isJson: true };
-                    eventProcessor.emit(message);
-                }
-                 */
-                $this->projector->emit($streamName, $eventType, $data, $metadata);
-            }
-        };
-    }
 }
