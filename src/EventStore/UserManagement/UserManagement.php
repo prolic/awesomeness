@@ -11,7 +11,7 @@ interface UserManagement
 {
     public const UserUpdated = '$UserUpdated';
     public const PasswordChanged = '$PasswordChanged';
-    public const UserPasswordNotificationsStreamId = '$users-password-notifications';
+    public const UserPasswordNotificationsStream = '$users-password-notifications';
     public const UsersStream = '$users';
     public const UsersStreamType = '$user';
 

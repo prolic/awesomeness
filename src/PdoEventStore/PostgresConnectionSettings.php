@@ -36,8 +36,8 @@ class PostgresConnectionSettings implements ConnectionSettings
     {
         return new self(
             new IpEndPoint('localhost', 5432),
-            'event_store',
-            new UserCredentials('postgres', ''),
+            'new_event_store',
+            new UserCredentials('postgres', 'postgres'),
             null,
             false
         );

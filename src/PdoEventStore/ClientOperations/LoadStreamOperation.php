@@ -11,11 +11,11 @@ use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Exception\RuntimeException;
 use Prooph\EventStore\Exception\StreamDeleted;
 use Prooph\EventStore\SystemSettings;
-use Prooph\PdoEventStore\Internal\LoadStreamIdResult;
+use Prooph\PdoEventStore\Internal\LoadStreamResult;
 use Prooph\PdoEventStore\Internal\StreamOperation;
 
 /** @internal */
-class LoadStreamIdOperation
+class LoadStreamOperation
 {
     public function __invoke(
         PDO $connection,
@@ -23,7 +23,7 @@ class LoadStreamIdOperation
         int $operation,
         SystemSettings $systemSettings,
         array $userRoles
-    ): LoadStreamIdResult {
+    ): LoadStreamResult {
         switch ($connection->getAttribute(PDO::ATTR_DRIVER_NAME)) {
             case 'mysql':
                 $concat = "GROUP_CONCAT(stream_acl.role SEPARATOR ',')";
@@ -36,11 +36,11 @@ class LoadStreamIdOperation
         }
 
         $statement = $connection->prepare(<<<SQL
-SELECT streams.stream_id, streams.mark_deleted, streams.deleted, $concat as stream_roles
+SELECT streams.mark_deleted, streams.deleted, $concat as stream_roles
     FROM streams
-    LEFT JOIN stream_acl ON streams.stream_id = stream_acl.stream_id AND stream_acl.operation = ?
+    LEFT JOIN stream_acl ON streams.stream_name = stream_acl.stream_name AND stream_acl.operation = ?
     WHERE streams.stream_name = ?
-    GROUP BY streams.stream_id, streams.mark_deleted, streams.deleted
+    GROUP BY streams.stream_name, streams.mark_deleted, streams.deleted
     LIMIT 1;
 SQL
         );
@@ -99,9 +99,9 @@ SQL
         }
 
         if (false === $data) {
-            return new LoadStreamIdResult(false, null);
+            return new LoadStreamResult(false);
         }
 
-        return new LoadStreamIdResult(true, $data->stream_id);
+        return new LoadStreamResult(true);
     }
 }

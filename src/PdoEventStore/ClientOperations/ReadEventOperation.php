@@ -18,7 +18,6 @@ class ReadEventOperation
     public function __invoke(
         PDO $connection,
         string $stream,
-        ?string $streamId,
         int $eventNumber,
         ?UserCredentials $userCredentials
     ): EventReadResult {
@@ -34,18 +33,18 @@ SELECT
 FROM
     events e1 
 LEFT JOIN events e2 
-    ON (e1.link_to = e2.event_id)
-WHERE e1.stream_id = ?
+    ON (e1.link_to_stream_name = e2.stream_name AND e1.link_to_event_number = e2.event_number)
+WHERE e1.stream_name = ?
 SQL;
         if (-1 === $eventNumber) {
             $sql .= <<<SQL
 ORDER BY e1.event_number DESC
 LIMIT 1
 SQL;
-            $params = [$streamId];
+            $params = [$stream];
         } else {
             $sql .= ' AND e1.event_number = ?';
-            $params = [$streamId, $eventNumber];
+            $params = [$stream, $eventNumber];
         }
 
         $statement = $connection->prepare($sql);

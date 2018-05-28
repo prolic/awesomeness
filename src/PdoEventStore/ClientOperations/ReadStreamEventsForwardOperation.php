@@ -19,7 +19,6 @@ class ReadStreamEventsForwardOperation
     public function __invoke(
         PDO $connection,
         string $stream,
-        string $streamId,
         int $start,
         int $count,
         bool $resolveLinkTos,
@@ -38,8 +37,8 @@ SELECT
 FROM
     events e1
 LEFT JOIN events e2
-    ON (e1.link_to = e2.event_id)
-WHERE e1.stream_id = ?
+    ON (e1.link_to_stream_name = e2.stream_name AND e1.link_to_event_number = e2.event_number)
+WHERE e1.stream_name = ?
 AND e1.event_number >= ?
 ORDER BY e1.event_number ASC
 LIMIT ?
@@ -56,7 +55,7 @@ SELECT
     e.updated
 FROM
     events e
-WHERE e.stream_id = ?
+WHERE e.stream_name = ?
 AND e.event_number >= ?
 ORDER BY e.event_number ASC
 LIMIT ?
@@ -65,7 +64,7 @@ SQL;
 
         $statement = $connection->prepare($sql);
         $statement->setFetchMode(PDO::FETCH_OBJ);
-        $statement->execute([$streamId, $start, $count]);
+        $statement->execute([$stream, $start, $count]);
 
         if (0 === $statement->rowCount()) {
             return new StreamEventsSlice(

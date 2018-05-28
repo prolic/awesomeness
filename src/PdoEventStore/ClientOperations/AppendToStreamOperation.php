@@ -11,7 +11,6 @@ use Prooph\EventStore\ExpectedVersion;
 use Prooph\EventStore\Internal\DateTimeUtil;
 use Prooph\EventStore\UserCredentials;
 use Prooph\EventStore\WriteResult;
-use Ramsey\Uuid\Uuid;
 
 /** @internal */
 class AppendToStreamOperation
@@ -19,7 +18,7 @@ class AppendToStreamOperation
     /**
      * @param PDO $connection
      * @param string $stream
-     * @param string|null $streamId
+     * @param bool $streamExists
      * @param int $expectedVersion
      * @param EventData[] $events
      * @param UserCredentials|null $userCredentials
@@ -31,27 +30,27 @@ class AppendToStreamOperation
     public function __invoke(
         PDO $connection,
         string $stream,
-        ?string $streamId,
+        bool $streamExists,
         int $expectedVersion,
         array $events,
         ?UserCredentials $userCredentials
     ): WriteResult {
         (new AcquireStreamLockOperation())($connection, $stream, $userCredentials);
 
-        if (! $streamId && $expectedVersion === ExpectedVersion::StreamExists) {
+        if (! $streamExists && $expectedVersion === ExpectedVersion::StreamExists) {
             $this->throw(WrongExpectedVersion::withExpectedVersion($stream, $expectedVersion), $connection, $stream);
         }
 
-        if ($streamId && $expectedVersion === ExpectedVersion::NoStream) {
+        if ($streamExists && $expectedVersion === ExpectedVersion::NoStream) {
             $this->throw(WrongExpectedVersion::withExpectedVersion($stream, $expectedVersion), $connection, $stream);
         }
 
-        if ($streamId) {
+        if ($streamExists) {
             $statement = $connection->prepare(<<<SQL
-SELECT MAX(event_number) as current_version FROM events WHERE stream_id = ?
+SELECT MAX(event_number) as current_version FROM events WHERE stream_name = ?
 SQL
             );
-            $statement->execute([$streamId]);
+            $statement->execute([$stream]);
             $statement->setFetchMode(PDO::FETCH_OBJ);
 
             $currentVersion = $statement->fetch()->current_version ?? -1;
@@ -71,17 +70,16 @@ SQL
             $this->throw(WrongExpectedVersion::withCurrentVersion($stream, $currentVersion, $expectedVersion), $connection, $stream);
         }
 
-        if (! $streamId) {
-            $streamId = Uuid::uuid4()->toString();
+        if (! $streamExists) {
             $statement = $connection->prepare(<<<SQL
-INSERT INTO streams (stream_id, stream_name, mark_deleted, deleted) VALUES (?, ?, ?, ?);
+INSERT INTO streams (stream_name, mark_deleted, deleted) VALUES (?, ?, ?);
 SQL
             );
-            $statement->execute([$streamId, $stream, 0, 0]);
+            $statement->execute([$stream, 0, 0]);
         }
 
         $sql = <<<SQL
-INSERT INTO events (event_id, event_number, event_type, data, meta_data, stream_id, is_json, updated) VALUES
+INSERT INTO events (event_id, event_number, event_type, data, meta_data, stream_name, is_json, updated) VALUES
 SQL;
         $sql .= str_repeat('(?, ?, ?, ?, ?, ?, ?, ?), ', count($events));
         $sql = substr($sql, 0, -2);
@@ -97,7 +95,7 @@ SQL;
             $params[] = $event->eventType();
             $params[] = $event->data();
             $params[] = $event->metaData();
-            $params[] = $streamId;
+            $params[] = $stream;
             $params[] = $event->isJson() ? 1 : 0;
             $params[] = $now;
         }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\PostgresProjectionManager\Internal;
 
+use Prooph\EventStore\Common\SystemEventTypes;
 use Prooph\EventStore\RecordedEvent;
 use Prooph\PostgresProjectionManager\Internal\Exception\QueryEvaluationError;
 use Throwable;
@@ -368,7 +369,7 @@ class ProjectionEvaluator
 
     public function linkTo(string $streamName, RecordedEvent $event, string $metadata = ''): void
     {
-        $this->eventProcessor->emit($streamName, '$>', $event->eventNumber() . '@' . $event->streamId(), $metadata, false);
+        $this->eventProcessor->emit($streamName, SystemEventTypes::LinkTo, $event->eventNumber() . '@' . $event->streamId(), $metadata, false);
     }
 
     public function copyTo(string $streamName, RecordedEvent $event, string $metadata = ''): void

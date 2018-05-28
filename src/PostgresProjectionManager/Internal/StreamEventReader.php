@@ -21,8 +21,6 @@ class StreamEventReader extends EventReader
 
     /** @var string */
     private $streamName;
-    /** @var string */
-    private $streamId;
     /** @var int */
     private $fromSequenceNumber;
 
@@ -31,13 +29,11 @@ class StreamEventReader extends EventReader
         SplQueue $queue,
         bool $stopOnEof,
         string $streamName,
-        string $streamId,
         int $fromSequenceNumber
     ) {
         parent::__construct($pool, $queue, $stopOnEof);
 
         $this->streamName = $streamName;
-        $this->streamId = $streamId;
         $this->fromSequenceNumber = $fromSequenceNumber;
     }
 
@@ -56,8 +52,8 @@ SELECT
 FROM
     events e1
 LEFT JOIN events e2
-    ON (e1.link_to = e2.event_id)
-WHERE e1.stream_id = ?
+    ON (e1.link_to_stream_name = e2.stream_name AND e1.link_to_event_number = e2.event_number)
+WHERE e1.stream_name = ?
 AND e1.event_number >= ?
 ORDER BY e1.event_number ASC
 LIMIT ?
@@ -66,7 +62,7 @@ SQL;
         /** @var Statement $statement */
         $statement = yield $this->pool->prepare($sql);
         /** @var ResultSet $result */
-        $result = yield $statement->execute([$this->streamId, $this->fromSequenceNumber, self::MaxReads]);
+        $result = yield $statement->execute([$this->streamName, $this->fromSequenceNumber, self::MaxReads]);
 
         $readEvents = 0;
 

@@ -64,7 +64,7 @@ class ResetPasswordOperation
             );
 
             $eventStoreConnection->appendToStream(
-                UserManagement::UserPasswordNotificationsStreamId,
+                UserManagement::UserPasswordNotificationsStream,
                 ExpectedVersion::Any,
                 [
                     new EventData(

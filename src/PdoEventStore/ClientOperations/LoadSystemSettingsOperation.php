@@ -14,19 +14,6 @@ class LoadSystemSettingsOperation
     public function __invoke(PDO $connection): SystemSettings
     {
         $statement = $connection->prepare(<<<SQL
-SELECT * FROM streams WHERE stream_name = ?
-SQL
-        );
-        $statement->execute([SystemStreams::SettingsStream]);
-
-        if (0 === $statement->rowCount()) {
-            return SystemSettings::default();
-        }
-
-        $statement->setFetchMode(PDO::FETCH_OBJ);
-        $streamData = $statement->fetch();
-
-        $statement = $connection->prepare(<<<SQL
 SELECT
     COALESCE(e1.event_id, e2.event_id) as event_id,
     e1.event_number as event_number,
@@ -38,14 +25,14 @@ SELECT
 FROM
     events e1
 LEFT JOIN events e2
-    ON (e1.link_to = e2.event_id)
-WHERE e1.stream_id = ?
+    ON (e1.link_to_stream_name = e2.stream_name AND e1.link_to_event_number = e2.event_number)
+WHERE e1.stream_name = ?
 ORDER BY e1.event_number DESC
 LIMIT 1
 SQL
         );
         $statement->setFetchMode(PDO::FETCH_OBJ);
-        $statement->execute([$streamData->stream_id]);
+        $statement->execute([SystemStreams::SettingsStream]);
 
         if (0 === $statement->rowCount()) {
             return SystemSettings::default();
