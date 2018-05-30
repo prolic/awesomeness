@@ -13,6 +13,7 @@ use Amp\Postgres\Connection;
 use Amp\Postgres\Pool;
 use Amp\Postgres\ResultSet;
 use Amp\Postgres\Statement;
+use Amp\Process\StatusError;
 use Amp\Promise;
 use Amp\Success;
 use Error;
@@ -23,6 +24,7 @@ use Prooph\EventStore\Exception\RuntimeException;
 use Prooph\EventStore\SystemSettings;
 use Psr\Log\LoggerInterface as PsrLogger;
 use Throwable;
+use const SIGINT;
 use function Amp\call;
 use function assert;
 
@@ -195,13 +197,9 @@ SQL
                     $this->state = self::STOPPING;
 
                     foreach ($this->projectors as $name => $projector) {
-                        if (! $projector->isRunning()) { // @todo: find out why this can happen
-                            unset($this->projectors[$name]);
-                        } else {
-                            yield $projector->send('shutdown');
-                            yield $projector->join();
-                            unset($this->projectors[$name]);
-                        }
+                        yield $projector->send('shutdown');
+                        yield $projector->join();
+                        unset($this->projectors[$name]);
                     }
 
                     assert($this->logger->debug('Stopped') || true);

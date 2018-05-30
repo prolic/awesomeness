@@ -121,6 +121,10 @@ PdoEventStore
 - [x] ACL Integration
 - [ ] Scavenging
 
+PostgresProjectionManager
+- [ ] ACL Integration
+- [ ] Missing functionality
+
 EventSourcing
 
 - [x] Use connection interface

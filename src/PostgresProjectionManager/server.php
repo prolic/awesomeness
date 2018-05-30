@@ -19,6 +19,7 @@ use Amp\Socket;
 use DateTimeZone;
 use Monolog\Logger;
 use Prooph\PostgresProjectionManager\Http\RequestHandler;
+use const SIGINT;
 
 Logger::setTimezone(new DateTimeZone('UTC'));
 

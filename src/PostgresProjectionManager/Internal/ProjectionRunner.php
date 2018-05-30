@@ -32,7 +32,6 @@ use Prooph\EventStore\RecordedEvent;
 use Prooph\PdoEventStore\Internal\StreamOperation;
 use Prooph\PostgresProjectionManager\Internal\Exception\StreamNotFound;
 use Psr\Log\LoggerInterface as PsrLogger;
-use Ramsey\Uuid\Uuid;
 use SplQueue;
 use Throwable;
 use function Amp\call;
@@ -41,7 +40,6 @@ use function current;
 use function explode;
 use function floor;
 use function in_array;
-use function is_callable;
 use function is_string;
 use function microtime;
 
@@ -88,14 +86,8 @@ class ProjectionRunner
     private $checkpointUnhandledBytesThreshold = 10000000;
     /** @var int */
     private $pendingEventsThreshold = 50;
-    /** @var int */
-    private $maxWriteBatchLength = 500;
-    /** @var int|null */
-    private $maxAllowedWritesInFlight = null;
     /** @var array */
     private $runAs;
-    /** @var array */
-    private $handlers = [];
     /** @var array */
     private $streamPositions = [];
     /** @var int */
@@ -221,12 +213,6 @@ SQL;
                     if (isset($data['pendingEventsThreshold'])) {
                         $this->pendingEventsThreshold = $data['pendingEventsThreshold'];
                     }
-                    if (isset($data['maxWriteBatchLength'])) {
-                        $this->maxWriteBatchLength = $data['maxWriteBatchLength'];
-                    }
-                    if (isset($data['maxAllowedWritesInFlight'])) {
-                        $this->maxAllowedWritesInFlight = $data['maxAllowedWritesInFlight'];
-                    }
                     $this->runAs = $data['runAs'];
                     $this->runAs['roles'][] = '$all';
                     break;
@@ -309,8 +295,6 @@ SQL;
 
             yield new Coroutine($this->runQuery());
         });
-
-        $this->logger->debug('started');
     }
 
     public function disable(): void
@@ -327,6 +311,7 @@ SQL;
     public function shutdown(): void
     {
         $this->state = ProjectionState::stopping();
+        $this->logger->debug('SHUTDOWN RECEIVED');
     }
 
     /** @throws Throwable */
@@ -371,15 +356,22 @@ SQL
                 while (yield $result->advance(ResultSet::FETCH_OBJECT)) {
                     $expectedVersion = $result->getCurrent()->current_version;
                 }
+
+                if (null === $expectedVersion) {
+                    $expectedVersion = ExpectedVersion::EmptyStream;
+                }
             } catch (StreamNotFound $e) {
+                $this->logger->debug('stream not found, create it');
                 /** @var Statement $statement */
                 $statement = yield $this->pool->prepare(<<<SQL
-INSERT INTO streams (stream_name, mark_deleted, deleted) VALUES (?, ?, ?, ?);
+INSERT INTO streams (stream_name, mark_deleted, deleted) VALUES (?, ?, ?);
 SQL
                 );
+                $this->logger->debug('stream not found, create it, execute sql');
                 /** @var CommandResult $result */
                 $result = yield $statement->execute([$stream, 0, 0]);
 
+                $this->logger->debug('stream not found, create it, done');
                 if (0 === $result->affectedRows()) {
                     throw new Exception\RuntimeException('Could not create stream for ' . $stream);
                 }
@@ -389,37 +381,27 @@ SQL
         }
 
         $sql = <<<SQL
-INSERT INTO events (event_id, event_number, event_type, data, meta_data, stream_name, is_json, updated, link_to_stream_name, link_to_event_number)
+INSERT INTO events (stream_name, event_id, event_type, data, meta_data, is_json, updated, link_to_stream_name, link_to_event_number, event_number)
 VALUES 
 SQL;
         $sql .= str_repeat('(?, ?, ?, ?, ?, ?, ?, ?, ?, ?), ', count($data));
         $sql = substr($sql, 0, -2) . ';';
 
-        $now = new DateTimeImmutable('NOW', new DateTimeZone('UTC'));
-        $now = DateTimeUtil::format($now);
-
         $params = [];
         foreach ($data as $record) {
-            $params[] = EventId::generate();
-            $params[] = ++$expectedVersion;
-            $params[] = SystemEventTypes::LinkTo;
-            $params[] = $expectedVersions[$record['stream']] . '@' . $record['stream'];
-            $params[] = $record['metadata'];
-            $params[] = $stream;
-            $params[] = $record['event']->isJson();
-            $params[] = $now;
-            $params[] = $record['event']->eventId()->toString(); // @todo stream name
-            $params[] = $record['event']->eventId()->toString(); // @todo event number
+            foreach ($record as $row) {
+                $params[] = $row;
+            }
+            $params[] = ++$expectedVersions[$record['stream']];
         }
-        $this->logger->debug('preparing insert sql');
+
         /** @var Statement $statement */
         $statement = yield $this->pool->prepare($sql);
-        $this->logger->debug('executing insert sql');
         /** @var CommandResult $result */
         $result = yield $statement->execute($params);
 
         if (0 === $result->affectedRows()) {
-            throw new Exception\RuntimeException('Could not create links');
+            throw new Exception\RuntimeException('Could not write events');
         }
 
         $this->logger->debug('releasing locks');
@@ -468,18 +450,23 @@ SQL;
         });
 
         while (! $reader->eof()) {
-            $this->logger->debug('handle loop');
-            if (! $this->queue->isEmpty()) {
-                /** @var RecordedEvent $event */
-                $event = $this->queue->dequeue();
-                $processor->processEvent($event);
-                $this->streamPositions[$event->streamId()] = $event->eventNumber();
-            }
-
             if (! $this->state->equals(ProjectionState::running())) {
                 $reader->pause();
                 break;
             }
+
+            if ($this->queue->isEmpty()) {
+                $this->logger->debug('no new events found, pause for a while');
+                yield new Delayed(200);
+                continue;
+            }
+
+            $this->logger->debug('handle loop ' . $this->state->name());
+
+            /** @var RecordedEvent $event */
+            $event = $this->queue->dequeue();
+            $processor->processEvent($event);
+            $this->streamPositions[$event->streamId()] = $event->eventNumber();
 
             if ($this->queue->count() > $this->pendingEventsThreshold) {
                 $reader->pause();
@@ -631,13 +618,16 @@ SQL;
     /** @throws Throwable */
     private function checkStream(string $streamName): Promise
     {
+        $this->logger->debug('checking stream');
         $result = $this->checkedStreams->get($streamName);
 
         if (null !== $result) {
+            $this->logger->debug('stream ok via cache');
             return new Success();
         }
 
         return call(function () use ($streamName): Generator {
+            $this->logger->debug('checking stream via sql');
             /** @var Statement $statement */
             $statement = yield $this->pool->prepare(<<<SQL
 SELECT streams.mark_deleted, streams.deleted, STRING_AGG(stream_acl.role, ',') as stream_roles
@@ -651,7 +641,7 @@ SQL
 
             /** @var ResultSet $result */
             $result = yield $statement->execute([StreamOperation::Read, $streamName]);
-
+            $this->logger->debug('checking stream via sql done');
             while (yield $result->advance(ResultSet::FETCH_OBJECT)) {
                 $data = $result->getCurrent();
 
@@ -673,10 +663,10 @@ SQL
                 }
 
                 $this->checkedStreams->put($streamName, 'ok');
-
+                $this->logger->debug('checking stream finished');
                 return null;
             }
-
+            $this->logger->debug('checking stream not found');
             throw StreamNotFound::with($streamName);
         });
     }
@@ -706,8 +696,7 @@ SQL
         }
     }
 
-    /** @throws Throwable */
-    public function emit(string $stream, string $eventType, string $data, string $metadata, bool $isJson = false): Promise
+    public function emit(string $stream, string $eventType, string $data, string $metadata, bool $isJson = false): void
     {
         if (! in_array($stream, $this->toWriteStreams, true)) {
             $this->toWriteStreams[] = $stream;
@@ -730,12 +719,12 @@ SQL
         if ($eventType === SystemEventTypes::LinkTo) {
             $linkTo = explode('@', $data);
 
-            $eventData['link_to_stream_name'] = $linkTo[0];
-            $eventData['link_to_event_number'] = $linkTo[1];
+            $eventData['link_to_stream_name'] = $linkTo[1];
+            $eventData['link_to_event_number'] = $linkTo[0];
         }
 
 
-        $this->toWrite[] = $data;
+        $this->toWrite[] = $eventData;
     }
 
     /*

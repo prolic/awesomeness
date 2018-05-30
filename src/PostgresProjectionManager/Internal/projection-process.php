@@ -72,24 +72,29 @@ Loop::run(function () use ($argc, $argv) {
 
         $logger->debug('bootstrapped');
 
-        while (true) {
+        $running = true;
+        // Stop the server when SIGINT is received (this is technically optional, but it is best to call Server::stop()).
+        Loop::onSignal(SIGINT, function (string $watcherId) use ($projector, $logger, &$running) {
+            $logger->info('Receive SIGINT - shutting down');
+            Loop::cancel($watcherId);
+            $projector->shutdown();
+            $running = false;
+        });
+
+        while ($running ) {
             $operation = yield $channel->receive();
 
             switch ($operation) {
                 case 'enable':
                     $logger->debug('starting...');
                     yield $projector->start();
-                    $logger->debug('started');
                     break;
                 case 'disable':
                     $logger->debug('disabling...');
                     $projector->disable();
-                    $logger->debug('disabled');
                     break;
                 case 'shutdown':
-                    $logger->debug('stopping...');
-                    $projector->shutdown();
-                    $logger->debug('stopped');
+                    $logger->debug('shutting down loop');
                     break 2;
                 default:
                     throw new RuntimeException('Invalid operation passed to projector');
@@ -107,8 +112,10 @@ Loop::run(function () use ($argc, $argv) {
     try {
         try {
             yield $channel->send($result);
+            $logger->debug($projectionName . ' shut down');
         } catch (Sync\SerializationException $exception) {
             // Serializing the result failed. Send the reason why.
+            $logger->debug($projectionName . ' stopped with error ' . $exception->getMessage());
             yield $channel->send(new Sync\ExitFailure($exception));
         }
     } catch (Throwable $exception) {
