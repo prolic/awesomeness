@@ -54,7 +54,7 @@ FROM
 LEFT JOIN events e2
     ON (e1.link_to_stream_name = e2.stream_name AND e1.link_to_event_number = e2.event_number)
 WHERE e1.stream_name = ?
-AND e1.event_number >= ?
+AND e1.event_number > ?
 ORDER BY e1.event_number ASC
 LIMIT ?
 SQL;

@@ -58,8 +58,6 @@ Loop::run(function () use ($argc, $argv) {
             'prooph_log_level' => $logLevel,
         ] = getenv();
 
-        $logLevel = Logger::INFO;
-
         $pool = new Pool($connectionString);
 
         $logHandler = new RotatingFileHandler('/tmp/projector-' . $projectionName . '.log');
@@ -71,8 +69,6 @@ Loop::run(function () use ($argc, $argv) {
 
         $projector = new ProjectionRunner($pool, $projectionName, $projectionId, $logger);
         yield $projector->bootstrap();
-
-        $logger->debug('bootstrapped');
 
         Loop::onSignal(SIGINT, function (string $watcherId) use ($projector, $logger) {
             $logger->info('Receive SIGINT - shutting down');
@@ -94,6 +90,7 @@ Loop::run(function () use ($argc, $argv) {
                     break;
                 case 'shutdown':
                     $logger->debug('shutting down loop');
+                    //$projector->shutdown();
                     break 2; // break the loop
                 default:
                     throw new RuntimeException('Invalid operation passed to projector');

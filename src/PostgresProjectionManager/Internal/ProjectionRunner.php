@@ -130,6 +130,8 @@ class ProjectionRunner
     /** @throws Throwable */
     private function load(): Generator
     {
+        $this->logger->debug('Loading projection ' . $this->name);
+
         $this->lockConnection = yield $this->pool->extractConnection();
 
         /** @var Statement $statement */
@@ -288,7 +290,6 @@ SQL;
             Loop::repeat(100, function (string $watcherId) {
                 if ($this->state->equals(ProjectionState::stopping())) {
                     Loop::cancel($watcherId);
-                    $this->state = ProjectionState::stopped();
                 }
             });
 
@@ -316,7 +317,7 @@ SQL;
     /** @throws Throwable */
     private function write(): Generator
     {
-        if (0 === $this->currentBatchSize) {
+        if (0 === count($this->toWrite)) {
             if ($this->state->equals(ProjectionState::running())) {
                 Loop::defer(function (): Generator {
                     yield from $this->write();
@@ -342,34 +343,9 @@ SQL;
 
             try {
                 yield $this->checkStream($stream);
-
-                /** @var Statement $statement */
-                $statement = yield $this->pool->prepare(<<<SQL
-SELECT MAX(event_number) as current_version FROM events WHERE stream_name = ?
-SQL
-                );
-                /** @var ResultSet $result */
-                $result = yield $statement->execute([$stream]);
-
-                while (yield $result->advance(ResultSet::FETCH_OBJECT)) {
-                    $expectedVersion = $result->getCurrent()->current_version;
-                }
-
-                if (null === $expectedVersion) {
-                    $expectedVersion = ExpectedVersion::EmptyStream;
-                }
+                $expectedVersion = yield from $this->getExpectedVersion($stream);
             } catch (StreamNotFound $e) {
-                /** @var Statement $statement */
-                $statement = yield $this->pool->prepare(<<<SQL
-INSERT INTO streams (stream_name, mark_deleted, deleted) VALUES (?, ?, ?);
-SQL
-                );
-                /** @var CommandResult $result */
-                $result = yield $statement->execute([$stream, 0, 0]);
-
-                if (0 === $result->affectedRows()) {
-                    throw new Exception\RuntimeException('Could not create stream for ' . $stream);
-                }
+                yield from $this->createStream($stream);
             }
 
             $expectedVersions[$stream] = $expectedVersion;
@@ -411,6 +387,8 @@ SQL;
     /** @throws Throwable */
     private function runQuery(): Generator
     {
+        $this->logger->debug('Running projection ' . $this->name);
+
         $notify = function (string $streamName, string $eventType, string $data, string $metadata = '', bool $isJson = false): void {
             $this->emit($streamName, $eventType, $data, $metadata, $isJson);
         };
@@ -476,15 +454,20 @@ SQL;
         if ($this->currentBatchSize > 0) {
             yield from $this->writeCheckPoint();
         }
+
+        $this->state = ProjectionState::stopped();
     }
 
     /** @throws Throwable */
     private function writeCheckPoint(): Generator
     {
-        if ($this->currentBatchSize < $this->checkpointHandledThreshold
+        $this->logger->info('writing checkpoint ' . $this->state->name());
+
+        if ($this->state->equals(ProjectionState::stopping())
+            || $this->currentBatchSize < $this->checkpointHandledThreshold
             || (
                 0 !== $this->checkpointAfterMs
-                || (floor(microtime(true) * 1000 - $this->lastCheckPointMs) < $this->checkpointAfterMs)
+                || (floor(microtime(true) * 10000 - $this->lastCheckPointMs) < $this->checkpointAfterMs)
             )
         ) {
             if ($this->state->equals(ProjectionState::running())) {
@@ -493,65 +476,42 @@ SQL;
                 });
             }
 
-            $this->logger->info('nothing to checkpoint write');
-            $this->logger->info('currentBatchSize: ' . $this->currentBatchSize);
-            $this->logger->info('treshold: ' . $this->checkpointHandledThreshold);
+            $this->logger->info('writing checkpoint NO!');
+
             return null;
         }
 
+        $this->logger->info('writing checkpoint YES!');
+
         $checkpointStream = ProjectionNames::ProjectionsStreamPrefix . $this->name . ProjectionNames::ProjectionCheckpointStreamSuffix;
         $batchSize = $this->currentBatchSize;
+        $streamPositions = $this->streamPositions;
 
         try {
             yield $this->checkStream($checkpointStream);
         } catch (StreamNotFound $e) {
-            /** @var Statement $statement */
-            $statement = yield $this->pool->prepare(<<<SQL
-INSERT INTO streams (stream_name, mark_deleted, deleted) VALUES (?, ?, ?, ?);
-SQL
-            );
-            /** @var CommandResult $result */
-            $result = yield $statement->execute([$checkpointStream, 0, 0]);
-
-            if (0 === $result->affectedRows()) {
-                throw new Exception\RuntimeException('Could not create stream id for ' . $checkpointStream);
-            }
+            yield from $this->createStream($checkpointStream);
         }
 
         yield from $this->acquireLock($this->lockConnection, $checkpointStream);
-
-        /** @var Statement $statement */
-        $statement = yield $this->pool->prepare(<<<SQL
-SELECT MAX(event_number) as current_version FROM events WHERE stream_name = ?
-SQL
-        );
-        /** @var ResultSet $result */
-        $result = yield $statement->execute([$checkpointStream]);
-
-        $expectedVersion = ExpectedVersion::NoStream;
-
-        while (yield $result->advance(ResultSet::FETCH_OBJECT)) {
-            $data = $result->getCurrent();
-            $expectedVersion = $data->current_version;
-        }
+        $expectedVersion = yield from $this->getExpectedVersion($checkpointStream);
 
         $sql = <<<SQL
-INSERT INTO events (event_id, event_number, event_type, data, meta_data, stream_name, is_json, updated)
+INSERT INTO events (event_id, event_number, event_type, data, meta_data, stream_name, is_json, updated) 
     VALUES (?, ?, ?, ?, ?, ?, ?, ?);
 SQL;
         $now = new DateTimeImmutable('NOW', new DateTimeZone('UTC'));
-        $now = DateTimeUtil::format($now);
 
         $params[] = EventId::generate()->toString();
         $params[] = ++$expectedVersion;
         $params[] = ProjectionEventTypes::ProjectionCheckpoint;
         $params[] = json_encode([
-            '$s' => $this->streamPositions,
+            '$s' => $streamPositions,
         ]);
         $params[] = '';
         $params[] = $checkpointStream;
         $params[] = true;
-        $params[] = $now;
+        $params[] = DateTimeUtil::format($now);
 
         /** @var Statement $statement */
         $statement = yield $this->pool->prepare($sql);
@@ -562,7 +522,7 @@ SQL;
             throw new Exception\RuntimeException('Could not write checkpoint for ' . $this->name);
         }
 
-        yield $this->releaseLock($this->lockConnection, $checkpointStream);
+        yield from $this->releaseLock($this->lockConnection, $checkpointStream);
 
         $this->currentBatchSize = $this->currentBatchSize - $batchSize;
         $this->lastCheckPointMs = microtime(true) * 10000;
@@ -584,7 +544,7 @@ SQL;
                 $streamName = current($processor->sources()['streams']);
 
                 if (! isset($this->streamPositions[$streamName])) {
-                    $this->streamPositions[$streamName] = 0;
+                    $this->streamPositions[$streamName] = -1;
                 }
 
                 yield $this->checkStream($streamName);
@@ -793,4 +753,44 @@ SQL
             $this->streamPositions = [];
         }
     */
+
+    /** @throws Throwable */
+    private function createStream(string $streamName): Generator
+    {
+        /** @var Statement $statement */
+        $statement = yield $this->pool->prepare(<<<SQL
+INSERT INTO streams (stream_name, mark_deleted, deleted) VALUES (?, ?, ?);
+SQL
+        );
+        /** @var CommandResult $result */
+        $result = yield $statement->execute([$streamName, 0, 0]);
+
+        if (0 === $result->affectedRows()) {
+            throw new Exception\RuntimeException('Could not create stream for ' . $streamName);
+        }
+    }
+
+    /** @throws Throwable */
+    private function getExpectedVersion(string $streamName): Generator
+    {
+        $expectedVersion = ExpectedVersion::NoStream;
+
+        /** @var Statement $statement */
+        $statement = yield $this->pool->prepare(<<<SQL
+SELECT MAX(event_number) as current_version FROM events WHERE stream_name = ?
+SQL
+            );
+        /** @var ResultSet $result */
+        $result = yield $statement->execute([$streamName]);
+
+        while (yield $result->advance(ResultSet::FETCH_OBJECT)) {
+            $expectedVersion = $result->getCurrent()->current_version;
+        }
+
+        if (null === $expectedVersion) {
+            $expectedVersion = ExpectedVersion::EmptyStream;
+        }
+
+        return $expectedVersion;
+    }
 }
