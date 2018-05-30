@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Prooph\PostgresProjectionManager\Internal;
 
-use Amp\Coroutine;
 use Amp\Delayed;
 use Amp\Loop;
 use Amp\Postgres\CommandResult;
@@ -118,7 +117,7 @@ class ProjectionRunner
     public function bootstrap(): Promise
     {
         return call(function (): Generator {
-            yield new Coroutine($this->load());
+            yield from $this->load();
 
             if ($this->enabled) {
                 yield $this->start();
@@ -293,7 +292,7 @@ SQL;
 
             $this->lastCheckPointMs = microtime(true) * 10000;
 
-            yield new Coroutine($this->runQuery());
+            yield from $this->runQuery();
         });
     }
 
@@ -317,8 +316,17 @@ SQL;
     /** @throws Throwable */
     private function write(): Generator
     {
+        $this->logger->debug('WRITING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1');
+
         if (0 === count($this->toWrite)) {
             $this->logger->debug('nothing to write');
+
+            if ($this->state->equals(ProjectionState::running())) {
+                Loop::defer(function (): Generator {
+                    $this->logger->debug('next write loop called');
+                    yield from $this->write();
+                });
+            }
 
             return null;
         }
@@ -332,7 +340,7 @@ SQL;
 
         foreach ($streams as $stream) {
             $this->logger->debug('acquire lock for ' . $stream);
-            yield new Coroutine($this->acquireLock($this->lockConnection, $stream));
+            yield from $this->acquireLock($this->lockConnection, $stream);
             $this->logger->debug('acquire lock for ' . $stream . ' done');
         }
 
@@ -407,14 +415,14 @@ SQL;
         $this->logger->debug('releasing locks');
 
         foreach ($streams as $stream) {
-            yield new Coroutine($this->releaseLock($this->lockConnection, $stream));
+            yield from $this->releaseLock($this->lockConnection, $stream);
         }
 
         $this->logger->debug('releasing locks done');
 
         Loop::defer(function (): Generator {
             $this->logger->debug('next write loop called');
-            yield new Coroutine($this->write());
+            yield from $this->write();
         });
 
         $this->logger->debug('writing ok');
@@ -493,13 +501,12 @@ SQL;
         if (count($this->toWrite) > 0) {
             yield from $this->writeCheckPoint();
         }
-
-        $this->logger->info('written checkpoint');
     }
 
     /** @throws Throwable */
     private function writeCheckPoint(): Generator
     {
+        $this->logger->info('writing checkpoint');
         if (count($this->toWrite) < $this->checkpointHandledThreshold
             || (
                 0 !== $this->checkpointAfterMs
@@ -512,6 +519,9 @@ SQL;
                 });
             }
 
+            $this->logger->info('nothing to checkpoint write');
+            $this->logger->info('count to write: ' . count($this->toWrite));
+            $this->logger->info('treshold: ' . $this->checkpointHandledThreshold);
             return null;
         }
 
@@ -533,7 +543,7 @@ SQL
             }
         }
 
-        yield new Coroutine($this->acquireLock($this->lockConnection, $checkpointStream));
+        yield from $this->acquireLock($this->lockConnection, $checkpointStream);
 
         /** @var Statement $statement */
         $statement = yield $this->pool->prepare(<<<SQL
@@ -579,7 +589,9 @@ SQL;
 
         $this->lastCheckPointMs = microtime(true) * 10000;
 
-        yield new Coroutine($this->releaseLock($this->lockConnection, $checkpointStream));
+        yield $this->releaseLock($this->lockConnection, $checkpointStream);
+
+        $this->logger->info('Checkpoint created');
 
         if ($this->state->equals(ProjectionState::running())) {
             Loop::delay($this->checkpointAfterMs, function (): Generator {

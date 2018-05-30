@@ -58,11 +58,13 @@ Loop::run(function () use ($argc, $argv) {
             'prooph_log_level' => $logLevel,
         ] = getenv();
 
+        $logLevel = Logger::INFO;
+
         $pool = new Pool($connectionString);
 
         $logHandler = new RotatingFileHandler('/tmp/projector-' . $projectionName . '.log');
         $logHandler->setFormatter(new ConsoleFormatter());
-        $logHandler->setLevel(Logger::class . '::' . $logLevel);
+        $logHandler->setLevel($logLevel);
 
         $logger = new Logger('PROJECTOR-' . $projectionName . ' - ' . posix_getpid());
         $logger->pushHandler($logHandler);
@@ -72,16 +74,13 @@ Loop::run(function () use ($argc, $argv) {
 
         $logger->debug('bootstrapped');
 
-        $running = true;
-        // Stop the server when SIGINT is received (this is technically optional, but it is best to call Server::stop()).
-        Loop::onSignal(SIGINT, function (string $watcherId) use ($projector, $logger, &$running) {
+        Loop::onSignal(SIGINT, function (string $watcherId) use ($projector, $logger) {
             $logger->info('Receive SIGINT - shutting down');
             Loop::cancel($watcherId);
             $projector->shutdown();
-            $running = false;
         });
 
-        while ($running ) {
+        while (true) {
             $operation = yield $channel->receive();
 
             switch ($operation) {
@@ -95,7 +94,7 @@ Loop::run(function () use ($argc, $argv) {
                     break;
                 case 'shutdown':
                     $logger->debug('shutting down loop');
-                    break 2;
+                    break 2; // break the loop
                 default:
                     throw new RuntimeException('Invalid operation passed to projector');
             }
@@ -112,10 +111,8 @@ Loop::run(function () use ($argc, $argv) {
     try {
         try {
             yield $channel->send($result);
-            $logger->debug($projectionName . ' shut down');
         } catch (Sync\SerializationException $exception) {
             // Serializing the result failed. Send the reason why.
-            $logger->debug($projectionName . ' stopped with error ' . $exception->getMessage());
             yield $channel->send(new Sync\ExitFailure($exception));
         }
     } catch (Throwable $exception) {
