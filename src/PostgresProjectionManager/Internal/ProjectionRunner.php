@@ -608,6 +608,7 @@ SQL
                 }
 
                 $this->checkedStreams->put($streamName, 'ok');
+
                 return null;
             }
 
@@ -666,7 +667,6 @@ SQL
             $eventData['link_to_stream_name'] = $linkTo[1];
             $eventData['link_to_event_number'] = $linkTo[0];
         }
-
 
         $this->toWrite[] = $eventData;
     }
