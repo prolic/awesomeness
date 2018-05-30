@@ -97,6 +97,8 @@ class ProjectionRunner
     private $toWriteStreams = [];
     /** @var array */
     private $toWrite = [];
+    /** @var int */
+    private $currentBatchSize = 0;
 
     public function __construct(
         Pool $pool,
@@ -304,26 +306,19 @@ SQL;
 
         $this->enabled = false;
         $this->state = ProjectionState::stopping();
-        $this->logger->debug('disabled');
     }
 
     public function shutdown(): void
     {
         $this->state = ProjectionState::stopping();
-        $this->logger->debug('SHUTDOWN RECEIVED');
     }
 
     /** @throws Throwable */
     private function write(): Generator
     {
-        $this->logger->debug('WRITING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1');
-
-        if (0 === count($this->toWrite)) {
-            $this->logger->debug('nothing to write');
-
+        if (0 === $this->currentBatchSize) {
             if ($this->state->equals(ProjectionState::running())) {
                 Loop::defer(function (): Generator {
-                    $this->logger->debug('next write loop called');
                     yield from $this->write();
                 });
             }
@@ -339,9 +334,7 @@ SQL;
         $this->toWrite = [];
 
         foreach ($streams as $stream) {
-            $this->logger->debug('acquire lock for ' . $stream);
             yield from $this->acquireLock($this->lockConnection, $stream);
-            $this->logger->debug('acquire lock for ' . $stream . ' done');
         }
 
         foreach ($streams as $stream) {
@@ -350,17 +343,14 @@ SQL;
             try {
                 yield $this->checkStream($stream);
 
-                $this->logger->debug('preparing sql');
                 /** @var Statement $statement */
                 $statement = yield $this->pool->prepare(<<<SQL
 SELECT MAX(event_number) as current_version FROM events WHERE stream_name = ?
 SQL
                 );
-                $this->logger->debug('executing sql');
                 /** @var ResultSet $result */
                 $result = yield $statement->execute([$stream]);
 
-                $this->logger->debug('advancing');
                 while (yield $result->advance(ResultSet::FETCH_OBJECT)) {
                     $expectedVersion = $result->getCurrent()->current_version;
                 }
@@ -369,17 +359,14 @@ SQL
                     $expectedVersion = ExpectedVersion::EmptyStream;
                 }
             } catch (StreamNotFound $e) {
-                $this->logger->debug('stream not found, create it');
                 /** @var Statement $statement */
                 $statement = yield $this->pool->prepare(<<<SQL
 INSERT INTO streams (stream_name, mark_deleted, deleted) VALUES (?, ?, ?);
 SQL
                 );
-                $this->logger->debug('stream not found, create it, execute sql');
                 /** @var CommandResult $result */
                 $result = yield $statement->execute([$stream, 0, 0]);
 
-                $this->logger->debug('stream not found, create it, done');
                 if (0 === $result->affectedRows()) {
                     throw new Exception\RuntimeException('Could not create stream for ' . $stream);
                 }
@@ -412,27 +399,18 @@ SQL;
             throw new Exception\RuntimeException('Could not write events');
         }
 
-        $this->logger->debug('releasing locks');
-
         foreach ($streams as $stream) {
             yield from $this->releaseLock($this->lockConnection, $stream);
         }
 
-        $this->logger->debug('releasing locks done');
-
         Loop::defer(function (): Generator {
-            $this->logger->debug('next write loop called');
             yield from $this->write();
         });
-
-        $this->logger->debug('writing ok');
     }
 
     /** @throws Throwable */
     private function runQuery(): Generator
     {
-        $this->logger->debug('eval query');
-
         $notify = function (string $streamName, string $eventType, string $data, string $metadata = '', bool $isJson = false): void {
             $this->emit($streamName, $eventType, $data, $metadata, $isJson);
         };
@@ -446,8 +424,6 @@ SQL;
         /** @var EventReader $reader */
         $reader = yield $this->determineReader($processor);
         $reader->run();
-
-        $this->logger->debug('reader run');
 
         Loop::delay(100, function (): Generator { // write up to 10 times per second
             yield from $this->write();
@@ -464,17 +440,15 @@ SQL;
             }
 
             if ($this->queue->isEmpty()) {
-                $this->logger->debug('no new events found, pause for a while');
                 yield new Delayed(200);
                 continue;
             }
-
-            $this->logger->debug('handle loop ' . $this->state->name());
 
             /** @var RecordedEvent $event */
             $event = $this->queue->dequeue();
             $processor->processEvent($event);
             $this->streamPositions[$event->streamId()] = $event->eventNumber();
+            ++$this->currentBatchSize;
 
             if ($this->queue->count() > $this->pendingEventsThreshold) {
                 $reader->pause();
@@ -494,11 +468,12 @@ SQL;
             $event = $this->queue->dequeue();
             $processor->processEvent($event);
             $this->streamPositions[$event->streamId()] = $event->eventNumber();
+            ++$this->currentBatchSize;
 
             yield new Delayed(0); // let some other work be done, too
         }
 
-        if (count($this->toWrite) > 0) {
+        if ($this->currentBatchSize > 0) {
             yield from $this->writeCheckPoint();
         }
     }
@@ -506,8 +481,7 @@ SQL;
     /** @throws Throwable */
     private function writeCheckPoint(): Generator
     {
-        $this->logger->info('writing checkpoint');
-        if (count($this->toWrite) < $this->checkpointHandledThreshold
+        if ($this->currentBatchSize < $this->checkpointHandledThreshold
             || (
                 0 !== $this->checkpointAfterMs
                 || (floor(microtime(true) * 1000 - $this->lastCheckPointMs) < $this->checkpointAfterMs)
@@ -520,12 +494,13 @@ SQL;
             }
 
             $this->logger->info('nothing to checkpoint write');
-            $this->logger->info('count to write: ' . count($this->toWrite));
+            $this->logger->info('currentBatchSize: ' . $this->currentBatchSize);
             $this->logger->info('treshold: ' . $this->checkpointHandledThreshold);
             return null;
         }
 
         $checkpointStream = ProjectionNames::ProjectionsStreamPrefix . $this->name . ProjectionNames::ProjectionCheckpointStreamSuffix;
+        $batchSize = $this->currentBatchSize;
 
         try {
             yield $this->checkStream($checkpointStream);
@@ -587,9 +562,10 @@ SQL;
             throw new Exception\RuntimeException('Could not write checkpoint for ' . $this->name);
         }
 
-        $this->lastCheckPointMs = microtime(true) * 10000;
-
         yield $this->releaseLock($this->lockConnection, $checkpointStream);
+
+        $this->currentBatchSize = $this->currentBatchSize - $batchSize;
+        $this->lastCheckPointMs = microtime(true) * 10000;
 
         $this->logger->info('Checkpoint created');
 
@@ -630,16 +606,13 @@ SQL;
     /** @throws Throwable */
     private function checkStream(string $streamName): Promise
     {
-        $this->logger->debug('checking stream');
         $result = $this->checkedStreams->get($streamName);
 
         if (null !== $result) {
-            $this->logger->debug('stream ok via cache');
             return new Success();
         }
 
         return call(function () use ($streamName): Generator {
-            $this->logger->debug('checking stream via sql');
             /** @var Statement $statement */
             $statement = yield $this->pool->prepare(<<<SQL
 SELECT streams.mark_deleted, streams.deleted, STRING_AGG(stream_acl.role, ',') as stream_roles
@@ -653,7 +626,7 @@ SQL
 
             /** @var ResultSet $result */
             $result = yield $statement->execute([StreamOperation::Read, $streamName]);
-            $this->logger->debug('checking stream via sql done');
+
             while (yield $result->advance(ResultSet::FETCH_OBJECT)) {
                 $data = $result->getCurrent();
 
@@ -675,10 +648,9 @@ SQL
                 }
 
                 $this->checkedStreams->put($streamName, 'ok');
-                $this->logger->debug('checking stream finished');
                 return null;
             }
-            $this->logger->debug('checking stream not found');
+
             throw StreamNotFound::with($streamName);
         });
     }
