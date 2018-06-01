@@ -80,7 +80,7 @@ SQL;
                 DateTimeUtil::create($row->updated)
             ));
 
-            $this->fromSequenceNumber = $row->event_number + 1;
+            $this->fromSequenceNumber = $row->event_number;
         }
 
         if (0 === $readEvents && $this->stopOnEof) {

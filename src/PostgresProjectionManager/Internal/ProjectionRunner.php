@@ -471,6 +471,8 @@ SQL;
             yield new Delayed(0); // let some other work be done, too
         }
 
+        yield from $this->write();
+
         if ($this->currentBatchSize > 0) {
             yield from $this->writeCheckPoint();
         }
@@ -481,22 +483,18 @@ SQL;
     /** @throws Throwable */
     private function writeCheckPoint(): Generator
     {
-        $this->logger->info('writing checkpoint, size: ' . $this->currentBatchSize);
+        $this->logger->info('writing checkpoint, size: ' . $this->currentBatchSize . ', threshold: ' . $this->checkpointHandledThreshold);
 
-        if ($this->state->equals(ProjectionState::stopping())
-            || $this->currentBatchSize < $this->checkpointHandledThreshold
-            || (
-                0 !== $this->checkpointAfterMs
-                || (floor(microtime(true) * 10000 - $this->lastCheckPointMs) < $this->checkpointAfterMs)
-            )
+        if ($this->currentBatchSize < $this->checkpointHandledThreshold
+            || (floor(microtime(true) * 10000 - $this->lastCheckPointMs) < $this->checkpointAfterMs)
         ) {
             if ($this->state->equals(ProjectionState::running())) {
                 Loop::delay($this->checkpointAfterMs, function (): Generator {
                     yield from $this->writeCheckPoint();
                 });
-            }
 
-            return null;
+                return null;
+            }
         }
 
         $this->logger->info('writing checkpoint');
