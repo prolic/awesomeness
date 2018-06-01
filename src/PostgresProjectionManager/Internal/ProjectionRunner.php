@@ -48,6 +48,7 @@ use function microtime;
 class ProjectionRunner
 {
     private const CheckedStreamsCacheSize = 10000;
+    private const MinCheckpointAfterMs = 100;
 
     /** @var SplQueue */
     private $queue;
@@ -78,7 +79,7 @@ class ProjectionRunner
     /** @var bool */
     private $trackEmittedStreams;
     /** @var int */
-    private $checkpointAfterMs = 1;
+    private $checkpointAfterMs = self::MinCheckpointAfterMs;
     /** @var int */
     private $checkpointHandledThreshold = 4000;
     /** @var int */
@@ -130,7 +131,7 @@ class ProjectionRunner
     /** @throws Throwable */
     private function load(): Generator
     {
-        $this->logger->debug('Loading projection ' . $this->name);
+        $this->logger->debug('Loading projection');
 
         $this->state = ProjectionState::initial();
 
@@ -195,8 +196,9 @@ SQL;
             switch ($event->event_type) {
                 case ProjectionEventTypes::ProjectionUpdated:
                     $data = json_decode($event->data, true);
+
                     if (0 !== json_last_error()) {
-                        throw new Error('Could not json decode event data for projection "' . $this->name . '"');
+                        throw new Error('Could not json decode event data for projection');
                     }
 
                     $this->handlerType = $data['handlerType'];
@@ -207,11 +209,7 @@ SQL;
                     $this->checkpointsDisabled = $data['checkpointsDisabled'];
                     $this->trackEmittedStreams = $data['trackEmittedStreams'];
                     if (isset($data['checkpointAfterMs'])) {
-                        $this->checkpointAfterMs = $data['checkpointAfterMs'];
-
-                        if ($this->checkpointAfterMs < 1) {
-                            $this->checkpointAfterMs = 1;
-                        }
+                        $this->checkpointAfterMs = max($data['checkpointAfterMs'], self::MinCheckpointAfterMs);
                     }
                     if (isset($data['checkpointHandledThreshold'])) {
                         $this->checkpointHandledThreshold = $data['checkpointHandledThreshold'];
@@ -272,7 +270,7 @@ SQL;
                 $streamPositions = json_decode($data->data, true);
 
                 if (0 !== json_last_error()) {
-                    throw new Exception\RuntimeException('Could not json decode checkpoint for ' . $this->name);
+                    throw new Exception\RuntimeException('Could not json decode checkpoint');
                 }
 
                 $this->streamPositions = $streamPositions['$s'];
@@ -286,7 +284,7 @@ SQL;
     public function start(): Promise
     {
         if (! $this->state->equals(ProjectionState::initial())) {
-            throw new Error('Cannot start projection "' . $this->name . '": already ' . $this->state->name());
+            throw new Error('Cannot start projection: already ' . $this->state->name());
         }
 
         return call(function (): Generator {
@@ -407,7 +405,7 @@ SQL;
     /** @throws Throwable */
     private function runQuery(): Generator
     {
-        $this->logger->debug('Running projection ' . $this->name);
+        $this->logger->debug('Running projection');
 
         $notify = function (string $streamName, string $eventType, string $data, string $metadata = '', bool $isJson = false): void {
             $this->emit($streamName, $eventType, $data, $metadata, $isJson);
@@ -461,6 +459,8 @@ SQL;
             yield new Delayed(0); // let some other work be done, too
         }
 
+        $this->logger->debug('Reader reached eof, handling rest of messages');
+
         while (! $this->queue->isEmpty()) {
             /** @var RecordedEvent $event */
             $event = $this->queue->dequeue();
@@ -481,6 +481,8 @@ SQL;
     /** @throws Throwable */
     private function writeCheckPoint(): Generator
     {
+        $this->logger->info('writing checkpoint, size: ' . $this->currentBatchSize);
+
         if ($this->state->equals(ProjectionState::stopping())
             || $this->currentBatchSize < $this->checkpointHandledThreshold
             || (
@@ -535,7 +537,7 @@ SQL;
         $result = yield $statement->execute($params);
 
         if (0 === $result->affectedRows()) {
-            throw new Exception\RuntimeException('Could not write checkpoint for ' . $this->name);
+            throw new Exception\RuntimeException('Could not write checkpoint');
         }
 
         yield from $this->releaseLock($this->lockConnection, $checkpointStream);
