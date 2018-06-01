@@ -320,7 +320,7 @@ SQL;
 
         $this->state = ProjectionState::stopping();
 
-        Loop::repeat(100, function (string $watcherId) {
+        Loop::repeat(150, function (string $watcherId) {
             if ($this->state->equals(ProjectionState::stopped())) {
                 Loop::cancel($watcherId);
                 $this->logger->info('shutdown done');
@@ -483,8 +483,6 @@ SQL;
     /** @throws Throwable */
     private function writeCheckPoint(): Generator
     {
-        $this->logger->info('writing checkpoint, size: ' . $this->currentBatchSize . ', threshold: ' . $this->checkpointHandledThreshold);
-
         if ($this->currentBatchSize < $this->checkpointHandledThreshold
             || (floor(microtime(true) * 10000 - $this->lastCheckPointMs) < $this->checkpointAfterMs)
         ) {
@@ -497,7 +495,7 @@ SQL;
             }
         }
 
-        $this->logger->info('writing checkpoint');
+        $this->logger->debug('writing checkpoint');
 
         $checkpointStream = ProjectionNames::ProjectionsStreamPrefix . $this->name . ProjectionNames::ProjectionCheckpointStreamSuffix;
         $batchSize = $this->currentBatchSize;
