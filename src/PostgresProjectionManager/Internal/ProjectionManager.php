@@ -13,6 +13,7 @@ use Amp\Postgres\Connection;
 use Amp\Postgres\Pool;
 use Amp\Postgres\ResultSet;
 use Amp\Postgres\Statement;
+use Amp\Process\StatusError;
 use Amp\Promise;
 use Amp\Success;
 use Error;
@@ -52,7 +53,7 @@ class ProjectionManager
     /** @var PsrLogger */
     private $logger;
     /** @var Process[] */
-    private $projectors = [];
+    private $projections = [];
     /** @var SystemSettings */
     private $settings;
     /** @var Connection */
@@ -121,7 +122,7 @@ class ProjectionManager
 
                 $this->logger->debug($projectionName . ' :: ' . $pid);
 
-                $this->projectors[$projectionName] = $context;
+                $this->projections[$projectionName] = $context;
 
                 yield new Delayed(100); // waiting for the projection to start
             }
@@ -194,10 +195,14 @@ SQL
                     assert($this->logger->debug('Stopping') || true);
                     $this->state = self::STOPPING;
 
-                    foreach ($this->projectors as $name => $projector) {
-                        yield $projector->send('shutdown');
-                        yield $projector->join();
-                        unset($this->projectors[$name]);
+                    foreach ($this->projections as $name => $context) {
+                        yield $context->send('shutdown');
+                        try {
+                            yield $context->join();
+                        } catch (StatusError $e) {
+                            // projection process already finished
+                        }
+                        unset($this->projections[$name]);
                     }
 
                     assert($this->logger->debug('Stopped') || true);
@@ -214,19 +219,19 @@ SQL
 
     public function disableProjection(string $name): Promise
     {
-        if (! isset($this->projectors[$name])) {
+        if (! isset($this->projections[$name])) {
             return new Failure(ProjectionNotFound::withName($name));
         }
 
-        return $this->projectors[$name]->send('disable');
+        return $this->projections[$name]->send('disable');
     }
 
     public function enableProjection(string $name): Promise
     {
-        if (! isset($this->projectors[$name])) {
+        if (! isset($this->projections[$name])) {
             return new Failure(ProjectionNotFound::withName($name));
         }
 
-        return $this->projectors[$name]->send('enable');
+        return $this->projections[$name]->send('enable');
     }
 }

@@ -78,7 +78,7 @@ class ProjectionRunner
     /** @var bool */
     private $trackEmittedStreams;
     /** @var int */
-    private $checkpointAfterMs = 0;
+    private $checkpointAfterMs = 1;
     /** @var int */
     private $checkpointHandledThreshold = 4000;
     /** @var int */
@@ -131,6 +131,8 @@ class ProjectionRunner
     private function load(): Generator
     {
         $this->logger->debug('Loading projection ' . $this->name);
+
+        $this->state = ProjectionState::initial();
 
         $this->lockConnection = yield $this->pool->extractConnection();
 
@@ -206,6 +208,10 @@ SQL;
                     $this->trackEmittedStreams = $data['trackEmittedStreams'];
                     if (isset($data['checkpointAfterMs'])) {
                         $this->checkpointAfterMs = $data['checkpointAfterMs'];
+
+                        if ($this->checkpointAfterMs < 1) {
+                            $this->checkpointAfterMs = 1;
+                        }
                     }
                     if (isset($data['checkpointHandledThreshold'])) {
                         $this->checkpointHandledThreshold = $data['checkpointHandledThreshold'];
@@ -279,20 +285,12 @@ SQL;
     /** @throws Throwable */
     public function start(): Promise
     {
-        if (! $this->state->equals(ProjectionState::stopped())) {
+        if (! $this->state->equals(ProjectionState::initial())) {
             throw new Error('Cannot start projection "' . $this->name . '": already ' . $this->state->name());
         }
 
         return call(function (): Generator {
             $this->enabled = true;
-            $this->state = ProjectionState::initial();
-
-            Loop::repeat(100, function (string $watcherId) {
-                if ($this->state->equals(ProjectionState::stopping())) {
-                    Loop::cancel($watcherId);
-                }
-            });
-
             $this->lastCheckPointMs = microtime(true) * 10000;
 
             yield from $this->runQuery();
@@ -311,7 +309,27 @@ SQL;
 
     public function shutdown(): void
     {
+        if ($this->state->equals(ProjectionState::stopped())) {
+            $this->logger->info('shutdown done');
+            return;
+        }
+
+        if ($this->state->equals(ProjectionState::initial())) {
+            $this->state = ProjectionState::stopped();
+            $this->logger->info('shutdown done');
+            return;
+        }
+
         $this->state = ProjectionState::stopping();
+
+        Loop::repeat(100, function (string $watcherId) {
+            if ($this->state->equals(ProjectionState::stopped())) {
+                Loop::cancel($watcherId);
+                $this->logger->info('shutdown done');
+            } else {
+                $this->logger->debug('still waiting for shutdown...');
+            }
+        });
     }
 
     /** @throws Throwable */
@@ -379,9 +397,11 @@ SQL;
             yield from $this->releaseLock($this->lockConnection, $stream);
         }
 
-        Loop::defer(function (): Generator {
-            yield from $this->write();
-        });
+        if ($this->state->equals(ProjectionState::running())) {
+            Loop::defer(function (): Generator {
+                yield from $this->write();
+            });
+        }
     }
 
     /** @throws Throwable */
@@ -461,8 +481,6 @@ SQL;
     /** @throws Throwable */
     private function writeCheckPoint(): Generator
     {
-        $this->logger->info('writing checkpoint ' . $this->state->name());
-
         if ($this->state->equals(ProjectionState::stopping())
             || $this->currentBatchSize < $this->checkpointHandledThreshold
             || (
@@ -476,12 +494,10 @@ SQL;
                 });
             }
 
-            $this->logger->info('writing checkpoint NO!');
-
             return null;
         }
 
-        $this->logger->info('writing checkpoint YES!');
+        $this->logger->info('writing checkpoint');
 
         $checkpointStream = ProjectionNames::ProjectionsStreamPrefix . $this->name . ProjectionNames::ProjectionCheckpointStreamSuffix;
         $batchSize = $this->currentBatchSize;

@@ -65,8 +65,8 @@ Loop::run(function () {
 
     // Stop the server when SIGINT is received (this is technically optional, but it is best to call Server::stop()).
     Loop::onSignal(SIGINT, function (string $watcherId) use ($server, $projectionManager, $logger) {
-        $logger->info('Receive SIGINT - shutting down');
         Loop::cancel($watcherId);
+        $logger->info('Received SIGINT - shutting down');
         yield $server->stop();
         yield $projectionManager->stop();
     });

@@ -15,6 +15,7 @@ use Throwable;
 use const PHP_EOL;
 use const PHP_OUTPUT_HANDLER_CLEANABLE;
 use const PHP_OUTPUT_HANDLER_FLUSHABLE;
+use const SIGINT;
 use const STDERR;
 use const STDIN;
 use const STDOUT;
@@ -67,13 +68,13 @@ Loop::run(function () use ($argc, $argv) {
         $logger = new Logger('PROJECTOR-' . $projectionName . ' - ' . posix_getpid());
         $logger->pushHandler($logHandler);
 
-        $projector = new ProjectionRunner($pool, $projectionName, $projectionId, $logger);
-        yield $projector->bootstrap();
+        $projectionRunner = new ProjectionRunner($pool, $projectionName, $projectionId, $logger);
+        yield $projectionRunner->bootstrap();
 
-        Loop::onSignal(SIGINT, function (string $watcherId) use ($projector, $logger) {
-            $logger->info('Receive SIGINT - shutting down');
+        Loop::onSignal(SIGINT, function (string $watcherId) use ($projectionRunner, $logger) {
             Loop::cancel($watcherId);
-            $projector->shutdown();
+            $logger->info('Received SIGINT - shutting down');
+            $projectionRunner->shutdown();
         });
 
         while (true) {
@@ -81,16 +82,14 @@ Loop::run(function () use ($argc, $argv) {
 
             switch ($operation) {
                 case 'enable':
-                    $logger->debug('starting...');
-                    yield $projector->start();
+                    $logger->info('enabling projection');
+                    yield $projectionRunner->start();
                     break;
                 case 'disable':
-                    $logger->debug('disabling...');
-                    $projector->disable();
+                    $logger->info('disabling projection');
+                    $projectionRunner->disable();
                     break;
                 case 'shutdown':
-                    $logger->debug('shutting down loop');
-                    //$projector->shutdown();
                     break 2; // break the loop
                 default:
                     throw new RuntimeException('Invalid operation passed to projector');
