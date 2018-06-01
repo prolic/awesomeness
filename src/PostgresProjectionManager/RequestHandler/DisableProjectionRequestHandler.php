@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Prooph\PostgresProjectionManager\Http\RequestHandler;
+namespace Prooph\PostgresProjectionManager\RequestHandler;
 
 use Amp\Http\Server\Request;
 use Amp\Http\Server\RequestHandler;
@@ -13,7 +13,7 @@ use Prooph\PostgresProjectionManager\Internal\ProjectionManager;
 use function Amp\call;
 
 /** @internal */
-class EnableProjectionRequestHandler implements RequestHandler
+class DisableProjectionRequestHandler implements RequestHandler
 {
     /** @var ProjectionManager */
     private $projectionManager;
@@ -30,9 +30,9 @@ class EnableProjectionRequestHandler implements RequestHandler
 
         return call(function () use ($name) {
             try {
-                yield $this->projectionManager->enableProjection($name);
+                yield $this->projectionManager->disableProjection($name);
             } catch (\Throwable $e) {
-                return new Response(404, ['Content-Type' => 'text/html'], 'Not found ' . $e->getMessage());
+                return new Response(404, ['Content-Type' => 'text/html'], 'Not found');
             }
 
             return new Response(202, ['Content-Type' => 'text/html'], 'OK');
