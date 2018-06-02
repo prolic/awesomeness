@@ -83,7 +83,7 @@ Loop::run(function () use ($argc, $argv) {
             switch ($operation) {
                 case 'enable':
                     $logger->info('enabling projection');
-                    yield $projectionRunner->start();
+                    yield $projectionRunner->enable();
                     break;
                 case 'disable':
                     $logger->info('disabling projection');

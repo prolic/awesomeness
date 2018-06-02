@@ -123,7 +123,7 @@ class ProjectionRunner
             yield from $this->load();
 
             if ($this->enabled) {
-                yield $this->start();
+                yield $this->enable();
             }
         });
     }
@@ -281,7 +281,7 @@ SQL;
     }
 
     /** @throws Throwable */
-    public function start(): Promise
+    public function enable(): Promise
     {
         if (! $this->state->equals(ProjectionState::initial())) {
             throw new Error('Cannot start projection: already ' . $this->state->name());
