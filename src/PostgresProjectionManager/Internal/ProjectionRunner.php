@@ -301,21 +301,78 @@ SQL;
         }
 
         return call(function (): Generator {
-            $this->enabled = true;
+            if (! $this->enabled) {
+                $sql = <<<SQL
+INSERT INTO events (stream_name, event_id, event_number, event_type, data, meta_data, is_json, updated) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+SQL;
+                /** @var Statement $statement */
+                $statement = yield $this->pool->prepare($sql);
+
+                $now = new DateTimeImmutable('NOW', new DateTimeZone('UTC'));
+
+                /** @var CommandResult $result */
+                $result = yield $statement->execute([
+                    ProjectionNames::ProjectionsStreamPrefix . $this->name,
+                    EventId::generate()->toString(),
+                    $this->projectionEventNumber + 1,
+                    '$start',
+                    json_encode(['id' => $this->id]),
+                    '',
+                    true,
+                    DateTimeUtil::format($now),
+                ]);
+
+                if ($result->affectedRows() !== 1) {
+                    throw new Exception\RuntimeException('Could not enable projection');
+                }
+
+                ++$this->projectionEventNumber;
+
+                $this->enabled = true;
+            }
+
             $this->lastCheckPointMs = microtime(true) * 10000;
 
             yield from $this->runQuery();
         });
     }
 
-    public function disable(): void
+    public function disable(): Promise
     {
         if (! $this->state->equals(ProjectionState::running())) {
-            return;
+            return new Success();
         }
 
         $this->enabled = false;
         $this->state = ProjectionState::stopping();
+
+        return call(function (): Generator {
+            $sql = <<<SQL
+INSERT INTO events (stream_name, event_id, event_number, event_type, data, meta_data, is_json, updated) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+SQL;
+            /** @var Statement $statement */
+            $statement = yield $this->pool->prepare($sql);
+
+            $now = new DateTimeImmutable('NOW', new DateTimeZone('UTC'));
+
+            /** @var CommandResult $result */
+            $result = yield $statement->execute([
+                ProjectionNames::ProjectionsStreamPrefix . $this->name,
+                EventId::generate()->toString(),
+                $this->projectionEventNumber + 1,
+                '$stop',
+                json_encode(['id' => $this->id]),
+                '',
+                true,
+                DateTimeUtil::format($now),
+            ]);
+
+            if ($result->affectedRows() !== 1) {
+                throw new Exception\RuntimeException('Could not disable projection');
+            }
+
+            ++$this->projectionEventNumber;
+        });
     }
 
     public function shutdown(): void

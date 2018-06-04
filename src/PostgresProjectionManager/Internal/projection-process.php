@@ -87,7 +87,7 @@ Loop::run(function () use ($argc, $argv) {
                     break;
                 case 'disable':
                     $logger->info('disabling projection');
-                    $projectionRunner->disable();
+                    yield $projectionRunner->disable();
                     break;
                 case 'shutdown':
                     break 2; // break the loop
