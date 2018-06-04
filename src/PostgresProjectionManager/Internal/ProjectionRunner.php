@@ -286,6 +286,7 @@ SQL;
                 }
 
                 $this->streamPositions = $streamPositions['$s'];
+                $this->lastWrittenStreamPositions = $streamPositions['$s'];
             }
         } catch (StreamNotFound $e) {
             // ignore, no checkpoint found
@@ -496,7 +497,8 @@ SQL;
     private function writeCheckPoint(): Generator
     {
         if ($this->currentBatchSize < $this->checkpointHandledThreshold
-            || (floor(microtime(true) * 10000 - $this->lastCheckPointMs) < $this->checkpointAfterMs)
+            || $this->streamPositions === $this->lastWrittenStreamPositions
+            || floor(microtime(true) * 10000 - $this->lastCheckPointMs) < $this->checkpointAfterMs
         ) {
             if ($this->state->equals(ProjectionState::running())) {
                 Loop::delay($this->checkpointAfterMs, function (): Generator {
@@ -553,6 +555,7 @@ SQL;
         $this->currentBatchSize = $this->currentBatchSize - $batchSize;
         $this->lastCheckPointMs = microtime(true) * 10000;
 
+        $this->lastWrittenStreamPositions = $streamPositions;
         $this->logger->info('Checkpoint created');
 
         if ($this->state->equals(ProjectionState::running())) {
@@ -571,6 +574,7 @@ SQL;
 
                 if (! isset($this->streamPositions[$streamName])) {
                     $this->streamPositions[$streamName] = -1;
+                    $this->lastWrittenStreamPositions[$streamName] = -1;
                 }
 
                 yield $this->checkStream($streamName);
