@@ -50,6 +50,8 @@ class ProjectionRunner
     private const CheckedStreamsCacheSize = 10000;
     private const MinCheckpointAfterMs = 100;
 
+    // properties regarding projection runner
+
     /** @var SplQueue */
     private $queue;
     /** @var Pool */
@@ -64,6 +66,21 @@ class ProjectionRunner
     private $logger;
     /** @var ProjectionState */
     private $state;
+    /** @var int */
+    private $projectionEventNumber;
+    /** @var int */
+    private $lastCheckPointMs;
+    /** @var LRUCache */
+    private $checkedStreams;
+    /** @var array */
+    private $toWriteStreams = [];
+    /** @var array */
+    private $toWrite = [];
+    /** @var int */
+    private $currentBatchSize = 0;
+
+    // properties regarding projection itself
+
     /** @var string */
     private $handlerType;
     /** @var string */
@@ -90,16 +107,8 @@ class ProjectionRunner
     private $runAs;
     /** @var array */
     private $streamPositions = [];
-    /** @var int */
-    private $lastCheckPointMs;
-    /** @var LRUCache */
-    private $checkedStreams;
     /** @var array */
-    private $toWriteStreams = [];
-    /** @var array */
-    private $toWrite = [];
-    /** @var int */
-    private $currentBatchSize = 0;
+    private $lastWrittenStreamPositions = [];
 
     public function __construct(
         Pool $pool,
