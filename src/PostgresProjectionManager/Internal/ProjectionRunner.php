@@ -231,12 +231,15 @@ SQL;
                     }
                     $this->runAs = $data['runAs'];
                     $this->runAs['roles'][] = '$all';
+                    $this->projectionEventNumber = $event->event_number;
                     break;
-                case '$stopped':
+                case '$stop':
                     $this->enabled = false;
+                    $this->projectionEventNumber = $event->event_number;
                     break;
-                case '$started':
+                case '$start':
                     $this->enabled = true;
+                    $this->projectionEventNumber = $event->event_number;
                     break;
             }
         }
