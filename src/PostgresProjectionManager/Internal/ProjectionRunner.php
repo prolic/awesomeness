@@ -419,7 +419,7 @@ SQL;
     {
         if (0 === count($this->toWrite)) {
             if ($this->state->equals(ProjectionState::running())) {
-                Loop::defer(function (): Generator {
+                Loop::delay(100, function (): Generator { // write up to 10 times per second
                     yield from $this->write();
                 });
             }
@@ -521,15 +521,14 @@ SQL;
             }
 
             if (! $this->state->equals(ProjectionState::running())) {
-                $this->logger->debug('stopping reader');
                 $reader->pause();
 
-                Loop::delay(0, function (): Generator { // write up to 10 times per second
+                Loop::defer(function (): Generator {
                     yield from $this->write();
                 });
 
                 if (! $this->checkpointsDisabled) {
-                    Loop::delay(0, function (): Generator {
+                    Loop::defer(function (): Generator {
                         yield from $this->writeCheckPoint(true);
                     });
                 }
@@ -540,7 +539,7 @@ SQL;
             }
 
             if ($this->queue->isEmpty()) {
-                Loop::delay(0, function (): Generator {
+                Loop::defer(function (): Generator {
                     yield from $this->writeCheckPoint(true);
                 });
                 Loop::delay(200, $readingTask); // if queue is empty let's wait for a while
@@ -564,10 +563,10 @@ SQL;
                 $reader->run();
             }
 
-            Loop::delay(0, $readingTask);
+            Loop::defer($readingTask);
         };
 
-        Loop::delay(0, $readingTask);
+        Loop::defer($readingTask);
     }
 
     /** @throws Throwable */
