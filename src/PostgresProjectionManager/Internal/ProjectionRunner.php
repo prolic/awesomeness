@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Prooph\PostgresProjectionManager\Internal;
 
-use Amp\Delayed;
 use Amp\Loop;
 use Amp\Postgres\CommandResult;
 use Amp\Postgres\Connection;
@@ -66,6 +65,8 @@ class ProjectionRunner
     private $logger;
     /** @var ProjectionState */
     private $state;
+    /** @var EventProcessor */
+    private $processor;
     /** @var int */
     private $projectionEventNumber;
     /** @var int */
@@ -395,6 +396,15 @@ SQL;
         Loop::repeat(150, function (string $watcherId) {
             if ($this->state->equals(ProjectionState::stopped())) {
                 Loop::cancel($watcherId);
+
+                yield from $this->write();
+
+                if ($this->currentBatchSize > 0
+                    && ! $this->checkpointsDisabled
+                ) {
+                    yield from $this->writeCheckPoint();
+                }
+
                 $this->logger->info('shutdown done');
             } else {
                 $this->logger->debug('still waiting for shutdown...');
@@ -484,13 +494,13 @@ SQL;
         };
 
         $evaluator = new ProjectionEvaluator($notify);
-        $processor = $evaluator->evaluate($this->query);
-        $processor->initState();
+        $this->processor = $evaluator->evaluate($this->query);
+        $this->processor->initState();
 
         $this->state = ProjectionState::running();
 
         /** @var EventReader $reader */
-        $reader = yield $this->determineReader($processor);
+        $reader = yield $this->determineReader();
         $reader->run();
 
         Loop::delay(100, function (): Generator { // write up to 10 times per second
@@ -501,20 +511,28 @@ SQL;
             yield from $this->writeCheckPoint();
         });
 
-        while (! $reader->eof()) {
+        $readingTask = function () use (&$readingTask, $reader): void {
+            if ($reader->eof()) {
+                return;
+            }
+
             if (! $this->state->equals(ProjectionState::running())) {
+                $this->logger->debug('stopping reader');
                 $reader->pause();
-                break;
+                $this->state = ProjectionState::stopped();
+
+                return;
             }
 
             if ($this->queue->isEmpty()) {
-                yield new Delayed(200);
-                continue;
+                Loop::delay(100, $readingTask); // if queue is empty let's wait for a while
+
+                return;
             }
 
             /** @var RecordedEvent $event */
             $event = $this->queue->dequeue();
-            $processor->processEvent($event);
+            $this->processor->processEvent($event);
             $this->streamPositions[$event->streamId()] = $event->eventNumber();
             ++$this->currentBatchSize;
 
@@ -528,28 +546,10 @@ SQL;
                 $reader->run();
             }
 
-            yield new Delayed(0); // let some other work be done, too
-        }
+            Loop::delay(0, $readingTask);
+        };
 
-        $this->logger->debug('Reader reached eof, handling rest of messages');
-
-        while (! $this->queue->isEmpty()) {
-            /** @var RecordedEvent $event */
-            $event = $this->queue->dequeue();
-            $processor->processEvent($event);
-            $this->streamPositions[$event->streamId()] = $event->eventNumber();
-            ++$this->currentBatchSize;
-
-            yield new Delayed(0); // let some other work be done, too
-        }
-
-        yield from $this->write();
-
-        if ($this->currentBatchSize > 0) {
-            yield from $this->writeCheckPoint();
-        }
-
-        $this->state = ProjectionState::stopped();
+        Loop::delay(0, $readingTask);
     }
 
     /** @throws Throwable */
@@ -625,11 +625,11 @@ SQL;
     }
 
     /** @throws Throwable */
-    private function determineReader(EventProcessor $processor): Promise
+    private function determineReader(): Promise
     {
-        return call(function () use ($processor): Generator {
-            if (count($processor->sources()['streams']) === 1) {
-                $streamName = current($processor->sources()['streams']);
+        return call(function (): Generator {
+            if (count($this->processor->sources()['streams']) === 1) {
+                $streamName = current($this->processor->sources()['streams']);
 
                 if (! isset($this->streamPositions[$streamName])) {
                     $this->streamPositions[$streamName] = -1;
