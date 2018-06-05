@@ -393,7 +393,7 @@ SQL;
 
         $this->state = ProjectionState::stopping();
 
-        Loop::repeat(150, function (string $watcherId) {
+        Loop::repeat(150, function (string $watcherId): Generator {
             if ($this->state->equals(ProjectionState::stopped())) {
                 Loop::cancel($watcherId);
 
@@ -402,7 +402,7 @@ SQL;
                 if ($this->currentBatchSize > 0
                     && ! $this->checkpointsDisabled
                 ) {
-                    yield from $this->writeCheckPoint();
+                    yield from $this->writeCheckPoint(true);
                 }
 
                 $this->logger->info('shutdown done');
@@ -507,9 +507,11 @@ SQL;
             yield from $this->write();
         });
 
-        Loop::delay($this->checkpointAfterMs, function (): Generator {
-            yield from $this->writeCheckPoint();
-        });
+        if (! $this->checkpointsDisabled) {
+            Loop::delay($this->checkpointAfterMs, function (): Generator {
+                yield from $this->writeCheckPoint(false);
+            });
+        }
 
         $readingTask = function () use (&$readingTask, $reader): void {
             if ($reader->eof()) {
@@ -553,19 +555,22 @@ SQL;
     }
 
     /** @throws Throwable */
-    private function writeCheckPoint(): Generator
+    private function writeCheckPoint(bool $force): Generator
     {
-        if ($this->currentBatchSize < $this->checkpointHandledThreshold
-            || $this->streamPositions === $this->lastWrittenStreamPositions
-            || floor(microtime(true) * 10000 - $this->lastCheckPointMs) < $this->checkpointAfterMs
+        if (! $force
+            && (
+                $this->currentBatchSize < $this->checkpointHandledThreshold
+                || $this->streamPositions === $this->lastWrittenStreamPositions
+                || floor(microtime(true) * 10000 - $this->lastCheckPointMs) < $this->checkpointAfterMs
+            )
         ) {
             if ($this->state->equals(ProjectionState::running())) {
                 Loop::delay($this->checkpointAfterMs, function (): Generator {
-                    yield from $this->writeCheckPoint();
+                    yield from $this->writeCheckPoint(false);
                 });
-
-                return null;
             }
+
+            return null;
         }
 
         $this->logger->debug('writing checkpoint');
@@ -619,7 +624,7 @@ SQL;
 
         if ($this->state->equals(ProjectionState::running())) {
             Loop::delay($this->checkpointAfterMs, function (): Generator {
-                yield from $this->writeCheckPoint();
+                yield from $this->writeCheckPoint(false);
             });
         }
     }
