@@ -735,6 +735,7 @@ SQL
         }
     }
 
+    /** @throws Throwable */
     public function emit(string $stream, string $eventType, string $data, string $metadata, bool $isJson = false): void
     {
         if (! in_array($stream, $this->toWriteStreams, true)) {
