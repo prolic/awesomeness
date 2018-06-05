@@ -540,6 +540,9 @@ SQL;
             }
 
             if ($this->queue->isEmpty()) {
+                Loop::delay(0, function (): Generator { // write up to 10 times per second
+                    yield from $this->writeCheckPoint(true);
+                });
                 Loop::delay(100, $readingTask); // if queue is empty let's wait for a while
 
                 return;
