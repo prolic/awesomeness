@@ -540,10 +540,10 @@ SQL;
             }
 
             if ($this->queue->isEmpty()) {
-                Loop::delay(0, function (): Generator { // write up to 10 times per second
+                Loop::delay(0, function (): Generator {
                     yield from $this->writeCheckPoint(true);
                 });
-                Loop::delay(100, $readingTask); // if queue is empty let's wait for a while
+                Loop::delay(200, $readingTask); // if queue is empty let's wait for a while
 
                 return;
             }
@@ -573,11 +573,15 @@ SQL;
     /** @throws Throwable */
     private function writeCheckPoint(bool $force): Generator
     {
+        if ($force && $this->streamPositions === $this->lastWrittenStreamPositions) {
+            return null;
+        }
+
         if (! $force
             && (
                 $this->currentBatchSize < $this->checkpointHandledThreshold
+                || (floor(microtime(true) * 10000 - $this->lastCheckPointMs) < $this->checkpointAfterMs)
                 || $this->streamPositions === $this->lastWrittenStreamPositions
-                || floor(microtime(true) * 10000 - $this->lastCheckPointMs) < $this->checkpointAfterMs
             )
         ) {
             if ($this->state->equals(ProjectionState::running())) {
