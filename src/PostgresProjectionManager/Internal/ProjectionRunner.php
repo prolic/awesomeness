@@ -297,7 +297,9 @@ SQL;
     /** @throws Throwable */
     public function enable(): Promise
     {
-        if (! $this->state->equals(ProjectionState::initial())) {
+        if (! $this->state->equals(ProjectionState::initial())
+            && ! $this->state->equals(ProjectionState::stopped())
+        ) {
             throw new Error('Cannot start projection: already ' . $this->state->name());
         }
 
@@ -521,6 +523,17 @@ SQL;
             if (! $this->state->equals(ProjectionState::running())) {
                 $this->logger->debug('stopping reader');
                 $reader->pause();
+
+                Loop::delay(0, function (): Generator { // write up to 10 times per second
+                    yield from $this->write();
+                });
+
+                if (! $this->checkpointsDisabled) {
+                    Loop::delay(0, function (): Generator {
+                        yield from $this->writeCheckPoint(true);
+                    });
+                }
+
                 $this->state = ProjectionState::stopped();
 
                 return;
