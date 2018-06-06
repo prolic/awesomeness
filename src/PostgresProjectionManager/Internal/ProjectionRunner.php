@@ -283,7 +283,7 @@ SQL;
             if (yield $result->advance(ResultSet::FETCH_OBJECT)) {
                 $data = $result->getCurrent();
                 $state = json_decode($data->data, true);
-                $streamPositions = json_decode($data->metadata, true);
+                $streamPositions = json_decode($data->meta_data, true);
 
                 if (0 !== json_last_error()) {
                     throw new Exception\RuntimeException('Could not json decode checkpoint');
@@ -501,7 +501,7 @@ SQL;
 
         $evaluator = new ProjectionEvaluator($notify);
         $this->processor = $evaluator->evaluate($this->query);
-        $this->processor->initState();
+        $this->processor->initState($this->loadedState);
 
         $this->state = ProjectionState::running();
 

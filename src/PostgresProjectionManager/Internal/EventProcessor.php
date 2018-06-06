@@ -163,9 +163,11 @@ class EventProcessor
         $handler($streamName, $eventType, $data, $metadata, $isJson);
     }
 
-    public function initState(): void
+    public function initState(?array $loadedState): void
     {
-        if (null === $this->projectionState) {
+        if (null !== $loadedState) {
+            $this->projectionState = $loadedState;
+        } elseif (null === $this->projectionState) {
             $handler = $this->initStateHandler;
             $this->projectionState = $handler();
         }
