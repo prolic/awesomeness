@@ -110,6 +110,8 @@ class ProjectionRunner
     private $streamPositions = [];
     /** @var array */
     private $lastWrittenStreamPositions = [];
+    /** @var array */
+    private $loadedState = [];
 
     public function __construct(
         Pool $pool,
@@ -280,12 +282,14 @@ SQL;
 
             if (yield $result->advance(ResultSet::FETCH_OBJECT)) {
                 $data = $result->getCurrent();
-                $streamPositions = json_decode($data->data, true);
+                $state = json_decode($data->data, true);
+                $streamPositions = json_decode($data->metadata, true);
 
                 if (0 !== json_last_error()) {
                     throw new Exception\RuntimeException('Could not json decode checkpoint');
                 }
 
+                $this->loadedState = $state;
                 $this->streamPositions = $streamPositions['$s'];
                 $this->lastWrittenStreamPositions = $streamPositions['$s'];
             }
@@ -597,6 +601,7 @@ SQL;
         $checkpointStream = ProjectionNames::ProjectionsStreamPrefix . $this->name . ProjectionNames::ProjectionCheckpointStreamSuffix;
         $batchSize = $this->currentBatchSize;
         $streamPositions = $this->streamPositions;
+        $state = $this->processor->getState();
 
         try {
             yield $this->checkStream($checkpointStream);
@@ -616,10 +621,10 @@ SQL;
         $params[] = EventId::generate()->toString();
         $params[] = ++$expectedVersion;
         $params[] = ProjectionEventTypes::ProjectionCheckpoint;
+        $params[] = json_encode($state);
         $params[] = json_encode([
             '$s' => $streamPositions,
         ]);
-        $params[] = '';
         $params[] = $checkpointStream;
         $params[] = true;
         $params[] = DateTimeUtil::format($now);
