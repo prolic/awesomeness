@@ -110,8 +110,8 @@ class ProjectionRunner
     private $streamPositions = [];
     /** @var array */
     private $lastWrittenStreamPositions = [];
-    /** @var array */
-    private $loadedState = [];
+    /** @var array|null */
+    private $loadedState;
 
     public function __construct(
         Pool $pool,
