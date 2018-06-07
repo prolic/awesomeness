@@ -539,6 +539,7 @@ SQL;
                     });
                 }
 
+                $this->loadedState = $this->processor->getState();
                 $this->state = ProjectionState::stopped();
 
                 return;
