@@ -8,6 +8,7 @@ use Amp\Log\ConsoleFormatter;
 use Amp\Loop;
 use Amp\Parallel\Sync;
 use Amp\Postgres\Pool;
+use Generator;
 use Monolog\Handler\RotatingFileHandler;
 use Monolog\Logger;
 use Prooph\EventStore\Exception\RuntimeException;
@@ -77,24 +78,28 @@ Loop::run(function () use ($argc, $argv) {
             $projectionRunner->shutdown();
         });
 
-        while (true) {
+        $requestHandler = function () use ($projectionRunner, $channel, $logger, &$requestHandler): Generator {
             $operation = yield $channel->receive();
 
             switch ($operation) {
                 case 'enable':
                     $logger->info('enabling projection');
                     yield $projectionRunner->enable();
+                    Loop::defer($requestHandler);
                     break;
                 case 'disable':
                     $logger->info('disabling projection');
                     yield $projectionRunner->disable();
+                    Loop::defer($requestHandler);
                     break;
                 case 'shutdown':
-                    break 2; // break the loop
+                    return null; // break the loop
                 default:
                     throw new RuntimeException('Invalid operation passed to projector');
             }
-        }
+        };
+
+        Loop::defer($requestHandler);
 
         $result = new Sync\ExitSuccess(0);
     } catch (Sync\ChannelException $exception) {
