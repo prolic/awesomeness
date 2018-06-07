@@ -411,6 +411,8 @@ SQL;
                     yield from $this->writeCheckPoint(true);
                 }
 
+                $this->loadedState = $this->processor->getState();
+
                 $this->logger->info('shutdown done');
             } else {
                 $this->logger->debug('still waiting for shutdown...');
