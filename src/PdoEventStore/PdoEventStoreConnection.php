@@ -49,6 +49,8 @@ use Prooph\PdoEventStore\Internal\TransactionData;
 
 final class PdoEventStoreConnection implements EventStoreConnection, EventStoreTransactionConnection
 {
+    private const MaxAllowedEventsToAppend = 5000;
+
     /** @var ConnectionSettings */
     private $settings;
     /** @var PDO */
@@ -137,6 +139,10 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
 
         if (empty($events)) {
             throw new InvalidArgumentException('Empty stream given');
+        }
+
+        if (count($events) > self::MaxAllowedEventsToAppend) {
+            throw new InvalidArgumentException('Can only append up to ' . self::MaxAllowedEventsToAppend . ' events at once');
         }
 
         if (isset($this->locks[$stream])) {
