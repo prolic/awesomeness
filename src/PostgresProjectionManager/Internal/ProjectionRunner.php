@@ -402,17 +402,6 @@ SQL;
         Loop::repeat(150, function (string $watcherId): Generator {
             if ($this->state->equals(ProjectionState::stopped())) {
                 Loop::cancel($watcherId);
-
-                yield from $this->write();
-
-                if ($this->currentBatchSize > 0
-                    && ! $this->checkpointsDisabled
-                ) {
-                    yield from $this->writeCheckPoint(true);
-                }
-
-                $this->loadedState = $this->processor->getState();
-
                 $this->logger->info('shutdown done');
             } else {
                 $this->logger->debug('still waiting for shutdown...');
@@ -526,15 +515,14 @@ SQL;
                 return;
             }
 
-            if (! $this->state->equals(ProjectionState::running())) {
+            if ($this->state->equals(ProjectionState::stopping())) {
                 $reader->pause();
-
-                Loop::defer(function (): Generator {
+                Loop::delay(101, function (): Generator { // default delay is 100ms, so we write after 101 ms
                     yield from $this->write();
                 });
 
                 if (! $this->checkpointsDisabled) {
-                    Loop::defer(function (): Generator {
+                    Loop::delay($this->checkpointAfterMs + 1, function (): Generator { // again, let's be 1ms later then default
                         yield from $this->writeCheckPoint(true);
                     });
                 }
