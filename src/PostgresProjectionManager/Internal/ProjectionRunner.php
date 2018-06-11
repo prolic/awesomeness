@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\PostgresProjectionManager\Internal;
 
+use Amp\Deferred;
 use Amp\Loop;
 use Amp\Postgres\CommandResult;
 use Amp\Postgres\Connection;
@@ -12,6 +13,8 @@ use Amp\Postgres\ResultSet;
 use Amp\Postgres\Statement;
 use Amp\Promise;
 use Amp\Success;
+use Amp\Sync\LocalMutex;
+use function Amp\Sync\synchronized;
 use cash\LRUCache;
 use DateTimeImmutable;
 use DateTimeZone;
@@ -52,7 +55,7 @@ class ProjectionRunner
     // properties regarding projection runner
 
     /** @var SplQueue */
-    private $queue;
+    private $processingQueue;
     /** @var Pool */
     private $pool;
     /** @var Connection */
@@ -67,6 +70,12 @@ class ProjectionRunner
     private $state;
     /** @var EventProcessor */
     private $processor;
+    /** @var LocalMutex */
+    private $writeMutex;
+    /** @var Deferred */
+    private $shutdownDeferred;
+    /** @var Promise */
+    private $shutdownPromise;
     /** @var int */
     private $projectionEventNumber;
     /** @var int */
@@ -97,6 +106,8 @@ class ProjectionRunner
     /** @var bool */
     private $trackEmittedStreams;
     /** @var int */
+    private $maxWriteBatchLength;
+    /** @var int */
     private $checkpointAfterMs = self::MinCheckpointAfterMs;
     /** @var int */
     private $checkpointHandledThreshold = 4000;
@@ -125,7 +136,10 @@ class ProjectionRunner
         $this->logger = $logger;
         $this->state = ProjectionState::stopped();
         $this->checkedStreams = new LRUCache(self::CheckedStreamsCacheSize);
-        $this->queue = new SplQueue();
+        $this->processingQueue = new SplQueue();
+        $this->writeMutex = new LocalMutex();
+        $this->shutdownDeferred = new Deferred();
+        $this->shutdownPromise = $this->shutdownDeferred->promise();
     }
 
     /** @throws Throwable */
@@ -220,6 +234,7 @@ SQL;
                     $this->emitEnabled = $data['emitEnabled'];
                     $this->checkpointsDisabled = $data['checkpointsDisabled'];
                     $this->trackEmittedStreams = $data['trackEmittedStreams'];
+                    $this->maxWriteBatchLength = $data['maxWriteBatchLength'];
                     if (isset($data['checkpointAfterMs'])) {
                         $this->checkpointAfterMs = max($data['checkpointAfterMs'], self::MinCheckpointAfterMs);
                     }
@@ -382,19 +397,21 @@ SQL;
         });
     }
 
-    public function shutdown(): void
+    public function shutdown(): Promise
     {
         if ($this->state->equals(ProjectionState::stopped())) {
             $this->logger->info('shutdown done');
+            $this->shutdownDeferred->resolve();
 
-            return;
+            return $this->shutdownPromise;
         }
 
         if ($this->state->equals(ProjectionState::initial())) {
             $this->state = ProjectionState::stopped();
             $this->logger->info('shutdown done');
+            $this->shutdownDeferred->resolve();
 
-            return;
+            return $this->shutdownPromise;
         }
 
         $this->state = ProjectionState::stopping();
@@ -403,10 +420,13 @@ SQL;
             if ($this->state->equals(ProjectionState::stopped())) {
                 Loop::cancel($watcherId);
                 $this->logger->info('shutdown done');
+                $this->shutdownDeferred->resolve();
             } else {
                 $this->logger->debug('still waiting for shutdown...');
             }
         });
+
+        return $this->shutdownPromise;
     }
 
     /** @throws Throwable */
@@ -415,7 +435,9 @@ SQL;
         if (0 === count($this->toWrite)) {
             if ($this->state->equals(ProjectionState::running())) {
                 Loop::delay(100, function (): Generator { // write up to 10 times per second
-                    yield from $this->write();
+                    yield synchronized($this->writeMutex, function (): Generator {
+                        yield from $this->write();
+                    });
                 });
             }
 
@@ -476,7 +498,9 @@ SQL;
 
         if ($this->state->equals(ProjectionState::running())) {
             Loop::defer(function (): Generator {
-                yield from $this->write();
+                yield synchronized($this->writeMutex, function (): Generator {
+                    yield from $this->write();
+                });
             });
         }
     }
@@ -501,12 +525,16 @@ SQL;
         $reader->run();
 
         Loop::delay(100, function (): Generator { // write up to 10 times per second
-            yield from $this->write();
+            yield synchronized($this->writeMutex, function (): Generator {
+                yield from $this->write();
+            });
         });
 
         if (! $this->checkpointsDisabled) {
             Loop::delay($this->checkpointAfterMs, function (): Generator {
-                yield from $this->writeCheckPoint(false);
+                yield synchronized($this->writeMutex, function (): Generator {
+                    yield from $this->writeCheckPoint(false);
+                });
             });
         }
 
@@ -517,13 +545,17 @@ SQL;
 
             if ($this->state->equals(ProjectionState::stopping())) {
                 $reader->pause();
-                Loop::delay(101, function (): Generator { // default delay is 100ms, so we write after 101 ms
-                    yield from $this->write();
+                Loop::delay(100, function (): Generator {
+                    yield synchronized($this->writeMutex, function (): Generator {
+                        yield from $this->write();
+                    });
                 });
 
                 if (! $this->checkpointsDisabled) {
-                    Loop::delay($this->checkpointAfterMs + 1, function (): Generator { // again, let's be 1ms later then default
-                        yield from $this->writeCheckPoint(true);
+                    Loop::delay($this->checkpointAfterMs, function (): Generator {
+                        yield synchronized($this->writeMutex, function (): Generator {
+                            yield from $this->writeCheckPoint(true);
+                        });
                     });
                 }
 
@@ -533,26 +565,28 @@ SQL;
                 return;
             }
 
-            if ($this->queue->isEmpty()) {
-                Loop::defer(function (): Generator {
-                    yield from $this->writeCheckPoint(true);
+            if ($this->processingQueue->isEmpty()) {
+                Loop::defer(function () use (&$readingTask): Generator {
+                    yield synchronized($this->writeMutex, function (): Generator {
+                        yield from $this->writeCheckPoint(true);
+                    });
+                    Loop::delay(200, $readingTask); // if queue is empty let's wait for a while
                 });
-                Loop::delay(200, $readingTask); // if queue is empty let's wait for a while
 
                 return;
             }
 
             /** @var RecordedEvent $event */
-            $event = $this->queue->dequeue();
+            $event = $this->processingQueue->dequeue();
             $this->processor->processEvent($event);
             $this->streamPositions[$event->streamId()] = $event->eventNumber();
             ++$this->currentBatchSize;
 
-            if ($this->queue->count() > $this->pendingEventsThreshold) {
+            if ($this->processingQueue->count() > $this->pendingEventsThreshold) {
                 $reader->pause();
             }
 
-            if ($this->queue->count() < $this->pendingEventsThreshold
+            if ($this->processingQueue->count() < $this->pendingEventsThreshold
                 && $reader->paused()
             ) {
                 $reader->run();
@@ -580,7 +614,9 @@ SQL;
         ) {
             if ($this->state->equals(ProjectionState::running())) {
                 Loop::delay($this->checkpointAfterMs, function (): Generator {
-                    yield from $this->writeCheckPoint(false);
+                    yield synchronized($this->writeMutex, function (): Generator {
+                        yield from $this->writeCheckPoint(false);
+                    });
                 });
             }
 
@@ -639,7 +675,9 @@ SQL;
 
         if ($this->state->equals(ProjectionState::running())) {
             Loop::delay($this->checkpointAfterMs, function (): Generator {
-                yield from $this->writeCheckPoint(false);
+                yield synchronized($this->writeMutex, function (): Generator {
+                    yield from $this->writeCheckPoint(false);
+                });
             });
         }
     }
@@ -660,7 +698,7 @@ SQL;
 
                 return yield new Success(new StreamEventReader(
                     $this->pool,
-                    $this->queue,
+                    $this->processingQueue,
                     'Continuous' !== $this->mode,
                     $streamName,
                     $this->streamPositions[$streamName]

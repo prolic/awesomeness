@@ -17,6 +17,7 @@ use const PHP_EOL;
 use const PHP_OUTPUT_HANDLER_CLEANABLE;
 use const PHP_OUTPUT_HANDLER_FLUSHABLE;
 use const SIGINT;
+use const SIGTERM;
 use const STDERR;
 use const STDIN;
 use const STDOUT;
@@ -72,34 +73,32 @@ Loop::run(function () use ($argc, $argv) {
         $projectionRunner = new ProjectionRunner($pool, $projectionName, $projectionId, $logger);
         yield $projectionRunner->bootstrap();
 
-        Loop::onSignal(SIGINT, function (string $watcherId) use ($projectionRunner, $logger) {
-            Loop::cancel($watcherId);
-            $logger->info('Received SIGINT - shutting down');
-            $projectionRunner->shutdown();
-        });
+        $shutdown = function (string $watcherId) {
+            // do nothing, we wait for shutdown command from projection manager
+        };
 
-        $requestHandler = function () use ($projectionRunner, $channel, $logger, &$requestHandler): Generator {
+        Loop::unreference(Loop::onSignal(SIGINT, $shutdown));
+        Loop::unreference(Loop::onSignal(SIGTERM, $shutdown));
+
+        while (true) {
             $operation = yield $channel->receive();
 
             switch ($operation) {
                 case 'enable':
                     $logger->info('enabling projection');
                     yield $projectionRunner->enable();
-                    Loop::defer($requestHandler);
                     break;
                 case 'disable':
                     $logger->info('disabling projection');
                     yield $projectionRunner->disable();
-                    Loop::defer($requestHandler);
                     break;
                 case 'shutdown':
-                    return null; // break the loop
+                    yield $projectionRunner->shutdown();
+                    break 2; // break the loop
                 default:
                     throw new RuntimeException('Invalid operation passed to projector');
             }
-        };
-
-        Loop::defer($requestHandler);
+        }
 
         $result = new Sync\ExitSuccess(0);
     } catch (Sync\ChannelException $exception) {

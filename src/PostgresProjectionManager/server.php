@@ -19,6 +19,7 @@ use Amp\Socket;
 use DateTimeZone;
 use Monolog\Logger;
 use const SIGINT;
+use const SIGTERM;
 
 Logger::setTimezone(new DateTimeZone('UTC'));
 
@@ -62,11 +63,13 @@ Loop::run(function () {
     $server = new Server($servers, $router, $logger);
     yield $server->start();
 
-    // Stop the server when SIGINT is received (this is technically optional, but it is best to call Server::stop()).
-    Loop::onSignal(SIGINT, function (string $watcherId) use ($server, $projectionManager, $logger) {
-        Loop::cancel($watcherId);
-        $logger->info('Received SIGINT - shutting down');
+    $shutdown = function (string $watcherId) use ($server, $projectionManager, $logger) {
+        $logger->info('Received SIGINT or SIGTERM - shutting down');
         yield $server->stop();
         yield $projectionManager->stop();
-    });
+    };
+
+    // Stop the server when SIGINT or SIGTERM is received
+    Loop::unreference(Loop::onSignal(SIGINT, $shutdown));
+    Loop::unreference(Loop::onSignal(SIGTERM, $shutdown));
 });
