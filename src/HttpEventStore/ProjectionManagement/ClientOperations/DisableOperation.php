@@ -26,7 +26,7 @@ class DisableOperation extends Operation
     ): void {
         $request = $requestFactory->createRequest(
             RequestMethod::Post,
-            $uriFactory->createUri($baseUri . '/projection/' . urlencode($name) . '/command/disable')
+            $uriFactory->createUri($baseUri . '/projection/' . \urlencode($name) . '/command/disable')
         );
 
         $response = $this->sendRequest($httpClient, $userCredentials, $request);

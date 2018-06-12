@@ -241,7 +241,7 @@ final class PdoProjectionManagement implements ProjectionManagement
                     EventId::generate(),
                     '$prepared',
                     true,
-                    json_encode([
+                    \json_encode([
                         'id' => $projectionId,
                     ]),
                     ''
@@ -253,7 +253,7 @@ final class PdoProjectionManagement implements ProjectionManagement
         $streamName = ProjectionNames::ProjectionsStreamPrefix . $name;
 
         $data = $this->fetchLastProjectionStreamDataByEventType($streamName, ProjectionEventTypes::ProjectionUpdated);
-        $data = array_merge($data, $config->toArray());
+        $data = \array_merge($data, $config->toArray());
 
         $this->pdoEventStoreConnection->appendToStream(
             ProjectionNames::ProjectionsStreamPrefix . $name,
@@ -263,7 +263,7 @@ final class PdoProjectionManagement implements ProjectionManagement
                     EventId::generate(),
                     ProjectionEventTypes::ProjectionUpdated,
                     true,
-                    json_encode($data),
+                    \json_encode($data),
                     ''
                 ),
             ],
@@ -296,7 +296,7 @@ final class PdoProjectionManagement implements ProjectionManagement
                     EventId::generate(),
                     '$prepared',
                     true,
-                    json_encode([
+                    \json_encode([
                         'id' => $projectionId,
                     ]),
                     ''
@@ -318,7 +318,7 @@ final class PdoProjectionManagement implements ProjectionManagement
                     EventId::generate(),
                     ProjectionEventTypes::ProjectionUpdated,
                     true,
-                    json_encode($data),
+                    \json_encode($data),
                     ''
                 ),
             ],
@@ -367,7 +367,7 @@ final class PdoProjectionManagement implements ProjectionManagement
 
         $roles = $this->userRolesMethod->invoke($this->pdoEventStoreConnection, $cred);
 
-        $projectionId = str_replace('-', '', Uuid::uuid4()->toString());
+        $projectionId = \str_replace('-', '', Uuid::uuid4()->toString());
 
         try {
             $statement = $this->connection->prepare('INSERT INTO projections (projection_name, projection_id) VALUES (?, ?);');
@@ -429,7 +429,7 @@ final class PdoProjectionManagement implements ProjectionManagement
                     EventId::generate(),
                     '$prepared',
                     true,
-                    json_encode([
+                    \json_encode([
                         'id' => $projectionId,
                     ]),
                     ''
@@ -446,7 +446,7 @@ final class PdoProjectionManagement implements ProjectionManagement
                     EventId::generate(),
                     ProjectionEventTypes::ProjectionUpdated,
                     true,
-                    json_encode(array_merge(
+                    \json_encode(\array_merge(
                         $eventData,
                         $this->defaultProjectionConfig()
                     )),
@@ -500,6 +500,6 @@ SQL;
         $statement->execute([$name, $type]);
         $statement->setFetchMode(PDO::FETCH_OBJ);
 
-        return json_decode($statement->fetch()->data, true);
+        return \json_decode($statement->fetch()->data, true);
     }
 }

@@ -89,12 +89,12 @@ SQL
             }
 
             $toCheck = [SystemRoles::All];
-            if (is_string($data->stream_roles)) {
-                $toCheck = explode(',', $data->stream_roles);
+            if (\is_string($data->stream_roles)) {
+                $toCheck = \explode(',', $data->stream_roles);
             }
         }
 
-        if (empty(array_intersect($userRoles, $toCheck))) {
+        if (empty(\array_intersect($userRoles, $toCheck))) {
             throw AccessDenied::toStream($stream);
         }
 

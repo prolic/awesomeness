@@ -166,7 +166,7 @@ class StreamMetadata
         $params = [];
 
         foreach ($data as $key => $value) {
-            if (in_array($key, $internal, true)) {
+            if (\in_array($key, $internal, true)) {
                 $params[$key] = $value;
             } elseif ($key === SystemMetadata::Acl) {
                 $params[SystemMetadata::Acl] = StreamAcl::fromArray($value);

@@ -71,18 +71,18 @@ final class PersistentSubscriptionOperations extends Operation implements BasePe
 
     public function acknowledge(array $eventIds): void
     {
-        $eventIds = array_map(function (EventId $eventId): string {
+        $eventIds = \array_map(function (EventId $eventId): string {
             return $eventId->toString();
         }, $eventIds);
 
         $request = $this->requestFactory->createRequest(
             RequestMethod::Post,
-            $this->uriFactory->createUri(sprintf(
+            $this->uriFactory->createUri(\sprintf(
                 '%s/subscriptions/%s/%s/ack?ids=%s',
                 $this->baseUri,
-                urlencode($this->stream),
-                urlencode($this->groupName),
-                implode(',', $eventIds)
+                \urlencode($this->stream),
+                \urlencode($this->groupName),
+                \implode(',', $eventIds)
             )),
             [
                 'Content-Length' => 0,
@@ -104,18 +104,18 @@ final class PersistentSubscriptionOperations extends Operation implements BasePe
 
     public function fail(array $eventIds, PersistentSubscriptionNakEventAction $action): void
     {
-        $eventIds = array_map(function (EventId $eventId): string {
+        $eventIds = \array_map(function (EventId $eventId): string {
             return $eventId->toString();
         }, $eventIds);
 
         $request = $this->requestFactory->createRequest(
             RequestMethod::Post,
-            $this->uriFactory->createUri(sprintf(
+            $this->uriFactory->createUri(\sprintf(
                 '%s/subscriptions/%s/%s/nack?ids=%s&action=%s',
                 $this->baseUri,
-                urlencode($this->stream),
-                urlencode($this->groupName),
-                implode(',', $eventIds),
+                \urlencode($this->stream),
+                \urlencode($this->groupName),
+                \implode(',', $eventIds),
                 $action->name()
             )),
             [

@@ -26,7 +26,7 @@ class EnableOperation extends Operation
     ): void {
         $request = $requestFactory->createRequest(
             RequestMethod::Post,
-            $uriFactory->createUri($baseUri . '/projection/' . urlencode($name) . '/command/enable')
+            $uriFactory->createUri($baseUri . '/projection/' . \urlencode($name) . '/command/enable')
         );
 
         $response = $this->sendRequest($httpClient, $userCredentials, $request);

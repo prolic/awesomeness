@@ -26,7 +26,7 @@ class AbortOperation extends Operation
     ): void {
         $request = $requestFactory->createRequest(
             RequestMethod::Post,
-            $uriFactory->createUri($baseUri . '/projection/' . urlencode($name) . '/command/abort')
+            $uriFactory->createUri($baseUri . '/projection/' . \urlencode($name) . '/command/abort')
         );
 
         $response = $this->sendRequest($httpClient, $userCredentials, $request);

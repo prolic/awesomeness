@@ -32,11 +32,11 @@ class ReadFromSubscriptionOperation extends Operation
     ): array {
         $request = $requestFactory->createRequest(
             RequestMethod::Get,
-            $uriFactory->createUri(sprintf(
+            $uriFactory->createUri(\sprintf(
                 '%s/subscriptions/%s/%s/%d?embed=tryharder',
                 $baseUri,
-                urlencode($stream),
-                urlencode($groupName),
+                \urlencode($stream),
+                \urlencode($groupName),
                 $amount
             )),
             [
@@ -50,32 +50,32 @@ class ReadFromSubscriptionOperation extends Operation
             case 401:
                 throw AccessDenied::toStream($stream);
             case 404:
-                throw new \RuntimeException(sprintf(
+                throw new \RuntimeException(\sprintf(
                     'Subscription with stream \'%s\' and group name \'%s\' not found',
                     $stream,
                     $groupName
                 ));
             case 200:
-                $json = json_decode($response->getBody()->getContents(), true);
+                $json = \json_decode($response->getBody()->getContents(), true);
                 $events = [];
 
                 if (null === $json) {
                     return $events;
                 }
 
-                foreach (array_reverse($json['entries']) as $entry) {
+                foreach (\array_reverse($json['entries']) as $entry) {
                     $data = $entry['data'] ?? '';
 
-                    if (is_array($data)) {
-                        $data = json_encode($data);
+                    if (\is_array($data)) {
+                        $data = \json_encode($data);
                     }
 
                     $field = isset($json['isLinkMetaData']) && $json['isLinkMetaData'] ? 'linkMetaData' : 'metaData';
 
                     $metadata = $json[$field] ?? '';
 
-                    if (is_array($metadata)) {
-                        $metadata = json_encode($metadata);
+                    if (\is_array($metadata)) {
+                        $metadata = \json_encode($metadata);
                     }
 
                     $events[] = new RecordedEvent(

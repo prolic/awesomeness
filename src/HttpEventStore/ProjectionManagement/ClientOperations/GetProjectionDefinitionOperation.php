@@ -27,14 +27,14 @@ class GetProjectionDefinitionOperation extends Operation
     ): ProjectionDefinition {
         $request = $requestFactory->createRequest(
             RequestMethod::Get,
-            $uriFactory->createUri($baseUri . '/projection/' . urlencode($name) . '/query?config=true')
+            $uriFactory->createUri($baseUri . '/projection/' . \urlencode($name) . '/query?config=true')
         );
 
         $response = $this->sendRequest($httpClient, $userCredentials, $request);
 
         switch ($response->getStatusCode()) {
             case 200:
-                $json = json_decode($response->getBody()->getContents(), true);
+                $json = \json_decode($response->getBody()->getContents(), true);
 
                 return new ProjectionDefinition(
                     $json['name'],

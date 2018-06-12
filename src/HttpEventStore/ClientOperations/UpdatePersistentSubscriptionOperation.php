@@ -27,21 +27,21 @@ class UpdatePersistentSubscriptionOperation extends Operation
         PersistentSubscriptionSettings $settings,
         ?UserCredentials $userCredentials
     ): PersistentSubscriptionUpdateResult {
-        $string = json_encode($settings->toArray());
+        $string = \json_encode($settings->toArray());
 
         $request = $requestFactory->createRequest(
             RequestMethod::Post,
-            $uriFactory->createUri($baseUri . '/subscriptions/' . urlencode($stream) . '/' . urlencode($groupName)),
+            $uriFactory->createUri($baseUri . '/subscriptions/' . \urlencode($stream) . '/' . \urlencode($groupName)),
             [
                 'Content-Type' => 'application/json',
-                'Content-Length' => strlen($string),
+                'Content-Length' => \strlen($string),
             ],
             $string
         );
 
         $response = $this->sendRequest($httpClient, $userCredentials, $request);
 
-        $json = json_decode($response->getBody()->getContents(), true);
+        $json = \json_decode($response->getBody()->getContents(), true);
         switch ($response->getStatusCode()) {
             case 200:
                 return new PersistentSubscriptionUpdateResult(

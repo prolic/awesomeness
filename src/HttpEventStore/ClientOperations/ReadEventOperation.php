@@ -35,13 +35,13 @@ class ReadEventOperation extends Operation
         if (-1 === $eventNumber) {
             $request = $requestFactory->createRequest(
                 RequestMethod::Get,
-                $uriFactory->createUri($baseUri . '/streams/' . urlencode($stream) . '/head?embed=tryharder'),
+                $uriFactory->createUri($baseUri . '/streams/' . \urlencode($stream) . '/head?embed=tryharder'),
                 $headers
             );
         } else {
             $request = $requestFactory->createRequest(
                 RequestMethod::Get,
-                $uriFactory->createUri($baseUri . '/streams/' . urlencode($stream) . '/' . $eventNumber . '?embed=tryharder'),
+                $uriFactory->createUri($baseUri . '/streams/' . \urlencode($stream) . '/' . $eventNumber . '?embed=tryharder'),
                 $headers
             );
         }
@@ -56,7 +56,7 @@ class ReadEventOperation extends Operation
             case 410:
                 return new EventReadResult(EventReadStatus::streamDeleted(), $stream, $eventNumber, null);
             case 200:
-                $json = json_decode($response->getBody()->getContents(), true);
+                $json = \json_decode($response->getBody()->getContents(), true);
 
                 if (empty($json)) {
                     return new EventReadResult(EventReadStatus::notFound(), $stream, $eventNumber, null);
@@ -64,16 +64,16 @@ class ReadEventOperation extends Operation
 
                 $data = $json['data'] ?? '';
 
-                if (is_array($data)) {
-                    $data = json_encode($data);
+                if (\is_array($data)) {
+                    $data = \json_encode($data);
                 }
 
                 $field = isset($json['isLinkMetaData']) && $json['isLinkMetaData'] ? 'linkMetaData' : 'metaData';
 
                 $metadata = $json[$field] ?? '';
 
-                if (is_array($metadata)) {
-                    $metadata = json_encode($metadata);
+                if (\is_array($metadata)) {
+                    $metadata = \json_encode($metadata);
                 }
 
                 $event = new RecordedEvent(

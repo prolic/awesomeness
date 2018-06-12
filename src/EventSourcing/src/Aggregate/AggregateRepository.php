@@ -62,7 +62,7 @@ class AggregateRepository
 
         $eventData = [];
 
-        $firstEvent = reset($domainEvents);
+        $firstEvent = \reset($domainEvents);
 
         if (false === $firstEvent) {
             return;
@@ -75,7 +75,7 @@ class AggregateRepository
         if ($this->isFirstEvent($firstEvent)) {
             $expectedVersion = ExpectedVersion::NoStream;
         } elseif ($this->optimisticConcurrency) {
-            $expectedVersion = $this->aggregateTranslator->extractAggregateVersion($eventSourcedAggregateRoot) - count($eventData);
+            $expectedVersion = $this->aggregateTranslator->extractAggregateVersion($eventSourcedAggregateRoot) - \count($eventData);
         } else {
             $expectedVersion = ExpectedVersion::Any;
         }

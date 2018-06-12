@@ -28,7 +28,7 @@ class GetInformationForSubscriptionsWithStreamOperation extends Operation
     ): array {
         $request = $requestFactory->createRequest(
             RequestMethod::Get,
-            $uriFactory->createUri($baseUri . '/subscriptions/' . urlencode($stream))
+            $uriFactory->createUri($baseUri . '/subscriptions/' . \urlencode($stream))
         );
 
         $response = $this->sendRequest($httpClient, $userCredentials, $request);
@@ -37,7 +37,7 @@ class GetInformationForSubscriptionsWithStreamOperation extends Operation
             case 401:
                 throw new AccessDenied();
             case 200:
-                $json = json_decode($response->getBody()->getContents(), true);
+                $json = \json_decode($response->getBody()->getContents(), true);
 
                 $result = [];
 

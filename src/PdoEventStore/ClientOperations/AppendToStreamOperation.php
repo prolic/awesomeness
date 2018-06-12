@@ -81,8 +81,8 @@ SQL
         $sql = <<<SQL
 INSERT INTO events (event_id, event_number, event_type, data, meta_data, stream_name, is_json, updated) VALUES
 SQL;
-        $sql .= str_repeat('(?, ?, ?, ?, ?, ?, ?, ?), ', count($events));
-        $sql = substr($sql, 0, -2);
+        $sql .= \str_repeat('(?, ?, ?, ?, ?, ?, ?, ?), ', \count($events));
+        $sql = \substr($sql, 0, -2);
 
         $now = new \DateTimeImmutable('NOW', new \DateTimeZone('UTC'));
         $now = DateTimeUtil::format($now);

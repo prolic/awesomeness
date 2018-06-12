@@ -26,7 +26,7 @@ class DisableUserOperation extends Operation
     ): void {
         $request = $requestFactory->createRequest(
             RequestMethod::Put,
-            $uriFactory->createUri($baseUri . '/users/' . urlencode($login) . '/command/disable')
+            $uriFactory->createUri($baseUri . '/users/' . \urlencode($login) . '/command/disable')
         );
 
         $response = $this->sendRequest($httpClient, $userCredentials, $request);

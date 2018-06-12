@@ -68,6 +68,6 @@ class StartTransactionOperation
 
         $connection->beginTransaction();
 
-        return new LockData($stream, random_int(0, PHP_INT_MAX), $slice->lastEventNumber(), 1);
+        return new LockData($stream, \random_int(0, PHP_INT_MAX), $slice->lastEventNumber(), 1);
     }
 }

@@ -53,7 +53,7 @@ final class HttpProjectionManagement implements ProjectionManagement
         $this->requestFactory = $requestFactory;
         $this->uriFactory = $uriFactory;
         $this->settings = $settings ?? ConnectionSettings::default();
-        $this->baseUri = sprintf(
+        $this->baseUri = \sprintf(
             '%s://%s:%s',
             $this->settings->useSslConnection() ? 'https' : 'http',
             $this->settings->endPoint()->host(),
@@ -335,7 +335,7 @@ final class HttpProjectionManagement implements ProjectionManagement
             $this->uriFactory,
             $this->baseUri,
             $name,
-            'result?parition=' . urlencode($partition),
+            'result?parition=' . \urlencode($partition),
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
     }
@@ -361,7 +361,7 @@ final class HttpProjectionManagement implements ProjectionManagement
             $this->uriFactory,
             $this->baseUri,
             $name,
-            'state?parition=' . urlencode($partition),
+            'state?parition=' . \urlencode($partition),
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
     }

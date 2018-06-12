@@ -28,11 +28,11 @@ class UpdateUserOperation extends Operation
     ): void {
         $request = $requestFactory->createRequest(
             RequestMethod::Put,
-            $uriFactory->createUri($baseUri . '/users/' . urlencode($login)),
+            $uriFactory->createUri($baseUri . '/users/' . \urlencode($login)),
             [
                 'Content-Type' => 'application/json',
             ],
-            json_encode([
+            \json_encode([
                 'fullName' => $fullName,
                 'groups' => $groups,
             ])

@@ -48,9 +48,9 @@ class AggregateRootDecorator extends AggregateRoot
      */
     public function fromHistory(string $aggregateRootClass, Iterator $aggregateChangedEvents): AggregateRoot
     {
-        if (! class_exists($aggregateRootClass)) {
+        if (! \class_exists($aggregateRootClass)) {
             throw new RuntimeException(
-                sprintf('Aggregate root class %s cannot be found', $aggregateRootClass)
+                \sprintf('Aggregate root class %s cannot be found', $aggregateRootClass)
             );
         }
 

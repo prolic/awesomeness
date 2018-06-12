@@ -8,7 +8,7 @@ class AccessDenied extends RuntimeException
 {
     public static function login(string $username): AccessDenied
     {
-        return new self(sprintf(
+        return new self(\sprintf(
             'Access to event store with username \'%s\' is denied',
             $username
         ));
@@ -16,7 +16,7 @@ class AccessDenied extends RuntimeException
 
     public static function toStream(string $stream): AccessDenied
     {
-        return new self(sprintf(
+        return new self(\sprintf(
             'Access to stream \'%s\' is denied',
             $stream
         ));
@@ -24,7 +24,7 @@ class AccessDenied extends RuntimeException
 
     public static function toProjection(string $name): AccessDenied
     {
-        return new self(sprintf(
+        return new self(\sprintf(
             'Access to projection \'%s\' is denied',
             $name
         ));
@@ -32,7 +32,7 @@ class AccessDenied extends RuntimeException
 
     public static function toSubscription(string $stream, string $groupName): AccessDenied
     {
-        return new self(sprintf(
+        return new self(\sprintf(
             'Access to subscription with stream \'%s\' and group name \'%s\' is denied',
             $stream,
             $groupName

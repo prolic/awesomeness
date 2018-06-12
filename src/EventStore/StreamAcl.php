@@ -120,7 +120,7 @@ class StreamAcl
                 throw new \InvalidArgumentException($value . ' is missing');
             }
 
-            if (! is_array($data[$value])) {
+            if (! \is_array($data[$value])) {
                 throw new \InvalidArgumentException($value . ' is not an array');
             }
         }

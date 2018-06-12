@@ -28,14 +28,14 @@ class GetInformationForSubscriptionOperation extends Operation
     ): DetailedSubscriptionInformation {
         $request = $requestFactory->createRequest(
             RequestMethod::Get,
-            $uriFactory->createUri($baseUri . '/subscriptions/' . urlencode($stream) . '/' . urlencode($groupName) . '/info')
+            $uriFactory->createUri($baseUri . '/subscriptions/' . \urlencode($stream) . '/' . \urlencode($groupName) . '/info')
         );
 
         $response = $this->sendRequest($httpClient, $userCredentials, $request);
 
         switch ($response->getStatusCode()) {
             case 200:
-                $json = json_decode($response->getBody()->getContents(), true);
+                $json = \json_decode($response->getBody()->getContents(), true);
 
                 return new DetailedSubscriptionInformation(
                     new PersistentSubscriptionSettings(
@@ -69,7 +69,7 @@ class GetInformationForSubscriptionOperation extends Operation
             case 401:
                 throw new AccessDenied();
             case 404:
-                throw new \RuntimeException(sprintf(
+                throw new \RuntimeException(\sprintf(
                     'Subscription with stream \'%s\' and group name \'%s\' not found',
                     $stream,
                     $groupName

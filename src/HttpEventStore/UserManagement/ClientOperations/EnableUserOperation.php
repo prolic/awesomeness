@@ -26,7 +26,7 @@ class EnableUserOperation extends Operation
     ): void {
         $request = $requestFactory->createRequest(
             RequestMethod::Put,
-            $uriFactory->createUri($baseUri . '/users/' . urlencode($login) . '/command/enable')
+            $uriFactory->createUri($baseUri . '/users/' . \urlencode($login) . '/command/enable')
         );
 
         $response = $this->sendRequest($httpClient, $userCredentials, $request);

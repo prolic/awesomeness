@@ -7,7 +7,6 @@ namespace Prooph\PostgresProjectionManager\Internal;
 use Amp\Coroutine;
 use Amp\Delayed;
 use Amp\Failure;
-use function Amp\Log\hasColorSupport;
 use Amp\Loop;
 use Amp\Parallel\Context\Process;
 use Amp\Postgres\Connection;
@@ -26,7 +25,7 @@ use Prooph\EventStore\SystemSettings;
 use Psr\Log\LoggerInterface as PsrLogger;
 use Throwable;
 use function Amp\call;
-use function assert;
+use function Amp\Log\hasColorSupport;
 
 /** @internal */
 class ProjectionManager
@@ -84,7 +83,7 @@ class ProjectionManager
 
     private function doStart(): Generator
     {
-        assert($this->logger->debug('Starting') || true);
+        \assert($this->logger->debug('Starting') || true);
 
         $this->state = self::STARTING;
 
@@ -130,7 +129,7 @@ class ProjectionManager
             }
 
             $this->state = self::STARTED;
-            assert($this->logger->debug('Started') || true);
+            \assert($this->logger->debug('Started') || true);
         } catch (Throwable $e) {
             $this->logger->error($e->getMessage());
             Loop::stop();
@@ -171,9 +170,9 @@ SQL
 
         $event = $result->getCurrent();
 
-        $data = json_decode($event->data, true);
+        $data = \json_decode($event->data, true);
 
-        if (0 !== json_last_error()) {
+        if (0 !== \json_last_error()) {
             throw new Error('Could not json decode system settings');
         }
 
@@ -194,7 +193,7 @@ SQL
         switch ($this->state) {
             case self::STARTED:
                 return call(function () use ($timeout): Generator {
-                    assert($this->logger->debug('Stopping') || true);
+                    \assert($this->logger->debug('Stopping') || true);
                     $this->state = self::STOPPING;
 
                     foreach ($this->projections as $name => $context) {
@@ -207,7 +206,7 @@ SQL
                         unset($this->projections[$name]);
                     }
 
-                    assert($this->logger->debug('Stopped') || true);
+                    \assert($this->logger->debug('Stopped') || true);
                     $this->state = self::STOPPED;
                 });
             case self::STOPPED:

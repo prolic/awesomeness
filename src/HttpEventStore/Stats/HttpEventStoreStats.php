@@ -35,7 +35,7 @@ final class HttpEventStoreStats implements EventStoreStats
         $this->requestFactory = $requestFactory;
         $this->uriFactory = $uriFactory;
         $this->settings = $settings ?? ConnectionSettings::default();
-        $this->baseUri = sprintf(
+        $this->baseUri = \sprintf(
             '%s://%s:%s',
             $this->settings->useSslConnection() ? 'https' : 'http',
             $this->settings->endPoint()->host(),

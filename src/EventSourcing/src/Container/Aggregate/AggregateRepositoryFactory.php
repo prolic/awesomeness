@@ -52,7 +52,7 @@ final class AggregateRepositoryFactory implements ProvidesDefaultOptions, Requir
     {
         if (! isset($arguments[0]) || ! $arguments[0] instanceof ContainerInterface) {
             throw new InvalidArgumentException(
-                sprintf('The first argument must be of type %s', ContainerInterface::class)
+                \sprintf('The first argument must be of type %s', ContainerInterface::class)
             );
         }
 
@@ -71,12 +71,12 @@ final class AggregateRepositoryFactory implements ProvidesDefaultOptions, Requir
 
         $repositoryClass = $config['repository_class'];
 
-        if (! class_exists($repositoryClass)) {
-            throw new Exception\RuntimeException(sprintf('Repository class %s cannot be found', $repositoryClass));
+        if (! \class_exists($repositoryClass)) {
+            throw new Exception\RuntimeException(\sprintf('Repository class %s cannot be found', $repositoryClass));
         }
 
-        if (! is_subclass_of($repositoryClass, AggregateRepository::class)) {
-            throw new Exception\RuntimeException(sprintf('Repository class %s must be a sub class of %s', $repositoryClass, AggregateRepository::class));
+        if (! \is_subclass_of($repositoryClass, AggregateRepository::class)) {
+            throw new Exception\RuntimeException(\sprintf('Repository class %s must be a sub class of %s', $repositoryClass, AggregateRepository::class));
         }
 
         $eventStore = $container->get(EventStoreConnection::class);

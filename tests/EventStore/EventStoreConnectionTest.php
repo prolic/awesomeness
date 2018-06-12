@@ -59,7 +59,7 @@ abstract class EventStoreConnectionTest extends TestCase
     {
         $connection = $this->getEventStoreConnection();
         if (! $connection instanceof PdoEventStoreConnection) {
-            $this->markTestSkipped(sprintf('The "%s" implementation is not tested yet.', get_class($connection)));
+            $this->markTestSkipped(\sprintf('The "%s" implementation is not tested yet.', \get_class($connection)));
         }
 
         $connection->connect();
@@ -69,7 +69,7 @@ abstract class EventStoreConnectionTest extends TestCase
         $stream = $this->getStream('test_stream');
         $this->assertEquals(true, $stream['mark_deleted']);
         $this->assertEquals(false, $stream['deleted']);
-        $this->assertEquals(1, count($stream['events']));
+        $this->assertEquals(1, \count($stream['events']));
     }
 
     /** @test */
@@ -77,7 +77,7 @@ abstract class EventStoreConnectionTest extends TestCase
     {
         $connection = $this->getEventStoreConnection();
         if (! $connection instanceof PdoEventStoreConnection) {
-            $this->markTestSkipped(sprintf('The "%s" implementation is not tested yet.', get_class($connection)));
+            $this->markTestSkipped(\sprintf('The "%s" implementation is not tested yet.', \get_class($connection)));
         }
 
         $connection->connect();
@@ -87,7 +87,7 @@ abstract class EventStoreConnectionTest extends TestCase
         $stream = $this->getStream('test_stream');
         $this->assertEquals(false, $stream['mark_deleted']);
         $this->assertEquals(true, $stream['deleted']);
-        $this->assertEquals(0, count($stream['events']));
+        $this->assertEquals(0, \count($stream['events']));
     }
 
     /** @test */
@@ -279,7 +279,7 @@ abstract class EventStoreConnectionTest extends TestCase
             EventId::generate(),
             'userCreated',
             true,
-            json_encode(['user' => 'Sacha Prlc', 'email' => 'saschaprolic@googlemail.com']),
+            \json_encode(['user' => 'Sacha Prlc', 'email' => 'saschaprolic@googlemail.com']),
             ''
         );
     }

@@ -26,7 +26,7 @@ class ResetOperation extends Operation
     ): void {
         $request = $requestFactory->createRequest(
             RequestMethod::Post,
-            $uriFactory->createUri($baseUri . '/projection/' . urlencode($name) . '/command/reset')
+            $uriFactory->createUri($baseUri . '/projection/' . \urlencode($name) . '/command/reset')
         );
 
         $response = $this->sendRequest($httpClient, $userCredentials, $request);

@@ -141,7 +141,7 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
             throw new InvalidArgumentException('Empty stream given');
         }
 
-        if (count($events) > self::MaxAllowedEventsToAppend) {
+        if (\count($events) > self::MaxAllowedEventsToAppend) {
             throw new InvalidArgumentException('Can only append up to ' . self::MaxAllowedEventsToAppend . ' events at once');
         }
 
@@ -364,7 +364,7 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
         }
 
         if (SystemStreams::isMetastream($stream)) {
-            throw new InvalidArgumentException(sprintf(
+            throw new InvalidArgumentException(\sprintf(
                 'Setting metadata for metastream \'%s\' is not supported.',
                 $stream
             ));
@@ -385,7 +385,7 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
             EventId::generate(),
             SystemEventTypes::StreamMetadata,
             true,
-            json_encode($metadata->toArray()),
+            \json_encode($metadata->toArray()),
             ''
         );
 
@@ -447,7 +447,7 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
                     EventId::generate(),
                     SystemEventTypes::Settings,
                     true,
-                    json_encode($settings->toArray()),
+                    \json_encode($settings->toArray()),
                     ''
                 ),
             ],
@@ -578,9 +578,9 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
         if ($expectedVersion === ExpectedVersion::Any) {
             $newExpectedVersion = ExpectedVersion::Any;
         } elseif ($expectedVersion < 0) {
-            $newExpectedVersion = count($events) - 1;
+            $newExpectedVersion = \count($events) - 1;
         } else {
-            $newExpectedVersion = $expectedVersion + count($events);
+            $newExpectedVersion = $expectedVersion + \count($events);
         }
 
         $this->locks[$stream] = new LockData(

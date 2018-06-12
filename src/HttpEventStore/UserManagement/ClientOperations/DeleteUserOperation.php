@@ -26,7 +26,7 @@ class DeleteUserOperation extends Operation
     ): void {
         $request = $requestFactory->createRequest(
             RequestMethod::Delete,
-            $uriFactory->createUri($baseUri . '/users/' . urlencode($login))
+            $uriFactory->createUri($baseUri . '/users/' . \urlencode($login))
         );
 
         $response = $this->sendRequest($httpClient, $userCredentials, $request);

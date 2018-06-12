@@ -36,7 +36,7 @@ class GetMultipleProjectionDetailsOperation extends Operation
 
         switch ($response->getStatusCode()) {
             case 200:
-                $json = json_decode($response->getBody()->getContents(), true);
+                $json = \json_decode($response->getBody()->getContents(), true);
 
                 $result = [];
 

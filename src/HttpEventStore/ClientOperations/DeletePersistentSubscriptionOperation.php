@@ -27,12 +27,12 @@ class DeletePersistentSubscriptionOperation extends Operation
     ): PersistentSubscriptionDeleteResult {
         $request = $requestFactory->createRequest(
             RequestMethod::Delete,
-            $uriFactory->createUri($baseUri . '/subscriptions/' . urlencode($stream) . '/' . urlencode($groupName))
+            $uriFactory->createUri($baseUri . '/subscriptions/' . \urlencode($stream) . '/' . \urlencode($groupName))
         );
 
         $response = $this->sendRequest($httpClient, $userCredentials, $request);
 
-        $json = json_decode($response->getBody()->getContents(), true);
+        $json = \json_decode($response->getBody()->getContents(), true);
         switch ($response->getStatusCode()) {
             case 401:
                 throw AccessDenied::toSubscription($stream, $groupName);

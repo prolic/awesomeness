@@ -36,7 +36,7 @@ class GetUserOperation
             throw UserNotFound::withLogin($login);
         }
 
-        $data = json_decode($streamEventsSlice->events()[0]->data(), true);
+        $data = \json_decode($streamEventsSlice->events()[0]->data(), true);
 
         return new UserDetails(
             $data['login'],

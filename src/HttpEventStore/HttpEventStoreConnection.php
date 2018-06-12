@@ -70,7 +70,7 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
         $this->requestFactory = $requestFactory;
         $this->uriFactory = $uriFactory;
         $this->settings = $settings ?? ConnectionSettings::default();
-        $this->baseUri = sprintf(
+        $this->baseUri = \sprintf(
             '%s://%s:%s',
             $this->settings->useSslConnection() ? 'https' : 'http',
             $this->settings->endPoint()->host(),
@@ -248,7 +248,7 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
         }
 
         if (SystemStreams::isMetastream($stream)) {
-            throw new InvalidArgumentException(sprintf(
+            throw new InvalidArgumentException(\sprintf(
                 'Setting metadata for metastream \'%s\' is not supported.',
                 $stream
             ));
@@ -258,7 +258,7 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
             EventId::generate(),
             SystemEventTypes::StreamMetadata,
             true,
-            json_encode($metadata->toArray()),
+            \json_encode($metadata->toArray()),
             ''
         );
 
@@ -320,7 +320,7 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
                     EventId::generate(),
                     SystemEventTypes::Settings,
                     true,
-                    json_encode($settings->toArray()),
+                    \json_encode($settings->toArray()),
                     ''
                 ),
             ],

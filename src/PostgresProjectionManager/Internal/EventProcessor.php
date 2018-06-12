@@ -60,7 +60,7 @@ class EventProcessor
     public function options(array $options): void
     {
         foreach ($options as $key => $value) {
-            if (! array_key_exists($key, $this->sources['options'])) {
+            if (! \array_key_exists($key, $this->sources['options'])) {
                 throw new \InvalidArgumentException('key ' . $key . ' does not exist in options');
             }
 
@@ -93,7 +93,7 @@ class EventProcessor
     {
         $newState = $handler($state, $event);
 
-        if (! is_array($newState)) {
+        if (! \is_array($newState)) {
             $newState = $state;
         }
 

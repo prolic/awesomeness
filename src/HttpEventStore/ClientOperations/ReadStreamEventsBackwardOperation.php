@@ -42,7 +42,7 @@ class ReadStreamEventsBackwardOperation extends Operation
         $request = $requestFactory->createRequest(
             RequestMethod::Get,
             $uriFactory->createUri(
-                $baseUri . '/streams/' . urlencode($stream) . '/' . $start . '/backward/' . $count . '?embed=tryharder'
+                $baseUri . '/streams/' . \urlencode($stream) . '/' . $start . '/backward/' . $count . '?embed=tryharder'
             ),
             $headers
         );
@@ -75,23 +75,23 @@ class ReadStreamEventsBackwardOperation extends Operation
                     true
                 );
             case 200:
-                $json = json_decode($response->getBody()->getContents(), true);
+                $json = \json_decode($response->getBody()->getContents(), true);
 
                 $events = [];
                 $lastEventNumber = 0;
                 foreach ($json['entries'] as $entry) {
                     $data = $entry['data'] ?? '';
 
-                    if (is_array($data)) {
-                        $data = json_encode($data);
+                    if (\is_array($data)) {
+                        $data = \json_encode($data);
                     }
 
                     $field = isset($json['isLinkMetaData']) && $json['isLinkMetaData'] ? 'linkMetaData' : 'metaData';
 
                     $metadata = $json[$field] ?? '';
 
-                    if (is_array($metadata)) {
-                        $metadata = json_encode($metadata);
+                    if (\is_array($metadata)) {
+                        $metadata = \json_encode($metadata);
                     }
 
                     $events[] = new RecordedEvent(

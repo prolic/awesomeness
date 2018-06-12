@@ -26,7 +26,7 @@ class CreateUserOperation extends Operation
         array $groups,
         ?UserCredentials $userCredentials
     ): void {
-        $string = json_encode([
+        $string = \json_encode([
             'login' => $login,
             'fullName' => $fullName,
             'password' => $password,
@@ -38,7 +38,7 @@ class CreateUserOperation extends Operation
             $uriFactory->createUri($baseUri . '/users/'),
             [
                 'Content-Type' => 'application/json',
-                'Content-Length' => strlen($string),
+                'Content-Length' => \strlen($string),
             ],
             $string
         );

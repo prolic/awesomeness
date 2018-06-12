@@ -19,30 +19,24 @@ use const SIGTERM;
 use const STDERR;
 use const STDIN;
 use const STDOUT;
-use function cli_set_process_title;
-use function dirname;
-use function file_exists;
-use function function_exists;
-use function fwrite;
-use function ob_start;
 
 // Doesn't exist in phpdbg...
-if (function_exists('cli_set_process_title')) {
-    @cli_set_process_title('projection-process');
+if (\function_exists('cli_set_process_title')) {
+    @\cli_set_process_title('projection-process');
 }
 
 // Redirect all output written using echo, print, printf, etc. to STDERR.
-ob_start(function ($data) {
-    fwrite(STDERR, $data);
+\ob_start(function ($data) {
+    \fwrite(STDERR, $data);
 
     return '';
 }, 1, PHP_OUTPUT_HANDLER_CLEANABLE | PHP_OUTPUT_HANDLER_FLUSHABLE);
 
 (function () {
-    $path = dirname(__DIR__, 3) . '/vendor/autoload.php';
+    $path = \dirname(__DIR__, 3) . '/vendor/autoload.php';
 
-    if (! file_exists($path)) {
-        fwrite(STDERR, 'Could not locate autoload.php at file: ' . $path . PHP_EOL);
+    if (! \file_exists($path)) {
+        \fwrite(STDERR, 'Could not locate autoload.php at file: ' . $path . PHP_EOL);
     }
 
     require $path;
@@ -57,7 +51,7 @@ Loop::run(function () use ($argc, $argv) {
             'prooph_projection_id' => $projectionId,
             'prooph_projection_name' => $projectionName,
             'prooph_log_level' => $logLevel,
-        ] = getenv();
+        ] = \getenv();
 
         $pool = new Pool($connectionString);
 
@@ -65,7 +59,7 @@ Loop::run(function () use ($argc, $argv) {
         $logHandler->setFormatter(new ConsoleFormatter());
         $logHandler->setLevel($logLevel);
 
-        $logger = new Logger('PROJECTOR-' . $projectionName . ' - ' . posix_getpid());
+        $logger = new Logger('PROJECTOR-' . $projectionName . ' - ' . \posix_getpid());
         $logger->pushHandler($logHandler);
 
         $projectionRunner = new ProjectionRunner($pool, $projectionName, $projectionId, $logger);

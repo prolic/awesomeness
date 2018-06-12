@@ -27,14 +27,14 @@ class GetUserOperation extends Operation
     ): UserDetails {
         $request = $requestFactory->createRequest(
             RequestMethod::Get,
-            $uriFactory->createUri($baseUri . '/users/' . urlencode($login))
+            $uriFactory->createUri($baseUri . '/users/' . \urlencode($login))
         );
 
         $response = $this->sendRequest($httpClient, $userCredentials, $request);
 
         switch ($response->getStatusCode()) {
             case 200:
-                $json = json_decode($response->getBody()->getContents(), true);
+                $json = \json_decode($response->getBody()->getContents(), true);
 
                 return new UserDetails(
                     $json['data']['login'],

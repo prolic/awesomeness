@@ -26,7 +26,7 @@ class GetQueryOperation extends Operation
     ): string {
         $request = $requestFactory->createRequest(
             RequestMethod::Get,
-            $uriFactory->createUri($baseUri . '/projection/' . urlencode($name) . '/query')
+            $uriFactory->createUri($baseUri . '/projection/' . \urlencode($name) . '/query')
         );
 
         $response = $this->sendRequest($httpClient, $userCredentials, $request);

@@ -29,9 +29,9 @@ class DeleteOperation extends Operation
     ): void {
         $request = $requestFactory->createRequest(
             RequestMethod::Delete,
-            $uriFactory->createUri(sprintf(
+            $uriFactory->createUri(\sprintf(
                 $baseUri . '/projection/%s?deleteStateStream=%s&deleteCheckpointStream=%s&deleteEmittedStreams=%s',
-                urlencode($name),
+                \urlencode($name),
                 (int) $deleteStateStream,
                 (int) $deleteCheckpointStream,
                 (int) $deleteEmittedStreams

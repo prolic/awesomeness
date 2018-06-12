@@ -27,14 +27,14 @@ class GetProjectionConfigOperation extends Operation
     ): ProjectionConfig {
         $request = $requestFactory->createRequest(
             RequestMethod::Get,
-            $uriFactory->createUri($baseUri . '/projection/' . urlencode($name) . '/config')
+            $uriFactory->createUri($baseUri . '/projection/' . \urlencode($name) . '/config')
         );
 
         $response = $this->sendRequest($httpClient, $userCredentials, $request);
 
         switch ($response->getStatusCode()) {
             case 200:
-                $json = json_decode($response->getBody()->getContents(), true);
+                $json = \json_decode($response->getBody()->getContents(), true);
 
                 return new ProjectionConfig(
                     $json['emitEnabled'],

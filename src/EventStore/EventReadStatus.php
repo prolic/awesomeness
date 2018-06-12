@@ -69,7 +69,7 @@ class EventReadStatus
 
     public function equals(EventReadStatus $other): bool
     {
-        return get_class($this) === get_class($other) && $this->name === $other->name;
+        return \get_class($this) === \get_class($other) && $this->name === $other->name;
     }
 
     public function name(): string

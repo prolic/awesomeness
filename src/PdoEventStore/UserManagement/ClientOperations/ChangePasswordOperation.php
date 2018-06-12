@@ -42,13 +42,13 @@ class ChangePasswordOperation
             throw UserNotFound::withLogin($login);
         }
 
-        $data = json_decode($streamEventsSlice->events()[0]->data(), true);
+        $data = \json_decode($streamEventsSlice->events()[0]->data(), true);
 
-        if (! password_verify($oldPassword, $data['hash'])) {
+        if (! \password_verify($oldPassword, $data['hash'])) {
             throw AccessDenied::toUserManagementOperation();
         }
 
-        $passwordHash = password_hash($newPassword, PASSWORD_DEFAULT);
+        $passwordHash = \password_hash($newPassword, PASSWORD_DEFAULT);
         $data['hash'] = $passwordHash;
 
         $connection->beginTransaction();
@@ -62,7 +62,7 @@ class ChangePasswordOperation
                         EventId::generate(),
                         UserManagement::UserUpdated,
                         true,
-                        json_encode($data),
+                        \json_encode($data),
                         ''
                     ),
                 ],

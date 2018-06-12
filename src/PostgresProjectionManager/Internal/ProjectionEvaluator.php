@@ -9,10 +9,6 @@ use Prooph\EventStore\RecordedEvent;
 use Prooph\PostgresProjectionManager\Internal\Exception\QueryEvaluationError;
 use Throwable;
 use const JSON_ERROR_NONE;
-use function array_map;
-use function json_decode;
-use function json_encode;
-use function json_last_error;
 
 /** @internal */
 class ProjectionEvaluator
@@ -355,7 +351,7 @@ class ProjectionEvaluator
 
     public function fromCategories(string ...$categories): object
     {
-        $categories = array_map(function ($category): string {
+        $categories = \array_map(function ($category): string {
             return '$ce-' . $category;
         }, $categories);
 
@@ -378,10 +374,10 @@ class ProjectionEvaluator
         $emRaw = $event->metaData();
 
         if ($emRaw) {
-            $em = json_decode($emRaw, true);
-            if (json_last_error() === JSON_ERROR_NONE) {
+            $em = \json_decode($emRaw, true);
+            if (\json_last_error() === JSON_ERROR_NONE) {
                 foreach ($em as $key => $value) {
-                    if (substr($key, 0, 1) !== '$' || $key === '$correlationId') {
+                    if (\substr($key, 0, 1) !== '$' || $key === '$correlationId') {
                         $m[$key] = $value;
                     }
                 }
@@ -389,17 +385,17 @@ class ProjectionEvaluator
         }
 
         if ($metadata) {
-            $em = json_decode($metadata, true);
-            if (json_last_error() === JSON_ERROR_NONE) {
+            $em = \json_decode($metadata, true);
+            if (\json_last_error() === JSON_ERROR_NONE) {
                 foreach ($em as $key => $value) {
-                    if (substr($key, 0, 1) !== '$') {
+                    if (\substr($key, 0, 1) !== '$') {
                         $m[$key] = $value;
                     }
                 }
             }
         }
 
-        $this->eventProcessor->emit($streamName, $event->eventType(), $event->data(), json_encode($newMetadata), false);
+        $this->eventProcessor->emit($streamName, $event->eventType(), $event->data(), \json_encode($newMetadata), false);
     }
 
     public function linkStreamTo(string $streamName, string $linkedStreamName, string $metadata = ''): void

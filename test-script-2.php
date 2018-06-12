@@ -16,7 +16,7 @@ $result = $connection->createPersistentSubscription(
     new \Prooph\EventStore\UserCredentials('admin', 'changeit')
 );
 
-var_dump($result);
+\var_dump($result);
 
 $result = $connection->updatePersistentSubscription(
     'sasastream',
@@ -39,7 +39,7 @@ $result = $connection->updatePersistentSubscription(
     new \Prooph\EventStore\UserCredentials('admin', 'changeit')
 );
 
-var_dump($result);
+\var_dump($result);
 /*
 $result = $connection->deletePersistentSubscription(
     'sasastream',
@@ -51,12 +51,12 @@ var_dump($result);
 */
 $result = $connection->getInformationForAllSubscriptions();
 
-var_dump($result);
+\var_dump($result);
 
 $result = $connection->getInformationForSubscriptionsWithStream('sasastream');
 
-var_dump($result);
+\var_dump($result);
 
 $result = $connection->getInformationForSubscription('sasastream', 'test');
 
-var_dump($result);
+\var_dump($result);

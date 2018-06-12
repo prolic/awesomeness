@@ -13,9 +13,9 @@ class PdoEventStoreConnectionTest extends EventStoreConnectionTest
     {
         return new \Prooph\PdoEventStore\PdoEventStoreConnection(
             new \Prooph\PdoEventStore\PostgresConnectionSettings(
-                new \Prooph\EventStore\IpEndPoint(getenv('PG_HOST'), (int) getenv('PG_PORT')),
-                getenv('PG_DBNAME'),
-                new \Prooph\EventStore\UserCredentials(getenv('PG_USERNAME'), getenv('PG_PASSWORD')),
+                new \Prooph\EventStore\IpEndPoint(\getenv('PG_HOST'), (int) \getenv('PG_PORT')),
+                \getenv('PG_DBNAME'),
+                new \Prooph\EventStore\UserCredentials(\getenv('PG_USERNAME'), \getenv('PG_PASSWORD')),
                 null,
                 false
             )
@@ -46,7 +46,7 @@ class PdoEventStoreConnectionTest extends EventStoreConnectionTest
 
         $stream = $stmt->fetch();
         if (false === $stream) {
-            throw new \InvalidArgumentException(sprintf(
+            throw new \InvalidArgumentException(\sprintf(
                 'Stream "%s" could not be found.',
                 $name
             ));
@@ -62,13 +62,13 @@ class PdoEventStoreConnectionTest extends EventStoreConnectionTest
 
     private function getConnection(): \PDO
     {
-        $dsn = sprintf(
+        $dsn = \sprintf(
             'pgsql:host=%s;port=%d;dbname=%s;user=%s;password=%s',
-            getenv('PG_HOST'),
-            getenv('PG_PORT'),
-            getenv('PG_DBNAME'),
-            getenv('PG_USERNAME'),
-            getenv('PG_PASSWORD')
+            \getenv('PG_HOST'),
+            \getenv('PG_PORT'),
+            \getenv('PG_DBNAME'),
+            \getenv('PG_USERNAME'),
+            \getenv('PG_PASSWORD')
         );
 
         $pdo = new \PDO($dsn);

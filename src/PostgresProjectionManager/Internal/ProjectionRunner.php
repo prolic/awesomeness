@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Prooph\PostgresProjectionManager\Internal;
 
 use Amp\Deferred;
-use Amp\Delayed;
 use Amp\Loop;
 use Amp\Postgres\CommandResult;
 use Amp\Postgres\Connection;
@@ -16,7 +15,6 @@ use Amp\Promise;
 use Amp\Success;
 use Amp\Sync\LocalMutex;
 use Amp\Sync\Lock;
-use function Amp\Sync\synchronized;
 use cash\LRUCache;
 use DateTimeImmutable;
 use DateTimeZone;
@@ -38,13 +36,6 @@ use Psr\Log\LoggerInterface as PsrLogger;
 use SplQueue;
 use Throwable;
 use function Amp\call;
-use function array_intersect;
-use function current;
-use function explode;
-use function floor;
-use function in_array;
-use function is_string;
-use function microtime;
 
 /**
  * @internal
@@ -195,8 +186,8 @@ SQL
         }
 
         $toCheck = [SystemRoles::All];
-        if (is_string($data->stream_roles)) {
-            $toCheck = explode(',', $data->stream_roles);
+        if (\is_string($data->stream_roles)) {
+            $toCheck = \explode(',', $data->stream_roles);
         }
 
         $sql = <<<SQL
@@ -225,9 +216,9 @@ SQL;
             $event = $result->getCurrent();
             switch ($event->event_type) {
                 case ProjectionEventTypes::ProjectionUpdated:
-                    $data = json_decode($event->data, true);
+                    $data = \json_decode($event->data, true);
 
-                    if (0 !== json_last_error()) {
+                    if (0 !== \json_last_error()) {
                         throw new Error('Could not json decode event data for projection');
                     }
 
@@ -240,7 +231,7 @@ SQL;
                     $this->trackEmittedStreams = $data['trackEmittedStreams'];
                     $this->maxWriteBatchLength = \min($data['maxWriteBatchLength'], self::MaxMaxWriteBatchLength);
                     if (isset($data['checkpointAfterMs'])) {
-                        $this->checkpointAfterMs = max($data['checkpointAfterMs'], self::MinCheckpointAfterMs);
+                        $this->checkpointAfterMs = \max($data['checkpointAfterMs'], self::MinCheckpointAfterMs);
                     }
                     if (isset($data['checkpointHandledThreshold'])) {
                         $this->checkpointHandledThreshold = $data['checkpointHandledThreshold'];
@@ -267,8 +258,8 @@ SQL;
         }
 
         if ('$system' !== $this->runAs['name']
-            && ! in_array($this->runAs['name'], $toCheck)
-            && (! isset($this->runAs['roles']) || empty(array_intersect($this->runAs['roles'], $toCheck)))
+            && ! \in_array($this->runAs['name'], $toCheck)
+            && (! isset($this->runAs['roles']) || empty(\array_intersect($this->runAs['roles'], $toCheck)))
         ) {
             throw Exception\AccessDenied::toStream(ProjectionNames::ProjectionsStreamPrefix . $this->name);
         }
@@ -301,10 +292,10 @@ SQL;
 
             if (yield $result->advance(ResultSet::FETCH_OBJECT)) {
                 $data = $result->getCurrent();
-                $state = json_decode($data->data, true);
-                $streamPositions = json_decode($data->meta_data, true);
+                $state = \json_decode($data->data, true);
+                $streamPositions = \json_decode($data->meta_data, true);
 
-                if (0 !== json_last_error()) {
+                if (0 !== \json_last_error()) {
                     throw new Exception\RuntimeException('Could not json decode checkpoint');
                 }
 
@@ -341,7 +332,7 @@ SQL;
                     EventId::generate()->toString(),
                     $this->projectionEventNumber + 1,
                     '$start',
-                    json_encode(['id' => $this->id]),
+                    \json_encode(['id' => $this->id]),
                     '',
                     true,
                     DateTimeUtil::format($now),
@@ -384,7 +375,7 @@ SQL;
                 EventId::generate()->toString(),
                 $this->projectionEventNumber + 1,
                 '$stop',
-                json_encode(['id' => $this->id]),
+                \json_encode(['id' => $this->id]),
                 '',
                 true,
                 DateTimeUtil::format($now),
@@ -449,7 +440,7 @@ SQL;
         $reader = yield $this->determineReader();
         $reader->run();
 
-        $this->lastCheckPointMs = microtime(true) * 10000;
+        $this->lastCheckPointMs = \microtime(true) * 10000;
 
         $readingTask = function () use (&$readingTask, $reader): void {
             if ($reader->eof()) {
@@ -499,7 +490,7 @@ SQL;
             ++$this->currentBatchSize;
 
             if ($this->currentBatchSize >= $this->checkpointHandledThreshold
-                && (floor(microtime(true) * 10000 - $this->lastCheckPointMs) >= $this->checkpointAfterMs)
+                && (\floor(\microtime(true) * 10000 - $this->lastCheckPointMs) >= $this->checkpointAfterMs)
             ) {
                 $this->persist(
                     $this->emittedEvents,
@@ -552,7 +543,7 @@ SQL;
         $this->emittedEvents = [];
         $this->streamsOfEmittedEvents = [];
         $this->currentBatchSize = 0;
-        $this->lastCheckPointMs = microtime(true) * 10000;
+        $this->lastCheckPointMs = \microtime(true) * 10000;
 
         Loop::defer(function () use (
             $emittedEvents,
@@ -599,7 +590,7 @@ SQL;
     /** @throws Throwable */
     private function writeEmittedEvents(array $emittedEvents, array $streamsOfEmittedEvents): Generator
     {
-        if (0 === count($emittedEvents)) {
+        if (0 === \count($emittedEvents)) {
             return null;
         }
 
@@ -634,8 +625,8 @@ SQL;
 INSERT INTO events (stream_name, event_id, event_type, data, meta_data, is_json, link_to_stream_name, link_to_event_number, event_number, updated)
 VALUES 
 SQL;
-            $sql .= str_repeat('(?, ?, ?, ?, ?, ?, ?, ?, ?, ?), ', count($batch));
-            $sql = substr($sql, 0, -2) . ';';
+            $sql .= \str_repeat('(?, ?, ?, ?, ?, ?, ?, ?, ?, ?), ', \count($batch));
+            $sql = \substr($sql, 0, -2) . ';';
 
             /** @var Statement $statement */
             $statement = yield $this->pool->prepare($sql);
@@ -668,8 +659,8 @@ SQL;
         $params[] = EventId::generate()->toString();
         $params[] = ++$expectedVersion;
         $params[] = ProjectionEventTypes::ProjectionCheckpoint;
-        $params[] = json_encode($state);
-        $params[] = json_encode([
+        $params[] = \json_encode($state);
+        $params[] = \json_encode([
             '$s' => $streamPositions,
         ]);
         $params[] = $checkpointStream;
@@ -692,8 +683,8 @@ SQL;
     private function determineReader(): Promise
     {
         return call(function (): Generator {
-            if (count($this->processor->sources()['streams']) === 1) {
-                $streamName = current($this->processor->sources()['streams']);
+            if (\count($this->processor->sources()['streams']) === 1) {
+                $streamName = \current($this->processor->sources()['streams']);
 
                 if (! isset($this->streamPositions[$streamName])) {
                     $this->streamPositions[$streamName] = -1;
@@ -749,13 +740,13 @@ SQL
 
                 $toCheck = [SystemRoles::All];
 
-                if (is_string($data->stream_roles)) {
-                    $toCheck = explode(',', $data->stream_roles);
+                if (\is_string($data->stream_roles)) {
+                    $toCheck = \explode(',', $data->stream_roles);
                 }
 
                 if ('$system' !== $this->runAs['name']
-                    && ! in_array($this->runAs['name'], $toCheck)
-                    && (! isset($this->runAs['roles']) || empty(array_intersect($this->runAs['roles'], $toCheck)))
+                    && ! \in_array($this->runAs['name'], $toCheck)
+                    && (! isset($this->runAs['roles']) || empty(\array_intersect($this->runAs['roles'], $toCheck)))
                 ) {
                     throw Exception\AccessDenied::toStream($streamName);
                 }
@@ -797,7 +788,7 @@ SQL
     /** @throws Throwable */
     private function emit(string $stream, string $eventType, string $data, string $metadata, bool $isJson = false): void
     {
-        if (! in_array($stream, $this->streamsOfEmittedEvents, true)) {
+        if (! \in_array($stream, $this->streamsOfEmittedEvents, true)) {
             $this->streamsOfEmittedEvents[] = $stream;
         }
 
@@ -813,7 +804,7 @@ SQL
         ];
 
         if ($eventType === SystemEventTypes::LinkTo) {
-            $linkTo = explode('@', $data);
+            $linkTo = \explode('@', $data);
 
             $eventData['link_to_stream_name'] = $linkTo[1];
             $eventData['link_to_event_number'] = $linkTo[0];

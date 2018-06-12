@@ -57,7 +57,7 @@ class GetAllUsersOperation
             $userDetails[] = new UserDetails(
                 $row->username,
                 $row->full_name,
-                explode(',', $row->rolenames),
+                \explode(',', $row->rolenames),
                 $row->disabled
             );
         }

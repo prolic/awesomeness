@@ -36,7 +36,7 @@ class GetInformationForAllSubscriptionsOperation extends Operation
             case 401:
                 throw new AccessDenied();
             case 200:
-                $json = json_decode($response->getBody()->getContents(), true);
+                $json = \json_decode($response->getBody()->getContents(), true);
 
                 $result = [];
 

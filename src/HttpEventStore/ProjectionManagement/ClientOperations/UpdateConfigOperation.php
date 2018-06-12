@@ -26,14 +26,14 @@ class UpdateConfigOperation extends Operation
         ProjectionConfig $definition,
         ?UserCredentials $userCredentials
     ): void {
-        $string = json_encode($config->toArray());
+        $string = \json_encode($config->toArray());
 
         $request = $requestFactory->createRequest(
             RequestMethod::Put,
-            $uriFactory->createUri($baseUri . '/projection/' . urlencode($name) . '/config'),
+            $uriFactory->createUri($baseUri . '/projection/' . \urlencode($name) . '/config'),
             [
                 'Content-Type' => 'application/json',
-                'Content-Length' => strlen($string),
+                'Content-Length' => \strlen($string),
             ],
             $string
         );

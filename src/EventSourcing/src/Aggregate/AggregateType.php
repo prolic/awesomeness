@@ -36,7 +36,7 @@ class AggregateType
 
     public function typeFromClassName(string $className): string
     {
-        $map = array_flip($this->map);
+        $map = \array_flip($this->map);
 
         if (! isset($map[$className])) {
             throw new Exception\InvalidArgumentException('Class name ' . $className . ' not valid');
@@ -47,7 +47,7 @@ class AggregateType
 
     public function typeFromAggregate(object $aggregateRoot): string
     {
-        $className = get_class($aggregateRoot);
+        $className = \get_class($aggregateRoot);
 
         return $this->typeFromClassName($className);
     }
@@ -57,9 +57,9 @@ class AggregateType
      */
     public function assert(object $aggregateRoot): void
     {
-        $className = get_class($aggregateRoot);
+        $className = \get_class($aggregateRoot);
 
-        $map = array_flip($this->map);
+        $map = \array_flip($this->map);
 
         if (! isset($map[$className])) {
             throw new Exception\AggregateTypeException('Unknown aggregate root');

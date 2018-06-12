@@ -27,11 +27,11 @@ class ReplayParkedOperation extends Operation
     ): ReplayParkedResult {
         $request = $requestFactory->createRequest(
             RequestMethod::Post,
-            $uriFactory->createUri(sprintf(
+            $uriFactory->createUri(\sprintf(
                 '%s/subscriptions/%s/%s/replayParked',
                 $baseUri,
-                urlencode($stream),
-                urlencode($groupName)
+                \urlencode($stream),
+                \urlencode($groupName)
             )),
             [
                 'Content-Length' => 0,
@@ -46,7 +46,7 @@ class ReplayParkedOperation extends Operation
                 throw AccessDenied::toStream($stream);
             case 404:
             case 200:
-                $json = json_decode($response->getBody()->getContents(), true);
+                $json = \json_decode($response->getBody()->getContents(), true);
 
                 return new ReplayParkedResult(
                     $json['correlationId'],

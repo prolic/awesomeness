@@ -33,10 +33,10 @@ class CreateOperation extends Operation
     ): CreateProjectionResult {
         $request = $requestFactory->createRequest(
             RequestMethod::Post,
-            $uriFactory->createUri(sprintf(
+            $uriFactory->createUri(\sprintf(
                 $baseUri . '/projections/%s?name=%s&enabled=%s&checkpoints=%semit=%s&type=%s&trackemittedstreams=%s',
                 $mode,
-                urlencode($name),
+                \urlencode($name),
                 (int) $enabled,
                 (int) $checkpoints,
                 (int) $emit,

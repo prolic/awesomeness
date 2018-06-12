@@ -39,7 +39,7 @@ class DisableUserOperation
                 throw UserNotFound::withLogin($login);
             }
 
-            $data = json_decode($streamEventsSlice->events()[0]->data(), true);
+            $data = \json_decode($streamEventsSlice->events()[0]->data(), true);
 
             $data['disabled'] = true;
 
@@ -51,7 +51,7 @@ class DisableUserOperation
                         EventId::generate(),
                         UserManagement::UserUpdated,
                         true,
-                        json_encode($data),
+                        \json_encode($data),
                         ''
                     ),
                 ]

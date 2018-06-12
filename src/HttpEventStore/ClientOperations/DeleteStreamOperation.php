@@ -31,7 +31,7 @@ class DeleteStreamOperation extends Operation
 
         $request = $requestFactory->createRequest(
             RequestMethod::Delete,
-            $uriFactory->createUri($baseUri . '/streams/' . urlencode($stream)),
+            $uriFactory->createUri($baseUri . '/streams/' . \urlencode($stream)),
             $headers
         );
 

@@ -41,8 +41,8 @@ class ResetPasswordOperation
             throw UserNotFound::withLogin($login);
         }
 
-        $passwordHash = password_hash($newPassword, PASSWORD_DEFAULT);
-        $data = json_decode($streamEventsSlice->events()[0]->data(), true);
+        $passwordHash = \password_hash($newPassword, PASSWORD_DEFAULT);
+        $data = \json_decode($streamEventsSlice->events()[0]->data(), true);
         $data['hash'] = $passwordHash;
 
         $connection->beginTransaction();
@@ -56,7 +56,7 @@ class ResetPasswordOperation
                         EventId::generate(),
                         UserManagement::UserUpdated,
                         true,
-                        json_encode($data),
+                        \json_encode($data),
                         ''
                     ),
                 ],
@@ -71,7 +71,7 @@ class ResetPasswordOperation
                         EventId::generate(),
                         UserManagement::PasswordChanged,
                         true,
-                        json_encode(['loginName' => $login]),
+                        \json_encode(['loginName' => $login]),
                         ''
                     ),
                 ],

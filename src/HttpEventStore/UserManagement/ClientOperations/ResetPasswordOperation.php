@@ -25,16 +25,16 @@ class ResetPasswordOperation extends Operation
         string $newPassword,
         ?UserCredentials $userCredentials
     ): void {
-        $string = json_encode([
+        $string = \json_encode([
             'newPassword' => $newPassword,
         ]);
 
         $request = $requestFactory->createRequest(
             RequestMethod::Post,
-            $uriFactory->createUri($baseUri . '/users/' . urlencode($login) . '/command/reset-password'),
+            $uriFactory->createUri($baseUri . '/users/' . \urlencode($login) . '/command/reset-password'),
             [
                 'Content-Type' => 'application/json',
-                'Content-Length' => strlen($string),
+                'Content-Length' => \strlen($string),
             ],
             $string
         );

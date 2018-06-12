@@ -29,9 +29,9 @@ class CreateTransientOperation extends Operation
     ): CreateProjectionResult {
         $request = $requestFactory->createRequest(
             RequestMethod::Post,
-            $uriFactory->createUri(sprintf(
+            $uriFactory->createUri(\sprintf(
                 $baseUri . '/projections/transient?name=%s&enabled=%s&type=%s',
-                urlencode($name),
+                \urlencode($name),
                 (int) $enabled,
                 $type
             )),

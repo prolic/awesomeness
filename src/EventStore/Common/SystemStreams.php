@@ -20,16 +20,16 @@ class SystemStreams
 
     public static function isMetastream(string $streamId): bool
     {
-        return strlen($streamId) > 1 && substr($streamId, 0, 2) === '$$';
+        return \strlen($streamId) > 1 && \substr($streamId, 0, 2) === '$$';
     }
 
     public static function originalStreamOf(string $metastreamId): string
     {
-        return substr($metastreamId, 2);
+        return \substr($metastreamId, 2);
     }
 
     public static function isSystemStream(string $streamId): bool
     {
-        return strlen($streamId) !== 0 && $streamId[0] === '$';
+        return \strlen($streamId) !== 0 && $streamId[0] === '$';
     }
 }

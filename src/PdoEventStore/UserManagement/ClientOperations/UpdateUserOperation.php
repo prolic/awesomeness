@@ -42,7 +42,7 @@ class UpdateUserOperation
             throw UserNotFound::withLogin($login);
         }
 
-        $data = json_decode($streamEventsSlice->events()[0]->data(), true);
+        $data = \json_decode($streamEventsSlice->events()[0]->data(), true);
 
         $data['fullName'] = $fullName;
         $data['groups'] = $groups;
@@ -58,7 +58,7 @@ class UpdateUserOperation
                         EventId::generate(),
                         UserManagement::UserUpdated,
                         true,
-                        json_encode($data),
+                        \json_encode($data),
                         ''
                     ),
                 ],
@@ -73,7 +73,7 @@ class UpdateUserOperation
             $statement = $connection->prepare($sql);
             $statement->execute([$login]);
 
-            $sql = 'INSERT INTO user_roles (rolename, username) VALUES ' . implode(', ', array_fill(0, count($groups), '(?, ?)'));
+            $sql = 'INSERT INTO user_roles (rolename, username) VALUES ' . \implode(', ', \array_fill(0, \count($groups), '(?, ?)'));
             $statement = $connection->prepare($sql);
             $params = [];
             foreach ($groups as $group) {

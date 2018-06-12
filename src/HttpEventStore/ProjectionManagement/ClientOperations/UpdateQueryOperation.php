@@ -29,9 +29,9 @@ class UpdateQueryOperation extends Operation
     ): void {
         $request = $requestFactory->createRequest(
             RequestMethod::Put,
-                $uriFactory->createUri(sprintf(
+                $uriFactory->createUri(\sprintf(
                     $baseUri . '/projection/%s/query?type=%s&emit=%s',
-                    urlencode($name),
+                    \urlencode($name),
                     $type,
                     (int) $emitEnabled
                 )),

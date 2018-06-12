@@ -57,7 +57,7 @@ class EventStorePersistentSubscription
             $events = $this->operations->readFromSubscription($this->bufferSize);
 
             if (empty($events)) {
-                usleep(100000);
+                \usleep(100000);
                 continue;
             }
 
@@ -110,7 +110,7 @@ class EventStorePersistentSubscription
      */
     public function acknowledgeMultiple(array $eventIds): void
     {
-        if (count($eventIds) > 2000) {
+        if (\count($eventIds) > 2000) {
             throw new \RuntimeException('Limited to ack 2000 events at a time');
         }
 
@@ -128,7 +128,7 @@ class EventStorePersistentSubscription
      */
     public function failMultiple(array $eventIds, PersistentSubscriptionNakEventAction $action): void
     {
-        if (count($eventIds) > 2000) {
+        if (\count($eventIds) > 2000) {
             throw new \RuntimeException('Limited to nack 2000 events at a time');
         }
 

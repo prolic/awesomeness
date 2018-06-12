@@ -27,14 +27,14 @@ class GetArrayOperation extends Operation
     ): array {
         $request = $requestFactory->createRequest(
             RequestMethod::Get,
-            $uriFactory->createUri($baseUri . '/projection/' . urlencode($name) . '/' . $urlQuery)
+            $uriFactory->createUri($baseUri . '/projection/' . \urlencode($name) . '/' . $urlQuery)
         );
 
         $response = $this->sendRequest($httpClient, $userCredentials, $request);
 
         switch ($response->getStatusCode()) {
             case 200:
-                return json_decode($response->getBody()->getContents(), true) ?? [];
+                return \json_decode($response->getBody()->getContents(), true) ?? [];
             case 401:
                 throw AccessDenied::toProjection($name);
             case 404:

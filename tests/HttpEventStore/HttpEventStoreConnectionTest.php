@@ -18,9 +18,9 @@ class HttpEventStoreConnectionTest extends EventStoreConnectionTest
             new \Http\Message\MessageFactory\DiactorosMessageFactory(),
             new \Http\Message\UriFactory\DiactorosUriFactory(),
             new \Prooph\HttpEventStore\ConnectionSettings(
-                new \Prooph\EventStore\IpEndPoint(getenv('HTTP_HOST'), (int) getenv('HTTP_PORT')),
+                new \Prooph\EventStore\IpEndPoint(\getenv('HTTP_HOST'), (int) \getenv('HTTP_PORT')),
                 false,
-                new UserCredentials(getenv('HTTP_USERNAME'), getenv('HTTP_PASSWORD'))
+                new UserCredentials(\getenv('HTTP_USERNAME'), \getenv('HTTP_PASSWORD'))
             )
         );
     }

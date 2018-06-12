@@ -38,14 +38,14 @@ class AppendToStreamOperation extends Operation
             ];
         }
 
-        $string = json_encode($data);
+        $string = \json_encode($data);
 
         $request = $requestFactory->createRequest(
             RequestMethod::Post,
-            $uriFactory->createUri($baseUri . '/streams/' . urlencode($stream)),
+            $uriFactory->createUri($baseUri . '/streams/' . \urlencode($stream)),
             [
                 'Content-Type' => 'application/vnd.eventstore.events+json',
-                'Content-Length' => strlen($string),
+                'Content-Length' => \strlen($string),
                 'ES-ExpectedVersion' => $expectedVersion,
             ],
             $string

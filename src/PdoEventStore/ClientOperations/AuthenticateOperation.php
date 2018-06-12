@@ -36,11 +36,11 @@ SQL
         $data = $statement->fetch();
 
         if ($data->disabled
-            || ! password_verify($userCredentials->password(), $data->password_hash)
+            || ! \password_verify($userCredentials->password(), $data->password_hash)
         ) {
             throw AccessDenied::login($userCredentials->username());
         }
 
-        return array_merge(explode(',', $data->user_roles), [SystemRoles::All]);
+        return \array_merge(\explode(',', $data->user_roles), [SystemRoles::All]);
     }
 }

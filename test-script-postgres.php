@@ -16,7 +16,7 @@ for ($i = 0; $i < 10; $i++) {
             \Prooph\EventStore\EventId::generate(),
             'test-event',
             true,
-            json_encode(['data' => \Ramsey\Uuid\Uuid::uuid4()->toString()]),
+            \json_encode(['data' => \Ramsey\Uuid\Uuid::uuid4()->toString()]),
             ''
         );
         $writeResult = $connection->appendToStream(

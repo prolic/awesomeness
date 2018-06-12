@@ -30,12 +30,12 @@ class MessageTransformer
             throw new \InvalidArgumentException('Unknown event type given: ' . $type);
         }
 
-        if (! class_exists($messageClass)) {
+        if (! \class_exists($messageClass)) {
             throw new \UnexpectedValueException('Given message name is not a valid class: ' . (string) $messageClass);
         }
 
-        if (! is_subclass_of($messageClass, DomainMessage::class)) {
-            throw new \UnexpectedValueException(sprintf(
+        if (! \is_subclass_of($messageClass, DomainMessage::class)) {
+            throw new \UnexpectedValueException(\sprintf(
                 'Message class %s is not a sub class of %s',
                 $messageClass,
                 DomainMessage::class
@@ -45,8 +45,8 @@ class MessageTransformer
         return $messageClass::fromArray([
             'uui' => $event->eventId()->toString(),
             'message_name' => $event->eventType(),
-            'payload' => json_decode($event->data(), true),
-            'metadata' => json_decode($event->metaData(), true),
+            'payload' => \json_decode($event->data(), true),
+            'metadata' => \json_decode($event->metaData(), true),
             'created' => $event->created(),
         ]);
     }
@@ -57,8 +57,8 @@ class MessageTransformer
             EventId::fromString($message->uuid()->toString()),
             $message->messageName(),
             true,
-            json_encode($message->payload()),
-            json_encode($message->metadata())
+            \json_encode($message->payload()),
+            \json_encode($message->metadata())
         );
     }
 }

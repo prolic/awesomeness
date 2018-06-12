@@ -40,7 +40,7 @@ SQL
 
         $event = $statement->fetch();
 
-        $data = json_decode($event->data, true);
+        $data = \json_decode($event->data, true);
 
         return SystemSettings::fromArray($data);
     }
