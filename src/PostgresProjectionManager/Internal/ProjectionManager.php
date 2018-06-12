@@ -235,4 +235,17 @@ SQL
 
         return $this->projections[$name]->send('enable');
     }
+
+    public function getState(string $name): Promise
+    {
+        if (! isset($this->projections[$name])) {
+            return new Failure(ProjectionNotFound::withName($name));
+        }
+
+        return call(function () use ($name): Generator {
+            yield $this->projections[$name]->send('state');
+
+            return yield $this->projections[$name]->receive();
+        });
+    }
 }

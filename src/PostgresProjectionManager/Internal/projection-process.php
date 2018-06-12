@@ -84,6 +84,10 @@ Loop::run(function () use ($argc, $argv) {
                     $logger->info('disabling projection');
                     yield $projectionRunner->disable();
                     break;
+                case 'state':
+                    $state = $projectionRunner->getState();
+                    yield $channel->send($state);
+                    break;
                 case 'shutdown':
                     yield $projectionRunner->shutdown();
                     break 2; // break the loop

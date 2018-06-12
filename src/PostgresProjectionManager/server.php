@@ -59,6 +59,7 @@ Loop::run(function () {
     }));
     $router->addRoute('GET', '/projection/{name}/command/disable', new RequestHandler\DisableProjectionRequestHandler($projectionManager));
     $router->addRoute('GET', '/projection/{name}/command/enable', new RequestHandler\EnableProjectionRequestHandler($projectionManager));
+    $router->addRoute('GET', '/projection/{name}/state', new RequestHandler\GetStateRequestHandler($projectionManager));
 
     $server = new Server($servers, $router, $logger);
     yield $server->start();

@@ -896,6 +896,11 @@ SQL
         }
     */
 
+    public function getState(): array
+    {
+        return $this->processor->getState();
+    }
+
     /** @throws Throwable */
     private function createStream(string $streamName): Generator
     {
