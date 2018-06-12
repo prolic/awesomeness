@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Prooph\PostgresProjectionManager\Internal;
 
 use Amp\Deferred;
+use Amp\Delayed;
 use Amp\Loop;
 use Amp\Postgres\CommandResult;
 use Amp\Postgres\Connection;
@@ -14,6 +15,7 @@ use Amp\Postgres\Statement;
 use Amp\Promise;
 use Amp\Success;
 use Amp\Sync\LocalMutex;
+use Amp\Sync\Lock;
 use function Amp\Sync\synchronized;
 use cash\LRUCache;
 use DateTimeImmutable;
@@ -51,6 +53,7 @@ class ProjectionRunner
 {
     private const CheckedStreamsCacheSize = 10000;
     private const MinCheckpointAfterMs = 100;
+    private const MaxMaxWriteBatchLength = 5000;
 
     // properties regarding projection runner
 
@@ -70,12 +73,14 @@ class ProjectionRunner
     private $state;
     /** @var EventProcessor */
     private $processor;
-    /** @var LocalMutex */
-    private $writeMutex;
     /** @var Deferred */
     private $shutdownDeferred;
     /** @var Promise */
     private $shutdownPromise;
+    /** @var LocalMutex */
+    private $readMutex;
+    /** @var LocalMutex */
+    private $persistMutex;
     /** @var int */
     private $projectionEventNumber;
     /** @var int */
@@ -83,9 +88,9 @@ class ProjectionRunner
     /** @var LRUCache */
     private $checkedStreams;
     /** @var array */
-    private $toWriteStreams = [];
+    private $streamsOfEmittedEvents = [];
     /** @var array */
-    private $toWrite = [];
+    private $emittedEvents = [];
     /** @var int */
     private $currentBatchSize = 0;
 
@@ -119,8 +124,6 @@ class ProjectionRunner
     private $runAs;
     /** @var array */
     private $streamPositions = [];
-    /** @var array */
-    private $lastWrittenStreamPositions = [];
     /** @var array|null */
     private $loadedState;
 
@@ -137,9 +140,10 @@ class ProjectionRunner
         $this->state = ProjectionState::stopped();
         $this->checkedStreams = new LRUCache(self::CheckedStreamsCacheSize);
         $this->processingQueue = new SplQueue();
-        $this->writeMutex = new LocalMutex();
         $this->shutdownDeferred = new Deferred();
         $this->shutdownPromise = $this->shutdownDeferred->promise();
+        $this->readMutex = new LocalMutex();
+        $this->persistMutex = new LocalMutex();
     }
 
     /** @throws Throwable */
@@ -234,7 +238,7 @@ SQL;
                     $this->emitEnabled = $data['emitEnabled'];
                     $this->checkpointsDisabled = $data['checkpointsDisabled'];
                     $this->trackEmittedStreams = $data['trackEmittedStreams'];
-                    $this->maxWriteBatchLength = $data['maxWriteBatchLength'];
+                    $this->maxWriteBatchLength = \min($data['maxWriteBatchLength'], self::MaxMaxWriteBatchLength);
                     if (isset($data['checkpointAfterMs'])) {
                         $this->checkpointAfterMs = max($data['checkpointAfterMs'], self::MinCheckpointAfterMs);
                     }
@@ -306,7 +310,6 @@ SQL;
 
                 $this->loadedState = $state;
                 $this->streamPositions = $streamPositions['$s'];
-                $this->lastWrittenStreamPositions = $streamPositions['$s'];
             }
         } catch (StreamNotFound $e) {
             // ignore, no checkpoint found
@@ -352,8 +355,6 @@ SQL;
 
                 $this->enabled = true;
             }
-
-            $this->lastCheckPointMs = microtime(true) * 10000;
 
             yield from $this->runQuery();
         });
@@ -416,7 +417,7 @@ SQL;
 
         $this->state = ProjectionState::stopping();
 
-        Loop::repeat(150, function (string $watcherId): Generator {
+        Loop::repeat(100, function (string $watcherId): void {
             if ($this->state->equals(ProjectionState::stopped())) {
                 Loop::cancel($watcherId);
                 $this->logger->info('shutdown done');
@@ -427,82 +428,6 @@ SQL;
         });
 
         return $this->shutdownPromise;
-    }
-
-    /** @throws Throwable */
-    private function write(): Generator
-    {
-        if (0 === count($this->toWrite)) {
-            if ($this->state->equals(ProjectionState::running())) {
-                Loop::delay(100, function (): Generator { // write up to 10 times per second
-                    yield synchronized($this->writeMutex, function (): Generator {
-                        yield from $this->write();
-                    });
-                });
-            }
-
-            return null;
-        }
-
-        $streams = $this->toWriteStreams;
-        $data = $this->toWrite;
-        $expectedVersions = [];
-
-        $this->toWriteStreams = [];
-        $this->toWrite = [];
-
-        foreach ($streams as $stream) {
-            yield from $this->acquireLock($this->lockConnection, $stream);
-        }
-
-        foreach ($streams as $stream) {
-            $expectedVersion = ExpectedVersion::NoStream;
-
-            try {
-                yield $this->checkStream($stream);
-                $expectedVersion = yield from $this->getExpectedVersion($stream);
-            } catch (StreamNotFound $e) {
-                yield from $this->createStream($stream);
-            }
-
-            $expectedVersions[$stream] = $expectedVersion;
-        }
-
-        $sql = <<<SQL
-INSERT INTO events (stream_name, event_id, event_type, data, meta_data, is_json, updated, link_to_stream_name, link_to_event_number, event_number)
-VALUES 
-SQL;
-        $sql .= str_repeat('(?, ?, ?, ?, ?, ?, ?, ?, ?, ?), ', count($data));
-        $sql = substr($sql, 0, -2) . ';';
-
-        $params = [];
-        foreach ($data as $record) {
-            foreach ($record as $row) {
-                $params[] = $row;
-            }
-            $params[] = ++$expectedVersions[$record['stream']];
-        }
-
-        /** @var Statement $statement */
-        $statement = yield $this->pool->prepare($sql);
-        /** @var CommandResult $result */
-        $result = yield $statement->execute($params);
-
-        if (0 === $result->affectedRows()) {
-            throw new Exception\RuntimeException('Could not write events');
-        }
-
-        foreach ($streams as $stream) {
-            yield from $this->releaseLock($this->lockConnection, $stream);
-        }
-
-        if ($this->state->equals(ProjectionState::running())) {
-            Loop::defer(function (): Generator {
-                yield synchronized($this->writeMutex, function (): Generator {
-                    yield from $this->write();
-                });
-            });
-        }
     }
 
     /** @throws Throwable */
@@ -524,54 +449,45 @@ SQL;
         $reader = yield $this->determineReader();
         $reader->run();
 
-        Loop::delay(100, function (): Generator { // write up to 10 times per second
-            yield synchronized($this->writeMutex, function (): Generator {
-                yield from $this->write();
-            });
-        });
-
-        if (! $this->checkpointsDisabled) {
-            Loop::delay($this->checkpointAfterMs, function (): Generator {
-                yield synchronized($this->writeMutex, function (): Generator {
-                    yield from $this->writeCheckPoint(false);
-                });
-            });
-        }
+        $this->lastCheckPointMs = microtime(true) * 10000;
 
         $readingTask = function () use (&$readingTask, $reader): void {
             if ($reader->eof()) {
+                $this->persist(
+                    $this->emittedEvents,
+                    $this->streamsOfEmittedEvents,
+                    $this->processor->getState(),
+                    $this->streamPositions,
+                    false
+                );
+
                 return;
             }
 
             if ($this->state->equals(ProjectionState::stopping())) {
                 $reader->pause();
-                Loop::delay(100, function (): Generator {
-                    yield synchronized($this->writeMutex, function (): Generator {
-                        yield from $this->write();
-                    });
-                });
 
-                if (! $this->checkpointsDisabled) {
-                    Loop::delay($this->checkpointAfterMs, function (): Generator {
-                        yield synchronized($this->writeMutex, function (): Generator {
-                            yield from $this->writeCheckPoint(true);
-                        });
-                    });
-                }
-
-                $this->loadedState = $this->processor->getState();
-                $this->state = ProjectionState::stopped();
+                $this->persist(
+                    $this->emittedEvents,
+                    $this->streamsOfEmittedEvents,
+                    $this->processor->getState(),
+                    $this->streamPositions,
+                    true
+                );
 
                 return;
             }
 
             if ($this->processingQueue->isEmpty()) {
-                Loop::defer(function () use (&$readingTask): Generator {
-                    yield synchronized($this->writeMutex, function (): Generator {
-                        yield from $this->writeCheckPoint(true);
-                    });
-                    Loop::delay(200, $readingTask); // if queue is empty let's wait for a while
-                });
+                $this->persist(
+                    $this->emittedEvents,
+                    $this->streamsOfEmittedEvents,
+                    $this->processor->getState(),
+                    $this->streamPositions,
+                    false
+                );
+
+                Loop::delay(200, $readingTask); // if queue is empty let's wait for a while
 
                 return;
             }
@@ -581,6 +497,18 @@ SQL;
             $this->processor->processEvent($event);
             $this->streamPositions[$event->streamId()] = $event->eventNumber();
             ++$this->currentBatchSize;
+
+            if ($this->currentBatchSize >= $this->checkpointHandledThreshold
+                && (floor(microtime(true) * 10000 - $this->lastCheckPointMs) >= $this->checkpointAfterMs)
+            ) {
+                $this->persist(
+                    $this->emittedEvents,
+                    $this->streamsOfEmittedEvents,
+                    $this->processor->getState(),
+                    $this->streamPositions,
+                    false
+                );
+            }
 
             if ($this->processingQueue->count() > $this->pendingEventsThreshold) {
                 $reader->pause();
@@ -598,45 +526,137 @@ SQL;
         Loop::defer($readingTask);
     }
 
-    /** @throws Throwable */
-    private function writeCheckPoint(bool $force): Generator
-    {
-        if ($force && $this->streamPositions === $this->lastWrittenStreamPositions) {
-            return null;
-        }
+    private function persist(
+        array $emittedEvents,
+        array $streamsOfEmittedEvents,
+        array $state,
+        array $streamPositions,
+        bool $stop
+    ): void {
+        if (0 === $this->currentBatchSize) {
+            if ($stop) {
+                Loop::defer(function (): Generator {
+                    /** @var Lock $lock */
+                    $lock = yield $this->persistMutex->acquire();
 
-        if (! $force
-            && (
-                $this->currentBatchSize < $this->checkpointHandledThreshold
-                || (floor(microtime(true) * 10000 - $this->lastCheckPointMs) < $this->checkpointAfterMs)
-                || $this->streamPositions === $this->lastWrittenStreamPositions
-            )
-        ) {
-            if ($this->state->equals(ProjectionState::running())) {
-                Loop::delay($this->checkpointAfterMs, function (): Generator {
-                    yield synchronized($this->writeMutex, function (): Generator {
-                        yield from $this->writeCheckPoint(false);
-                    });
+                    $this->loadedState = $this->processor->getState();
+                    $this->state = ProjectionState::stopped();
+
+                    $lock->release();
                 });
             }
 
+            return;
+        }
+
+        $this->emittedEvents = [];
+        $this->streamsOfEmittedEvents = [];
+        $this->currentBatchSize = 0;
+        $this->lastCheckPointMs = microtime(true) * 10000;
+
+        Loop::defer(function () use (
+            $emittedEvents,
+            $streamsOfEmittedEvents,
+            $state,
+            $streamPositions,
+            $stop
+        ): Generator {
+            /** @var Lock $lock */
+            $lock = yield $this->persistMutex->acquire();
+
+            $checkpointStream = ProjectionNames::ProjectionsStreamPrefix . $this->name . ProjectionNames::ProjectionCheckpointStreamSuffix;
+
+            /** @var Connection $lockConnection */
+            $lockConnection = yield $this->pool->extractConnection();
+
+            foreach ($streamsOfEmittedEvents as $stream) {
+                yield from $this->acquireLock($lockConnection, $stream);
+            }
+
+            yield from $this->acquireLock($lockConnection, $checkpointStream);
+            yield from $this->writeEmittedEvents($emittedEvents, $streamsOfEmittedEvents);
+            yield from $this->writeCheckPoint($checkpointStream, $state, $streamPositions);
+
+            foreach ($streamsOfEmittedEvents as $stream) {
+                yield from $this->releaseLock($lockConnection, $stream);
+            }
+
+            if ($stop) {
+                $this->loadedState = $this->processor->getState();
+                $this->state = ProjectionState::stopped();
+            }
+
+            yield from $this->releaseLock($lockConnection, $checkpointStream);
+
+            $lockConnection->close();
+
+            unset($lockConnection);
+
+            $lock->release();
+        });
+    }
+
+    /** @throws Throwable */
+    private function writeEmittedEvents(array $emittedEvents, array $streamsOfEmittedEvents): Generator
+    {
+        if (0 === count($emittedEvents)) {
             return null;
         }
 
-        $this->logger->debug('writing checkpoint');
+        $expectedVersions = [];
 
-        $checkpointStream = ProjectionNames::ProjectionsStreamPrefix . $this->name . ProjectionNames::ProjectionCheckpointStreamSuffix;
-        $batchSize = $this->currentBatchSize;
-        $streamPositions = $this->streamPositions;
-        $state = $this->processor->getState();
+        foreach ($streamsOfEmittedEvents as $stream) {
+            $expectedVersion = ExpectedVersion::NoStream;
 
+            try {
+                yield $this->checkStream($stream);
+                $expectedVersion = yield from $this->getExpectedVersion($stream);
+            } catch (StreamNotFound $e) {
+                yield from $this->createStream($stream);
+            }
+
+            $expectedVersions[$stream] = $expectedVersion;
+        }
+
+        foreach (\array_chunk($emittedEvents, $this->maxWriteBatchLength) as $batch) {
+            $params = [];
+            foreach ($batch as $record) {
+                foreach ($record as $row) {
+                    $params[] = $row;
+                }
+
+                $now = new DateTimeImmutable('NOW', new DateTimeZone('UTC'));
+                $params[] = ++$expectedVersions[$record['stream']];
+                $params[] = DateTimeUtil::format($now);
+            }
+
+            $sql = <<<SQL
+INSERT INTO events (stream_name, event_id, event_type, data, meta_data, is_json, link_to_stream_name, link_to_event_number, event_number, updated)
+VALUES 
+SQL;
+            $sql .= str_repeat('(?, ?, ?, ?, ?, ?, ?, ?, ?, ?), ', count($batch));
+            $sql = substr($sql, 0, -2) . ';';
+
+            /** @var Statement $statement */
+            $statement = yield $this->pool->prepare($sql);
+            /** @var CommandResult $result */
+            $result = yield $statement->execute($params);
+
+            if (0 === $result->affectedRows()) {
+                throw new Exception\RuntimeException('Could not write events');
+            }
+        }
+    }
+
+    /** @throws Throwable */
+    private function writeCheckPoint(string $checkpointStream, array $state, array $streamPositions): Generator
+    {
         try {
             yield $this->checkStream($checkpointStream);
         } catch (StreamNotFound $e) {
             yield from $this->createStream($checkpointStream);
         }
 
-        yield from $this->acquireLock($this->lockConnection, $checkpointStream);
         $expectedVersion = yield from $this->getExpectedVersion($checkpointStream);
 
         $sql = <<<SQL
@@ -665,21 +685,7 @@ SQL;
             throw new Exception\RuntimeException('Could not write checkpoint');
         }
 
-        yield from $this->releaseLock($this->lockConnection, $checkpointStream);
-
-        $this->currentBatchSize = $this->currentBatchSize - $batchSize;
-        $this->lastCheckPointMs = microtime(true) * 10000;
-
-        $this->lastWrittenStreamPositions = $streamPositions;
         $this->logger->info('Checkpoint created');
-
-        if ($this->state->equals(ProjectionState::running())) {
-            Loop::delay($this->checkpointAfterMs, function (): Generator {
-                yield synchronized($this->writeMutex, function (): Generator {
-                    yield from $this->writeCheckPoint(false);
-                });
-            });
-        }
     }
 
     /** @throws Throwable */
@@ -691,12 +697,12 @@ SQL;
 
                 if (! isset($this->streamPositions[$streamName])) {
                     $this->streamPositions[$streamName] = -1;
-                    $this->lastWrittenStreamPositions[$streamName] = -1;
                 }
 
                 yield $this->checkStream($streamName);
 
                 return yield new Success(new StreamEventReader(
+                    $this->readMutex,
                     $this->pool,
                     $this->processingQueue,
                     'Continuous' !== $this->mode,
@@ -789,13 +795,11 @@ SQL
     }
 
     /** @throws Throwable */
-    public function emit(string $stream, string $eventType, string $data, string $metadata, bool $isJson = false): void
+    private function emit(string $stream, string $eventType, string $data, string $metadata, bool $isJson = false): void
     {
-        if (! in_array($stream, $this->toWriteStreams, true)) {
-            $this->toWriteStreams[] = $stream;
+        if (! in_array($stream, $this->streamsOfEmittedEvents, true)) {
+            $this->streamsOfEmittedEvents[] = $stream;
         }
-
-        $now = new DateTimeImmutable('NOW', new DateTimeZone('UTC'));
 
         $eventData = [
             'stream' => $stream,
@@ -804,7 +808,6 @@ SQL
             'data' => $data,
             'metadata' => $metadata,
             'isJson' => $isJson,
-            'updated' => DateTimeUtil::format($now),
             'link_to_stream_name' => null,
             'link_to_event_number' => null,
         ];
@@ -816,7 +819,7 @@ SQL
             $eventData['link_to_event_number'] = $linkTo[0];
         }
 
-        $this->toWrite[] = $eventData;
+        $this->emittedEvents[] = $eventData;
     }
 
     /*

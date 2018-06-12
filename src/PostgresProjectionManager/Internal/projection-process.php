@@ -8,8 +8,6 @@ use Amp\Log\ConsoleFormatter;
 use Amp\Loop;
 use Amp\Parallel\Sync;
 use Amp\Postgres\Pool;
-use Generator;
-use Monolog\Handler\RotatingFileHandler;
 use Monolog\Logger;
 use Prooph\EventStore\Exception\RuntimeException;
 use Throwable;
@@ -30,7 +28,7 @@ use function ob_start;
 
 // Doesn't exist in phpdbg...
 if (function_exists('cli_set_process_title')) {
-    @cli_set_process_title('amp-process');
+    @cli_set_process_title('projection-process');
 }
 
 // Redirect all output written using echo, print, printf, etc. to STDERR.
@@ -63,7 +61,7 @@ Loop::run(function () use ($argc, $argv) {
 
         $pool = new Pool($connectionString);
 
-        $logHandler = new RotatingFileHandler('/tmp/projector-' . $projectionName . '.log');
+        $logHandler = new EchoHandler();
         $logHandler->setFormatter(new ConsoleFormatter());
         $logHandler->setLevel($logLevel);
 

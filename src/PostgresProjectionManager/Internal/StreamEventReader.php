@@ -7,6 +7,7 @@ namespace Prooph\PostgresProjectionManager\Internal;
 use Amp\Postgres\Pool;
 use Amp\Postgres\ResultSet;
 use Amp\Postgres\Statement;
+use Amp\Sync\LocalMutex;
 use Generator;
 use Prooph\EventStore\EventId;
 use Prooph\EventStore\Internal\DateTimeUtil;
@@ -17,21 +18,20 @@ use Throwable;
 /** @internal */
 class StreamEventReader extends EventReader
 {
-    private const MaxReads = 400;
-
     /** @var string */
     private $streamName;
     /** @var int */
     private $fromSequenceNumber;
 
     public function __construct(
+        LocalMutex $readMutex,
         Pool $pool,
         SplQueue $queue,
         bool $stopOnEof,
         string $streamName,
         int $fromSequenceNumber
     ) {
-        parent::__construct($pool, $queue, $stopOnEof);
+        parent::__construct($readMutex, $pool, $queue, $stopOnEof);
 
         $this->streamName = $streamName;
         $this->fromSequenceNumber = $fromSequenceNumber;
@@ -69,6 +69,7 @@ SQL;
         while (yield $result->advance(ResultSet::FETCH_OBJECT)) {
             $row = $result->getCurrent();
             ++$readEvents;
+
             $this->queue->enqueue(new RecordedEvent(
                 $this->streamName,
                 EventId::fromString($row->event_id),
@@ -79,9 +80,9 @@ SQL;
                 $row->is_json,
                 DateTimeUtil::create($row->updated)
             ));
-
-            $this->fromSequenceNumber = $row->event_number;
         }
+
+        $this->fromSequenceNumber += $readEvents;
 
         if (0 === $readEvents && $this->stopOnEof) {
             $this->eof = true;

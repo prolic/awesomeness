@@ -7,6 +7,7 @@ namespace Prooph\PostgresProjectionManager\Internal;
 use Amp\Coroutine;
 use Amp\Delayed;
 use Amp\Failure;
+use function Amp\Log\hasColorSupport;
 use Amp\Loop;
 use Amp\Parallel\Context\Process;
 use Amp\Postgres\Connection;
@@ -116,6 +117,7 @@ class ProjectionManager
                     'prooph_projection_id' => $projectionId,
                     'prooph_projection_name' => $projectionName,
                     'prooph_log_level' => 'DEBUG', //@todo make configurable
+                    'AMP_LOG_COLOR' => hasColorSupport(),
                 ]);
 
                 $pid = yield $context->getPid();

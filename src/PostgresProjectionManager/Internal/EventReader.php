@@ -4,15 +4,20 @@ declare(strict_types=1);
 
 namespace Prooph\PostgresProjectionManager\Internal;
 
-use Amp\Coroutine;
 use Amp\Loop;
 use Amp\Postgres\Pool;
+use Amp\Sync\LocalMutex;
+use Amp\Sync\Lock;
 use Generator;
 use SplQueue;
 
 /** @internal */
 abstract class EventReader
 {
+    protected const MaxReads = 400;
+
+    /** @var LocalMutex */
+    protected $readMutex;
     /** @var Pool */
     protected $pool;
     /** @var SplQueue */
@@ -23,8 +28,9 @@ abstract class EventReader
     protected $paused = true;
     protected $eof = false;
 
-    public function __construct(Pool $pool, SplQueue $queue, bool $stopOnEof)
+    public function __construct(LocalMutex $readMutex, Pool $pool, SplQueue $queue, bool $stopOnEof)
     {
+        $this->readMutex = $readMutex;
         $this->pool = $pool;
         $this->queue = $queue;
         $this->stopOnEof = $stopOnEof;
@@ -34,15 +40,20 @@ abstract class EventReader
     {
         $this->paused = false;
 
-        $run = function () use (&$run): Generator {
-            yield new Coroutine($this->doRequestEvents());
+        Loop::repeat(0, function (string $watcherId): Generator {
+            Loop::disable($watcherId);
+
+            /** @var Lock $lock */
+            $lock = yield $this->readMutex->acquire();
+
+            yield from $this->doRequestEvents();
+
+            $lock->release();
 
             if (! $this->eof && ! $this->paused) {
-                Loop::defer($run);
+                Loop::enable($watcherId);
             }
-        };
-
-        Loop::defer($run);
+        });
     }
 
     public function pause(): void
