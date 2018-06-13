@@ -238,6 +238,11 @@ SQL
         return $this->sendToAndReceiveFromProjection($name, 'config');
     }
 
+    public function getDefinition(string $name): Promise
+    {
+        return $this->sendToAndReceiveFromProjection($name, 'query');
+    }
+
     private function sendToProjection(string $name, string $operation): Promise
     {
         if (! isset($this->projections[$name])) {

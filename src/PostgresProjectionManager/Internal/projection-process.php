@@ -88,6 +88,10 @@ Loop::run(function () use ($argc, $argv) {
                     $logger->info('enabling projection');
                     yield $projectionRunner->enable();
                     break;
+                case 'query':
+                    $definition = $projectionRunner->getDefinition();
+                    yield $channel->send($definition);
+                    break;
                 case 'state':
                     $state = $projectionRunner->getState();
                     yield $channel->send($state);
