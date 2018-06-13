@@ -910,28 +910,6 @@ SQL
 
     public function getDefinition(): array
     {
-        /*
-         {
-  "msgTypeId": 298,
-  "name": "mixedprojection",
-  "query": "fromStream('sasastream4').when({\n    $init: function () {\n        return {count: 0};\n    },\n    $any: function (s, e) {\n        linkTo('testlinkstreamxxx', e);\n        s.count++;\n        return s;\n    }\n})",
-  "definition": {
-    "allEvents": true,
-    "categories": [],
-    "events": [],
-    "streams": [
-      "sasastream4"
-    ],
-    "options": {
-      "definesFold": true
-    }
-  },
-  "outputConfig": {
-    "resultStreamName": "$projections-mixedprojection-result"
-  }
-}%
-         */
-
         return [
             'name' => $this->name,
             'query' => $this->query,
