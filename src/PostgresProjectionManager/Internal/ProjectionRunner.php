@@ -165,6 +165,11 @@ class ProjectionRunner
                 Loop::disable($watcherId);
                 $second = (int) floor(microtime(true));
 
+                $readsInProgress = 0;
+                if ($this->reader && ! $this->reader->paused()) {
+                    $readsInProgress = 400;
+                }
+
                 $this->statisticsRecorder->record(
                     $second,
                     $this->state,
@@ -176,7 +181,7 @@ class ProjectionRunner
                     0,
                     $this->processingQueue->count(),
                     $this->eventsProcessedAfterRestart,
-                    $this->reader->paused() ? 0 : 400,
+                    $readsInProgress,
                     0,
                     count($this->emittedEvents),
                     $this->checkpointStatus,
@@ -462,7 +467,6 @@ SQL;
 
         Loop::repeat(100, function (string $watcherId): void {
             if ($this->state->equals(ProjectionState::stopped())) {
-                error_log('fds');
                 Loop::cancel($watcherId);
                 $this->logger->info('shutdown done');
                 //Loop::cancel($this->statisticsRecorderWatcherId);
@@ -1019,7 +1023,11 @@ SQL
             $progress = 0;
             $total = 0;
 
-            $head = yield from $this->reader->head();
+            if ($this->reader) { // @todo build reader earlier
+                $head = yield from $this->reader->head();
+            } else {
+                $head = [];
+            }
 
             foreach ($head as $streamName => $position) {
                 $total += $position;
