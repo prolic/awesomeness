@@ -64,6 +64,8 @@ class ProjectionRunner
     private $state;
     /** @var EventProcessor */
     private $processor;
+    /** @var EventReader */
+    private $reader;
     /** @var Deferred */
     private $shutdownDeferred;
     /** @var Promise */
@@ -83,7 +85,15 @@ class ProjectionRunner
     /** @var array */
     private $emittedEvents = [];
     /** @var int */
+    private $eventsProcessed = 0;
+    /** @var int */
     private $currentBatchSize = 0;
+    /** @var StatisticsRecorder */
+    private $statisticsRecorder;
+    /** @var string */
+    private $statisticsRecorderWatcherId;
+    /** @var string */
+    private $checkpointStatus = '';
 
     // properties regarding projection itself
 
@@ -115,6 +125,8 @@ class ProjectionRunner
     private $runAs;
     /** @var array */
     private $streamPositions = [];
+    /** @var array */
+    private $lastCheckpoint = [];
     /** @var array|null */
     private $loadedState;
 
@@ -135,6 +147,7 @@ class ProjectionRunner
         $this->shutdownPromise = $this->shutdownDeferred->promise();
         $this->readMutex = new LocalMutex();
         $this->persistMutex = new LocalMutex();
+        $this->statisticsRecorder = new StatisticsRecorder();
     }
 
     /** @throws Throwable */
@@ -146,6 +159,26 @@ class ProjectionRunner
             if ($this->enabled) {
                 yield $this->enable();
             }
+
+            $this->statisticsRecorderWatcherId = Loop::repeat(100, function (string $watcherId) {
+                Loop::disable($watcherId);
+                $second = (int) floor(microtime(true));
+
+                $this->statisticsRecorder->record(
+                    $second,
+                    0,
+                    $this->processingQueue->count(),
+                    $this->eventsProcessed,
+                    $this->reader->paused() ? 0 : 400,
+                    0,
+                    count($this->emittedEvents),
+                    $this->checkpointStatus,
+                    $this->streamPositions,
+                    $this->lastCheckpoint
+                );
+
+                Loop::enable($watcherId);
+            });
         });
     }
 
@@ -264,6 +297,8 @@ SQL;
             throw Exception\AccessDenied::toStream(ProjectionNames::ProjectionsStreamPrefix . $this->name);
         }
 
+        $this->checkpointStatus = 'Reading';
+
         $checkpointStream = ProjectionNames::ProjectionsStreamPrefix . $this->name . ProjectionNames::ProjectionCheckpointStreamSuffix;
 
         try {
@@ -301,10 +336,13 @@ SQL;
 
                 $this->loadedState = $state;
                 $this->streamPositions = $streamPositions['$s'];
+                $this->lastCheckpoint = $streamPositions['$s'];
             }
         } catch (StreamNotFound $e) {
             // ignore, no checkpoint found
         }
+
+        $this->checkpointStatus = '';
     }
 
     /** @throws Throwable */
@@ -393,6 +431,7 @@ SQL;
     {
         if ($this->state->equals(ProjectionState::stopped())) {
             $this->logger->info('shutdown done');
+            Loop::cancel($this->statisticsRecorderWatcherId);
             $this->shutdownDeferred->resolve();
 
             return $this->shutdownPromise;
@@ -401,6 +440,7 @@ SQL;
         if ($this->state->equals(ProjectionState::initial())) {
             $this->state = ProjectionState::stopped();
             $this->logger->info('shutdown done');
+            Loop::cancel($this->statisticsRecorderWatcherId);
             $this->shutdownDeferred->resolve();
 
             return $this->shutdownPromise;
@@ -412,6 +452,7 @@ SQL;
             if ($this->state->equals(ProjectionState::stopped())) {
                 Loop::cancel($watcherId);
                 $this->logger->info('shutdown done');
+                Loop::cancel($this->statisticsRecorderWatcherId);
                 $this->shutdownDeferred->resolve();
             } else {
                 $this->logger->debug('still waiting for shutdown...');
@@ -442,14 +483,13 @@ SQL;
 
         $this->state = ProjectionState::running();
 
-        /** @var EventReader $reader */
-        $reader = yield $this->determineReader();
-        $reader->run();
+        $this->reader = yield $this->determineReader();
+        $this->reader->run();
 
         $this->lastCheckPointMs = \microtime(true) * 10000;
 
-        $readingTask = function () use (&$readingTask, $reader): void {
-            if ($reader->eof()) {
+        $readingTask = function () use (&$readingTask): void {
+            if ($this->reader->eof()) {
                 $this->persist(
                     $this->emittedEvents,
                     $this->streamsOfEmittedEvents,
@@ -462,7 +502,7 @@ SQL;
             }
 
             if ($this->state->equals(ProjectionState::stopping())) {
-                $reader->pause();
+                $this->reader->pause();
 
                 $this->persist(
                     $this->emittedEvents,
@@ -494,6 +534,7 @@ SQL;
             $this->processor->processEvent($event);
             $this->streamPositions[$event->streamId()] = $event->eventNumber();
             ++$this->currentBatchSize;
+            ++$this->eventsProcessed;
 
             if ($this->currentBatchSize >= $this->checkpointHandledThreshold
                 && (\floor(\microtime(true) * 10000 - $this->lastCheckPointMs) >= $this->checkpointAfterMs)
@@ -508,13 +549,13 @@ SQL;
             }
 
             if ($this->processingQueue->count() > $this->pendingEventsThreshold) {
-                $reader->pause();
+                $this->reader->pause();
             }
 
             if ($this->processingQueue->count() < $this->pendingEventsThreshold
-                && $reader->paused()
+                && $this->reader->paused()
             ) {
-                $reader->run();
+                $this->reader->run();
             }
 
             Loop::defer($readingTask);
@@ -572,7 +613,10 @@ SQL;
 
             yield from $this->acquireLock($lockConnection, $checkpointStream);
             yield from $this->writeEmittedEvents($emittedEvents, $streamsOfEmittedEvents);
-            yield from $this->writeCheckPoint($checkpointStream, $state, $streamPositions);
+
+            if (! $this->checkpointsDisabled) {
+                yield from $this->writeCheckPoint($checkpointStream, $state, $streamPositions);
+            }
 
             foreach ($streamsOfEmittedEvents as $stream) {
                 yield from $this->releaseLock($lockConnection, $stream);
@@ -581,6 +625,7 @@ SQL;
             if ($stop) {
                 $this->loadedState = $this->processor->getState();
                 $this->state = ProjectionState::stopped();
+                $this->eventsProcessed = 0;
             }
 
             yield from $this->releaseLock($lockConnection, $checkpointStream);
@@ -615,7 +660,26 @@ SQL;
             $expectedVersions[$stream] = $expectedVersion;
         }
 
+        $toWrite = count($emittedEvents);
+
         foreach (\array_chunk($emittedEvents, $this->maxWriteBatchLength) as $batch) {
+            $second = (int) floor(microtime(true));
+            $batchSize = count($batch);
+            $toWrite = $toWrite - $batchSize;
+
+            $this->statisticsRecorder->record(
+                $second,
+                $batchSize,
+                $this->processingQueue->count(),
+                $this->eventsProcessed,
+                $this->reader->paused() ? 0 : 400,
+                $batchSize,
+                $toWrite,
+                $this->checkpointStatus,
+                $this->streamPositions,
+                $this->lastCheckpoint
+            );
+
             $params = [];
             foreach ($batch as $record) {
                 foreach ($record as $row) {
@@ -648,6 +712,8 @@ SQL;
     /** @throws Throwable */
     private function writeCheckPoint(string $checkpointStream, array $state, array $streamPositions): Generator
     {
+        $this->checkpointStatus = 'Writing';
+
         try {
             yield $this->checkStream($checkpointStream);
         } catch (StreamNotFound $e) {
@@ -675,12 +741,17 @@ SQL;
 
         /** @var Statement $statement */
         $statement = yield $this->pool->prepare($sql);
+
+        $this->lastCheckPointMs = $streamPositions;
+
         /** @var CommandResult $result */
         $result = yield $statement->execute($params);
 
         if (0 === $result->affectedRows()) {
             throw new Exception\RuntimeException('Could not write checkpoint');
         }
+
+        $this->checkpointStatus = '';
 
         $this->logger->info('Checkpoint created');
     }
@@ -694,6 +765,7 @@ SQL;
 
                 if (! isset($this->streamPositions[$streamName])) {
                     $this->streamPositions[$streamName] = -1;
+                    $this->lastCheckpoint[$streamName] = -1;
                 }
 
                 yield $this->checkStream($streamName);
@@ -920,6 +992,11 @@ SQL
     public function getState(): array
     {
         return $this->processor->getState();
+    }
+
+    public function getStatistics(): array
+    {
+        return $this->statisticsRecorder->get();
     }
 
     /** @throws Throwable */
