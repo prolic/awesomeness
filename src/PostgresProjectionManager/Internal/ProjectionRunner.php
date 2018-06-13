@@ -426,9 +426,15 @@ SQL;
     {
         $this->logger->debug('Running projection');
 
-        $notify = function (string $streamName, string $eventType, string $data, string $metadata = '', bool $isJson = false): void {
-            $this->emit($streamName, $eventType, $data, $metadata, $isJson);
-        };
+        if ($this->emitEnabled) {
+            $notify = function (string $streamName, string $eventType, string $data, string $metadata = '', bool $isJson = false): void {
+                $this->emit($streamName, $eventType, $data, $metadata, $isJson);
+            };
+        } else {
+            $notify = function () {
+                throw new \RuntimeException('\'emit\' is not allowed by the projection/configuration/mode');
+            };
+        }
 
         $evaluator = new ProjectionEvaluator($notify);
         $this->processor = $evaluator->evaluate($this->query);
