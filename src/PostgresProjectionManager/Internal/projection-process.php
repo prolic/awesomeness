@@ -81,11 +81,9 @@ Loop::run(function () use ($argc, $argv) {
                     yield $channel->send($config);
                     break;
                 case 'disable':
-                    $logger->info('disabling projection');
                     yield $projectionRunner->disable();
                     break;
                 case 'enable':
-                    $logger->info('enabling projection');
                     yield $projectionRunner->enable();
                     break;
                 case 'query':
@@ -95,6 +93,10 @@ Loop::run(function () use ($argc, $argv) {
                 case 'state':
                     $state = $projectionRunner->getState();
                     yield $channel->send($state);
+                    break;
+                case 'statistics':
+                    $stats = yield $projectionRunner->getStatistics();
+                    yield $channel->send($stats);
                     break;
                 case 'shutdown':
                     yield $projectionRunner->shutdown();

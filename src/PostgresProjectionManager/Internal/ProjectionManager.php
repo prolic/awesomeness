@@ -243,6 +243,11 @@ SQL
         return $this->sendToAndReceiveFromProjection($name, 'query');
     }
 
+    public function getStatistics(string $name): Promise
+    {
+        return $this->sendToAndReceiveFromProjection($name, 'statistics');
+    }
+
     private function sendToProjection(string $name, string $operation): Promise
     {
         if (! isset($this->projections[$name])) {

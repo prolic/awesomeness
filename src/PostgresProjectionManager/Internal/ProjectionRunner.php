@@ -27,6 +27,7 @@ use Prooph\EventStore\Exception;
 use Prooph\EventStore\ExpectedVersion;
 use Prooph\EventStore\Internal\DateTimeUtil;
 use Prooph\EventStore\Projections\ProjectionEventTypes;
+use Prooph\EventStore\Projections\ProjectionMode;
 use Prooph\EventStore\Projections\ProjectionNames;
 use Prooph\EventStore\Projections\ProjectionState;
 use Prooph\EventStore\RecordedEvent;
@@ -77,7 +78,7 @@ class ProjectionRunner
     /** @var int */
     private $projectionEventNumber;
     /** @var int */
-    private $lastCheckPointMs;
+    private $lastCheckpointMs;
     /** @var LRUCache */
     private $checkedStreams;
     /** @var array */
@@ -101,7 +102,7 @@ class ProjectionRunner
     private $handlerType;
     /** @var string */
     private $query;
-    /** @var string */
+    /** @var ProjectionMode */
     private $mode;
     /** @var bool */
     private $enabled;
@@ -166,6 +167,12 @@ class ProjectionRunner
 
                 $this->statisticsRecorder->record(
                     $second,
+                    $this->state,
+                    '',
+                    $this->enabled,
+                    $this->name,
+                    $this->id,
+                    $this->mode,
                     0,
                     $this->processingQueue->count(),
                     $this->eventsProcessed,
@@ -179,6 +186,7 @@ class ProjectionRunner
 
                 Loop::enable($watcherId);
             });
+
         });
     }
 
@@ -257,7 +265,7 @@ SQL;
 
                     $this->handlerType = $data['handlerType'];
                     $this->query = $data['query'];
-                    $this->mode = $data['mode'];
+                    $this->mode = ProjectionMode::byName($data['mode']);
                     $this->enabled = $data['enabled'] ?? false;
                     $this->emitEnabled = $data['emitEnabled'];
                     $this->checkpointsDisabled = $data['checkpointsDisabled'];
@@ -354,6 +362,8 @@ SQL;
             throw new Error('Cannot start projection: already ' . $this->state->name());
         }
 
+        $this->logger->info('enabling projection');
+
         return call(function (): Generator {
             if (! $this->enabled) {
                 $sql = <<<SQL
@@ -395,6 +405,8 @@ SQL;
             return new Success();
         }
 
+        $this->logger->info('disabling projection');
+
         $this->enabled = false;
         $this->state = ProjectionState::stopping();
 
@@ -431,7 +443,7 @@ SQL;
     {
         if ($this->state->equals(ProjectionState::stopped())) {
             $this->logger->info('shutdown done');
-            Loop::cancel($this->statisticsRecorderWatcherId);
+            //Loop::cancel($this->statisticsRecorderWatcherId);
             $this->shutdownDeferred->resolve();
 
             return $this->shutdownPromise;
@@ -440,7 +452,7 @@ SQL;
         if ($this->state->equals(ProjectionState::initial())) {
             $this->state = ProjectionState::stopped();
             $this->logger->info('shutdown done');
-            Loop::cancel($this->statisticsRecorderWatcherId);
+            //Loop::cancel($this->statisticsRecorderWatcherId);
             $this->shutdownDeferred->resolve();
 
             return $this->shutdownPromise;
@@ -452,7 +464,7 @@ SQL;
             if ($this->state->equals(ProjectionState::stopped())) {
                 Loop::cancel($watcherId);
                 $this->logger->info('shutdown done');
-                Loop::cancel($this->statisticsRecorderWatcherId);
+                //Loop::cancel($this->statisticsRecorderWatcherId);
                 $this->shutdownDeferred->resolve();
             } else {
                 $this->logger->debug('still waiting for shutdown...');
@@ -486,7 +498,7 @@ SQL;
         $this->reader = yield $this->determineReader();
         $this->reader->run();
 
-        $this->lastCheckPointMs = \microtime(true) * 10000;
+        $this->lastCheckpointMs = \microtime(true) * 10000;
 
         $readingTask = function () use (&$readingTask): void {
             if ($this->reader->eof()) {
@@ -537,7 +549,7 @@ SQL;
             ++$this->eventsProcessed;
 
             if ($this->currentBatchSize >= $this->checkpointHandledThreshold
-                && (\floor(\microtime(true) * 10000 - $this->lastCheckPointMs) >= $this->checkpointAfterMs)
+                && (\floor(\microtime(true) * 10000 - $this->lastCheckpointMs) >= $this->checkpointAfterMs)
             ) {
                 $this->persist(
                     $this->emittedEvents,
@@ -590,7 +602,7 @@ SQL;
         $this->emittedEvents = [];
         $this->streamsOfEmittedEvents = [];
         $this->currentBatchSize = 0;
-        $this->lastCheckPointMs = \microtime(true) * 10000;
+        $this->lastCheckpointMs = \microtime(true) * 10000;
 
         Loop::defer(function () use (
             $emittedEvents,
@@ -660,15 +672,21 @@ SQL;
             $expectedVersions[$stream] = $expectedVersion;
         }
 
-        $toWrite = count($emittedEvents);
+        $toWrite = \count($emittedEvents);
 
         foreach (\array_chunk($emittedEvents, $this->maxWriteBatchLength) as $batch) {
-            $second = (int) floor(microtime(true));
-            $batchSize = count($batch);
+            $second = (int) \floor(\microtime(true));
+            $batchSize = \count($batch);
             $toWrite = $toWrite - $batchSize;
 
             $this->statisticsRecorder->record(
                 $second,
+                $this->state,
+                '',
+                $this->enabled,
+                $this->name,
+                $this->id,
+                $this->mode,
                 $batchSize,
                 $this->processingQueue->count(),
                 $this->eventsProcessed,
@@ -695,7 +713,7 @@ SQL;
 INSERT INTO events (stream_name, event_id, event_type, data, meta_data, is_json, link_to_stream_name, link_to_event_number, event_number, updated)
 VALUES 
 SQL;
-            $sql .= \str_repeat('(?, ?, ?, ?, ?, ?, ?, ?, ?, ?), ', \count($batch));
+            $sql .= \str_repeat('(?, ?, ?, ?, ?, ?, ?, ?, ?, ?), ', $batchSize);
             $sql = \substr($sql, 0, -2) . ';';
 
             /** @var Statement $statement */
@@ -742,7 +760,7 @@ SQL;
         /** @var Statement $statement */
         $statement = yield $this->pool->prepare($sql);
 
-        $this->lastCheckPointMs = $streamPositions;
+        $this->lastCheckpoint = $streamPositions;
 
         /** @var CommandResult $result */
         $result = yield $statement->execute($params);
@@ -774,7 +792,7 @@ SQL;
                     $this->readMutex,
                     $this->pool,
                     $this->processingQueue,
-                    'Continuous' !== $this->mode,
+                    ! $this->mode->equals(ProjectionMode::continuous()),
                     $streamName,
                     $this->streamPositions[$streamName]
                 ));
@@ -994,9 +1012,24 @@ SQL
         return $this->processor->getState();
     }
 
-    public function getStatistics(): array
+    public function getStatistics(): Promise
     {
-        return $this->statisticsRecorder->get();
+        return call(function (): Generator {
+            $progress = 0;
+            $total = 0;
+
+            $head = yield from $this->reader->head();
+
+            foreach ($head as $streamName => $position) {
+                $total += $position;
+                $progress += $this->streamPositions[$streamName];
+            }
+
+            $stats = $this->statisticsRecorder->get();
+            $stats['progress'] = (0 === $total) ? 100.0 : ($progress * 100 / $total);
+
+            return new Success($stats);
+        });
     }
 
     /** @throws Throwable */
