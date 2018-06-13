@@ -13,7 +13,7 @@ use Prooph\PostgresProjectionManager\Internal\ProjectionManager;
 use function Amp\call;
 
 /** @internal */
-class GetStateRequestHandler implements RequestHandler
+class GetState implements RequestHandler
 {
     /** @var ProjectionManager */
     private $projectionManager;
@@ -32,10 +32,10 @@ class GetStateRequestHandler implements RequestHandler
             try {
                 $state = yield $this->projectionManager->getState($projectionName);
             } catch (\Throwable $e) {
-                return new Response(404, ['Content-Type' => 'text/html'], 'Not found');
+                return new Response(404, ['Content-Type' => 'text/plain'], 'Not Found');
             }
 
-            return new Response(200, ['Content-Type' => 'application'], \json_encode($state));
+            return new Response(200, ['Content-Type' => 'application/json'], \json_encode($state));
         });
     }
 }
