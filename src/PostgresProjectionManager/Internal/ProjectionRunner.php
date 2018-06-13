@@ -448,7 +448,7 @@ SQL;
     {
         if ($this->state->equals(ProjectionState::stopped())) {
             $this->logger->info('shutdown done');
-            //Loop::cancel($this->statisticsRecorderWatcherId);
+            Loop::cancel($this->statisticsRecorderWatcherId);
             $this->shutdownDeferred->resolve();
 
             return $this->shutdownPromise;
@@ -457,7 +457,7 @@ SQL;
         if ($this->state->equals(ProjectionState::initial())) {
             $this->state = ProjectionState::stopped();
             $this->logger->info('shutdown done');
-            //Loop::cancel($this->statisticsRecorderWatcherId);
+            Loop::cancel($this->statisticsRecorderWatcherId);
             $this->shutdownDeferred->resolve();
 
             return $this->shutdownPromise;
@@ -469,7 +469,7 @@ SQL;
             if ($this->state->equals(ProjectionState::stopped())) {
                 Loop::cancel($watcherId);
                 $this->logger->info('shutdown done');
-                //Loop::cancel($this->statisticsRecorderWatcherId);
+                Loop::cancel($this->statisticsRecorderWatcherId);
                 $this->shutdownDeferred->resolve();
             } else {
                 $this->logger->debug('still waiting for shutdown...');
