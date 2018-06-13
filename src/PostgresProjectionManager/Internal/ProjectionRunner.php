@@ -86,7 +86,7 @@ class ProjectionRunner
     /** @var array */
     private $emittedEvents = [];
     /** @var int */
-    private $eventsProcessed = 0;
+    private $eventsProcessedAfterRestart = 0;
     /** @var int */
     private $currentBatchSize = 0;
     /** @var StatisticsRecorder */
@@ -175,7 +175,7 @@ class ProjectionRunner
                     $this->mode,
                     0,
                     $this->processingQueue->count(),
-                    $this->eventsProcessed,
+                    $this->eventsProcessedAfterRestart,
                     $this->reader->paused() ? 0 : 400,
                     0,
                     count($this->emittedEvents),
@@ -462,6 +462,7 @@ SQL;
 
         Loop::repeat(100, function (string $watcherId): void {
             if ($this->state->equals(ProjectionState::stopped())) {
+                error_log('fds');
                 Loop::cancel($watcherId);
                 $this->logger->info('shutdown done');
                 //Loop::cancel($this->statisticsRecorderWatcherId);
@@ -546,7 +547,7 @@ SQL;
             $this->processor->processEvent($event);
             $this->streamPositions[$event->streamId()] = $event->eventNumber();
             ++$this->currentBatchSize;
-            ++$this->eventsProcessed;
+            ++$this->eventsProcessedAfterRestart;
 
             if ($this->currentBatchSize >= $this->checkpointHandledThreshold
                 && (\floor(\microtime(true) * 10000 - $this->lastCheckpointMs) >= $this->checkpointAfterMs)
@@ -637,7 +638,7 @@ SQL;
             if ($stop) {
                 $this->loadedState = $this->processor->getState();
                 $this->state = ProjectionState::stopped();
-                $this->eventsProcessed = 0;
+                $this->eventsProcessedAfterRestart = 0;
             }
 
             yield from $this->releaseLock($lockConnection, $checkpointStream);
@@ -689,7 +690,7 @@ SQL;
                 $this->mode,
                 $batchSize,
                 $this->processingQueue->count(),
-                $this->eventsProcessed,
+                $this->eventsProcessedAfterRestart,
                 $this->reader->paused() ? 0 : 400,
                 $batchSize,
                 $toWrite,

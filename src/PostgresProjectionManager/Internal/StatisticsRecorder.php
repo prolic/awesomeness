@@ -22,7 +22,7 @@ class StatisticsRecorder
         ProjectionMode $mode,
         int $eventsPerSecond,
         int $bufferedEvents,
-        int $eventsProcessed,
+        int $eventsProcessedAfterRestart,
         int $readsInProgress,
         int $writesInProgress,
         int $writeQueue,
@@ -39,7 +39,7 @@ class StatisticsRecorder
             $this->data[$second]['mode'] = $mode->name();
             $this->data[$second]['bufferedEvents'] = $bufferedEvents;
             $this->data[$second]['eventsPerSecond'] += $eventsPerSecond;
-            $this->data[$second]['eventsProcessed'] = $eventsProcessed;
+            $this->data[$second]['eventsProcessedAfterRestart'] = $eventsProcessedAfterRestart;
             $this->data[$second]['readsInProgress'] = $readsInProgress;
             $this->data[$second]['writesInProgress'] = $writesInProgress;
             $this->data[$second]['writeQueue'] = $writeQueue;
@@ -56,7 +56,7 @@ class StatisticsRecorder
                 'mode' => $mode->name(),
                 'bufferedEvents' => $bufferedEvents,
                 'eventsPerSecond' => $eventsPerSecond,
-                'eventsProcessed' => $eventsProcessed,
+                'eventsProcessedAfterRestart' => $eventsProcessedAfterRestart,
                 'readsInProgress' => $readsInProgress,
                 'writesInProgress' => $writesInProgress,
                 'writeQueue' => $writeQueue,
