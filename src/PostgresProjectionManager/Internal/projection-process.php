@@ -76,13 +76,17 @@ Loop::run(function () use ($argc, $argv) {
             $operation = yield $channel->receive();
 
             switch ($operation) {
-                case 'enable':
-                    $logger->info('enabling projection');
-                    yield $projectionRunner->enable();
+                case 'config':
+                    $config = $projectionRunner->getConfig();
+                    yield $channel->send($config);
                     break;
                 case 'disable':
                     $logger->info('disabling projection');
                     yield $projectionRunner->disable();
+                    break;
+                case 'enable':
+                    $logger->info('enabling projection');
+                    yield $projectionRunner->enable();
                     break;
                 case 'state':
                     $state = $projectionRunner->getState();

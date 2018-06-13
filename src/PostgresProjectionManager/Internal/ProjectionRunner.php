@@ -896,6 +896,17 @@ SQL
         }
     */
 
+    public function getConfig(): array
+    {
+        return [
+            'emitEnabled' => $this->emitEnabled,
+            'checkpointHandledThreshold' => $this->checkpointHandledThreshold,
+            'checkpointUnhandledBytesThreshold' => $this->checkpointUnhandledBytesThreshold,
+            'pendingEventsThreshold' => $this->pendingEventsThreshold,
+            'maxWriteBatchLength' => $this->maxWriteBatchLength,
+        ];
+    }
+
     public function getState(): array
     {
         return $this->processor->getState();

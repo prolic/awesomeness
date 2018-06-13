@@ -220,30 +220,41 @@ SQL
 
     public function disableProjection(string $name): Promise
     {
-        if (! isset($this->projections[$name])) {
-            return new Failure(ProjectionNotFound::withName($name));
-        }
-
-        return $this->projections[$name]->send('disable');
+        return $this->sendToProjection($name, 'disable');
     }
 
     public function enableProjection(string $name): Promise
     {
-        if (! isset($this->projections[$name])) {
-            return new Failure(ProjectionNotFound::withName($name));
-        }
-
-        return $this->projections[$name]->send('enable');
+        return $this->sendToProjection($name, 'enable');
     }
 
     public function getState(string $name): Promise
+    {
+        return $this->sendToAndReceiveFromProjection($name, 'state');
+    }
+
+    public function getConfig(string $name): Promise
+    {
+        return $this->sendToAndReceiveFromProjection($name, 'config');
+    }
+
+    private function sendToProjection(string $name, string $operation): Promise
     {
         if (! isset($this->projections[$name])) {
             return new Failure(ProjectionNotFound::withName($name));
         }
 
-        return call(function () use ($name): Generator {
-            yield $this->projections[$name]->send('state');
+        return $this->projections[$name]->send($operation);
+    }
+
+    private function sendToAndReceiveFromProjection(string $name, string $operation): Promise
+    {
+        if (! isset($this->projections[$name])) {
+            return new Failure(ProjectionNotFound::withName($name));
+        }
+
+        return call(function () use ($name, $operation): Generator {
+            yield $this->projections[$name]->send($operation);
 
             return yield $this->projections[$name]->receive();
         });
