@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Prooph\PostgresProjectionManager\Internal;
+namespace Prooph\PostgresProjectionManager;
 
 use Amp\Deferred;
 use Amp\Loop;
@@ -32,7 +32,7 @@ use Prooph\EventStore\Projections\ProjectionNames;
 use Prooph\EventStore\Projections\ProjectionState;
 use Prooph\EventStore\RecordedEvent;
 use Prooph\PdoEventStore\Internal\StreamOperation;
-use Prooph\PostgresProjectionManager\Internal\Exception\StreamNotFound;
+use Prooph\PostgresProjectionManager\Exception\StreamNotFound;
 use Psr\Log\LoggerInterface as PsrLogger;
 use SplQueue;
 use Throwable;

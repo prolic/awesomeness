@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Prooph\PostgresProjectionManager\Internal\Exception;
+namespace Prooph\PostgresProjectionManager\Exception;
 
 /** @internal */
 class StreamNotFound extends \RuntimeException

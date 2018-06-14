@@ -9,7 +9,7 @@ use Amp\Http\Server\RequestHandler;
 use Amp\Http\Server\Response;
 use Amp\Http\Server\Router;
 use Amp\Promise;
-use Prooph\PostgresProjectionManager\Internal\ProjectionManager;
+use Prooph\PostgresProjectionManager\ProjectionManager;
 use function Amp\call;
 
 /** @internal */

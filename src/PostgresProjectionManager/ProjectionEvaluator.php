@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Prooph\PostgresProjectionManager\Internal;
+namespace Prooph\PostgresProjectionManager;
 
 use Prooph\EventStore\Common\SystemEventTypes;
 use Prooph\EventStore\RecordedEvent;
-use Prooph\PostgresProjectionManager\Internal\Exception\QueryEvaluationError;
+use Prooph\PostgresProjectionManager\Exception\QueryEvaluationError;
 use Throwable;
 use const JSON_ERROR_NONE;
 

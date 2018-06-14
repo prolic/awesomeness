@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Prooph\PostgresProjectionManager\Internal;
+namespace Prooph\PostgresProjectionManager;
 
 use Amp\Postgres\Pool;
 use Amp\Postgres\ResultSet;

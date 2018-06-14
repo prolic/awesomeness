@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\PostgresProjectionManager;
 
-require __DIR__ . '/../../vendor/autoload.php';
+require __DIR__ . '/../../../vendor/autoload.php';
 
 use Amp\ByteStream\ResourceOutputStream;
 use Amp\Http\Server\RequestHandler\CallableRequestHandler;
@@ -35,7 +35,7 @@ Loop::run(function () {
 
     // @todo make configurable
     $connectionString = 'host=localhost user=postgres dbname=new_event_store password=postgres';
-    $projectionManager = new Internal\ProjectionManager($connectionString, $logger);
+    $projectionManager = new ProjectionManager($connectionString, $logger);
 
     yield $projectionManager->start();
 

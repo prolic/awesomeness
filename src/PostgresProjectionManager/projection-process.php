@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Prooph\PostgresProjectionManager\Internal;
+namespace Prooph\PostgresProjectionManager;
 
 use Amp\Log\ConsoleFormatter;
 use Amp\Loop;
@@ -33,7 +33,7 @@ if (\function_exists('cli_set_process_title')) {
 }, 1, PHP_OUTPUT_HANDLER_CLEANABLE | PHP_OUTPUT_HANDLER_FLUSHABLE);
 
 (function () {
-    $path = \dirname(__DIR__, 3) . '/vendor/autoload.php';
+    $path = \dirname(__DIR__, 2) . '/vendor/autoload.php';
 
     if (! \file_exists($path)) {
         \fwrite(STDERR, 'Could not locate autoload.php at file: ' . $path . PHP_EOL);
