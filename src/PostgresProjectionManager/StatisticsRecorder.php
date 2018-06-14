@@ -3,8 +3,6 @@
 declare(strict_types=1);
 
 namespace Prooph\PostgresProjectionManager;
-use Prooph\EventStore\Projections\ProjectionMode;
-use Prooph\EventStore\Projections\ProjectionState;
 
 /** @internal */
 class StatisticsRecorder
@@ -13,68 +11,51 @@ class StatisticsRecorder
     private $data = [];
 
     public function record(
-        int $second,
-        ProjectionState $state,
-        string $stateReason,
-        bool $enabled,
-        string $name,
-        string $id,
-        ProjectionMode $mode,
-        int $eventsPerSecond,
-        int $bufferedEvents,
-        int $eventsProcessedAfterRestart,
-        int $readsInProgress,
-        int $writesInProgress,
-        int $writeQueue,
-        string $checkpointStatus,
-        array $position,
-        array $lastCheckpoint
+        float $time,
+        int $events
     ): void {
-        if (isset($this->data[$second])) {
-            $this->data[$second]['status'] = $state->name();
-            $this->data[$second]['stateReason'] = $stateReason;
-            $this->data[$second]['enabled'] = $enabled;
-            $this->data[$second]['name'] = $name;
-            $this->data[$second]['id'] = $id;
-            $this->data[$second]['mode'] = $mode->name();
-            $this->data[$second]['bufferedEvents'] = $bufferedEvents;
-            $this->data[$second]['eventsPerSecond'] += $eventsPerSecond;
-            $this->data[$second]['eventsProcessedAfterRestart'] = $eventsProcessedAfterRestart;
-            $this->data[$second]['readsInProgress'] = $readsInProgress;
-            $this->data[$second]['writesInProgress'] = $writesInProgress;
-            $this->data[$second]['writeQueue'] = $writeQueue;
-            $this->data[$second]['checkpointStatus'] = $checkpointStatus;
-            $this->data[$second]['position'] = $position;
-            $this->data[$second]['lastCheckpoint'] = $lastCheckpoint;
+        $timeString = (string) $time;
+        if (! isset($this->data[$timeString])) {
+            $this->data[$timeString] = $events;
         } else {
-            $this->data[$second] = [
-                'status' => $state->name(),
-                'stateReason' => $stateReason,
-                'enabled' => $enabled,
-                'name' => $name,
-                'id' => $id,
-                'mode' => $mode->name(),
-                'bufferedEvents' => $bufferedEvents,
-                'eventsPerSecond' => $eventsPerSecond,
-                'eventsProcessedAfterRestart' => $eventsProcessedAfterRestart,
-                'readsInProgress' => $readsInProgress,
-                'writesInProgress' => $writesInProgress,
-                'writeQueue' => $writeQueue,
-                'checkpointStatus' => $checkpointStatus,
-                'position' => $position,
-                'lastCheckpoint' => $lastCheckpoint,
-            ];
+            $this->data[$timeString] += $events;
+        }
 
-            if (count($this->data) > 2) {
-                reset($this->data);
-                unset($this->data[key($this->data)]);
+        // clean up records older then 2 seconds
+        foreach (array_keys($this->data) as $key) {
+            if ($time - 2 > (float) $key) {
+                unset($this->data[$key]);
             }
         }
     }
 
-    public function get(): array
+    public function eventsPerSecond(): float
     {
-        reset($this->data);
-        return $data = current($this->data);
+        $now = microtime(true);
+
+        $totalEvents = 0;
+        $beginTime = \PHP_INT_MAX;
+
+        foreach ($this->data as $timeString => $events) {
+            $time = (float) $timeString;
+
+            if ($time + 3 < $now) {
+                continue;
+            }
+
+            if ($time < $beginTime) {
+                $beginTime = $time;
+            }
+
+            $totalEvents += $events;
+        }
+
+        if (0 === $totalEvents) {
+            return 0;
+        }
+
+        $time = $now - $beginTime;
+
+        return floor(($totalEvents / $time) * 10000) / 10000;
     }
 }

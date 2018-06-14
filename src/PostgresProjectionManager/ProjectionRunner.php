@@ -92,9 +92,9 @@ class ProjectionRunner
     /** @var StatisticsRecorder */
     private $statisticsRecorder;
     /** @var string */
-    private $statisticsRecorderWatcherId;
-    /** @var string */
     private $checkpointStatus = '';
+    /** @var int */
+    private $currentlyWriting = 0;
 
     // properties regarding projection itself
 
@@ -160,38 +160,6 @@ class ProjectionRunner
             if ($this->enabled) {
                 yield $this->enable();
             }
-
-            $this->statisticsRecorderWatcherId = Loop::repeat(100, function (string $watcherId) {
-                Loop::disable($watcherId);
-                $second = (int) floor(microtime(true));
-
-                $readsInProgress = 0;
-                if ($this->reader && ! $this->reader->paused()) {
-                    $readsInProgress = 400;
-                }
-
-                $this->statisticsRecorder->record(
-                    $second,
-                    $this->state,
-                    '',
-                    $this->enabled,
-                    $this->name,
-                    $this->id,
-                    $this->mode,
-                    0,
-                    $this->processingQueue->count(),
-                    $this->eventsProcessedAfterRestart,
-                    $readsInProgress,
-                    0,
-                    count($this->emittedEvents),
-                    $this->checkpointStatus,
-                    $this->streamPositions,
-                    $this->lastCheckpoint
-                );
-
-                Loop::enable($watcherId);
-            });
-
         });
     }
 
@@ -448,7 +416,6 @@ SQL;
     {
         if ($this->state->equals(ProjectionState::stopped())) {
             $this->logger->info('shutdown done');
-            Loop::cancel($this->statisticsRecorderWatcherId);
             $this->shutdownDeferred->resolve();
 
             return $this->shutdownPromise;
@@ -457,7 +424,6 @@ SQL;
         if ($this->state->equals(ProjectionState::initial())) {
             $this->state = ProjectionState::stopped();
             $this->logger->info('shutdown done');
-            Loop::cancel($this->statisticsRecorderWatcherId);
             $this->shutdownDeferred->resolve();
 
             return $this->shutdownPromise;
@@ -469,7 +435,6 @@ SQL;
             if ($this->state->equals(ProjectionState::stopped())) {
                 Loop::cancel($watcherId);
                 $this->logger->info('shutdown done');
-                Loop::cancel($this->statisticsRecorderWatcherId);
                 $this->shutdownDeferred->resolve();
             } else {
                 $this->logger->debug('still waiting for shutdown...');
@@ -677,30 +642,13 @@ SQL;
             $expectedVersions[$stream] = $expectedVersion;
         }
 
-        $toWrite = \count($emittedEvents);
-
         foreach (\array_chunk($emittedEvents, $this->maxWriteBatchLength) as $batch) {
-            $second = (int) \floor(\microtime(true));
+            $time = \microtime(true);
             $batchSize = \count($batch);
-            $toWrite = $toWrite - $batchSize;
 
             $this->statisticsRecorder->record(
-                $second,
-                $this->state,
-                '',
-                $this->enabled,
-                $this->name,
-                $this->id,
-                $this->mode,
-                $batchSize,
-                $this->processingQueue->count(),
-                $this->eventsProcessedAfterRestart,
-                $this->reader->paused() ? 0 : 400,
-                $batchSize,
-                $toWrite,
-                $this->checkpointStatus,
-                $this->streamPositions,
-                $this->lastCheckpoint
+                $time,
+                $batchSize
             );
 
             $params = [];
@@ -1034,8 +982,24 @@ SQL
                 $progress += $this->streamPositions[$streamName];
             }
 
-            $stats = $this->statisticsRecorder->get();
-            $stats['progress'] = (0 === $total) ? 100.0 : ($progress * 100 / $total);
+            $stats = [
+                'status' => $this->state->name(),
+                'stateReason' => '',
+                'enabled' => $this->enabled,
+                'name' => $this->name,
+                'id' => $this->id,
+                'mode' => $this->mode->name(),
+                'bufferedEvents' => $this->processingQueue->count(),
+                'eventsPerSecond' => $this->statisticsRecorder->eventsPerSecond(),
+                'eventsProcessedAfterRestart' => $this->eventsProcessedAfterRestart,
+                'readsInProgress' => $this->reader->paused() ? 0 : 400,
+                'writesInProgress' => $this->currentlyWriting,
+                'writeQueue' => \count($this->emittedEvents),
+                'checkpointStatus' => $this->checkpointStatus,
+                'position' => $this->streamPositions,
+                'lastCheckpoint' => $this->lastCheckpoint,
+                'progress' => (0 === $total) ? 100.0 : floor($progress * 100 / $total * 10000) / 10000,
+            ];
 
             return new Success($stats);
         });
