@@ -17,25 +17,28 @@ use SplQueue;
 use Throwable;
 
 /** @internal */
-class StreamEventReader extends EventReader
+class StreamsEventReader extends EventReader
 {
-    /** @var string */
-    private $streamName;
+    /** @var string[] */
+    private $streamNames;
     /** @var int */
     private $fromSequenceNumber;
+    /** @var string */
+    private $rowPlaces;
 
     public function __construct(
         LocalMutex $readMutex,
         Pool $pool,
         SplQueue $queue,
         bool $stopOnEof,
-        string $streamName,
+        array $streamNames,
         int $fromSequenceNumber
     ) {
         parent::__construct($readMutex, $pool, $queue, $stopOnEof);
 
-        $this->streamName = $streamName;
+        $this->streamNames = $streamNames;
         $this->fromSequenceNumber = $fromSequenceNumber;
+        $this->rowPlaces = implode(', ', array_fill(0, count($this->streamNames), '?'));
     }
 
     /** @throws Throwable */
@@ -44,6 +47,7 @@ class StreamEventReader extends EventReader
         $sql = <<<SQL
 SELECT
     COALESCE(e2.event_id, e2.event_id) as event_id,
+    COALESCE(e2.stream_name, e1.stream_name) as stream_name,
     COALESCE(e2.event_number, e1.event_number) as event_number,
     COALESCE(e2.event_type, e1.event_type) as event_type,
     COALESCE(e2.data, e1.data) as data,
@@ -54,16 +58,19 @@ FROM
     events e1
 LEFT JOIN events e2
     ON (e1.link_to_stream_name = e2.stream_name AND e1.link_to_event_number = e2.event_number)
-WHERE e1.stream_name = ?
+WHERE e1.stream_name IN ({$this->rowPlaces})
 AND e1.event_number > ?
 ORDER BY e1.event_number ASC
 LIMIT ?
 SQL;
+        $params = $this->streamNames;
+        $params[] = $this->fromSequenceNumber;
+        $params[] = self::MaxReads;
 
         /** @var Statement $statement */
         $statement = yield $this->pool->prepare($sql);
         /** @var ResultSet $result */
-        $result = yield $statement->execute([$this->streamName, $this->fromSequenceNumber, self::MaxReads]);
+        $result = yield $statement->execute($params);
 
         $readEvents = 0;
 
@@ -72,7 +79,7 @@ SQL;
             ++$readEvents;
 
             $this->queue->enqueue(new RecordedEvent(
-                $this->streamName,
+                $row->stream_name,
                 EventId::fromString($row->event_id),
                 $row->event_number,
                 $row->event_type,
@@ -96,19 +103,23 @@ SQL;
 
     public function head(): Generator
     {
-        $sql = 'SELECT MAX(event_number) as head FROM events WHERE stream_name = ?;';
+        $sql = <<<SQL
+SELECT MAX(event_number) as head, stream_name FROM events WHERE stream_name IN ($this->rowPlaces)
+GROUP BY stream_name
+SQL;
 
         /** @var Statement $statement */
         $statement = yield $this->pool->prepare($sql);
         /** @var ResultSet $result */
         $result = yield $statement->execute([$this->streamName]);
 
-        yield $result->advance(ResultSet::FETCH_OBJECT);
+        $data = [];
 
-        $row = $result->getCurrent();
+        while(yield $result->advance(ResultSet::FETCH_OBJECT)) {
+            $row = $result->getCurrent();
+            $data[$row->stream_name] = $row->head;
+        }
 
-        return [
-            $this->streamName => $row->head,
-        ];
+        return $data;
     }
 }
