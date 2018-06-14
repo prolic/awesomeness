@@ -22,7 +22,7 @@ class StatisticsRecorder
         }
 
         // clean up records older then 2 seconds
-        foreach (array_keys($this->data) as $key) {
+        foreach (\array_keys($this->data) as $key) {
             if ($time - 2 > (float) $key) {
                 unset($this->data[$key]);
             }
@@ -31,7 +31,7 @@ class StatisticsRecorder
 
     public function eventsPerSecond(): float
     {
-        $now = microtime(true);
+        $now = \microtime(true);
 
         $totalEvents = 0;
         $beginTime = \PHP_INT_MAX;
@@ -56,6 +56,6 @@ class StatisticsRecorder
 
         $time = $now - $beginTime;
 
-        return floor(($totalEvents / $time) * 10000) / 10000;
+        return \floor(($totalEvents / $time) * 10000) / 10000;
     }
 }

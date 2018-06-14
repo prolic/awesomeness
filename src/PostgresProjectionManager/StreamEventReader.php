@@ -113,7 +113,7 @@ SQL;
         $row = $result->getCurrent();
 
         return [
-            $this->streamName => $row->event_number
+            $this->streamName => $row->event_number,
         ];
     }
 }

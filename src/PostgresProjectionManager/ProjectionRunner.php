@@ -998,7 +998,7 @@ SQL
                 'checkpointStatus' => $this->checkpointStatus,
                 'position' => $this->streamPositions,
                 'lastCheckpoint' => $this->lastCheckpoint,
-                'progress' => (0 === $total) ? 100.0 : floor($progress * 100 / $total * 10000) / 10000,
+                'progress' => (0 === $total) ? 100.0 : \floor($progress * 100 / $total * 10000) / 10000,
             ];
 
             return new Success($stats);
