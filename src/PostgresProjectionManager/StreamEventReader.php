@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\PostgresProjectionManager;
 
+use Amp\Delayed;
 use Amp\Postgres\Pool;
 use Amp\Postgres\ResultSet;
 use Amp\Postgres\Statement;
@@ -86,6 +87,10 @@ SQL;
 
         if (0 === $readEvents && $this->stopOnEof) {
             $this->eof = true;
+        }
+
+        if (0 === $readEvents) {
+            yield new Delayed(200);
         }
     }
 
