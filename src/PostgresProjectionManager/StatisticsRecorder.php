@@ -15,6 +15,7 @@ class StatisticsRecorder
         int $events
     ): void {
         $timeString = (string) $time;
+
         if (! isset($this->data[$timeString])) {
             $this->data[$timeString] = $events;
         } else {
