@@ -731,8 +731,9 @@ SQL;
     private function determineReader(): Promise
     {
         return call(function (): Generator {
-            if (\count($this->processor->sources()['streams']) === 1) {
-                $streamName = \current($this->processor->sources()['streams']);
+            $sources = $this->processor->sources();
+            if (\count($sources['streams']) === 1) {
+                $streamName = \current($sources['streams']);
 
                 if (! isset($this->streamPositions[$streamName])) {
                     $this->streamPositions[$streamName] = -1;
@@ -747,6 +748,26 @@ SQL;
                     $this->processingQueue,
                     ! $this->mode->equals(ProjectionMode::continuous()),
                     $streamName,
+                    $this->streamPositions[$streamName]
+                ));
+            } elseif (\count($sources['streams']) > 2) {
+                $streamNames = $sources['streams'];
+
+                foreach ($streamNames as $streamName) {
+                    if (! isset($this->streamPositions[$streamName])) {
+                        $this->streamPositions[$streamName] = -1;
+                        $this->lastCheckpoint[$streamName] = -1;
+                    }
+
+                    yield $this->checkStream($streamName);
+                }
+
+                return yield new Success(new StreamsEventReader(
+                    $this->readMutex,
+                    $this->pool,
+                    $this->processingQueue,
+                    ! $this->mode->equals(ProjectionMode::continuous()),
+                    $streamNames,
                     $this->streamPositions[$streamName]
                 ));
             }
