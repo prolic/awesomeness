@@ -38,7 +38,7 @@ class StreamsEventReader extends EventReader
 
         $this->streamNames = $streamNames;
         $this->fromSequenceNumber = $fromSequenceNumber;
-        $this->rowPlaces = implode(', ', array_fill(0, count($this->streamNames), '?'));
+        $this->rowPlaces = \implode(', ', \array_fill(0, \count($this->streamNames), '?'));
     }
 
     /** @throws Throwable */
@@ -115,7 +115,7 @@ SQL;
 
         $data = [];
 
-        while(yield $result->advance(ResultSet::FETCH_OBJECT)) {
+        while (yield $result->advance(ResultSet::FETCH_OBJECT)) {
             $row = $result->getCurrent();
             $data[$row->stream_name] = $row->head;
         }
