@@ -197,7 +197,7 @@ SQL
                     $this->state = self::STOPPING;
 
                     foreach ($this->projections as $name => $context) {
-                        yield $context->send('shutdown');
+                        yield $context->send('shutdown::' . \serialize([]));
                         try {
                             yield $context->join();
                         } catch (StatusError $e) {
@@ -228,9 +228,9 @@ SQL
         return $this->sendToProjection($name, 'enable');
     }
 
-    public function resetProjection(string $name): Promise
+    public function resetProjection(string $name, $enableRunAs): Promise
     {
-        return $this->sendToProjection($name, 'reset');
+        return $this->sendToProjection($name, 'reset', [$enableRunAs]);
     }
 
     public function getState(string $name): Promise
@@ -253,23 +253,27 @@ SQL
         return $this->sendToAndReceiveFromProjection($name, 'statistics');
     }
 
-    private function sendToProjection(string $name, string $operation): Promise
+    private function sendToProjection(string $name, string $operation, array $args = []): Promise
     {
         if (! isset($this->projections[$name])) {
             return new Failure(ProjectionNotFound::withName($name));
         }
 
-        return $this->projections[$name]->send($operation);
+        $value = $operation . '::' . \serialize($args);
+
+        return $this->projections[$name]->send($value);
     }
 
-    private function sendToAndReceiveFromProjection(string $name, string $operation): Promise
+    private function sendToAndReceiveFromProjection(string $name, string $operation, array $args = []): Promise
     {
         if (! isset($this->projections[$name])) {
             return new Failure(ProjectionNotFound::withName($name));
         }
 
-        return call(function () use ($name, $operation): Generator {
-            yield $this->projections[$name]->send($operation);
+        $value = $operation . '::' . \serialize($args);
+
+        return call(function () use ($name, $value): Generator {
+            yield $this->projections[$name]->send($value);
 
             return yield $this->projections[$name]->receive();
         });

@@ -73,7 +73,10 @@ Loop::run(function () use ($argc, $argv) {
         Loop::unreference(Loop::onSignal(SIGTERM, $shutdown));
 
         while (true) {
-            $operation = yield $channel->receive();
+            $value = yield $channel->receive();
+            $data = explode('::' , $value, 2);
+            list ($operation, $args) = $data;
+            $args = \unserialize($args);
 
             switch ($operation) {
                 case 'config':
@@ -84,7 +87,7 @@ Loop::run(function () use ($argc, $argv) {
                     yield $projectionRunner->disable();
                     break;
                 case 'enable':
-                    yield $projectionRunner->enable();
+                    yield $projectionRunner->enable(...$args);
                     break;
                 case 'query':
                     $definition = $projectionRunner->getDefinition();

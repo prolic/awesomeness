@@ -28,9 +28,18 @@ class ResetProjection implements RequestHandler
         $args = $request->getAttribute(Router::class);
         $name = $args['name'];
 
-        return call(function () use ($name) {
+        $query = $request->getUri()->getQuery();
+
+        if ($query) {
+            parse_str($query, $query);
+            $enableRunAs = $query['enableRunAs'] ?? null;
+        } else {
+            $enableRunAs = null;
+        }
+
+        return call(function () use ($name, $enableRunAs) {
             try {
-                yield $this->projectionManager->resetProjection($name);
+                yield $this->projectionManager->resetProjection($name, $enableRunAs);
             } catch (\Throwable $e) {
                 return new Response(404, ['Content-Type' => 'text/plain'], 'Not Found');
             }

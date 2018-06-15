@@ -333,7 +333,7 @@ SQL;
     }
 
     /** @throws Throwable */
-    public function enable(): Promise
+    public function enable(string $enableRunAs = null): Promise
     {
         if (! $this->state->equals(ProjectionState::initial())
             && ! $this->state->equals(ProjectionState::stopped())
@@ -342,6 +342,10 @@ SQL;
         }
 
         $this->logger->info('enabling projection');
+
+        if ($enableRunAs) {
+            $this->runAs['name'] = $enableRunAs;
+        }
 
         return call(function (): Generator {
             if (! $this->enabled) {
