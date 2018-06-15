@@ -74,8 +74,8 @@ Loop::run(function () use ($argc, $argv) {
 
         while (true) {
             $value = yield $channel->receive();
-            $data = explode('::' , $value, 2);
-            list ($operation, $args) = $data;
+            $data = \explode('::', $value, 2);
+            list($operation, $args) = $data;
             $args = \unserialize($args);
 
             switch ($operation) {

@@ -31,7 +31,7 @@ class ResetProjection implements RequestHandler
         $query = $request->getUri()->getQuery();
 
         if ($query) {
-            parse_str($query, $query);
+            \parse_str($query, $query);
             $enableRunAs = $query['enableRunAs'] ?? null;
         } else {
             $enableRunAs = null;
