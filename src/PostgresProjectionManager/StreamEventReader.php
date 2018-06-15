@@ -43,7 +43,7 @@ class StreamEventReader extends EventReader
     {
         $sql = <<<SQL
 SELECT
-    COALESCE(e2.event_id, e2.event_id) as event_id,
+    COALESCE(e2.event_id, e1.event_id) as event_id,
     COALESCE(e2.event_number, e1.event_number) as event_number,
     COALESCE(e2.event_type, e1.event_type) as event_type,
     COALESCE(e2.data, e1.data) as data,

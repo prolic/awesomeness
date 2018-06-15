@@ -32,7 +32,6 @@ use Prooph\EventStore\Projections\ProjectionNames;
 use Prooph\EventStore\Projections\ProjectionState;
 use Prooph\EventStore\RecordedEvent;
 use Prooph\PdoEventStore\Internal\StreamOperation;
-use Prooph\PostgresProjectionManager\Exception\ProjectionIsRunning;
 use Prooph\PostgresProjectionManager\Exception\StreamNotFound;
 use Psr\Log\LoggerInterface as PsrLogger;
 use SplQueue;
@@ -893,6 +892,7 @@ SQL
 
     public function reset(): void
     {
+        $this->logger->info('Resetting projection');
         $this->state = ProjectionState::stopping();
 
         Loop::repeat(1, function (string $watcherId): Generator {
@@ -900,8 +900,11 @@ SQL
                 return;
             }
 
+            Loop::cancel($watcherId);
+
             $this->loadedState = null;
             $this->streamPositions = [];
+            $this->checkedStreams->clear();
 
             if (! $this->checkpointsDisabled) {
                 $this->lastCheckpoint = [];
@@ -919,8 +922,6 @@ SQL
             if ($this->enabled) {
                 yield from $this->runQuery();
             }
-
-            Loop::cancel($watcherId);
         });
     }
 
