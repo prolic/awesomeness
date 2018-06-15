@@ -32,6 +32,7 @@ use Prooph\EventStore\Projections\ProjectionNames;
 use Prooph\EventStore\Projections\ProjectionState;
 use Prooph\EventStore\RecordedEvent;
 use Prooph\PdoEventStore\Internal\StreamOperation;
+use Prooph\PostgresProjectionManager\Exception\ProjectionIsRunning;
 use Prooph\PostgresProjectionManager\Exception\StreamNotFound;
 use Psr\Log\LoggerInterface as PsrLogger;
 use SplQueue;
@@ -95,6 +96,8 @@ class ProjectionRunner
     private $checkpointStatus = '';
     /** @var int */
     private $currentlyWriting = 0;
+    /** @var string|null */
+    private $shutdownWatcher;
 
     // properties regarding projection itself
 
@@ -276,6 +279,10 @@ SQL;
             && (! isset($this->runAs['roles']) || empty(\array_intersect($this->runAs['roles'], $toCheck)))
         ) {
             throw Exception\AccessDenied::toStream(ProjectionNames::ProjectionsStreamPrefix . $this->name);
+        }
+
+        if ($this->checkpointsDisabled) {
+            return;
         }
 
         $this->checkpointStatus = 'Reading';
@@ -584,8 +591,6 @@ SQL;
             /** @var Lock $lock */
             $lock = yield $this->persistMutex->acquire();
 
-            $checkpointStream = ProjectionNames::ProjectionsStreamPrefix . $this->name . ProjectionNames::ProjectionCheckpointStreamSuffix;
-
             /** @var Connection $lockConnection */
             $lockConnection = yield $this->pool->extractConnection();
 
@@ -593,10 +598,11 @@ SQL;
                 yield from $this->acquireLock($lockConnection, $stream);
             }
 
-            yield from $this->acquireLock($lockConnection, $checkpointStream);
             yield from $this->writeEmittedEvents($emittedEvents, $streamsOfEmittedEvents);
 
             if (! $this->checkpointsDisabled) {
+                $checkpointStream = ProjectionNames::ProjectionsStreamPrefix . $this->name . ProjectionNames::ProjectionCheckpointStreamSuffix;
+                yield from $this->acquireLock($lockConnection, $checkpointStream);
                 yield from $this->writeCheckPoint($checkpointStream, $state, $streamPositions);
             }
 
@@ -610,7 +616,9 @@ SQL;
                 $this->eventsProcessedAfterRestart = 0;
             }
 
-            yield from $this->releaseLock($lockConnection, $checkpointStream);
+            if (! $this->checkpointsDisabled) {
+                yield from $this->releaseLock($lockConnection, $checkpointStream);
+            }
 
             $lockConnection->close();
 
@@ -883,47 +891,38 @@ SQL
         $this->emittedEvents[] = $eventData;
     }
 
-    /*
-        public function reset(): void
-        {
+    public function reset(): void
+    {
+        $this->state = ProjectionState::stopping();
+
+        Loop::repeat(1, function (string $watcherId): Generator {
+            if ($this->state->equals(ProjectionState::stopping())) {
+                return;
+            }
+
+            $this->loadedState = null;
             $this->streamPositions = [];
-            $callback = $this->initCallback;
-            $this->state = [];
 
-            if (is_callable($callback)) {
-                $result = $callback();
-                if (is_array($result)) {
-                    $this->state = $result;
-                }
+            if (! $this->checkpointsDisabled) {
+                $this->lastCheckpoint = [];
+
+                $sql = 'DELETE FROM events WHERE stream_name = ?';
+
+                /** @var Statement $statement */
+                $statement = yield $this->pool->prepare($sql);
+
+                $checkpointStream = ProjectionNames::ProjectionsStreamPrefix . $this->name . ProjectionNames::ProjectionCheckpointStreamSuffix;
+
+                yield $statement->execute([$checkpointStream]);
             }
 
-            $projectionsTable = $this->quoteTableName($this->projectionsTable);
+            if ($this->enabled) {
+                yield from $this->runQuery();
+            }
 
-            $sql = <<<EOT
-    UPDATE $projectionsTable SET position = ?, state = ?, status = ?
-    WHERE name = ?
-    EOT;
-            $statement = $this->connection->prepare($sql);
-            try {
-                $statement->execute([
-                    json_encode($this->streamPositions),
-                    json_encode($this->state),
-                    $this->status->getValue(),
-                    $this->name,
-                ]);
-            } catch (PDOException $exception) {
-                // ignore and check error code
-            }
-            if ($statement->errorCode() !== '00000') {
-                throw RuntimeException::fromStatementErrorInfo($statement->errorInfo());
-            }
-            try {
-                $this->eventStoreConnection->delete(new StreamName($this->name));
-            } catch (Exception\StreamNotFound $exception) {
-                // ignore
-            }
-        }
-    */
+            Loop::cancel($watcherId);
+        });
+    }
 
     /*
         public function delete(bool $deleteEmittedEvents): void

@@ -10,6 +10,7 @@ use Amp\Parallel\Sync;
 use Amp\Postgres\Pool;
 use Monolog\Logger;
 use Prooph\EventStore\Exception\RuntimeException;
+use Prooph\PostgresProjectionManager\Exception\ProjectionIsRunning;
 use Throwable;
 use const PHP_EOL;
 use const PHP_OUTPUT_HANDLER_CLEANABLE;
@@ -89,6 +90,9 @@ Loop::run(function () use ($argc, $argv) {
                 case 'query':
                     $definition = $projectionRunner->getDefinition();
                     yield $channel->send($definition);
+                    break;
+                case 'reset':
+                    $projectionRunner->reset();
                     break;
                 case 'state':
                     $state = $projectionRunner->getState();

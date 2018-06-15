@@ -228,6 +228,11 @@ SQL
         return $this->sendToProjection($name, 'enable');
     }
 
+    public function resetProjection(string $name): Promise
+    {
+        return $this->sendToProjection($name, 'reset');
+    }
+
     public function getState(string $name): Promise
     {
         return $this->sendToAndReceiveFromProjection($name, 'state');
