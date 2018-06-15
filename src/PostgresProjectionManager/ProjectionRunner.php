@@ -478,13 +478,7 @@ SQL;
 
         $readingTask = function () use (&$readingTask): void {
             if ($this->reader->eof()) {
-                $this->persist(
-                    $this->emittedEvents,
-                    $this->streamsOfEmittedEvents,
-                    $this->processor->getState(),
-                    $this->streamPositions,
-                    false
-                );
+                $this->persist(false);
 
                 return;
             }
@@ -492,25 +486,13 @@ SQL;
             if ($this->state->equals(ProjectionState::stopping())) {
                 $this->reader->pause();
 
-                $this->persist(
-                    $this->emittedEvents,
-                    $this->streamsOfEmittedEvents,
-                    $this->processor->getState(),
-                    $this->streamPositions,
-                    true
-                );
+                $this->persist(true);
 
                 return;
             }
 
             if ($this->processingQueue->isEmpty()) {
-                $this->persist(
-                    $this->emittedEvents,
-                    $this->streamsOfEmittedEvents,
-                    $this->processor->getState(),
-                    $this->streamPositions,
-                    false
-                );
+                $this->persist(false);
 
                 Loop::delay(200, $readingTask); // if queue is empty let's wait for a while
 
@@ -527,13 +509,7 @@ SQL;
             if ($this->currentBatchSize >= $this->checkpointHandledThreshold
                 && (\floor(\microtime(true) * 10000 - $this->lastCheckpointMs) >= $this->checkpointAfterMs)
             ) {
-                $this->persist(
-                    $this->emittedEvents,
-                    $this->streamsOfEmittedEvents,
-                    $this->processor->getState(),
-                    $this->streamPositions,
-                    false
-                );
+                $this->persist(false);
             }
 
             if ($this->processingQueue->count() > $this->pendingEventsThreshold) {
@@ -552,13 +528,16 @@ SQL;
         Loop::defer($readingTask);
     }
 
-    private function persist(
-        array $emittedEvents,
-        array $streamsOfEmittedEvents,
-        array $state,
-        array $streamPositions,
-        bool $stop
-    ): void {
+    private function persist(bool $stop): void
+    {
+        $emittedEvents = $this->emittedEvents;
+        $streamsOfEmittedEvents = $this->streamsOfEmittedEvents;
+        $state = $this->processor->getState();
+        $streamPositions = $this->streamPositions;
+
+        $this->emittedEvents = [];
+        $this->streamsOfEmittedEvents = [];
+
         if (0 === $this->currentBatchSize) {
             if ($stop) {
                 Loop::defer(function (): Generator {
@@ -575,8 +554,6 @@ SQL;
             return;
         }
 
-        $this->emittedEvents = [];
-        $this->streamsOfEmittedEvents = [];
         $this->currentBatchSize = 0;
         $this->lastCheckpointMs = \microtime(true) * 10000;
 
@@ -610,7 +587,7 @@ SQL;
             }
 
             if ($stop) {
-                $this->loadedState = $this->processor->getState();
+                $this->loadedState = $state;
                 $this->state = ProjectionState::stopped();
                 $this->eventsProcessedAfterRestart = 0;
             }
