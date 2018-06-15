@@ -123,7 +123,7 @@ class ProjectionRunner
     /** @var int */
     private $checkpointUnhandledBytesThreshold = 10000000;
     /** @var int */
-    private $pendingEventsThreshold = 50;
+    private $pendingEventsThreshold = 5000;
     /** @var array */
     private $runAs;
     /** @var array */
@@ -520,7 +520,7 @@ SQL;
                 $this->reader->pause();
             }
 
-            if ($this->processingQueue->count() < $this->pendingEventsThreshold
+            if ($this->processingQueue->count() < ($this->pendingEventsThreshold / 2)
                 && $this->reader->paused()
             ) {
                 $this->reader->run();
