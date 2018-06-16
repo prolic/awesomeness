@@ -13,6 +13,16 @@ final class ProjectionConfig
      */
     private $emitEnabled;
     /**
+     * This setting enables tracking of a projection's emitted streams.
+     * It will only have an affect if the projection has EmitEnabled enabled.
+     * Tracking emitted streams enables you to delete a projection and all the
+     * streams that it has created. You should only use it if you intend to delete
+     * a projection and create new ones that project to the same stream.
+     * @todo currently ignored by postgres projection manager
+     * @var bool
+     */
+    private $trackEmittedStreams;
+    /**
      * This prevents a new checkpoint from being written within a certain time frame from the previous one.
      * The aim of this option is to keep a projection from writing too many checkpoints too quickly
      * something that can happen in a very busy system.
@@ -29,6 +39,7 @@ final class ProjectionConfig
     /**
      * This specifies the number of bytes a projection can process before attempting to write a checkpoint.
      * This option defaults to 10mb.
+     * @todo currently ignored by postgres projection manager
      * @var int
      */
     private $checkpointUnhandledBytesThreshold;
@@ -56,6 +67,7 @@ final class ProjectionConfig
 
     public function __construct(
         bool $emitEnabled = false,
+        bool $trackEmittedStreams = false,
         int $checkpointAfterMs = 0,
         int $checkpointHandledThreshold = 4000,
         int $checkpointUnhandledBytesThreshold = 10000000,
@@ -64,6 +76,7 @@ final class ProjectionConfig
         int $maxAllowedWritesInFlight = null
     ) {
         $this->emitEnabled = $emitEnabled;
+        $this->trackEmittedStreams = $trackEmittedStreams;
         $this->checkpointAfterMs = $checkpointAfterMs;
         $this->checkpointHandledThreshold = $checkpointHandledThreshold;
         $this->checkpointUnhandledBytesThreshold = $checkpointUnhandledBytesThreshold;
@@ -75,6 +88,11 @@ final class ProjectionConfig
     public function emitEnabled(): bool
     {
         return $this->emitEnabled;
+    }
+
+    public function trackEmittedStreams(): bool
+    {
+        return $this->trackEmittedStreams;
     }
 
     public function checkpointAfterMs(): int
@@ -111,6 +129,7 @@ final class ProjectionConfig
     {
         return [
             'emitEnabled' => $this->emitEnabled,
+            'trackEmittedStreams' => $this->trackEmittedStreams,
             'checkpointAfterMs' => $this->checkpointAfterMs,
             'checkpointHandledThreshold' => $this->checkpointHandledThreshold,
             'checkpointUnhandledBytesThreshold' => $this->checkpointUnhandledBytesThreshold,
