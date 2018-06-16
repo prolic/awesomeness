@@ -16,6 +16,8 @@ final class ProjectionConfig
     /** @var bool */
     private $emitEnabled;
     /** @var bool */
+    private $checkpointsEnabled;
+    /** @var bool */
     private $trackEmittedStreams;
     /** @var int */
     private $checkpointAfterMs;
@@ -34,6 +36,7 @@ final class ProjectionConfig
         Principal $runAs,
         bool $stopOnEof,
         bool $emitEnabled,
+        bool $checkpointsEnabled,
         bool $trackEmittedStreams,
         int $checkpointAfterMs = 0,
         int $checkpointHandledThreshold = 4000,
@@ -45,6 +48,7 @@ final class ProjectionConfig
         $this->runAs = $runAs;
         $this->stopOnEof = $stopOnEof;
         $this->emitEnabled = $emitEnabled;
+        $this->checkpointsEnabled = $checkpointsEnabled;
         $this->trackEmittedStreams = $trackEmittedStreams;
         $this->checkpointAfterMs = $checkpointAfterMs;
         $this->checkpointHandledThreshold = $checkpointHandledThreshold;
@@ -67,6 +71,11 @@ final class ProjectionConfig
     public function emitEnabled(): bool
     {
         return $this->emitEnabled;
+    }
+
+    public function checkpointsEnabled(): bool
+    {
+        return $this->checkpointsEnabled;
     }
 
     public function trackEmittedStreams(): bool
@@ -110,6 +119,7 @@ final class ProjectionConfig
             'runAs' => $this->runAs->toArray(),
             'stopOnEof' => $this->stopOnEof,
             'emitEnabled' => $this->emitEnabled,
+            'checkpointsEnabled' => $this->checkpointsEnabled,
             'trackEmittedStreams' => $this->trackEmittedStreams,
             'checkpointAfterMs' => $this->checkpointAfterMs,
             'checkpointHandledThreshold' => $this->checkpointHandledThreshold,

@@ -13,6 +13,11 @@ final class ProjectionConfig
      */
     private $emitEnabled;
     /**
+     * Whether or not to enable checkpoints
+     * @var bool
+     */
+    private $checkpointsEnabled;
+    /**
      * This setting enables tracking of a projection's emitted streams.
      * It will only have an affect if the projection has EmitEnabled enabled.
      * Tracking emitted streams enables you to delete a projection and all the
@@ -68,6 +73,7 @@ final class ProjectionConfig
 
     public function __construct(
         bool $emitEnabled = false,
+        bool $checkpointsEnabled = false,
         bool $trackEmittedStreams = false,
         int $checkpointAfterMs = 0,
         int $checkpointHandledThreshold = 4000,
@@ -77,6 +83,7 @@ final class ProjectionConfig
         int $maxAllowedWritesInFlight = null
     ) {
         $this->emitEnabled = $emitEnabled;
+        $this->checkpointsEnabled = $checkpointsEnabled;
         $this->trackEmittedStreams = $trackEmittedStreams;
         $this->checkpointAfterMs = $checkpointAfterMs;
         $this->checkpointHandledThreshold = $checkpointHandledThreshold;
@@ -89,6 +96,11 @@ final class ProjectionConfig
     public function emitEnabled(): bool
     {
         return $this->emitEnabled;
+    }
+
+    public function checkpointsEnabled(): bool
+    {
+        return $this->checkpointsEnabled;
     }
 
     public function trackEmittedStreams(): bool
@@ -130,6 +142,7 @@ final class ProjectionConfig
     {
         return [
             'emitEnabled' => $this->emitEnabled,
+            'checkpointsEnabled' => $this->checkpointsEnabled,
             'trackEmittedStreams' => $this->trackEmittedStreams,
             'checkpointAfterMs' => $this->checkpointAfterMs,
             'checkpointHandledThreshold' => $this->checkpointHandledThreshold,

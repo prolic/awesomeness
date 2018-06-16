@@ -26,6 +26,9 @@ use Prooph\EventStore\EventId;
 use Prooph\EventStore\Exception;
 use Prooph\EventStore\ExpectedVersion;
 use Prooph\EventStore\Internal\DateTimeUtil;
+use Prooph\EventStore\Internal\Principal;
+use Prooph\EventStore\ProjectionManagement\Internal\ProjectionConfig;
+use Prooph\EventStore\ProjectionManagement\ProjectionDefinition;
 use Prooph\EventStore\Projections\ProjectionEventTypes;
 use Prooph\EventStore\Projections\ProjectionMode;
 use Prooph\EventStore\Projections\ProjectionNames;
@@ -46,6 +49,11 @@ class ProjectionRunner
     private const CheckedStreamsCacheSize = 10000;
     private const MinCheckpointAfterMs = 100;
     private const MaxMaxWriteBatchLength = 5000;
+
+    /** @var ProjectionConfig */
+    private $config;
+    /** @var ProjectionDefinition */
+    private $definition;
 
     // properties regarding projection runner
 
@@ -95,8 +103,6 @@ class ProjectionRunner
     private $checkpointStatus = '';
     /** @var int */
     private $currentlyWriting = 0;
-    /** @var string|null */
-    private $shutdownWatcher;
 
     // properties regarding projection itself
 
@@ -108,24 +114,6 @@ class ProjectionRunner
     private $mode;
     /** @var bool */
     private $enabled;
-    /** @var bool */
-    private $emitEnabled;
-    /** @var bool */
-    private $checkpointsDisabled;
-    /** @var bool */
-    private $trackEmittedStreams;
-    /** @var int */
-    private $maxWriteBatchLength;
-    /** @var int */
-    private $checkpointAfterMs = self::MinCheckpointAfterMs;
-    /** @var int */
-    private $checkpointHandledThreshold = 4000;
-    /** @var int */
-    private $checkpointUnhandledBytesThreshold = 10000000;
-    /** @var int */
-    private $pendingEventsThreshold = 5000;
-    /** @var array */
-    private $runAs;
     /** @var array */
     private $streamPositions = [];
     /** @var array */
@@ -239,27 +227,24 @@ SQL;
                     }
 
                     $this->handlerType = $data['handlerType'];
+
+                    $this->config = new ProjectionConfig(
+                        new Principal($data['runAs']['name'], ['$all']), // @todo load roles
+                        $data['mode'] !== 'Continuous',
+                        $data['emitEnabled'],
+                        $data['checkpointsEnabled'],
+                        $data['trackEmittedStreams'],
+                        \max($data['checkpointAfterMs'] ?? 0, self::MinCheckpointAfterMs),
+                        $data['checkpointHandledThreshold'] ?? 4000,
+                        $data['checkpointUnhandledBytesThreshold'] ?? 10000000,
+                        $data['pendingEventsThreshold'] ?? 5000,
+                        \min($data['maxWriteBatchLength'], self::MaxMaxWriteBatchLength),
+                        null
+                    );
+
                     $this->query = $data['query'];
                     $this->mode = ProjectionMode::byName($data['mode']);
                     $this->enabled = $data['enabled'] ?? false;
-                    $this->emitEnabled = $data['emitEnabled'];
-                    $this->checkpointsDisabled = $data['checkpointsDisabled'];
-                    $this->trackEmittedStreams = $data['trackEmittedStreams'];
-                    $this->maxWriteBatchLength = \min($data['maxWriteBatchLength'], self::MaxMaxWriteBatchLength);
-                    if (isset($data['checkpointAfterMs'])) {
-                        $this->checkpointAfterMs = \max($data['checkpointAfterMs'], self::MinCheckpointAfterMs);
-                    }
-                    if (isset($data['checkpointHandledThreshold'])) {
-                        $this->checkpointHandledThreshold = $data['checkpointHandledThreshold'];
-                    }
-                    if (isset($data['checkpointUnhandledBytesThreshold'])) {
-                        $this->checkpointUnhandledBytesThreshold = $data['checkpointUnhandledBytesThreshold'];
-                    }
-                    if (isset($data['pendingEventsThreshold'])) {
-                        $this->pendingEventsThreshold = $data['pendingEventsThreshold'];
-                    }
-                    $this->runAs = $data['runAs'];
-                    $this->runAs['roles'][] = '$all';
                     $this->projectionEventNumber = $event->event_number;
                     break;
                 case '$stop':
@@ -273,14 +258,14 @@ SQL;
             }
         }
 
-        if ('$system' !== $this->runAs['name']
-            && ! \in_array($this->runAs['name'], $toCheck)
-            && (! isset($this->runAs['roles']) || empty(\array_intersect($this->runAs['roles'], $toCheck)))
+        if ('$system' !== $this->config->runAs()->identity()
+            && ! \in_array($this->config->runAs()->identity(), $toCheck)
+            && empty(\array_intersect($this->config->runAs()->roles(), $toCheck))
         ) {
             throw Exception\AccessDenied::toStream(ProjectionNames::ProjectionsStreamPrefix . $this->name);
         }
 
-        if ($this->checkpointsDisabled) {
+        if (! $this->config->checkpointsEnabled()) {
             return;
         }
 
@@ -344,7 +329,7 @@ SQL;
         $this->logger->info('enabling projection');
 
         if ($enableRunAs) {
-            $this->runAs['name'] = $enableRunAs;
+            $this->config->runAs()->setIdentity($enableRunAs);
         }
 
         return call(function (): Generator {
@@ -459,7 +444,7 @@ SQL;
     {
         $this->logger->debug('Running projection');
 
-        if ($this->emitEnabled) {
+        if ($this->config->emitEnabled()) {
             $notify = function (string $streamName, string $eventType, string $data, string $metadata = '', bool $isJson = false): void {
                 $this->emit($streamName, $eventType, $data, $metadata, $isJson);
             };
@@ -510,17 +495,17 @@ SQL;
             ++$this->currentBatchSize;
             ++$this->eventsProcessedAfterRestart;
 
-            if ($this->currentBatchSize >= $this->checkpointHandledThreshold
-                && (\floor(\microtime(true) * 10000 - $this->lastCheckpointMs) >= $this->checkpointAfterMs)
+            if ($this->currentBatchSize >= $this->config->checkpointHandledThreshold()
+                && (\floor(\microtime(true) * 10000 - $this->lastCheckpointMs) >= $this->config->checkpointAfterMs())
             ) {
                 $this->persist(false);
             }
 
-            if ($this->processingQueue->count() > $this->pendingEventsThreshold) {
+            if ($this->processingQueue->count() > $this->config->pendingEventsThreshold()) {
                 $this->reader->pause();
             }
 
-            if ($this->processingQueue->count() < ($this->pendingEventsThreshold / 2)
+            if ($this->processingQueue->count() < ($this->config->pendingEventsThreshold() / 2)
                 && $this->reader->paused()
             ) {
                 $this->reader->run();
@@ -580,7 +565,7 @@ SQL;
 
             yield from $this->writeEmittedEvents($emittedEvents, $streamsOfEmittedEvents);
 
-            if (! $this->checkpointsDisabled) {
+            if ($this->config->checkpointsEnabled()) {
                 $checkpointStream = ProjectionNames::ProjectionsStreamPrefix . $this->name . ProjectionNames::ProjectionCheckpointStreamSuffix;
                 yield from $this->acquireLock($lockConnection, $checkpointStream);
                 yield from $this->writeCheckPoint($checkpointStream, $state, $streamPositions);
@@ -596,7 +581,7 @@ SQL;
                 $this->eventsProcessedAfterRestart = 0;
             }
 
-            if (! $this->checkpointsDisabled) {
+            if ($this->config->checkpointsEnabled()) {
                 yield from $this->releaseLock($lockConnection, $checkpointStream);
             }
 
@@ -630,7 +615,7 @@ SQL;
             $expectedVersions[$stream] = $expectedVersion;
         }
 
-        foreach (\array_chunk($emittedEvents, $this->maxWriteBatchLength) as $batch) {
+        foreach (\array_chunk($emittedEvents, $this->config->maxWriteBatchLength()) as $batch) {
             $time = \microtime(true);
             $batchSize = \count($batch);
 
@@ -720,8 +705,18 @@ SQL;
     {
         return call(function (): Generator {
             $sources = $this->processor->sources();
-            if (\count($sources['streams']) === 1) {
-                $streamName = \current($sources['streams']);
+
+            // @todo: we have to move this into load method somehow!
+            $this->definition = new ProjectionDefinition(
+                $this->name,
+                $this->query,
+                $this->config->emitEnabled(),
+                $sources,
+                []
+            );
+
+            if (\count($sources->streams()) === 1) {
+                $streamName = $sources->streams()[0];
 
                 if (! isset($this->streamPositions[$streamName])) {
                     $this->streamPositions[$streamName] = -1;
@@ -734,14 +729,12 @@ SQL;
                     $this->readMutex,
                     $this->pool,
                     $this->processingQueue,
-                    ! $this->mode->equals(ProjectionMode::continuous()),
+                    $this->config->stopOnEof(),
                     $streamName,
                     $this->streamPositions[$streamName]
                 ));
-            } elseif (\count($sources['streams']) > 2) {
-                $streamNames = $sources['streams'];
-
-                foreach ($streamNames as $streamName) {
+            } elseif (\count($sources->streams()) > 2) {
+                foreach ($sources->streams() as $streamName) {
                     if (! isset($this->streamPositions[$streamName])) {
                         $this->streamPositions[$streamName] = -1;
                         $this->lastCheckpoint[$streamName] = -1;
@@ -754,8 +747,8 @@ SQL;
                     $this->readMutex,
                     $this->pool,
                     $this->processingQueue,
-                    ! $this->mode->equals(ProjectionMode::continuous()),
-                    $streamNames,
+                    $this->config->stopOnEof(),
+                    $sources->streams(),
                     $this->streamPositions[$streamName]
                 ));
             }
@@ -802,9 +795,9 @@ SQL
                     $toCheck = \explode(',', $data->stream_roles);
                 }
 
-                if ('$system' !== $this->runAs['name']
-                    && ! \in_array($this->runAs['name'], $toCheck)
-                    && (! isset($this->runAs['roles']) || empty(\array_intersect($this->runAs['roles'], $toCheck)))
+                if ('$system' !== $this->config->runAs()->identity()
+                    && ! \in_array($this->config->runAs()->identity(), $toCheck)
+                    && empty(\array_intersect($this->config->runAs()->roles(), $toCheck))
                 ) {
                     throw Exception\AccessDenied::toStream($streamName);
                 }
@@ -887,7 +880,7 @@ SQL
             $this->streamPositions = [];
             $this->checkedStreams->clear();
 
-            if (! $this->checkpointsDisabled) {
+            if ($this->config->checkpointsEnabled()) {
                 $this->lastCheckpoint = [];
 
                 $sql = 'DELETE FROM events WHERE stream_name = ?';
@@ -945,11 +938,11 @@ SQL
     public function getConfig(): array
     {
         return [
-            'emitEnabled' => $this->emitEnabled,
-            'checkpointHandledThreshold' => $this->checkpointHandledThreshold,
-            'checkpointUnhandledBytesThreshold' => $this->checkpointUnhandledBytesThreshold,
-            'pendingEventsThreshold' => $this->pendingEventsThreshold,
-            'maxWriteBatchLength' => $this->maxWriteBatchLength,
+            'emitEnabled' => $this->config->emitEnabled(),
+            'checkpointHandledThreshold' => $this->config->checkpointHandledThreshold(),
+            'checkpointUnhandledBytesThreshold' => $this->config->checkpointUnhandledBytesThreshold(),
+            'pendingEventsThreshold' => $this->config->pendingEventsThreshold(),
+            'maxWriteBatchLength' => $this->config->maxWriteBatchLength(),
         ];
     }
 
@@ -958,7 +951,7 @@ SQL
         return [
             'name' => $this->name,
             'query' => $this->query,
-            'definition' => $this->processor->sources(),
+            'definition' => $this->processor->sources()->toArray(),
         ];
     }
 

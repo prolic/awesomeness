@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\PostgresProjectionManager;
 
+use Prooph\EventStore\ProjectionManagement\QuerySourcesDefinition;
 use Prooph\EventStore\RecordedEvent;
 
 /** @internal */
@@ -178,8 +179,8 @@ class EventProcessor
         return $this->projectionState;
     }
 
-    public function sources(): array
+    public function sources(): QuerySourcesDefinition
     {
-        return $this->sources;
+        return QuerySourcesDefinition::fromArray($this->sources);
     }
 }

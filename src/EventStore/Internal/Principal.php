@@ -28,6 +28,22 @@ final class Principal
         return $this->roles;
     }
 
+    /**
+     * @param string $identity
+     */
+    public function setIdentity(string $identity): void
+    {
+        $this->identity = $identity;
+    }
+
+    /**
+     * @param string[] $roles
+     */
+    public function setRoles(array $roles): void
+    {
+        $this->roles = $roles;
+    }
+
     public function toArray(): array
     {
         return [
