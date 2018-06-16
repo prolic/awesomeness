@@ -10,6 +10,7 @@ use Http\Message\UriFactory;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Exception\ProjectionNotFound;
 use Prooph\EventStore\ProjectionManagement\ProjectionDefinition;
+use Prooph\EventStore\ProjectionManagement\QuerySourcesDefinition;
 use Prooph\EventStore\UserCredentials;
 use Prooph\HttpEventStore\ClientOperations\Operation;
 use Prooph\HttpEventStore\Http\RequestMethod;
@@ -40,7 +41,7 @@ class GetProjectionDefinitionOperation extends Operation
                     $json['name'],
                     $json['query'],
                     $json['emitEnabled'],
-                    $json['definition'],
+                    QuerySourcesDefinition::fromArray($json['definition']),
                     $json['outputConfig']
                 );
             case 401:

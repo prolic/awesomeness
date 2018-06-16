@@ -12,13 +12,18 @@ final class ProjectionDefinition
     private $query;
     /** @var bool */
     private $emitEnabled;
-    /** @var array */
+    /** @var QuerySourcesDefinition */
     private $definition;
     /** @var array */
     private $outputConfig;
 
-    public function __construct(string $name, string $query, bool $emitEnabled, array $definition, array $outputConfig)
-    {
+    public function __construct(
+        string $name,
+        string $query,
+        bool $emitEnabled,
+        QuerySourcesDefinition $definition,
+        array $outputConfig
+    ) {
         $this->name = $name;
         $this->query = $query;
         $this->emitEnabled = $emitEnabled;
@@ -41,7 +46,7 @@ final class ProjectionDefinition
         return $this->emitEnabled;
     }
 
-    public function definition(): array
+    public function definition(): QuerySourcesDefinition
     {
         return $this->definition;
     }
@@ -57,7 +62,7 @@ final class ProjectionDefinition
             'name' => $this->name,
             'query' => $this->query,
             'emitEnabled' => $this->emitEnabled,
-            'definition' => $this->definition,
+            'definition' => $this->definition->toArray(),
             'outputConfig' => $this->outputConfig,
         ];
     }
