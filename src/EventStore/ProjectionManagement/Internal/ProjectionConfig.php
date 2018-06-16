@@ -2,73 +2,39 @@
 
 declare(strict_types=1);
 
-namespace Prooph\EventStore\ProjectionManagement;
+namespace Prooph\EventStore\ProjectionManagement\Internal;
 
+use Prooph\EventStore\Internal\Principal;
+
+/** @internal  */
 final class ProjectionConfig
 {
-    /**
-     * This setting is disabled by default, and is usually set when you
-     * create the projection and if you need the projection to emit events
-     * @var bool
-     */
+    /** @var Principal */
+    private $runAs;
+    /** @var bool */
+    private $stopOnEof;
+    /** @var bool */
     private $emitEnabled;
-    /**
-     * This setting enables tracking of a projection's emitted streams.
-     * It will only have an affect if the projection has EmitEnabled enabled.
-     * Tracking emitted streams enables you to delete a projection and all the
-     * streams that it has created. You should only use it if you intend to delete
-     * a projection and create new ones that project to the same stream.
-     * @todo currently ignored by postgres projection manager
-     * @var bool
-     */
+    /** @var bool */
     private $trackEmittedStreams;
-    /**
-     * This prevents a new checkpoint from being written within a certain time frame from the previous one.
-     * The aim of this option is to keep a projection from writing too many checkpoints too quickly
-     * something that can happen in a very busy system.
-     * Default is 0
-     * @var int
-     */
+    /** @var int */
     private $checkpointAfterMs;
-    /**
-     * This controls the number of events that a projection can handle before attempting to write a checkpoint.
-     * The default for this option is 4,000 events.
-     * @var int
-     */
+    /** @var int */
     private $checkpointHandledThreshold;
-    /**
-     * This specifies the number of bytes a projection can process before attempting to write a checkpoint.
-     * This option defaults to 10mb.
-     * @todo currently ignored by postgres projection manager
-     * @var int
-     */
+    /** @var int */
     private $checkpointUnhandledBytesThreshold;
-    /**
-     * This determines the number of events that can be pending before the projection is paused.
-     * The default is 5000.
-     * @var int
-     */
+    /** @var int */
     private $pendingEventsThreshold;
-    /**
-     * This determines the maximum number of events the projection can write in a batch at a time.
-     * The default for this option is 500
-     * @var int
-     */
+    /** @var int */
     private $maxWriteBatchLength;
-    /**
-     * This sets the maximum number of writes to allow for a projection.
-     * Because a projection can write to multiple different streams,
-     * it is possible for the projection to send off multiple writes at the same time.
-     * This option sets the number of concurrent writes that a projection can perform.
-     * Default is null (unbound)
-     * @todo currently ignored by postgres projection manager
-     * @var int|null
-     */
+    /** @var int|null */
     private $maxAllowedWritesInFlight;
 
     public function __construct(
+        Principal $runAs,
+        bool $stopOnEof,
         bool $emitEnabled = false,
-        bool $trackEmittedStreams = false,
+        bool $trackEmittedStreams,
         int $checkpointAfterMs = 0,
         int $checkpointHandledThreshold = 4000,
         int $checkpointUnhandledBytesThreshold = 10000000,
@@ -76,6 +42,8 @@ final class ProjectionConfig
         int $maxWriteBatchLength = 500,
         int $maxAllowedWritesInFlight = null
     ) {
+        $this->runAs = $runAs;
+        $this->stopOnEof = $stopOnEof;
         $this->emitEnabled = $emitEnabled;
         $this->trackEmittedStreams = $trackEmittedStreams;
         $this->checkpointAfterMs = $checkpointAfterMs;
@@ -84,6 +52,16 @@ final class ProjectionConfig
         $this->pendingEventsThreshold = $pendingEventsThreshold;
         $this->maxWriteBatchLength = $maxWriteBatchLength;
         $this->maxAllowedWritesInFlight = $maxAllowedWritesInFlight;
+    }
+
+    public function runAs(): Principal
+    {
+        return $this->runAs;
+    }
+
+    public function stopOnEof(): bool
+    {
+        return $this->stopOnEof;
     }
 
     public function emitEnabled(): bool
@@ -129,6 +107,8 @@ final class ProjectionConfig
     public function toArray(): array
     {
         return [
+            'runAs' => $this->runAs->toArray(),
+            'stopOnEof' => $this->stopOnEof,
             'emitEnabled' => $this->emitEnabled,
             'trackEmittedStreams' => $this->trackEmittedStreams,
             'checkpointAfterMs' => $this->checkpointAfterMs,
