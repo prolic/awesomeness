@@ -33,7 +33,7 @@ final class ProjectionConfig
     public function __construct(
         Principal $runAs,
         bool $stopOnEof,
-        bool $emitEnabled = false,
+        bool $emitEnabled,
         bool $trackEmittedStreams,
         int $checkpointAfterMs = 0,
         int $checkpointHandledThreshold = 4000,

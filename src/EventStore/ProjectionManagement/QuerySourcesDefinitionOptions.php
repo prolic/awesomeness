@@ -58,7 +58,7 @@ final class QuerySourcesDefinitionOptions
         $this->processingLagOption = $processingLagOption;
         $this->isBiState = $isBiState;
     }
-    
+
     public static function fromArray(array $options): QuerySourcesDefinitionOptions
     {
         return new self(
