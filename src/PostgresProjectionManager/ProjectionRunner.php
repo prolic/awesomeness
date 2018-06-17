@@ -344,6 +344,10 @@ SQL;
     /** @throws Throwable */
     public function enable(string $enableRunAs = null): Promise
     {
+        if ('' !== $this->stateReason) {
+            throw new Error('Cannot start projection: ' . $this->stateReason);
+        }
+
         if (! $this->state->equals(ProjectionState::initial())
             && ! $this->state->equals(ProjectionState::stopped())
         ) {
@@ -498,7 +502,15 @@ SQL;
 
             /** @var RecordedEvent $event */
             $event = $this->processingQueue->dequeue();
-            $this->processor->processEvent($event);
+            try {
+                $this->processor->processEvent($event);
+            } catch (Throwable $e) {
+                $this->stateReason = $e->getMessage();
+                $this->reader->pause();
+                $this->persist(true);
+
+                return;
+            }
             $this->streamPositions[$event->streamId()] = $event->eventNumber();
             ++$this->currentBatchSize;
             ++$this->eventsProcessedAfterRestart;
