@@ -14,7 +14,7 @@ use SplQueue;
 /** @internal */
 abstract class EventReader
 {
-    protected const MaxReads = 400;
+    public const MaxReads = 400;
 
     /** @var LocalMutex */
     protected $readMutex;

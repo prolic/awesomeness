@@ -93,6 +93,6 @@ SQL;
             }
         }
 
-        return new LoadConfigResult($query, $mode, $enabled, $projectionEventNumber);
+        return new LoadConfigResult($config, $query, $mode, $enabled, $projectionEventNumber);
     }
 }

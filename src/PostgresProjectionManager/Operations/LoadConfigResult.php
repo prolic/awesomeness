@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\PostgresProjectionManager\Operations;
 
-use Prooph\EventStore\ProjectionManagement\ProjectionConfig;
+use Prooph\EventStore\ProjectionManagement\Internal\ProjectionConfig;
 use Prooph\EventStore\Projections\ProjectionMode;
 
 /** @internal */

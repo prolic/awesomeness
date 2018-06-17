@@ -21,7 +21,6 @@ use DateTimeZone;
 use Error;
 use Generator;
 use Prooph\EventStore\Common\SystemEventTypes;
-use Prooph\EventStore\Common\SystemRoles;
 use Prooph\EventStore\EventId;
 use Prooph\EventStore\Exception;
 use Prooph\EventStore\ExpectedVersion;
@@ -33,13 +32,13 @@ use Prooph\EventStore\Projections\ProjectionMode;
 use Prooph\EventStore\Projections\ProjectionNames;
 use Prooph\EventStore\Projections\ProjectionState;
 use Prooph\EventStore\RecordedEvent;
-use Prooph\PdoEventStore\Internal\StreamOperation;
 use Prooph\PostgresProjectionManager\Exception\QueryEvaluationError;
 use Prooph\PostgresProjectionManager\Exception\StreamNotFound;
 use Prooph\PostgresProjectionManager\Operations\LoadConfigOperation;
 use Prooph\PostgresProjectionManager\Operations\LoadConfigResult;
 use Prooph\PostgresProjectionManager\Operations\LoadLatestCheckpointOperation;
 use Prooph\PostgresProjectionManager\Operations\LoadLatestCheckpointResult;
+use Prooph\PostgresProjectionManager\Operations\LoadProjectionStreamRolesOperation;
 use Psr\Log\LoggerInterface as PsrLogger;
 use SplQueue;
 use Throwable;
@@ -149,70 +148,33 @@ class ProjectionRunner
 
         $projectionStream = ProjectionNames::ProjectionsStreamPrefix . $name;
 
-        /** @var Statement $statement */
-        $statement = yield $this->pool->prepare(<<<SQL
-SELECT streams.mark_deleted, streams.deleted, STRING_AGG(stream_acl.role, ',') as stream_roles
-    FROM streams
-    LEFT JOIN stream_acl ON streams.stream_name = stream_acl.stream_name AND stream_acl.operation = ?
-    WHERE streams.stream_name = ?
-    GROUP BY streams.stream_name, streams.mark_deleted, streams.deleted
-    LIMIT 1;
-SQL
-        );
-
-        /** @var ResultSet $result */
-        $result = yield $statement->execute([
-            StreamOperation::Read,
-            $projectionStream,
-        ]);
-
-        if (! yield $result->advance(ResultSet::FETCH_OBJECT)) {
-            throw new Error('Stream for projection "' . $name .'" not found');
-        }
-
-        $data = $result->getCurrent();
-
-        if ($data->mark_deleted || $data->deleted) {
-            throw Exception\StreamDeleted::with($projectionStream);
-        }
-
-        $toCheck = [SystemRoles::All];
-        if (\is_string($data->stream_roles)) {
-            $toCheck = \explode(',', $data->stream_roles);
-        }
+        $streamRoles = yield from (new LoadProjectionStreamRolesOperation())($this->pool, $projectionStream);
 
         /** @var LoadConfigResult $result */
-        $result = (new LoadConfigOperation())($this->pool, $projectionStream);
+        $result = yield from (new LoadConfigOperation())($this->pool, $projectionStream);
         $this->config = $result->config();
         $this->mode = $result->mode();
         $this->enabled = $result->enabled();
         $this->projectionEventNumber = $result->projectionEventNumber();
 
-        if ('$system' !== $this->config->runAs()->identity()
-            && ! \in_array($this->config->runAs()->identity(), $toCheck)
-            && empty(\array_intersect($this->config->runAs()->roles(), $toCheck))
-        ) {
-            throw Exception\AccessDenied::toStream($projectionStream);
+        $this->checkAcl($streamRoles, $projectionStream);
+
+        if ($this->config->checkpointsEnabled()) {
+            $this->checkpointStatus = 'Reading';
+
+            $latestCheckpoint = yield from (new LoadLatestCheckpointOperation())(
+                $this->pool,
+                $projectionStream . ProjectionNames::ProjectionCheckpointStreamSuffix
+            );
+
+            if ($latestCheckpoint instanceof LoadLatestCheckpointResult) {
+                $this->loadedState = $latestCheckpoint->state();
+                $this->streamPositions = $latestCheckpoint->streamPositions();
+                $this->lastCheckpoint = $latestCheckpoint->streamPositions();
+            }
+
+            $this->checkpointStatus = '';
         }
-
-        if (! $this->config->checkpointsEnabled()) {
-            return;
-        }
-
-        $this->checkpointStatus = 'Reading';
-
-        $result = (new LoadLatestCheckpointOperation())(
-            $this->pool,
-            $projectionStream . ProjectionNames::ProjectionCheckpointStreamSuffix
-        );
-
-        if ($result instanceof LoadLatestCheckpointResult) {
-            $this->loadedState = $result->state();
-            $this->streamPositions = $result->streamPositions();
-            $this->lastCheckpoint = $result->streamPositions();
-        }
-
-        $this->checkpointStatus = '';
 
         if ($this->config->emitEnabled()) {
             $notify = function (string $streamName, string $eventType, string $data, string $metadata = '', bool $isJson = false): void {
@@ -225,6 +187,7 @@ SQL
         }
 
         $evaluator = new ProjectionEvaluator($notify);
+
         try {
             $this->processor = $evaluator->evaluate($result->query());
         } catch (QueryEvaluationError $e) {
@@ -686,46 +649,11 @@ SQL;
         }
 
         return call(function () use ($streamName): Generator {
-            /** @var Statement $statement */
-            $statement = yield $this->pool->prepare(<<<SQL
-SELECT streams.mark_deleted, streams.deleted, STRING_AGG(stream_acl.role, ',') as stream_roles
-FROM streams
-LEFT JOIN stream_acl ON streams.stream_name = stream_acl.stream_name AND stream_acl.operation = ?
-WHERE streams.stream_name = ?
-GROUP BY streams.stream_name, streams.mark_deleted, streams.deleted
-LIMIT 1;
-SQL
-            );
+            $streamRoles = yield from (new LoadProjectionStreamRolesOperation())($this->pool, $streamName);
 
-            /** @var ResultSet $result */
-            $result = yield $statement->execute([StreamOperation::Read, $streamName]);
+            $this->checkAcl($streamRoles, $streamName);
 
-            while (yield $result->advance(ResultSet::FETCH_OBJECT)) {
-                $data = $result->getCurrent();
-
-                if ($data->mark_deleted || $data->deleted) {
-                    throw Exception\StreamDeleted::with($streamName);
-                }
-
-                $toCheck = [SystemRoles::All];
-
-                if (\is_string($data->stream_roles)) {
-                    $toCheck = \explode(',', $data->stream_roles);
-                }
-
-                if ('$system' !== $this->config->runAs()->identity()
-                    && ! \in_array($this->config->runAs()->identity(), $toCheck)
-                    && empty(\array_intersect($this->config->runAs()->roles(), $toCheck))
-                ) {
-                    throw Exception\AccessDenied::toStream($streamName);
-                }
-
-                $this->checkedStreams->put($streamName, 'ok');
-
-                return null;
-            }
-
-            throw StreamNotFound::with($streamName);
+            $this->checkedStreams->put($streamName, 'ok');
         });
     }
 
@@ -891,6 +819,12 @@ SQL
                 $progress += $this->streamPositions[$streamName];
             }
 
+            if (! $this->reader || $this->reader->paused()) {
+                $readsInProgress = 0;
+            } else {
+                $readsInProgress = EventReader::MaxReads;
+            }
+
             $stats = [
                 'status' => $this->state->name(),
                 'stateReason' => $this->stateReason,
@@ -901,7 +835,7 @@ SQL
                 'bufferedEvents' => $this->processingQueue->count(),
                 'eventsPerSecond' => $this->statisticsRecorder->eventsPerSecond(),
                 'eventsProcessedAfterRestart' => $this->eventsProcessedAfterRestart,
-                'readsInProgress' => $this->reader->paused() ? 0 : 400,
+                'readsInProgress' => $readsInProgress,
                 'writesInProgress' => $this->currentlyWriting,
                 'writeQueue' => \count($this->emittedEvents),
                 'checkpointStatus' => $this->checkpointStatus,
@@ -936,10 +870,14 @@ SQL
         $expectedVersion = ExpectedVersion::NoStream;
 
         /** @var Statement $statement */
-        $statement = yield $this->pool->prepare(<<<SQL
+        static $statement = null;
+        if (! $statement) {
+            $statement = yield $this->pool->prepare(<<<SQL
 SELECT MAX(event_number) as current_version FROM events WHERE stream_name = ?
 SQL
             );
+        }
+
         /** @var ResultSet $result */
         $result = yield $statement->execute([$streamName]);
 
@@ -952,5 +890,15 @@ SQL
         }
 
         return $expectedVersion;
+    }
+
+    private function checkAcl(array $streamRoles, string $streamName): void
+    {
+        if ('$system' !== $this->config->runAs()->identity()
+            && ! \in_array($this->config->runAs()->identity(), $streamRoles)
+            && empty(\array_intersect($this->config->runAs()->roles(), $streamRoles))
+        ) {
+            throw Exception\AccessDenied::toStream($streamName);
+        }
     }
 }
