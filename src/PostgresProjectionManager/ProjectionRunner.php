@@ -37,6 +37,8 @@ use Prooph\EventStore\RecordedEvent;
 use Prooph\PdoEventStore\Internal\StreamOperation;
 use Prooph\PostgresProjectionManager\Exception\QueryEvaluationError;
 use Prooph\PostgresProjectionManager\Exception\StreamNotFound;
+use Prooph\PostgresProjectionManager\Operations\LoadConfigOperation;
+use Prooph\PostgresProjectionManager\Operations\LoadConfigResult;
 use Prooph\PostgresProjectionManager\Operations\LoadLatestCheckpointOperation;
 use Prooph\PostgresProjectionManager\Operations\LoadLatestCheckpointResult;
 use Psr\Log\LoggerInterface as PsrLogger;
@@ -49,12 +51,7 @@ use function Amp\call;
  */
 class ProjectionRunner
 {
-    private const DefaultCheckpointHandledThreshold = 4000;
-    private const DefaultCheckpointUnhandledBytesThreshold = 10000000;
-    private const DefaultPendingEventsThreshold = 5000;
     private const CheckedStreamsCacheSize = 10000;
-    private const MinCheckpointAfterMs = 100;
-    private const MaxMaxWriteBatchLength = 5000;
 
     /** @var string */
     private $id;
@@ -187,73 +184,12 @@ SQL
             $toCheck = \explode(',', $data->stream_roles);
         }
 
-        $sql = <<<SQL
-SELECT
-    e2.event_id as event_id,
-    e1.event_number as event_number,
-    COALESCE(e1.event_type, e2.event_type) as event_type,
-    COALESCE(e1.data, e2.data) as data,
-    COALESCE(e1.meta_data, e2.meta_data) as meta_data,
-    COALESCE(e1.is_json, e2.is_json) as is_json,
-    COALESCE(e1.updated, e2.updated) as updated
-FROM
-    events e1
-LEFT JOIN events e2
-    ON (e1.link_to_stream_name = e2.stream_name AND e1.link_to_event_number = e2.event_number)
-WHERE e1.stream_name = ?
-ORDER BY e1.event_number ASC
-SQL;
-        /** @var Statement $statement */
-        $statement = yield $this->pool->prepare($sql);
-
-        /** @var ResultSet $result */
-        $result = yield $statement->execute([$projectionStream]);
-
-        while (yield $result->advance(ResultSet::FETCH_OBJECT)) {
-            $event = $result->getCurrent();
-            switch ($event->event_type) {
-                case ProjectionEventTypes::ProjectionUpdated:
-                    $data = \json_decode($event->data, true);
-
-                    if (0 !== \json_last_error()) {
-                        throw new Error('Could not json decode event data for projection');
-                    }
-
-                    $handlerType = $data['handlerType'];
-
-                    if ($handlerType !== 'PHP') {
-                        throw new Error('Unexpected handler type "' . $handlerType . '" given');
-                    }
-
-                    $this->config = new ProjectionConfig(
-                        new Principal($data['runAs']['name'], ['$all']), // @todo load roles
-                        $data['mode'] !== 'Continuous',
-                        $data['emitEnabled'],
-                        $data['checkpointsEnabled'],
-                        $data['trackEmittedStreams'],
-                        \max($data['checkpointAfterMs'] ?? 0, self::MinCheckpointAfterMs),
-                        $data['checkpointHandledThreshold'] ?? self::DefaultCheckpointHandledThreshold,
-                        $data['checkpointUnhandledBytesThreshold'] ?? self::DefaultCheckpointUnhandledBytesThreshold,
-                        $data['pendingEventsThreshold'] ?? self::DefaultPendingEventsThreshold,
-                        \min($data['maxWriteBatchLength'], self::MaxMaxWriteBatchLength),
-                        null
-                    );
-
-                    $query = $data['query'];
-                    $this->mode = ProjectionMode::byName($data['mode']);
-                    $this->enabled = $data['enabled'] ?? false;
-                    $this->projectionEventNumber = $event->event_number;
-                    break;
-                case '$stop':
-                    $this->enabled = false;
-                    $this->projectionEventNumber = $event->event_number;
-                    break;
-                case '$start':
-                    $this->enabled = true;
-                    $this->projectionEventNumber = $event->event_number;
-                    break;
-            }
-        }
+        /** @var LoadConfigResult $result */
+        $result = (new LoadConfigOperation())($this->pool, $projectionStream);
+        $this->config = $result->config();
+        $this->mode = $result->mode();
+        $this->enabled = $result->enabled();
+        $this->projectionEventNumber = $result->projectionEventNumber();
 
         if ('$system' !== $this->config->runAs()->identity()
             && ! \in_array($this->config->runAs()->identity(), $toCheck)
@@ -293,7 +229,7 @@ SQL;
 
         $evaluator = new ProjectionEvaluator($notify);
         try {
-            $this->processor = $evaluator->evaluate($query);
+            $this->processor = $evaluator->evaluate($result->query());
         } catch (QueryEvaluationError $e) {
             $this->state = ProjectionState::stopped();
             $this->stateReason = $e->getMessage();
@@ -306,7 +242,7 @@ SQL;
         $sources = $this->processor->sources();
         $this->definition = new ProjectionDefinition(
             $name,
-            $query,
+            $result->query(),
             $this->config->emitEnabled(),
             $sources,
             []
