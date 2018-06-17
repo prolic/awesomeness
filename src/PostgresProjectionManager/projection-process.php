@@ -62,8 +62,8 @@ Loop::run(function () use ($argc, $argv) {
         $logger = new Logger('PROJECTOR-' . $projectionName . ' - ' . \posix_getpid());
         $logger->pushHandler($logHandler);
 
-        $projectionRunner = new ProjectionRunner($pool, $projectionName, $projectionId, $logger);
-        yield $projectionRunner->bootstrap();
+        $projectionRunner = new ProjectionRunner($projectionId, $pool, $logger);
+        yield $projectionRunner->bootstrap($projectionName);
 
         $shutdown = function (string $watcherId) {
             // do nothing, we wait for shutdown command from projection manager

@@ -7,6 +7,7 @@ namespace Prooph\PostgresProjectionManager;
 use Prooph\EventStore\Common\SystemEventTypes;
 use Prooph\EventStore\RecordedEvent;
 use Prooph\PostgresProjectionManager\Exception\QueryEvaluationError;
+use Ramsey\Uuid\Uuid;
 use Throwable;
 use const JSON_ERROR_NONE;
 
@@ -68,6 +69,12 @@ class ProjectionEvaluator
         };
 
         try {
+            $code = '$scope->' . $query;
+            $binary = \PHP_BINARY;
+            $lint = `echo "$code" | $binary -l`;
+            if (substr($lint, 0, 48) !== 'No syntax errors detected in Standard input code') {
+                throw new \Error($lint);
+            }
             eval('$scope->' . $query);
         } catch (Throwable $e) {
             throw QueryEvaluationError::with($e->getMessage());

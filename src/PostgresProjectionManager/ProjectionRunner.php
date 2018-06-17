@@ -35,6 +35,7 @@ use Prooph\EventStore\Projections\ProjectionNames;
 use Prooph\EventStore\Projections\ProjectionState;
 use Prooph\EventStore\RecordedEvent;
 use Prooph\PdoEventStore\Internal\StreamOperation;
+use Prooph\PostgresProjectionManager\Exception\QueryEvaluationError;
 use Prooph\PostgresProjectionManager\Exception\StreamNotFound;
 use Psr\Log\LoggerInterface as PsrLogger;
 use SplQueue;
@@ -53,27 +54,24 @@ class ProjectionRunner
     private const MinCheckpointAfterMs = 100;
     private const MaxMaxWriteBatchLength = 5000;
 
+    /** @var string */
+    private $id;
     /** @var ProjectionConfig */
     private $config;
     /** @var ProjectionDefinition */
     private $definition;
-
-    // properties regarding projection runner
-
     /** @var SplQueue */
     private $processingQueue;
     /** @var Pool */
     private $pool;
     /** @var Connection */
     private $lockConnection;
-    /** @var string */
-    private $name;
-    /** @var string */
-    private $id;
     /** @var PsrLogger */
     private $logger;
     /** @var ProjectionState */
     private $state;
+    /** @var string */
+    private $stateReason = '';
     /** @var EventProcessor */
     private $processor;
     /** @var EventReader */
@@ -106,13 +104,8 @@ class ProjectionRunner
     private $checkpointStatus = '';
     /** @var int */
     private $currentlyWriting = 0;
-
-    // properties regarding projection itself
-
-    /** @var string */
-    private $handlerType;
-    /** @var string */
-    private $query;
+    /** @var array|null */
+    private $loadedState;
     /** @var ProjectionMode */
     private $mode;
     /** @var bool */
@@ -121,18 +114,11 @@ class ProjectionRunner
     private $streamPositions = [];
     /** @var array */
     private $lastCheckpoint = [];
-    /** @var array|null */
-    private $loadedState;
 
-    public function __construct(
-        Pool $pool,
-        string $name,
-        string $id,
-        PsrLogger $logger
-    ) {
-        $this->pool = $pool;
-        $this->name = $name;
+    public function __construct(string $id, Pool $pool, PsrLogger $logger)
+    {
         $this->id = $id;
+        $this->pool = $pool;
         $this->logger = $logger;
         $this->state = ProjectionState::stopped();
         $this->checkedStreams = new LRUCache(self::CheckedStreamsCacheSize);
@@ -145,10 +131,10 @@ class ProjectionRunner
     }
 
     /** @throws Throwable */
-    public function bootstrap(): Promise
+    public function bootstrap(string $name): Promise
     {
-        return call(function (): Generator {
-            yield from $this->load();
+        return call(function () use ($name): Generator {
+            yield from $this->load($name);
 
             if ($this->enabled) {
                 yield $this->enable();
@@ -157,13 +143,15 @@ class ProjectionRunner
     }
 
     /** @throws Throwable */
-    private function load(): Generator
+    private function load(string $name): Generator
     {
         $this->logger->debug('Loading projection');
 
         $this->state = ProjectionState::initial();
 
         $this->lockConnection = yield $this->pool->extractConnection();
+
+        $projectionStream = ProjectionNames::ProjectionsStreamPrefix . $name;
 
         /** @var Statement $statement */
         $statement = yield $this->pool->prepare(<<<SQL
@@ -179,17 +167,17 @@ SQL
         /** @var ResultSet $result */
         $result = yield $statement->execute([
             StreamOperation::Read,
-            ProjectionNames::ProjectionsStreamPrefix . $this->name,
+            $projectionStream,
         ]);
 
         if (! yield $result->advance(ResultSet::FETCH_OBJECT)) {
-            throw new Error('Stream for projection "' . $this->name .'" not found');
+            throw new Error('Stream for projection "' . $name .'" not found');
         }
 
         $data = $result->getCurrent();
 
         if ($data->mark_deleted || $data->deleted) {
-            throw Exception\StreamDeleted::with(ProjectionNames::ProjectionsStreamPrefix . $this->name);
+            throw Exception\StreamDeleted::with($projectionStream);
         }
 
         $toCheck = [SystemRoles::All];
@@ -217,7 +205,7 @@ SQL;
         $statement = yield $this->pool->prepare($sql);
 
         /** @var ResultSet $result */
-        $result = yield $statement->execute([ProjectionNames::ProjectionsStreamPrefix . $this->name]);
+        $result = yield $statement->execute([$projectionStream]);
 
         while (yield $result->advance(ResultSet::FETCH_OBJECT)) {
             $event = $result->getCurrent();
@@ -229,7 +217,7 @@ SQL;
                         throw new Error('Could not json decode event data for projection');
                     }
 
-                    $this->handlerType = $data['handlerType'];
+                    $handlerType = $data['handlerType'];
 
                     $this->config = new ProjectionConfig(
                         new Principal($data['runAs']['name'], ['$all']), // @todo load roles
@@ -245,7 +233,7 @@ SQL;
                         null
                     );
 
-                    $this->query = $data['query'];
+                    $query = $data['query'];
                     $this->mode = ProjectionMode::byName($data['mode']);
                     $this->enabled = $data['enabled'] ?? false;
                     $this->projectionEventNumber = $event->event_number;
@@ -265,7 +253,7 @@ SQL;
             && ! \in_array($this->config->runAs()->identity(), $toCheck)
             && empty(\array_intersect($this->config->runAs()->roles(), $toCheck))
         ) {
-            throw Exception\AccessDenied::toStream(ProjectionNames::ProjectionsStreamPrefix . $this->name);
+            throw Exception\AccessDenied::toStream($projectionStream);
         }
 
         if (! $this->config->checkpointsEnabled()) {
@@ -274,7 +262,7 @@ SQL;
 
         $this->checkpointStatus = 'Reading';
 
-        $checkpointStream = ProjectionNames::ProjectionsStreamPrefix . $this->name . ProjectionNames::ProjectionCheckpointStreamSuffix;
+        $checkpointStream = $projectionStream . ProjectionNames::ProjectionCheckpointStreamSuffix;
 
         try {
             $sql = <<<SQL
@@ -317,6 +305,38 @@ SQL;
             // ignore, no checkpoint found
         }
 
+        if ($this->config->emitEnabled()) {
+            $notify = function (string $streamName, string $eventType, string $data, string $metadata = '', bool $isJson = false): void {
+                $this->emit($streamName, $eventType, $data, $metadata, $isJson);
+            };
+        } else {
+            $notify = function () {
+                throw new \RuntimeException('\'emit\' is not allowed by the projection/configuration/mode');
+            };
+        }
+
+        $evaluator = new ProjectionEvaluator($notify);
+        try {
+            $this->processor = $evaluator->evaluate($query);
+        } catch (QueryEvaluationError $e) {
+            $this->stateReason = $e->getMessage();
+
+            return;
+        }
+
+        $this->processor->initState($this->loadedState);
+
+        $sources = $this->processor->sources();
+        $this->definition = new ProjectionDefinition(
+            $name,
+            $query,
+            $this->config->emitEnabled(),
+            $sources,
+            []
+        );
+
+        $this->reader = yield $this->determineReader();
+
         $this->checkpointStatus = '';
     }
 
@@ -347,7 +367,7 @@ SQL;
 
                 /** @var CommandResult $result */
                 $result = yield $statement->execute([
-                    ProjectionNames::ProjectionsStreamPrefix . $this->name,
+                    ProjectionNames::ProjectionsStreamPrefix . $this->definition->name(),
                     EventId::generate()->toString(),
                     $this->projectionEventNumber + 1,
                     '$start',
@@ -366,7 +386,7 @@ SQL;
                 $this->enabled = true;
             }
 
-            yield from $this->runQuery();
+            $this->runQuery();
         });
     }
 
@@ -392,7 +412,7 @@ SQL;
 
             /** @var CommandResult $result */
             $result = yield $statement->execute([
-                ProjectionNames::ProjectionsStreamPrefix . $this->name,
+                ProjectionNames::ProjectionsStreamPrefix . $this->definition->name(),
                 EventId::generate()->toString(),
                 $this->projectionEventNumber + 1,
                 '$stop',
@@ -442,28 +462,12 @@ SQL;
         return $this->shutdownPromise;
     }
 
-    /** @throws Throwable */
-    private function runQuery(): Generator
+    private function runQuery(): void
     {
         $this->logger->debug('Running projection');
 
-        if ($this->config->emitEnabled()) {
-            $notify = function (string $streamName, string $eventType, string $data, string $metadata = '', bool $isJson = false): void {
-                $this->emit($streamName, $eventType, $data, $metadata, $isJson);
-            };
-        } else {
-            $notify = function () {
-                throw new \RuntimeException('\'emit\' is not allowed by the projection/configuration/mode');
-            };
-        }
-
-        $evaluator = new ProjectionEvaluator($notify);
-        $this->processor = $evaluator->evaluate($this->query);
-        $this->processor->initState($this->loadedState);
-
         $this->state = ProjectionState::running();
 
-        $this->reader = yield $this->determineReader();
         $this->reader->run();
 
         $this->lastCheckpointMs = \microtime(true) * 10000;
@@ -569,7 +573,7 @@ SQL;
             yield from $this->writeEmittedEvents($emittedEvents, $streamsOfEmittedEvents);
 
             if ($this->config->checkpointsEnabled()) {
-                $checkpointStream = ProjectionNames::ProjectionsStreamPrefix . $this->name . ProjectionNames::ProjectionCheckpointStreamSuffix;
+                $checkpointStream = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name() . ProjectionNames::ProjectionCheckpointStreamSuffix;
                 yield from $this->acquireLock($lockConnection, $checkpointStream);
                 yield from $this->writeCheckPoint($checkpointStream, $state, $streamPositions);
             }
@@ -708,15 +712,6 @@ SQL;
     {
         return call(function (): Generator {
             $sources = $this->processor->sources();
-
-            // @todo: we have to move this into load method somehow!
-            $this->definition = new ProjectionDefinition(
-                $this->name,
-                $this->query,
-                $this->config->emitEnabled(),
-                $sources,
-                []
-            );
 
             if (\count($sources->streams()) === 1) {
                 $streamName = $sources->streams()[0];
@@ -891,13 +886,13 @@ SQL
                 /** @var Statement $statement */
                 $statement = yield $this->pool->prepare($sql);
 
-                $checkpointStream = ProjectionNames::ProjectionsStreamPrefix . $this->name . ProjectionNames::ProjectionCheckpointStreamSuffix;
+                $checkpointStream = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name() . ProjectionNames::ProjectionCheckpointStreamSuffix;
 
                 yield $statement->execute([$checkpointStream]);
             }
 
             if ($this->enabled) {
-                yield from $this->runQuery();
+                $this->runQuery();
             }
         });
     }
@@ -952,8 +947,8 @@ SQL
     public function getDefinition(): array
     {
         return [
-            'name' => $this->name,
-            'query' => $this->query,
+            'name' => $this->definition->name(),
+            'query' => $this->definition->query(),
             'definition' => $this->processor->sources()->toArray(),
         ];
     }
@@ -969,11 +964,7 @@ SQL
             $progress = 0;
             $total = 0;
 
-            if ($this->reader) { // @todo build reader earlier
-                $head = yield from $this->reader->head();
-            } else {
-                $head = [];
-            }
+            $head = yield from $this->reader->head();
 
             foreach ($head as $streamName => $position) {
                 $total += $position;
@@ -982,9 +973,9 @@ SQL
 
             $stats = [
                 'status' => $this->state->name(),
-                'stateReason' => '',
+                'stateReason' => $this->stateReason,
                 'enabled' => $this->enabled,
-                'name' => $this->name,
+                'name' => $this->definition->name(),
                 'id' => $this->id,
                 'mode' => $this->mode->name(),
                 'bufferedEvents' => $this->processingQueue->count(),
