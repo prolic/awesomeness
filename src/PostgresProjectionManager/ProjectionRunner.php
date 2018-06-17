@@ -34,6 +34,7 @@ use Prooph\EventStore\Projections\ProjectionState;
 use Prooph\EventStore\RecordedEvent;
 use Prooph\PostgresProjectionManager\Exception\QueryEvaluationError;
 use Prooph\PostgresProjectionManager\Exception\StreamNotFound;
+use Prooph\PostgresProjectionManager\Operations\GetExpectedVersionOperation;
 use Prooph\PostgresProjectionManager\Operations\LoadConfigOperation;
 use Prooph\PostgresProjectionManager\Operations\LoadConfigResult;
 use Prooph\PostgresProjectionManager\Operations\LoadLatestCheckpointOperation;
@@ -57,6 +58,8 @@ class ProjectionRunner
     private $definition;
     /** @var SplQueue */
     private $processingQueue;
+    /** @var array */
+    private $operations = [];
     /** @var Pool */
     private $pool;
     /** @var Connection */
@@ -867,29 +870,11 @@ SQL
     /** @throws Throwable */
     private function getExpectedVersion(string $streamName): Generator
     {
-        $expectedVersion = ExpectedVersion::NoStream;
-
-        /** @var Statement $statement */
-        static $statement = null;
-        if (! $statement) {
-            $statement = yield $this->pool->prepare(<<<SQL
-SELECT MAX(event_number) as current_version FROM events WHERE stream_name = ?
-SQL
-            );
+        if (! isset($this->operations[__FUNCTION__])) {
+            $this->operations[__FUNCTION__] = new GetExpectedVersionOperation($this->pool);
         }
 
-        /** @var ResultSet $result */
-        $result = yield $statement->execute([$streamName]);
-
-        while (yield $result->advance(ResultSet::FETCH_OBJECT)) {
-            $expectedVersion = $result->getCurrent()->current_version;
-        }
-
-        if (null === $expectedVersion) {
-            $expectedVersion = ExpectedVersion::EmptyStream;
-        }
-
-        return $expectedVersion;
+        return yield from $this->operations[__FUNCTION__]($streamName);
     }
 
     private function checkAcl(array $streamRoles, string $streamName): void
