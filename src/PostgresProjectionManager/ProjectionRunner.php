@@ -9,7 +9,6 @@ use Amp\Loop;
 use Amp\Postgres\CommandResult;
 use Amp\Postgres\Connection;
 use Amp\Postgres\Pool;
-use Amp\Postgres\ResultSet;
 use Amp\Postgres\Statement;
 use Amp\Promise;
 use Amp\Success;
@@ -41,6 +40,7 @@ use Prooph\PostgresProjectionManager\Operations\LoadConfigResult;
 use Prooph\PostgresProjectionManager\Operations\LoadLatestCheckpointOperation;
 use Prooph\PostgresProjectionManager\Operations\LoadLatestCheckpointResult;
 use Prooph\PostgresProjectionManager\Operations\LoadProjectionStreamRolesOperation;
+use Prooph\PostgresProjectionManager\Operations\LockOperation;
 use Psr\Log\LoggerInterface as PsrLogger;
 use SplQueue;
 use Throwable;
@@ -450,23 +450,20 @@ SQL;
             /** @var Lock $lock */
             $lock = yield $this->persistMutex->acquire();
 
-            /** @var Connection $lockConnection */
-            $lockConnection = yield $this->pool->extractConnection();
-
             foreach ($streamsOfEmittedEvents as $stream) {
-                yield from $this->acquireLock($lockConnection, $stream);
+                yield from $this->acquireLock($stream);
             }
 
             yield from $this->writeEmittedEvents($emittedEvents, $streamsOfEmittedEvents);
 
             if ($this->config->checkpointsEnabled()) {
                 $checkpointStream = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name() . ProjectionNames::ProjectionCheckpointStreamSuffix;
-                yield from $this->acquireLock($lockConnection, $checkpointStream);
+                yield from $this->acquireLock($checkpointStream);
                 yield from $this->writeCheckPoint($checkpointStream, $state, $streamPositions);
             }
 
             foreach ($streamsOfEmittedEvents as $stream) {
-                yield from $this->releaseLock($lockConnection, $stream);
+                yield from $this->releaseLock($stream);
             }
 
             if ($stop) {
@@ -476,12 +473,8 @@ SQL;
             }
 
             if ($this->config->checkpointsEnabled()) {
-                yield from $this->releaseLock($lockConnection, $checkpointStream);
+                yield from $this->releaseLock($checkpointStream);
             }
-
-            $lockConnection->close();
-
-            unset($lockConnection);
 
             $lock->release();
         });
@@ -662,28 +655,23 @@ SQL;
     }
 
     /** @throws Throwable */
-    private function acquireLock(Connection $connection, string $name): Generator
+    private function acquireLock(string $streamName): Generator
     {
-        /** @var Statement $statement */
-        $statement = yield $connection->prepare('SELECT PG_ADVISORY_LOCK(HASHTEXT(?)) as stream_lock;');
-        /** @var ResultSet $result */
-        $result = yield $statement->execute([$name]);
-        yield $result->advance(ResultSet::FETCH_OBJECT);
+        if (! isset($this->operations['lockOperation'])) {
+            $this->operations['lockOperation'] = new LockOperation($this->pool);
+        }
+
+        yield from $this->operations['lockOperation']->acquire($streamName);
     }
 
     /** @throws Throwable */
-    private function releaseLock(Connection $connection, string $name): Generator
+    private function releaseLock(string $streamName): Generator
     {
-        /** @var Statement $statement */
-        $statement = yield $connection->prepare('SELECT PG_ADVISORY_UNLOCK(HASHTEXT(?)) as stream_lock;');
-        /** @var ResultSet $result */
-        $result = yield $statement->execute([$name]);
-        yield $result->advance(ResultSet::FETCH_OBJECT);
-        $lock = $result->getCurrent()->stream_lock;
-
-        if (! $lock) {
-            throw new Exception\RuntimeException('Could not release lock for ' . $name);
+        if (! isset($this->operations['lockOperation'])) {
+            $this->operations['lockOperation'] = new LockOperation($this->pool);
         }
+
+        yield from $this->operations['lockOperation']->release($streamName);
     }
 
     /** @throws Throwable */
