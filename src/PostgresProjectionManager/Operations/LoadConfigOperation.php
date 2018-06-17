@@ -14,6 +14,7 @@ use Prooph\EventStore\ProjectionManagement\Internal\ProjectionConfig;
 use Prooph\EventStore\Projections\ProjectionEventTypes;
 use Prooph\EventStore\Projections\ProjectionMode;
 
+/** @internal */
 class LoadConfigOperation
 {
     private const DefaultCheckpointHandledThreshold = 4000;

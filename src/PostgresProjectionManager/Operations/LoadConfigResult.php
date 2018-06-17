@@ -7,6 +7,7 @@ namespace Prooph\PostgresProjectionManager\Operations;
 use Prooph\EventStore\ProjectionManagement\ProjectionConfig;
 use Prooph\EventStore\Projections\ProjectionMode;
 
+/** @internal */
 class LoadConfigResult
 {
     /** @var ProjectionConfig */

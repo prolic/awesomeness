@@ -45,9 +45,7 @@ use SplQueue;
 use Throwable;
 use function Amp\call;
 
-/**
- * @internal
- */
+/** @internal */
 class ProjectionRunner
 {
     private const CheckedStreamsCacheSize = 10000;

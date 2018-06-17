@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\PostgresProjectionManager\Operations;
 
+/** @internal */
 class LoadLatestCheckpointResult
 {
     /** @var array */

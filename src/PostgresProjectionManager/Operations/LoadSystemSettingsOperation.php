@@ -12,6 +12,7 @@ use Generator;
 use Prooph\EventStore\Common\SystemStreams;
 use Prooph\EventStore\SystemSettings;
 
+/** @internal */
 class LoadSystemSettingsOperation
 {
     public function __invoke(Pool $pool): Generator

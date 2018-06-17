@@ -6,6 +6,7 @@ namespace Prooph\PostgresProjectionManager;
 
 use Monolog\Handler\AbstractProcessingHandler;
 
+/** @internal */
 final class EchoHandler extends AbstractProcessingHandler
 {
     protected function write(array $record)

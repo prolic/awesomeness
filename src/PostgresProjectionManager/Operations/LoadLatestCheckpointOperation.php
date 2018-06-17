@@ -11,6 +11,7 @@ use Error;
 use Generator;
 use Prooph\PostgresProjectionManager\Exception\StreamNotFound;
 
+/** @internal */
 class LoadLatestCheckpointOperation
 {
     public function __invoke(Pool $pool, string $checkpointStream): Generator
