@@ -26,7 +26,6 @@ use Prooph\EventStore\EventId;
 use Prooph\EventStore\Exception;
 use Prooph\EventStore\ExpectedVersion;
 use Prooph\EventStore\Internal\DateTimeUtil;
-use Prooph\EventStore\Internal\Principal;
 use Prooph\EventStore\ProjectionManagement\Internal\ProjectionConfig;
 use Prooph\EventStore\ProjectionManagement\ProjectionDefinition;
 use Prooph\EventStore\Projections\ProjectionEventTypes;
