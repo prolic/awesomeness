@@ -18,7 +18,6 @@ use Amp\Promise;
 use Amp\Success;
 use Error;
 use Generator;
-use Prooph\EventStore\Common\SystemStreams;
 use Prooph\EventStore\Exception\ProjectionNotFound;
 use Prooph\EventStore\Exception\RuntimeException;
 use Prooph\EventStore\SystemSettings;
