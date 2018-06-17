@@ -136,7 +136,7 @@ class ProjectionRunner
         return call(function () use ($name): Generator {
             yield from $this->load($name);
 
-            if ($this->enabled) {
+            if ($this->enabled && $this->state->equals(ProjectionState::initial())) {
                 yield $this->enable();
             }
         });
@@ -319,6 +319,7 @@ SQL;
         try {
             $this->processor = $evaluator->evaluate($query);
         } catch (QueryEvaluationError $e) {
+            $this->state = ProjectionState::stopped();
             $this->stateReason = $e->getMessage();
 
             return;
