@@ -26,7 +26,6 @@ use Prooph\EventStore\ExpectedVersion;
 use Prooph\EventStore\Internal\DateTimeUtil;
 use Prooph\EventStore\ProjectionManagement\Internal\ProjectionConfig;
 use Prooph\EventStore\ProjectionManagement\ProjectionDefinition;
-use Prooph\EventStore\Projections\ProjectionEventTypes;
 use Prooph\EventStore\Projections\ProjectionMode;
 use Prooph\EventStore\Projections\ProjectionNames;
 use Prooph\EventStore\Projections\ProjectionState;
@@ -41,6 +40,7 @@ use Prooph\PostgresProjectionManager\Operations\LoadLatestCheckpointOperation;
 use Prooph\PostgresProjectionManager\Operations\LoadLatestCheckpointResult;
 use Prooph\PostgresProjectionManager\Operations\LoadProjectionStreamRolesOperation;
 use Prooph\PostgresProjectionManager\Operations\LockOperation;
+use Prooph\PostgresProjectionManager\Operations\WriteCheckPointOperation;
 use Psr\Log\LoggerInterface as PsrLogger;
 use SplQueue;
 use Throwable;
@@ -553,35 +553,12 @@ SQL;
 
         $expectedVersion = yield from $this->getExpectedVersion($checkpointStream);
 
-        $sql = <<<SQL
-INSERT INTO events (event_id, event_number, event_type, data, meta_data, stream_name, is_json, updated) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?);
-SQL;
-        $now = new DateTimeImmutable('NOW', new DateTimeZone('UTC'));
-
-        $params[] = EventId::generate()->toString();
-        $params[] = ++$expectedVersion;
-        $params[] = ProjectionEventTypes::ProjectionCheckpoint;
-        $params[] = \json_encode($state);
-        $params[] = \json_encode([
-            '$s' => $streamPositions,
-        ]);
-        $params[] = $checkpointStream;
-        $params[] = true;
-        $params[] = DateTimeUtil::format($now);
-
-        /** @var Statement $statement */
-        $statement = yield $this->pool->prepare($sql);
-
-        $this->lastCheckpoint = $streamPositions;
-
-        /** @var CommandResult $result */
-        $result = yield $statement->execute($params);
-
-        if (0 === $result->affectedRows()) {
-            throw new Exception\RuntimeException('Could not write checkpoint');
+        if (! isset($this->operations[__FUNCTION__])) {
+            $this->operations[__FUNCTION__] = new WriteCheckPointOperation($this->pool);
         }
 
+        $this->lastCheckpoint = $streamPositions;
+        $this->operations[__FUNCTION__]($checkpointStream, $expectedVersion, $state, $streamPositions);
         $this->checkpointStatus = '';
 
         $this->logger->info('Checkpoint created');
