@@ -46,6 +46,9 @@ use function Amp\call;
  */
 class ProjectionRunner
 {
+    private const DefaultCheckpointHandledThreshold = 4000;
+    private const DefaultCheckpointUnhandledBytesThreshold = 10000000;
+    private const DefaultPendingEventsThreshold = 5000;
     private const CheckedStreamsCacheSize = 10000;
     private const MinCheckpointAfterMs = 100;
     private const MaxMaxWriteBatchLength = 5000;
@@ -235,9 +238,9 @@ SQL;
                         $data['checkpointsEnabled'],
                         $data['trackEmittedStreams'],
                         \max($data['checkpointAfterMs'] ?? 0, self::MinCheckpointAfterMs),
-                        $data['checkpointHandledThreshold'] ?? 4000,
-                        $data['checkpointUnhandledBytesThreshold'] ?? 10000000,
-                        $data['pendingEventsThreshold'] ?? 5000,
+                        $data['checkpointHandledThreshold'] ?? self::DefaultCheckpointHandledThreshold,
+                        $data['checkpointUnhandledBytesThreshold'] ?? self::DefaultCheckpointUnhandledBytesThreshold,
+                        $data['pendingEventsThreshold'] ?? self::DefaultPendingEventsThreshold,
                         \min($data['maxWriteBatchLength'], self::MaxMaxWriteBatchLength),
                         null
                     );
