@@ -34,6 +34,7 @@ use Prooph\EventStore\Projections\ProjectionState;
 use Prooph\EventStore\RecordedEvent;
 use Prooph\PostgresProjectionManager\Exception\QueryEvaluationError;
 use Prooph\PostgresProjectionManager\Exception\StreamNotFound;
+use Prooph\PostgresProjectionManager\Operations\CreateStreamOperation;
 use Prooph\PostgresProjectionManager\Operations\GetExpectedVersionOperation;
 use Prooph\PostgresProjectionManager\Operations\LoadConfigOperation;
 use Prooph\PostgresProjectionManager\Operations\LoadConfigResult;
@@ -854,17 +855,11 @@ SQL;
     /** @throws Throwable */
     private function createStream(string $streamName): Generator
     {
-        /** @var Statement $statement */
-        $statement = yield $this->pool->prepare(<<<SQL
-INSERT INTO streams (stream_name, mark_deleted, deleted) VALUES (?, ?, ?);
-SQL
-        );
-        /** @var CommandResult $result */
-        $result = yield $statement->execute([$streamName, 0, 0]);
-
-        if (0 === $result->affectedRows()) {
-            throw new Exception\RuntimeException('Could not create stream for ' . $streamName);
+        if (! isset($this->operations[__FUNCTION__])) {
+            $this->operations[__FUNCTION__] = new CreateStreamOperation($this->pool);
         }
+
+        yield from $this->operations[__FUNCTION__]($streamName);
     }
 
     /** @throws Throwable */
