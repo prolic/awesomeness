@@ -41,6 +41,7 @@ use Prooph\PostgresProjectionManager\Operations\LoadLatestCheckpointResult;
 use Prooph\PostgresProjectionManager\Operations\LoadProjectionStreamRolesOperation;
 use Prooph\PostgresProjectionManager\Operations\LockOperation;
 use Prooph\PostgresProjectionManager\Operations\WriteCheckPointOperation;
+use Prooph\PostgresProjectionManager\Operations\WriteEmittedStreamsOperation;
 use Psr\Log\LoggerInterface as PsrLogger;
 use SplQueue;
 use Throwable;
@@ -89,15 +90,19 @@ class ProjectionRunner
     private $lastCheckpointMs;
     /** @var LRUCache */
     private $checkedStreams;
-    /** @var array */
+    /** @var string[] */
     private $streamsOfEmittedEvents = [];
     /** @var array */
     private $emittedEvents = [];
+    /** @var string[] */
+    private $trackedEmittedStreams = [];
+    /** @var string[] */
+    private $unhandledTrackedEmittedStreams = [];
     /** @var int */
     private $eventsProcessedAfterRestart = 0;
     /** @var int */
     private $currentBatchSize = 0;
-    /** @var int int */
+    /** @var int */
     private $currentUnhandledBytes = 0;
     /** @var StatisticsRecorder */
     private $statisticsRecorder;
@@ -420,9 +425,11 @@ SQL;
         $streamsOfEmittedEvents = $this->streamsOfEmittedEvents;
         $state = $this->processor->getState();
         $streamPositions = $this->streamPositions;
+        $unhandledTrackedEmittedStreams = $this->unhandledTrackedEmittedStreams;
 
         $this->emittedEvents = [];
         $this->streamsOfEmittedEvents = [];
+        $this->unhandledTrackedEmittedStreams = [];
 
         if (0 === $this->currentBatchSize) {
             if ($stop) {
@@ -449,6 +456,7 @@ SQL;
             $streamsOfEmittedEvents,
             $state,
             $streamPositions,
+            $unhandledTrackedEmittedStreams,
             $stop
         ): Generator {
             /** @var Lock $lock */
@@ -456,6 +464,37 @@ SQL;
 
             foreach ($streamsOfEmittedEvents as $stream) {
                 yield from $this->acquireLock($stream);
+            }
+
+            if ($this->config->trackEmittedStreams()) {
+                $emittedStream = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name() . ProjectionNames::ProjectionEmittedStreamSuffix;
+
+                yield from $this->acquireLock($emittedStream);
+
+                $emittedStreamsExpectedVersion = ExpectedVersion::NoStream;
+
+                try {
+                    yield $this->checkStream($emittedStream);
+                    $emittedStreamsExpectedVersion = yield from $this->getExpectedVersion($emittedStream);
+                } catch (StreamNotFound $e) {
+                    yield from $this->createStream($emittedStream);
+                }
+
+                if (! isset($this->operations['writeEmittedStreams'])) {
+                    $this->operations['writeEmittedStreams'] = new WriteEmittedStreamsOperation($this->pool);
+                }
+
+                $this->operations['writeEmittedStreams'](
+                    $emittedStream,
+                    $unhandledTrackedEmittedStreams,
+                    $emittedStreamsExpectedVersion
+                );
+
+                foreach ($unhandledTrackedEmittedStreams as $trackedEmittedStream) {
+                    $this->trackedEmittedStreams[] = $trackedEmittedStream;
+                }
+
+                yield from $this->releaseLock($emittedStream);
             }
 
             yield from $this->writeEmittedEvents($emittedEvents, $streamsOfEmittedEvents);
@@ -660,6 +699,14 @@ SQL;
     {
         if (! \in_array($stream, $this->streamsOfEmittedEvents, true)) {
             $this->streamsOfEmittedEvents[] = $stream;
+        }
+
+        if ($this->config->trackEmittedStreams()
+            && (! \in_array($stream, $this->trackedEmittedStreams, true)
+                || ! \in_array($stream, $this->unhandledTrackedEmittedStreams, true)
+            )
+        ) {
+            $this->unhandledTrackedEmittedStreams[] = $stream;
         }
 
         $this->currentUnhandledBytes += \strlen($stream) + \strlen($eventType) + \strlen($data) + \strlen($metadata);
