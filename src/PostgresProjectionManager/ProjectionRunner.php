@@ -39,6 +39,7 @@ use Prooph\PostgresProjectionManager\Operations\LoadConfigResult;
 use Prooph\PostgresProjectionManager\Operations\LoadLatestCheckpointOperation;
 use Prooph\PostgresProjectionManager\Operations\LoadLatestCheckpointResult;
 use Prooph\PostgresProjectionManager\Operations\LoadProjectionStreamRolesOperation;
+use Prooph\PostgresProjectionManager\Operations\LoadTrackedEmittedStreamsOperation;
 use Prooph\PostgresProjectionManager\Operations\LockOperation;
 use Prooph\PostgresProjectionManager\Operations\WriteCheckPointOperation;
 use Prooph\PostgresProjectionManager\Operations\WriteEmittedStreamsOperation;
@@ -185,6 +186,11 @@ class ProjectionRunner
             }
 
             $this->checkpointStatus = '';
+        }
+
+        if ($this->config->trackEmittedStreams()) {
+            $emittedStream = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name() . ProjectionNames::ProjectionEmittedStreamSuffix;
+            $this->trackedEmittedStreams = yield from (new LoadTrackedEmittedStreamsOperation())($this->pool, $emittedStream);
         }
 
         if ($this->config->emitEnabled()) {
