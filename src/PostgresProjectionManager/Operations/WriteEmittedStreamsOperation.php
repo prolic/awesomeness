@@ -37,7 +37,7 @@ INSERT INTO events (event_id, event_number, event_type, data, meta_data, stream_
     VALUES 
 SQL;
         $sql .= \str_repeat('(?, ?, ?, ?, ?, ?, ?, ?), ', \count($unhandledTrackedStreams));
-        $sql  = substr($sql, 0, -2) . ';';
+        $sql = \substr($sql, 0, -2) . ';';
 
         /** @var Statement $statement */
         $statement = yield $this->pool->prepare($sql);
