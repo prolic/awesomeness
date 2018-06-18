@@ -97,6 +97,8 @@ class ProjectionRunner
     private $eventsProcessedAfterRestart = 0;
     /** @var int */
     private $currentBatchSize = 0;
+    /** @var int int */
+    private $currentUnhandledBytes = 0;
     /** @var StatisticsRecorder */
     private $statisticsRecorder;
     /** @var string */
@@ -389,7 +391,8 @@ SQL;
             ++$this->currentBatchSize;
             ++$this->eventsProcessedAfterRestart;
 
-            if ($this->currentBatchSize >= $this->config->checkpointHandledThreshold()
+            if (($this->currentBatchSize >= $this->config->checkpointHandledThreshold()
+                    || $this->currentUnhandledBytes >= $this->config->checkpointUnhandledBytesThreshold())
                 && (\floor(\microtime(true) * 10000 - $this->lastCheckpointMs) >= $this->config->checkpointAfterMs())
             ) {
                 $this->persist(false);
@@ -438,6 +441,7 @@ SQL;
         }
 
         $this->currentBatchSize = 0;
+        $this->currentUnhandledBytes = 0;
         $this->lastCheckpointMs = \microtime(true) * 10000;
 
         Loop::defer(function () use (
@@ -658,6 +662,8 @@ SQL;
             $this->streamsOfEmittedEvents[] = $stream;
         }
 
+        $this->currentUnhandledBytes += \strlen($stream) + \strlen($eventType) + \strlen($data) + \strlen($metadata);
+
         $eventData = [
             'stream' => $stream,
             'eventId' => EventId::generate()->toString(),
@@ -674,6 +680,8 @@ SQL;
 
             $eventData['link_to_stream_name'] = $linkTo[1];
             $eventData['link_to_event_number'] = $linkTo[0];
+
+            $this->currentUnhandledBytes += \strlen($linkTo[1]);
         }
 
         $this->emittedEvents[] = $eventData;

@@ -44,7 +44,6 @@ final class ProjectionConfig
     /**
      * This specifies the number of bytes a projection can process before attempting to write a checkpoint.
      * This option defaults to 10mb.
-     * @todo currently ignored by postgres projection manager
      * @var int
      */
     private $checkpointUnhandledBytesThreshold;
