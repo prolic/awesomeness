@@ -23,7 +23,6 @@ final class ProjectionConfig
      * Tracking emitted streams enables you to delete a projection and all the
      * streams that it has created. You should only use it if you intend to delete
      * a projection and create new ones that project to the same stream.
-     * @todo currently ignored by postgres projection manager
      * @var bool
      */
     private $trackEmittedStreams;
