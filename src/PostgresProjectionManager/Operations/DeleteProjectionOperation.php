@@ -12,12 +12,10 @@ use Generator;
 use function Amp\Promise\all;
 
 /** @internal */
-class DeleteStreamsOperation
+class DeleteProjectionOperation
 {
     /** @var Pool */
     private $pool;
-    /** @var GetExpectedVersionOperation */
-    private $getExpectedVersionOperation;
     /** @var LockOperation */
     private $lockOperation;
     /** @var string[] */
@@ -30,8 +28,9 @@ class DeleteStreamsOperation
     }
 
     public function __invoke(
+        string $name,
         array $streamsToDelete,
-        bool $markDeleted
+        bool $resetOnly
     ): Generator {
         yield from $this->lockMulti($streamsToDelete);
 
@@ -40,15 +39,15 @@ class DeleteStreamsOperation
 
         $placeholder = \substr(\str_repeat('?, ', \count($streamsToDelete)), 0, -2) . ';';
 
-        $sql = "DELETE FROM events WHERE stream_name IN ($placeholder)";
+        $sql = "DELETE FROM events WHERE stream_name IN ($placeholder);";
 
         /** @var Statement $statement */
         $statement = yield $transaction->prepare($sql);
 
         yield $statement->execute($streamsToDelete);
 
-        if ($markDeleted) {
-            $sql = "UPDATE streams SET mark_deleted = ? WHERE stream_name IN ($placeholder)";
+        if (! $resetOnly) {
+            $sql = "UPDATE streams SET mark_deleted = ? WHERE stream_name IN ($placeholder);";
             /** @var Statement $statement */
             $statement = yield $transaction->prepare($sql);
 
@@ -56,6 +55,12 @@ class DeleteStreamsOperation
 
             yield $statement->execute($streamsToDelete);
         }
+
+        $sql = 'DELETE FROM projections WHERE projection_name = ?;';
+        /** @var Statement $statement */
+        $statement = yield $transaction->prepare($sql);
+
+        yield $statement->execute([$name]);
 
         yield $transaction->commit();
 

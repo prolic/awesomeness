@@ -33,7 +33,7 @@ use Prooph\EventStore\RecordedEvent;
 use Prooph\PostgresProjectionManager\Exception\QueryEvaluationError;
 use Prooph\PostgresProjectionManager\Exception\StreamNotFound;
 use Prooph\PostgresProjectionManager\Operations\CreateStreamOperation;
-use Prooph\PostgresProjectionManager\Operations\DeleteStreamsOperation;
+use Prooph\PostgresProjectionManager\Operations\DeleteProjectionOperation;
 use Prooph\PostgresProjectionManager\Operations\GetExpectedVersionOperation;
 use Prooph\PostgresProjectionManager\Operations\LoadConfigOperation;
 use Prooph\PostgresProjectionManager\Operations\LoadConfigResult;
@@ -754,8 +754,8 @@ SQL;
             $streamsToDelete[] = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name() . ProjectionNames::ProjectionEmittedStreamSuffix;
             $streamsToDelete[] = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name() . ProjectionNames::ProjectionsStateStreamSuffix;
 
-            $operation = new DeleteStreamsOperation($this->pool);
-            yield from $operation($streamsToDelete, false);
+            $operation = new DeleteProjectionOperation($this->pool);
+            yield from $operation($this->definition->name(), $streamsToDelete, true);
 
             $this->loadedState = null;
             $this->streamPositions = [];
@@ -810,8 +810,8 @@ SQL;
             $streamsToDelete[] = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name() . ProjectionNames::ProjectionEmittedStreamSuffix;
             $streamsToDelete[] = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name();
 
-            $operation = new DeleteStreamsOperation($this->pool);
-            yield from $operation($streamsToDelete, true);
+            $operation = new DeleteProjectionOperation($this->pool);
+            yield from $operation($this->definition->name(), $streamsToDelete, false);
 
             $this->loadedState = null;
             $this->streamPositions = [];
