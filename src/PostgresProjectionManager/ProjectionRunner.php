@@ -146,6 +146,8 @@ class ProjectionRunner
             if ($this->enabled && $this->state->equals(ProjectionState::initial())) {
                 yield $this->enable();
             }
+
+            return $this->shutdownPromise;
         });
     }
 
@@ -322,21 +324,17 @@ SQL;
         });
     }
 
-    public function shutdown(): Promise
+    public function shutdown(): void
     {
         if ($this->state->equals(ProjectionState::stopped())) {
             $this->logger->info('shutdown done');
-            $this->shutdownDeferred->resolve();
-
-            return $this->shutdownPromise;
+            $this->shutdownDeferred->resolve(0);
         }
 
         if ($this->state->equals(ProjectionState::initial())) {
             $this->state = ProjectionState::stopped();
             $this->logger->info('shutdown done');
-            $this->shutdownDeferred->resolve();
-
-            return $this->shutdownPromise;
+            $this->shutdownDeferred->resolve(0);
         }
 
         $this->state = ProjectionState::stopping();
@@ -345,13 +343,11 @@ SQL;
             if ($this->state->equals(ProjectionState::stopped())) {
                 Loop::cancel($watcherId);
                 $this->logger->info('shutdown done');
-                $this->shutdownDeferred->resolve();
+                $this->shutdownDeferred->resolve(0);
             } else {
                 $this->logger->debug('still waiting for shutdown...');
             }
         });
-
-        return $this->shutdownPromise;
     }
 
     private function runQuery(): void

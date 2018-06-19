@@ -8,6 +8,7 @@ use Amp\Log\ConsoleFormatter;
 use Amp\Loop;
 use Amp\Parallel\Sync;
 use Amp\Postgres\Pool;
+use Amp\Promise;
 use Monolog\Logger;
 use Prooph\EventStore\Exception\RuntimeException;
 use Throwable;
@@ -63,16 +64,16 @@ Loop::run(function () use ($argc, $argv) {
         $logger->pushHandler($logHandler);
 
         $projectionRunner = new ProjectionRunner($projectionId, $pool, $logger);
-        yield $projectionRunner->bootstrap($projectionName);
+        $shutdownPromise = $projectionRunner->bootstrap($projectionName);
 
-        $shutdown = function (string $watcherId) {
-            // do nothing, we wait for shutdown command from projection manager
+        $shutdown = function () use ($projectionRunner) {
+            $projectionRunner->shutdown();
         };
 
         Loop::unreference(Loop::onSignal(SIGINT, $shutdown));
         Loop::unreference(Loop::onSignal(SIGTERM, $shutdown));
 
-        while (true) {
+        $messageHandler = function () use ($projectionRunner, $channel, &$messageHandler) {
             $value = yield $channel->receive();
             $data = \explode('::', $value, 2);
             list($operation, $args) = $data;
@@ -104,15 +105,16 @@ Loop::run(function () use ($argc, $argv) {
                     $stats = yield $projectionRunner->getStatistics();
                     yield $channel->send($stats);
                     break;
-                case 'shutdown':
-                    yield $projectionRunner->shutdown();
-                    break 2; // break the loop
                 default:
                     throw new RuntimeException('Invalid operation passed to projector');
             }
-        }
 
-        $result = new Sync\ExitSuccess(0);
+            Loop::defer($messageHandler);
+        };
+
+        Loop::defer($messageHandler);
+
+        $result = new Sync\ExitSuccess(yield $shutdownPromise);
     } catch (Sync\ChannelException $exception) {
         exit(1); // Parent context died, simply exit.
     } catch (Throwable $exception) {

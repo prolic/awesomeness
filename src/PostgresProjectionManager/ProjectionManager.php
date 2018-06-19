@@ -153,12 +153,7 @@ class ProjectionManager
                     $this->state = self::STOPPING;
 
                     foreach ($this->projections as $name => $context) {
-                        yield $context->send('shutdown::' . \serialize([]));
-                        try {
-                            yield $context->join();
-                        } catch (StatusError $e) {
-                            // projection process already finished
-                        }
+                        yield $context->join();
                         unset($this->projections[$name]);
                     }
 
