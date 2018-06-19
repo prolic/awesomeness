@@ -49,14 +49,11 @@ class LockOperation
 
     public function release(string $streamName): Generator
     {
-        $newConnection = false;
-
         if (null === $this->lockConnection || ! $this->lockConnection->isAlive()) {
-            $this->lockConnection = yield $this->pool->extractConnection();
-            $newConnection = true;
+            return null;
         }
 
-        if ($newConnection || null === $this->releaseStatement || ! $this->releaseStatement->isAlive()) {
+        if (null === $this->releaseStatement || ! $this->releaseStatement->isAlive()) {
             $this->releaseStatement = yield $this->lockConnection->prepare('SELECT PG_ADVISORY_UNLOCK(HASHTEXT(?)) as stream_lock;');
         }
 
