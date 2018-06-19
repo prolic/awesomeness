@@ -30,7 +30,6 @@ use Prooph\EventStore\Projections\ProjectionMode;
 use Prooph\EventStore\Projections\ProjectionNames;
 use Prooph\EventStore\Projections\ProjectionState;
 use Prooph\EventStore\RecordedEvent;
-use Prooph\PdoEventStore\ClientOperations\DeleteStreamOperation;
 use Prooph\PostgresProjectionManager\Exception\QueryEvaluationError;
 use Prooph\PostgresProjectionManager\Exception\StreamNotFound;
 use Prooph\PostgresProjectionManager\Operations\CreateStreamOperation;
@@ -779,8 +778,7 @@ SQL;
         bool $deleteStateStream,
         bool $deleteCheckpointStream,
         bool $deleteEmittedStreams
-    ): void
-    {
+    ): void {
         $this->logger->info('Deleting projection');
         $this->state = ProjectionState::stopping();
 
