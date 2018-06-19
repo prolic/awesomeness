@@ -154,6 +154,7 @@ class ProjectionManager
                     $this->state = self::STOPPING;
 
                     $promises = [];
+
                     foreach ($this->projections as $name => $context) {
                         $promises[] = $context->join();
                         unset($this->projections[$name]);
