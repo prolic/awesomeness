@@ -752,18 +752,22 @@ SQL;
             $this->streamPositions = [];
             $this->checkedStreams->clear();
 
-            if ($this->config->checkpointsEnabled()) {
-                $this->lastCheckpoint = [];
+            $streamsToDelete = $this->trackedEmittedStreams;
+            $streamsToDelete[] = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name() . ProjectionNames::ProjectionCheckpointStreamSuffix;
+            $streamsToDelete[] = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name() . ProjectionNames::ProjectionEmittedStreamSuffix;
 
-                $sql = 'DELETE FROM events WHERE stream_name = ?';
+            $this->lastCheckpoint = [];
+            $this->trackedEmittedStreams = [];
+            $this->unhandledTrackedEmittedStreams = [];
 
-                /** @var Statement $statement */
-                $statement = yield $this->pool->prepare($sql);
+            $placeholder = \substr(\str_repeat('?, ', \count($streamsToDelete) + 1), 0, -2) . ';';
 
-                $checkpointStream = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name() . ProjectionNames::ProjectionCheckpointStreamSuffix;
+            $sql = "DELETE FROM events WHERE stream_name IN ($placeholder)";
 
-                yield $statement->execute([$checkpointStream]);
-            }
+            /** @var Statement $statement */
+            $statement = yield $this->pool->prepare($sql);
+
+            yield $statement->execute($streamsToDelete);
 
             if (null !== $enableRunAs) {
                 $this->config->runAs()->setIdentity($enableRunAs);
