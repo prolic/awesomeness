@@ -9,7 +9,9 @@ use Amp\Http\Server\RequestHandler;
 use Amp\Http\Server\Response;
 use Amp\Http\Server\Router;
 use Amp\Promise;
+use Prooph\PostgresProjectionManager\Exception\ProjectionNotFound;
 use Prooph\PostgresProjectionManager\ProjectionManager;
+use Throwable;
 use function Amp\call;
 
 /** @internal */
@@ -31,8 +33,10 @@ class DisableProjection implements RequestHandler
         return call(function () use ($name) {
             try {
                 yield $this->projectionManager->disableProjection($name);
-            } catch (\Throwable $e) {
+            } catch (ProjectionNotFound $e) {
                 return new Response(404, ['Content-Type' => 'text/plain'], 'Not Found');
+            } catch (Throwable $e) {
+                return new Response(500, ['Content-Type' => 'text/plain'], 'Error');
             }
 
             return new Response(202, ['Content-Type' => 'text/html'], 'OK');
