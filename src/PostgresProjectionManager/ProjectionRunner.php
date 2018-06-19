@@ -603,7 +603,7 @@ SQL;
         }
 
         $this->lastCheckpoint = $streamPositions;
-        $this->operations[__FUNCTION__]($checkpointStream, $expectedVersion, $state, $streamPositions);
+        yield from $this->operations[__FUNCTION__]($checkpointStream, $expectedVersion, $state, $streamPositions);
         $this->checkpointStatus = '';
 
         $this->logger->info('Checkpoint created');
