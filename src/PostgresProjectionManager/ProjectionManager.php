@@ -177,56 +177,7 @@ class ProjectionManager
         }
     }
 
-    public function disableProjection(string $name): Promise
-    {
-        $message = new DisableMessage($name);
-
-        return $this->sendToProjection($message);
-    }
-
-    public function enableProjection(string $name, $enableRunAs): Promise
-    {
-        $message = new EnableMessage($name, $enableRunAs);
-
-        return $this->sendToProjection($message);
-    }
-
-    public function resetProjection(string $name, $enableRunAs): Promise
-    {
-        $message = new ResetMessage($name, $enableRunAs);
-
-        return $this->sendToProjection($message);
-    }
-
-    public function getState(string $name): Promise
-    {
-        $message = new GetStateMessage($name);
-
-        return $this->sendToProjection($message);
-    }
-
-    public function getConfig(string $name): Promise
-    {
-        $message = new GetConfigMessage($name);
-
-        return $this->sendToProjection($message);
-    }
-
-    public function getDefinition(string $name): Promise
-    {
-        $message = new GetDefinitionMessage($name);
-
-        return $this->sendToProjection($message);
-    }
-
-    public function getStatistics(string $name): Promise
-    {
-        $message = new GetStatisticsMessage($name);
-
-        return $this->sendToProjection($message);
-    }
-
-    private function sendToProjection(Message $message): Promise
+    public function handle(Message $message): Promise
     {
         $name = $message->name();
 

@@ -10,6 +10,7 @@ use Amp\Http\Server\Response;
 use Amp\Http\Server\Router;
 use Amp\Promise;
 use Prooph\PostgresProjectionManager\Exception\ProjectionNotFound;
+use Prooph\PostgresProjectionManager\Messages\GetConfigMessage;
 use Prooph\PostgresProjectionManager\ProjectionManager;
 use Throwable;
 use function Amp\call;
@@ -32,7 +33,8 @@ class GetConfig implements RequestHandler
 
         return call(function () use ($projectionName) {
             try {
-                $config = yield $this->projectionManager->getConfig($projectionName);
+                $message = new GetConfigMessage($projectionName);
+                $config = yield $this->projectionManager->handle($message);
             } catch (ProjectionNotFound $e) {
                 return new Response(404, ['Content-Type' => 'text/plain'], 'Not Found');
             } catch (Throwable $e) {
