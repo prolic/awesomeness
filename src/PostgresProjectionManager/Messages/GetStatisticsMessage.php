@@ -18,4 +18,9 @@ class GetStatisticsMessage implements Message
     {
         return $this->name;
     }
+
+    public function messageName(): string
+    {
+        return 'GetStatisticsMessage';
+    }
 }

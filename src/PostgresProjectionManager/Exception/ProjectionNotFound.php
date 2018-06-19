@@ -7,7 +7,7 @@ namespace Prooph\PostgresProjectionManager\Exception;
 /** @internal */
 class ProjectionNotFound extends \RuntimeException implements Exception
 {
-    public static function with(string $name): ProjectionNotFound
+    public static function withName(string $name): ProjectionNotFound
     {
         return new self(\sprintf(
             'Projection with name "%s" not found',

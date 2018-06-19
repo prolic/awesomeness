@@ -18,4 +18,9 @@ class DisableMessage implements Message
     {
         return $this->name;
     }
+
+    public function messageName(): string
+    {
+        return 'DisableMessage';
+    }
 }

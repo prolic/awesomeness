@@ -11,7 +11,7 @@ class Response
     /** @var bool */
     private $error = false;
 
-    public function __construct($result, bool $error)
+    public function __construct($result = null, bool $error = false)
     {
         $this->result = $result;
         $this->error = $error;

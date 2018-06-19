@@ -8,9 +8,7 @@ use Amp\Log\ConsoleFormatter;
 use Amp\Loop;
 use Amp\Parallel\Sync;
 use Amp\Postgres\Pool;
-use Amp\Promise;
 use Monolog\Logger;
-use Prooph\EventStore\Exception\RuntimeException;
 use Throwable;
 use const PHP_EOL;
 use const PHP_OUTPUT_HANDLER_CLEANABLE;
@@ -73,45 +71,7 @@ Loop::run(function () use ($argc, $argv) {
         Loop::unreference(Loop::onSignal(SIGINT, $shutdown));
         Loop::unreference(Loop::onSignal(SIGTERM, $shutdown));
 
-        $messageHandler = function () use ($projectionRunner, $channel, &$messageHandler) {
-            $value = yield $channel->receive();
-            $data = \explode('::', $value, 2);
-            list($operation, $args) = $data;
-            $args = \unserialize($args);
-
-            switch ($operation) {
-                case 'config':
-                    $config = $projectionRunner->getConfig();
-                    yield $channel->send($config);
-                    break;
-                case 'disable':
-                    yield $projectionRunner->disable();
-                    break;
-                case 'enable':
-                    yield $projectionRunner->enable(...$args);
-                    break;
-                case 'query':
-                    $definition = $projectionRunner->getDefinition();
-                    yield $channel->send($definition);
-                    break;
-                case 'reset':
-                    $projectionRunner->reset();
-                    break;
-                case 'state':
-                    $state = $projectionRunner->getState();
-                    yield $channel->send($state);
-                    break;
-                case 'statistics':
-                    $stats = yield $projectionRunner->getStatistics();
-                    yield $channel->send($stats);
-                    break;
-                default:
-                    throw new RuntimeException('Invalid operation passed to projector');
-            }
-
-            Loop::defer($messageHandler);
-        };
-
+        $messageHandler = new MessageHandler($channel, $projectionRunner, $logger);
         Loop::defer($messageHandler);
 
         $result = new Sync\ExitSuccess(yield $shutdownPromise);

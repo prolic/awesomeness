@@ -13,14 +13,22 @@ use Amp\Postgres\Connection;
 use Amp\Postgres\Pool;
 use Amp\Postgres\ResultSet;
 use Amp\Postgres\Statement;
-use Amp\Process\StatusError;
 use Amp\Promise;
 use Amp\Success;
 use Error;
 use Generator;
-use Prooph\EventStore\Exception\ProjectionNotFound;
 use Prooph\EventStore\Exception\RuntimeException;
 use Prooph\EventStore\SystemSettings;
+use Prooph\PostgresProjectionManager\Exception\ProjectionNotFound;
+use Prooph\PostgresProjectionManager\Messages\DisableMessage;
+use Prooph\PostgresProjectionManager\Messages\EnableMessage;
+use Prooph\PostgresProjectionManager\Messages\GetConfigMessage;
+use Prooph\PostgresProjectionManager\Messages\GetDefinitionMessage;
+use Prooph\PostgresProjectionManager\Messages\GetStateMessage;
+use Prooph\PostgresProjectionManager\Messages\GetStatisticsMessage;
+use Prooph\PostgresProjectionManager\Messages\Message;
+use Prooph\PostgresProjectionManager\Messages\ResetMessage;
+use Prooph\PostgresProjectionManager\Messages\Response;
 use Prooph\PostgresProjectionManager\Operations\LoadSystemSettingsOperation;
 use Psr\Log\LoggerInterface as PsrLogger;
 use Throwable;
@@ -171,62 +179,74 @@ class ProjectionManager
 
     public function disableProjection(string $name): Promise
     {
-        return $this->sendToProjection($name, 'disable');
+        $message = new DisableMessage($name);
+
+        return $this->sendToProjection($message);
     }
 
     public function enableProjection(string $name): Promise
     {
-        return $this->sendToProjection($name, 'enable');
+        $message = new EnableMessage($name);
+
+        return $this->sendToProjection($message);
     }
 
     public function resetProjection(string $name, $enableRunAs): Promise
     {
-        return $this->sendToProjection($name, 'reset', [$enableRunAs]);
+        $message = new ResetMessage($name, $enableRunAs);
+
+        return $this->sendToProjection($message);
     }
 
     public function getState(string $name): Promise
     {
-        return $this->sendToAndReceiveFromProjection($name, 'state');
+        $message = new GetStateMessage($name);
+
+        return $this->sendToProjection($message);
     }
 
     public function getConfig(string $name): Promise
     {
-        return $this->sendToAndReceiveFromProjection($name, 'config');
+        $message = new GetConfigMessage($name);
+
+        return $this->sendToProjection($message);
     }
 
     public function getDefinition(string $name): Promise
     {
-        return $this->sendToAndReceiveFromProjection($name, 'query');
+        $message = new GetDefinitionMessage($name);
+
+        return $this->sendToProjection($message);
     }
 
     public function getStatistics(string $name): Promise
     {
-        return $this->sendToAndReceiveFromProjection($name, 'statistics');
+        $message = new GetStatisticsMessage($name);
+
+        return $this->sendToProjection($message);
     }
 
-    private function sendToProjection(string $name, string $operation, array $args = []): Promise
+    private function sendToProjection(Message $message): Promise
     {
+        $name = $message->name();
+
         if (! isset($this->projections[$name])) {
             return new Failure(ProjectionNotFound::withName($name));
         }
 
-        $value = $operation . '::' . \serialize($args);
+        return call(function () use ($message, $name): Generator {
+            yield $this->projections[$name]->send($message);
 
-        return $this->projections[$name]->send($value);
-    }
+            /** @var Response $response */
+            $response = yield $this->projections[$name]->receive();
 
-    private function sendToAndReceiveFromProjection(string $name, string $operation, array $args = []): Promise
-    {
-        if (! isset($this->projections[$name])) {
-            return new Failure(ProjectionNotFound::withName($name));
-        }
+            if ($response->error()) {
+                throw new \RuntimeException(
+                    'Error sending ' . $message->messageName() . ': ' . \serialize($response->result())
+                );
+            }
 
-        $value = $operation . '::' . \serialize($args);
-
-        return call(function () use ($name, $value): Generator {
-            yield $this->projections[$name]->send($value);
-
-            return yield $this->projections[$name]->receive();
+            return $response->result();
         });
     }
 }

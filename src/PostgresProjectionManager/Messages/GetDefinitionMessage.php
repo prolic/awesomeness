@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\PostgresProjectionManager\Messages;
 
-class GetDefinition implements Message
+class GetDefinitionMessage implements Message
 {
     /** @var string */
     private $name;
@@ -17,5 +17,10 @@ class GetDefinition implements Message
     public function name(): string
     {
         return $this->name;
+    }
+
+    public function messageName(): string
+    {
+        return 'GetDefinitionMessage';
     }
 }

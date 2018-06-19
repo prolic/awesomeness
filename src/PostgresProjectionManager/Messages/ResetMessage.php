@@ -9,12 +9,12 @@ class ResetMessage implements Message
     /** @var string */
     private $name;
     /** @var string|null */
-    private $runAs;
+    private $enableRunAs;
 
     public function __construct(string $name, ?string $runAs)
     {
         $this->name = $name;
-        $this->runAs = $runAs;
+        $this->enableRunAs = $runAs;
     }
 
     public function name(): string
@@ -22,8 +22,13 @@ class ResetMessage implements Message
         return $this->name;
     }
 
-    public function runAs(): ?string
+    public function enableRunAs(): ?string
     {
-        return $this->runAs;
+        return $this->enableRunAs;
+    }
+
+    public function messageName(): string
+    {
+        return 'ResetMessage';
     }
 }

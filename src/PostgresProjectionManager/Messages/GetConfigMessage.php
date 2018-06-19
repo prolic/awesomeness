@@ -18,4 +18,9 @@ class GetConfigMessage implements Message
     {
         return $this->name;
     }
+
+    public function messageName(): string
+    {
+        return 'GetConfigMessage';
+    }
 }

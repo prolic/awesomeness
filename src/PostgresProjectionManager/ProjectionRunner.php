@@ -245,7 +245,7 @@ class ProjectionRunner
 
         $this->logger->info('enabling projection');
 
-        if ($enableRunAs) {
+        if (null !== $enableRunAs) {
             $this->config->runAs()->setIdentity($enableRunAs);
         }
 
@@ -736,12 +736,12 @@ SQL;
         $this->emittedEvents[] = $eventData;
     }
 
-    public function reset(): void
+    public function reset(string $enableRunAs = null): void
     {
         $this->logger->info('Resetting projection');
         $this->state = ProjectionState::stopping();
 
-        Loop::repeat(1, function (string $watcherId): Generator {
+        Loop::repeat(1, function (string $watcherId) use ($enableRunAs): Generator {
             if ($this->state->equals(ProjectionState::stopping())) {
                 return;
             }
@@ -763,6 +763,10 @@ SQL;
                 $checkpointStream = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name() . ProjectionNames::ProjectionCheckpointStreamSuffix;
 
                 yield $statement->execute([$checkpointStream]);
+            }
+
+            if (null !== $enableRunAs) {
+                $this->config->runAs()->setIdentity($enableRunAs);
             }
 
             if ($this->enabled) {

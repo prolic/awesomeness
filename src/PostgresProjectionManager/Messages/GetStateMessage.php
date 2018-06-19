@@ -18,4 +18,9 @@ class GetStateMessage implements Message
     {
         return $this->name;
     }
+
+    public function messageName(): string
+    {
+        return 'GetStateMessage';
+    }
 }
