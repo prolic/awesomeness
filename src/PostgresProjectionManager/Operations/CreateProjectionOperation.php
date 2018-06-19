@@ -62,17 +62,36 @@ class CreateProjectionOperation
 
         $projectionId = \str_replace('-', '', Uuid::uuid4()->toString());
 
-        yield from $this->lockMulti(
+        yield from $this->lockMulti([
             'projection-' . $name,
             ProjectionNames::ProjectionsRegistrationStream,
             ProjectionNames::ProjectionsMasterStream,
-            ProjectionNames::ProjectionsStreamPrefix . $name
-        );
+            ProjectionNames::ProjectionsStreamPrefix . $name,
+            ProjectionNames::ProjectionsStreamPrefix . $name . ProjectionNames::ProjectionCheckpointStreamSuffix,
+            ProjectionNames::ProjectionsStreamPrefix . $name . ProjectionNames::ProjectionEmittedStreamSuffix,
+            ProjectionNames::ProjectionsStreamPrefix . $name . ProjectionNames::ProjectionsStateStreamSuffix,
+        ]);
 
         $getExpectedVersionOperation = $this->getExpectedVersionOperation;
 
         /** @var Transaction $transaction */
         $transaction = yield $this->pool->transaction();
+
+        $streamsToReactivate = [
+            ProjectionNames::ProjectionsStreamPrefix . $name,
+            ProjectionNames::ProjectionsStreamPrefix . $name . ProjectionNames::ProjectionCheckpointStreamSuffix,
+            ProjectionNames::ProjectionsStreamPrefix . $name . ProjectionNames::ProjectionEmittedStreamSuffix,
+            ProjectionNames::ProjectionsStreamPrefix . $name . ProjectionNames::ProjectionsStateStreamSuffix,
+        ];
+
+        $placeholder = \substr(\str_repeat('?, ', \count($streamsToReactivate)), 0, -2) . ';';
+
+        \array_unshift($streamsToReactivate, false, false);
+
+        yield $transaction->execute(
+            "UPDATE projections SET mark_deleted = ? WHERE deleted = ? AND stream_names IN ($placeholder);",
+            $streamsToReactivate
+        );
 
         /** @var Statement $projectionStatement */
         $projectionStatement = yield $transaction->prepare(
@@ -121,7 +140,7 @@ SQL;
         $params = [
             // registration stream
             EventId::generate()->toString(),
-            yield from $getExpectedVersionOperation(ProjectionNames::ProjectionsRegistrationStream),
+            yield from $getExpectedVersionOperation(ProjectionNames::ProjectionsRegistrationStream) + 1,
             ProjectionEventTypes::ProjectionCreated,
             $name,
             '',
@@ -130,7 +149,7 @@ SQL;
             $now,
             // master stream
             EventId::generate()->toString(),
-            yield from $getExpectedVersionOperation(ProjectionNames::ProjectionsMasterStream),
+            yield from $getExpectedVersionOperation(ProjectionNames::ProjectionsMasterStream) + 1,
             '$prepared',
             \json_encode([
                 'id' => $projectionId,
@@ -141,7 +160,7 @@ SQL;
             $now,
             // projection stream
             EventId::generate()->toString(),
-            yield from $getExpectedVersionOperation(ProjectionNames::ProjectionsStreamPrefix . $name),
+            yield from $getExpectedVersionOperation(ProjectionNames::ProjectionsStreamPrefix . $name) + 1,
             ProjectionEventTypes::ProjectionUpdated,
             \json_encode($eventData),
             '',

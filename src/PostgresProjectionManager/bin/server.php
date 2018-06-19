@@ -65,6 +65,7 @@ Loop::run(function () {
     $router->addRoute('GET', '/projection/{name}/state', new RequestHandler\GetState($projectionManager));
     $router->addRoute('GET', '/projection/{name}/statistics', new RequestHandler\GetStatistics($projectionManager));
     $router->addRoute('POST', '/projections/{mode}', new RequestHandler\CreateProjection($projectionManager));
+    $router->addRoute('DELETE', '/projection/{name}', new RequestHandler\DeleteProjection($projectionManager));
 
     $server = new Server($servers, $router, $logger);
     yield $server->start();

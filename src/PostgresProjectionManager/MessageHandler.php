@@ -7,6 +7,7 @@ namespace Prooph\PostgresProjectionManager;
 use Amp\Loop;
 use Amp\Parallel\Sync\Channel;
 use Generator;
+use Prooph\PostgresProjectionManager\Messages\DeleteMessage;
 use Prooph\PostgresProjectionManager\Messages\DisableMessage;
 use Prooph\PostgresProjectionManager\Messages\EnableMessage;
 use Prooph\PostgresProjectionManager\Messages\GetConfigMessage;
@@ -66,8 +67,16 @@ class MessageHandler
                 $stats = yield $this->projectionRunner->getStatistics();
                 yield $this->channel->send(new Response($stats));
                 break;
+            case $message instanceof DeleteMessage:
+                $this->projectionRunner->delete(
+                    $message->deleteStateStream(),
+                    $message->deleteCheckpointStream(),
+                    $message->deleteEmittedStreams()
+                );
+                yield $this->channel->send(new Response());
+                break;
             default:
-                $this->logger->err('Received invalid message: ' . \serialize($message));
+                $this->logger->error('Received invalid message: ' . \serialize($message));
                 break;
         }
 

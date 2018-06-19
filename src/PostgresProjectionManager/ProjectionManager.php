@@ -107,8 +107,10 @@ class ProjectionManager
 
             $this->settings = yield new Coroutine((new LoadSystemSettingsOperation())($this->pool));
 
+            $sql = 'SELECT projection_id, projection_name from projections WHERE mark_deleted = ? AND deleted = ?;';
+
             /** @var ResultSet $result */
-            $result = yield $this->pool->execute('SELECT projection_id, projection_name from projections;');
+            $result = yield $this->pool->execute($sql, [false, false]);
 
             while (yield $result->advance(ResultSet::FETCH_OBJECT)) {
                 $projectionName = $result->getCurrent()->projection_name;

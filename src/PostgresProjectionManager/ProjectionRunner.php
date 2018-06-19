@@ -755,12 +755,12 @@ SQL;
             $streamsToDelete = $this->trackedEmittedStreams;
             $streamsToDelete[] = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name() . ProjectionNames::ProjectionCheckpointStreamSuffix;
             $streamsToDelete[] = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name() . ProjectionNames::ProjectionEmittedStreamSuffix;
-
+            $streamsToDelete[] = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name() . ProjectionNames::ProjectionsStateStreamSuffix;
             $this->lastCheckpoint = [];
             $this->trackedEmittedStreams = [];
             $this->unhandledTrackedEmittedStreams = [];
 
-            $placeholder = \substr(\str_repeat('?, ', \count($streamsToDelete) + 1), 0, -2) . ';';
+            $placeholder = \substr(\str_repeat('?, ', \count($streamsToDelete)), 0, -2) . ';';
 
             $sql = "DELETE FROM events WHERE stream_name IN ($placeholder)";
 
@@ -779,41 +779,71 @@ SQL;
         });
     }
 
-    /*
-        public function delete(bool $deleteEmittedEvents): void
-        {
-            $projectionsTable = $this->quoteTableName($this->projectionsTable);
-            $deleteProjectionSql = <<<EOT
-    DELETE FROM $projectionsTable WHERE name = ?;
-    EOT;
-            $statement = $this->connection->prepare($deleteProjectionSql);
-            try {
-                $statement->execute([$this->name]);
-            } catch (PDOException $exception) {
-                // ignore and check error code
+    public function delete(
+        bool $deleteStateStream,
+        bool $deleteCheckpointStream,
+        bool $deleteEmittedStreams
+    ): void
+    {
+        $this->logger->info('Deleting projection');
+        $this->state = ProjectionState::stopping();
+
+        Loop::repeat(1, function (string $watcherId) use (
+            $deleteStateStream,
+            $deleteCheckpointStream,
+            $deleteEmittedStreams
+        ): Generator {
+            if ($this->state->equals(ProjectionState::stopping())) {
+                return;
             }
-            if ($statement->errorCode() !== '00000') {
-                throw RuntimeException::fromStatementErrorInfo($statement->errorInfo());
-            }
-            if ($deleteEmittedEvents) {
-                try {
-                    $this->eventStoreConnection->delete(new StreamName($this->name));
-                } catch (Exception\StreamNotFound $e) {
-                    // ignore
-                }
-            }
-            $this->isStopped = true;
-            $callback = $this->initCallback;
-            $this->state = [];
-            if (is_callable($callback)) {
-                $result = $callback();
-                if (is_array($result)) {
-                    $this->state = $result;
-                }
-            }
+
+            Loop::cancel($watcherId);
+
+            $this->loadedState = null;
             $this->streamPositions = [];
-        }
-    */
+            $this->checkedStreams->clear();
+
+            $streamsToDelete = [];
+
+            if ($deleteEmittedStreams) {
+                $streamsToDelete = $this->trackedEmittedStreams;
+            }
+
+            if ($deleteCheckpointStream) {
+                $streamsToDelete[] = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name() . ProjectionNames::ProjectionCheckpointStreamSuffix;
+            }
+
+            if ($deleteStateStream) {
+                $streamsToDelete[] = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name() . ProjectionNames::ProjectionsStateStreamSuffix;
+            }
+
+            $streamsToDelete[] = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name() . ProjectionNames::ProjectionEmittedStreamSuffix;
+            $streamsToDelete[] = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name();
+
+            $this->lastCheckpoint = [];
+            $this->trackedEmittedStreams = [];
+            $this->unhandledTrackedEmittedStreams = [];
+
+            $placeholder = \substr(\str_repeat('?, ', \count($streamsToDelete)), 0, -2) . ';';
+
+            $sql = "DELETE FROM events WHERE stream_name IN ($placeholder)";
+
+            /** @var Statement $statement */
+            $statement = yield $this->pool->prepare($sql);
+
+            yield $statement->execute($streamsToDelete);
+
+            $sql = "UPDATE streams SET mark_deleted = ? WHERE stream_name IN ($placeholder)";
+            /** @var Statement $statement */
+            $statement = yield $this->pool->prepare($sql);
+
+            \array_unshift($streamsToDelete, true);
+
+            yield $statement->execute($streamsToDelete);
+
+            $this->shutdownDeferred->resolve(0);
+        });
+    }
 
     public function getConfig(): array
     {
