@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\ProjectionManagement;
 
-final class ProjectionDefinition
+class ProjectionDefinition
 {
     /** @var string */
     private $name;

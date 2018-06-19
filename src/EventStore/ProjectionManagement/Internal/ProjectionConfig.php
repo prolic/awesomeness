@@ -7,7 +7,7 @@ namespace Prooph\EventStore\ProjectionManagement\Internal;
 use Prooph\EventStore\Internal\Principal;
 
 /** @internal  */
-final class ProjectionConfig
+class ProjectionConfig
 {
     /** @var Principal */
     private $runAs;

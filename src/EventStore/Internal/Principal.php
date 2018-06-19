@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\Internal;
 
-final class Principal
+class Principal
 {
     /** @var string */
     private $identity;

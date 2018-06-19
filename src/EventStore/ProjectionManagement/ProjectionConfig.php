@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\ProjectionManagement;
 
-final class ProjectionConfig
+class ProjectionConfig
 {
     /**
      * This setting is disabled by default, and is usually set when you

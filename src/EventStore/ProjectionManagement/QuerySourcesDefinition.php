@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\ProjectionManagement;
 
-final class QuerySourcesDefinition
+class QuerySourcesDefinition
 {
     /** @var bool */
     private $allStreams;

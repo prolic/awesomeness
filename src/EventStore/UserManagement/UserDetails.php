@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\UserManagement;
 
-final class UserDetails
+class UserDetails
 {
     /** @var string */
     private $login;

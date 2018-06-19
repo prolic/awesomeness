@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\ProjectionManagement;
 
-final class QuerySourcesDefinitionOptions
+class QuerySourcesDefinitionOptions
 {
     /** @var bool|null */
     private $definesStateTransform;

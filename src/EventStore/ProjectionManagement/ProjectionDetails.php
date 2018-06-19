@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Prooph\EventStore\ProjectionManagement;
 
 /** @internal */
-final class ProjectionDetails
+class ProjectionDetails
 {
     /** @var int */
     private $coreProcessingTime;
