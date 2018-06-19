@@ -184,9 +184,9 @@ class ProjectionManager
         return $this->sendToProjection($message);
     }
 
-    public function enableProjection(string $name): Promise
+    public function enableProjection(string $name, $enableRunAs): Promise
     {
-        $message = new EnableMessage($name);
+        $message = new EnableMessage($name, $enableRunAs);
 
         return $this->sendToProjection($message);
     }

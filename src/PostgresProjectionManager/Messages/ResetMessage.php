@@ -11,10 +11,10 @@ class ResetMessage implements Message
     /** @var string|null */
     private $enableRunAs;
 
-    public function __construct(string $name, ?string $runAs)
+    public function __construct(string $name, ?string $enableRunAs)
     {
         $this->name = $name;
-        $this->enableRunAs = $runAs;
+        $this->enableRunAs = $enableRunAs;
     }
 
     public function name(): string
