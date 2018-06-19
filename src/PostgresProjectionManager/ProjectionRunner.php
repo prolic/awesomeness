@@ -30,9 +30,11 @@ use Prooph\EventStore\Projections\ProjectionMode;
 use Prooph\EventStore\Projections\ProjectionNames;
 use Prooph\EventStore\Projections\ProjectionState;
 use Prooph\EventStore\RecordedEvent;
+use Prooph\PdoEventStore\ClientOperations\DeleteStreamOperation;
 use Prooph\PostgresProjectionManager\Exception\QueryEvaluationError;
 use Prooph\PostgresProjectionManager\Exception\StreamNotFound;
 use Prooph\PostgresProjectionManager\Operations\CreateStreamOperation;
+use Prooph\PostgresProjectionManager\Operations\DeleteStreamsOperation;
 use Prooph\PostgresProjectionManager\Operations\GetExpectedVersionOperation;
 use Prooph\PostgresProjectionManager\Operations\LoadConfigOperation;
 use Prooph\PostgresProjectionManager\Operations\LoadConfigResult;
@@ -748,26 +750,20 @@ SQL;
 
             Loop::cancel($watcherId);
 
-            $this->loadedState = null;
-            $this->streamPositions = [];
-            $this->checkedStreams->clear();
-
             $streamsToDelete = $this->trackedEmittedStreams;
             $streamsToDelete[] = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name() . ProjectionNames::ProjectionCheckpointStreamSuffix;
             $streamsToDelete[] = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name() . ProjectionNames::ProjectionEmittedStreamSuffix;
             $streamsToDelete[] = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name() . ProjectionNames::ProjectionsStateStreamSuffix;
+
+            $operation = new DeleteStreamsOperation($this->pool);
+            yield from $operation($streamsToDelete, false);
+
+            $this->loadedState = null;
+            $this->streamPositions = [];
+            $this->checkedStreams->clear();
             $this->lastCheckpoint = [];
             $this->trackedEmittedStreams = [];
             $this->unhandledTrackedEmittedStreams = [];
-
-            $placeholder = \substr(\str_repeat('?, ', \count($streamsToDelete)), 0, -2) . ';';
-
-            $sql = "DELETE FROM events WHERE stream_name IN ($placeholder)";
-
-            /** @var Statement $statement */
-            $statement = yield $this->pool->prepare($sql);
-
-            yield $statement->execute($streamsToDelete);
 
             if (null !== $enableRunAs) {
                 $this->config->runAs()->setIdentity($enableRunAs);
@@ -799,10 +795,6 @@ SQL;
 
             Loop::cancel($watcherId);
 
-            $this->loadedState = null;
-            $this->streamPositions = [];
-            $this->checkedStreams->clear();
-
             $streamsToDelete = [];
 
             if ($deleteEmittedStreams) {
@@ -820,26 +812,15 @@ SQL;
             $streamsToDelete[] = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name() . ProjectionNames::ProjectionEmittedStreamSuffix;
             $streamsToDelete[] = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name();
 
+            $operation = new DeleteStreamsOperation($this->pool);
+            yield from $operation($streamsToDelete, true);
+
+            $this->loadedState = null;
+            $this->streamPositions = [];
+            $this->checkedStreams->clear();
             $this->lastCheckpoint = [];
             $this->trackedEmittedStreams = [];
             $this->unhandledTrackedEmittedStreams = [];
-
-            $placeholder = \substr(\str_repeat('?, ', \count($streamsToDelete)), 0, -2) . ';';
-
-            $sql = "DELETE FROM events WHERE stream_name IN ($placeholder)";
-
-            /** @var Statement $statement */
-            $statement = yield $this->pool->prepare($sql);
-
-            yield $statement->execute($streamsToDelete);
-
-            $sql = "UPDATE streams SET mark_deleted = ? WHERE stream_name IN ($placeholder)";
-            /** @var Statement $statement */
-            $statement = yield $this->pool->prepare($sql);
-
-            \array_unshift($streamsToDelete, true);
-
-            yield $statement->execute($streamsToDelete);
 
             $this->shutdownDeferred->resolve(0);
         });
