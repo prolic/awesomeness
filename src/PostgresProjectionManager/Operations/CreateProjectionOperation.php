@@ -44,8 +44,8 @@ class CreateProjectionOperation
     public function __invoke(
         string $mode,
         string $name,
-        string $type,
         string $query,
+        string $type,
         bool $enabled,
         ?bool $checkpoints,
         ?bool $emit,

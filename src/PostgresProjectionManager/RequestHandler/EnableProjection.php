@@ -31,10 +31,10 @@ class EnableProjection implements RequestHandler
         $args = $request->getAttribute(Router::class);
         $name = $args['name'];
 
-        $query = $request->getUri()->getQuery();
+        $rawQuery = $request->getUri()->getQuery();
 
-        if ($query) {
-            \parse_str($query, $query);
+        if ($rawQuery) {
+            \parse_str($rawQuery, $query);
             $enableRunAs = $query['enableRunAs'] ?? null;
         } else {
             $enableRunAs = null;

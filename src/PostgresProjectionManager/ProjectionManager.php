@@ -20,8 +20,10 @@ use Generator;
 use Prooph\EventStore\Exception\RuntimeException;
 use Prooph\EventStore\SystemSettings;
 use Prooph\PostgresProjectionManager\Exception\ProjectionNotFound;
+use Prooph\PostgresProjectionManager\Messages\CreateProjectionMessage;
 use Prooph\PostgresProjectionManager\Messages\Message;
 use Prooph\PostgresProjectionManager\Messages\Response;
+use Prooph\PostgresProjectionManager\Operations\CreateProjectionOperation;
 use Prooph\PostgresProjectionManager\Operations\LoadSystemSettingsOperation;
 use Psr\Log\LoggerInterface as PsrLogger;
 use Throwable;
@@ -174,8 +176,58 @@ class ProjectionManager
         }
     }
 
+    public function create(CreateProjectionMessage $message): Promise
+    {
+        return call(function () use ($message) {
+            $name = $message->name();
+
+            $operation = new CreateProjectionOperation($this->pool);
+
+            yield from $operation(
+                $message->mode(),
+                $name,
+                $message->query(),
+                $message->type(),
+                $message->enabled(),
+                $message->checkpoints(),
+                $message->emit(),
+                $message->trackEmittedStreams(),
+                $message->runAs()
+            );
+
+            /** @var ResultSet $result */
+            $result = yield $this->pool->execute('SELECT projection_id FROM projections WHERE projection_name = ?;', [
+                $name,
+            ]);
+
+            yield $result->advance(ResultSet::FETCH_OBJECT);
+
+            $id = $result->getCurrent()->projection_id;
+
+            $context = Process::run(__DIR__ . '/projection-process.php', null, [
+                'prooph_connection_string' => $this->connectionString,
+                'prooph_projection_id' => $id,
+                'prooph_projection_name' => $name,
+                'prooph_log_level' => 'DEBUG', //@todo make configurable
+                'AMP_LOG_COLOR' => hasColorSupport(),
+            ]);
+
+            $pid = yield $context->getPid();
+
+            $this->logger->debug($name . ' :: ' . $pid);
+
+            $this->projections[$name] = $context;
+
+            yield new Delayed(100); // waiting for the projection to start
+        });
+    }
+
     public function handle(Message $message): Promise
     {
+        if ($message instanceof CreateProjectionMessage) {
+            return $this->create($message);
+        }
+
         $name = $message->name();
 
         if (! isset($this->projections[$name])) {
