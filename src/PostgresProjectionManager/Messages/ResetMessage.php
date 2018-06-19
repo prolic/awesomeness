@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\PostgresProjectionManager\Messages;
 
-class ResetMessage
+class ResetMessage implements Message
 {
     /** @var string */
     private $name;

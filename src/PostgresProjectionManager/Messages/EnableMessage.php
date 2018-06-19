@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\PostgresProjectionManager\Messages;
 
-class EnableMessage
+class EnableMessage implements Message
 {
     /** @var string */
     private $name;

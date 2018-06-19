@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\PostgresProjectionManager\Messages;
 
-class DisableMessage
+class DisableMessage implements Message
 {
     /** @var string */
     private $name;
