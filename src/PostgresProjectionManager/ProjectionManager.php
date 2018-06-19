@@ -153,10 +153,13 @@ class ProjectionManager
                     \assert($this->logger->debug('Stopping') || true);
                     $this->state = self::STOPPING;
 
+                    $promises = [];
                     foreach ($this->projections as $name => $context) {
-                        yield $context->join();
+                        $promises[] = $context->join();
                         unset($this->projections[$name]);
                     }
+
+                    yield Promise\all($promises);
 
                     \assert($this->logger->debug('Stopped') || true);
                     $this->state = self::STOPPED;
