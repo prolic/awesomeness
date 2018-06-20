@@ -63,6 +63,7 @@ Loop::run(function () {
     $router->addRoute('GET', '/projection/{name}/command/enable', new RequestHandler\EnableProjection($projectionManager));
     $router->addRoute('GET', '/projection/{name}/command/reset', new RequestHandler\ResetProjection($projectionManager));
     $router->addRoute('GET', '/projection/{name}/query', new RequestHandler\GetDefinition($projectionManager));
+    $router->addRoute('PUT', '/projection/{name}/query', new RequestHandler\UpdateQuery($projectionManager));
     $router->addRoute('GET', '/projection/{name}/state', new RequestHandler\GetState($projectionManager));
     $router->addRoute('GET', '/projection/{name}/statistics', new RequestHandler\GetStatistics($projectionManager));
     $router->addRoute('POST', '/projections/{mode}', new RequestHandler\CreateProjection($projectionManager));

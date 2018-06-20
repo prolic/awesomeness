@@ -33,12 +33,8 @@ class EnableProjection implements RequestHandler
 
         $rawQuery = $request->getUri()->getQuery();
 
-        if ($rawQuery) {
-            \parse_str($rawQuery, $query);
-            $enableRunAs = $query['enableRunAs'] ?? null;
-        } else {
-            $enableRunAs = null;
-        }
+        \parse_str($request->getUri()->getQuery(), $query);
+        $enableRunAs = $query['enableRunAs'] ?? null;
 
         return call(function () use ($name, $enableRunAs) {
             try {

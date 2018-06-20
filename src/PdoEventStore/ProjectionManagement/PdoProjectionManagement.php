@@ -40,52 +40,6 @@ final class PdoProjectionManagement implements ProjectionManagement
         $this->userRolesMethod->setAccessible(true);
     }
 
-    public function updateConfig(string $name, ProjectionConfig $config, UserCredentials $userCredentials = null): void
-    {
-        if (StandardProjections::isStandardProjection($name)) {
-            throw new ProjectionException('Cannot override standard projections');
-        }
-
-        $projectionId = $this->fetchProjectionId($name);
-
-        $this->pdoEventStoreConnection->appendToStream(
-            ProjectionNames::ProjectionsMasterStream,
-            ExpectedVersion::Any,
-            [
-                new EventData(
-                    EventId::generate(),
-                    '$prepared',
-                    true,
-                    \json_encode([
-                        'id' => $projectionId,
-                    ]),
-                    ''
-                ),
-            ],
-            $userCredentials
-        );
-
-        $streamName = ProjectionNames::ProjectionsStreamPrefix . $name;
-
-        $data = $this->fetchLastProjectionStreamDataByEventType($streamName, ProjectionEventTypes::ProjectionUpdated);
-        $data = \array_merge($data, $config->toArray());
-
-        $this->pdoEventStoreConnection->appendToStream(
-            ProjectionNames::ProjectionsStreamPrefix . $name,
-            ExpectedVersion::Any,
-            [
-                new EventData(
-                    EventId::generate(),
-                    ProjectionEventTypes::ProjectionUpdated,
-                    true,
-                    \json_encode($data),
-                    ''
-                ),
-            ],
-            $userCredentials
-        );
-    }
-
     public function updateQuery(
         string $name,
         string $type,

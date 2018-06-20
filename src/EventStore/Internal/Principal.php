@@ -51,4 +51,9 @@ class Principal
             'roles' => $this->roles,
         ];
     }
+
+    public static function fromArray(array $data): Principal
+    {
+        return new self($data['identity'], $data['roles']);
+    }
 }

@@ -21,7 +21,7 @@ use Prooph\EventStore\Projections\StandardProjections;
 use function Amp\Promise\all;
 
 /** @internal */
-class UpdateConfigOperation
+class UpdateProjectionOperation
 {
     /** @var Pool */
     private $pool;
@@ -42,13 +42,11 @@ class UpdateConfigOperation
     public function __invoke(
         string $id,
         string $name,
-        ProjectionConfig $newConfig,
-        InternalProjectionConfig $currentConfig
+        ? ProjectionConfig $newConfig,
+        string $query,
+        bool $emitEnabled,
+        array $currentConfiguration
     ): Generator {
-        if (StandardProjections::isStandardProjection($name)) {
-            throw new ProjectionException('Cannot override standard projections');
-        }
-
         yield from $this->lockMulti([
             ProjectionNames::ProjectionsMasterStream,
             ProjectionNames::ProjectionsStreamPrefix . $name,
@@ -56,7 +54,13 @@ class UpdateConfigOperation
 
         $getExpectedVersionOperation = $this->getExpectedVersionOperation;
 
-        $data = \array_merge($currentConfig->toArray(), $newConfig->toArray());
+        if ($newConfig) {
+            $data = \array_merge($currentConfiguration, $newConfig->toArray());
+        } else {
+            $data = $currentConfiguration;
+        }
+        $data['query'] = $query;
+        $data['emitEnabled'] = $emitEnabled;
 
         $sql = <<<SQL
 INSERT INTO events (event_id, event_number, event_type, data, meta_data, stream_name, is_json, updated) 
@@ -77,7 +81,7 @@ SQL;
                 'id' => $id,
             ]),
             '',
-            ProjectionNames::ProjectionsRegistrationStream,
+            ProjectionNames::ProjectionsMasterStream,
             true,
             $now,
             // projection stream
@@ -94,6 +98,8 @@ SQL;
         yield $statement->execute($params);
 
         yield from $this->releaseAll();
+
+        return InternalProjectionConfig::fromArray($data);
     }
 
     private function lockMulti(array $names): Generator

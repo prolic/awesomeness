@@ -17,6 +17,7 @@ use Prooph\PostgresProjectionManager\Messages\GetStatisticsMessage;
 use Prooph\PostgresProjectionManager\Messages\ResetMessage;
 use Prooph\PostgresProjectionManager\Messages\Response;
 use Prooph\PostgresProjectionManager\Messages\UpdateConfigMessage;
+use Prooph\PostgresProjectionManager\Messages\UpdateQueryMessage;
 use Psr\Log\LoggerInterface;
 
 class MessageHandler
@@ -77,7 +78,21 @@ class MessageHandler
                 yield $this->channel->send(new Response());
                 break;
             case $message instanceof UpdateConfigMessage:
-                yield $this->projectionRunner->updateConfig($message->config());
+                try {
+                    yield $this->projectionRunner->updateConfig($message->config());
+                } catch (\Throwable $e) {
+                    yield $this->channel->send(new Response($e->getMessage(), true));
+                }
+
+                yield $this->channel->send(new Response());
+                break;
+            case $message instanceof UpdateQueryMessage:
+                try {
+                    yield $this->projectionRunner->updateQuery($message->type(), $message->query(), $message->emitEnabled());
+                } catch (\Throwable $e) {
+                    yield $this->channel->send(new Response($e->getMessage(), true));
+                }
+
                 yield $this->channel->send(new Response());
                 break;
             default:

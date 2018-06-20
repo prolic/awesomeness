@@ -31,6 +31,7 @@ use Prooph\EventStore\ProjectionManagement\ProjectionDefinition;
 use Prooph\EventStore\Projections\ProjectionMode;
 use Prooph\EventStore\Projections\ProjectionNames;
 use Prooph\EventStore\Projections\ProjectionState;
+use Prooph\EventStore\Projections\StandardProjections;
 use Prooph\EventStore\RecordedEvent;
 use Prooph\PostgresProjectionManager\Exception\QueryEvaluationError;
 use Prooph\PostgresProjectionManager\Exception\StreamNotFound;
@@ -44,7 +45,8 @@ use Prooph\PostgresProjectionManager\Operations\LoadLatestCheckpointResult;
 use Prooph\PostgresProjectionManager\Operations\LoadProjectionStreamRolesOperation;
 use Prooph\PostgresProjectionManager\Operations\LoadTrackedEmittedStreamsOperation;
 use Prooph\PostgresProjectionManager\Operations\LockOperation;
-use Prooph\PostgresProjectionManager\Operations\UpdateConfigOperation;
+use Prooph\PostgresProjectionManager\Operations\UpdateProjectionOperation;
+use Prooph\PostgresProjectionManager\Operations\UpdateQueryOperation;
 use Prooph\PostgresProjectionManager\Operations\WriteCheckPointOperation;
 use Prooph\PostgresProjectionManager\Operations\WriteEmittedStreamsOperation;
 use Psr\Log\LoggerInterface as PsrLogger;
@@ -829,14 +831,93 @@ SQL;
 
     public function updateConfig(ProjectionConfig $config): Promise
     {
-        $operation = new UpdateConfigOperation($this->pool);
+        if (StandardProjections::isStandardProjection($this->definition->name())) {
+            throw new Exception\ProjectionException('Cannot override standard projections');
+        }
 
-        return new Coroutine($operation(
-            $this->id,
-            $this->definition->name(),
-            $config,
-            $this->config
-        ));
+        if ($this->state->equals(ProjectionState::running())) {
+            throw new Exception\ProjectionException('Cannot update query while running');
+        }
+
+        return call(function () use ($config): Generator {
+            $operation = new UpdateProjectionOperation($this->pool);
+
+            $config = yield from $operation(
+                $this->id,
+                $this->definition->name(),
+                $config,
+                $this->definition->query(),
+                $this->config->emitEnabled(),
+                [
+                    'handlerType' => 'PHP',
+                    'runAs' => $this->config->runAs()->toArray(),
+                    'mode' => $this->mode->name(),
+                    'emitEnabled' => $this->config->emitEnabled(),
+                    'checkpointsEnabled' => $this->config->checkpointsEnabled(),
+                    'trackEmittedStreams' => $this->config->trackEmittedStreams(),
+                    'checkpointAfterMs' => $this->config->checkpointAfterMs(),
+                    'checkpointHandledThreshold' => $this->config->checkpointHandledThreshold(),
+                    'checkpointUnhandledBytesThreshold' => $this->config->checkpointUnhandledBytesThreshold(),
+                    'pendingEventsThreshold' => $this->config->pendingEventsThreshold(),
+                    'maxWriteBatchLength' => $this->config->maxWriteBatchLength(),
+                    'query' => $this->definition->query(),
+                    'enabled' => $this->enabled,
+                ]
+            );
+
+            $this->config = $config;
+        });
+    }
+
+    public function updateQuery(string $type, string $query, bool $emitEnabled): Promise
+    {
+        if (StandardProjections::isStandardProjection($this->definition->name())) {
+            throw new Exception\ProjectionException('Cannot override standard projections');
+        }
+
+        if ($this->state->equals(ProjectionState::running())) {
+            throw new Exception\ProjectionException('Cannot update query while running');
+        }
+
+        if ($type !== 'PHP') {
+            throw new Exception\ProjectionException('Only projection type support for now is \'PHP\'');
+        }
+
+        return call(function () use ($type, $query, $emitEnabled): Generator {
+            $operation = new UpdateProjectionOperation($this->pool);
+
+            yield from $operation(
+                $this->id,
+                $this->definition->name(),
+                null,
+                $query,
+                $emitEnabled,
+                [
+                    'handlerType' => 'PHP',
+                    'runAs' => $this->config->runAs()->toArray(),
+                    'mode' => $this->mode->name(),
+                    'emitEnabled' => $this->config->emitEnabled(),
+                    'checkpointsEnabled' => $this->config->checkpointsEnabled(),
+                    'trackEmittedStreams' => $this->config->trackEmittedStreams(),
+                    'checkpointAfterMs' => $this->config->checkpointAfterMs(),
+                    'checkpointHandledThreshold' => $this->config->checkpointHandledThreshold(),
+                    'checkpointUnhandledBytesThreshold' => $this->config->checkpointUnhandledBytesThreshold(),
+                    'pendingEventsThreshold' => $this->config->pendingEventsThreshold(),
+                    'maxWriteBatchLength' => $this->config->maxWriteBatchLength(),
+                    'query' => $this->definition->query(),
+                    'enabled' => $this->enabled,
+                ]
+            );
+
+            $sources = $this->processor->sources();
+            $this->definition = new ProjectionDefinition(
+                $this->definition->name(),
+                $query,
+                $emitEnabled,
+                $sources,
+                []
+            );
+        });
     }
 
     public function getConfig(): array
