@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Prooph\PostgresProjectionManager;
 
-use Amp\Coroutine;
 use Amp\Deferred;
 use Amp\Loop;
 use Amp\Postgres\CommandResult;
@@ -46,7 +45,6 @@ use Prooph\PostgresProjectionManager\Operations\LoadProjectionStreamRolesOperati
 use Prooph\PostgresProjectionManager\Operations\LoadTrackedEmittedStreamsOperation;
 use Prooph\PostgresProjectionManager\Operations\LockOperation;
 use Prooph\PostgresProjectionManager\Operations\UpdateProjectionOperation;
-use Prooph\PostgresProjectionManager\Operations\UpdateQueryOperation;
 use Prooph\PostgresProjectionManager\Operations\WriteCheckPointOperation;
 use Prooph\PostgresProjectionManager\Operations\WriteEmittedStreamsOperation;
 use Psr\Log\LoggerInterface as PsrLogger;

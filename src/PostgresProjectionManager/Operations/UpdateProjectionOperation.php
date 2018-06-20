@@ -11,13 +11,11 @@ use DateTimeImmutable;
 use DateTimeZone;
 use Generator;
 use Prooph\EventStore\EventId;
-use Prooph\EventStore\Exception\ProjectionException;
 use Prooph\EventStore\Internal\DateTimeUtil;
 use Prooph\EventStore\ProjectionManagement\Internal\ProjectionConfig as InternalProjectionConfig;
 use Prooph\EventStore\ProjectionManagement\ProjectionConfig;
 use Prooph\EventStore\Projections\ProjectionEventTypes;
 use Prooph\EventStore\Projections\ProjectionNames;
-use Prooph\EventStore\Projections\StandardProjections;
 use function Amp\Promise\all;
 
 /** @internal */

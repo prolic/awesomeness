@@ -10,7 +10,6 @@ use Prooph\EventStore\EventId;
 use Prooph\EventStore\Exception\ProjectionException;
 use Prooph\EventStore\Exception\ProjectionNotFound;
 use Prooph\EventStore\ExpectedVersion;
-use Prooph\EventStore\ProjectionManagement\ProjectionConfig;
 use Prooph\EventStore\ProjectionManagement\ProjectionManagement;
 use Prooph\EventStore\Projections\ProjectionEventTypes;
 use Prooph\EventStore\Projections\ProjectionNames;
