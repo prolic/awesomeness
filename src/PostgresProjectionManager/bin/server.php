@@ -58,6 +58,7 @@ Loop::run(function () {
         return new Response(Status::OK, ['content-type' => 'text/plain'], 'Prooph PDO Projection Manager');
     }));
     $router->addRoute('GET', '/projection/{name}/config', new RequestHandler\GetConfig($projectionManager));
+    $router->addRoute('POST', '/projection/{name}/config', new RequestHandler\UpdateConfig($projectionManager));
     $router->addRoute('GET', '/projection/{name}/command/disable', new RequestHandler\DisableProjection($projectionManager));
     $router->addRoute('GET', '/projection/{name}/command/enable', new RequestHandler\EnableProjection($projectionManager));
     $router->addRoute('GET', '/projection/{name}/command/reset', new RequestHandler\ResetProjection($projectionManager));

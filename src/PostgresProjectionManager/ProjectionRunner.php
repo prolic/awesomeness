@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\PostgresProjectionManager;
 
+use Amp\Coroutine;
 use Amp\Deferred;
 use Amp\Loop;
 use Amp\Postgres\CommandResult;
@@ -24,7 +25,8 @@ use Prooph\EventStore\EventId;
 use Prooph\EventStore\Exception;
 use Prooph\EventStore\ExpectedVersion;
 use Prooph\EventStore\Internal\DateTimeUtil;
-use Prooph\EventStore\ProjectionManagement\Internal\ProjectionConfig;
+use Prooph\EventStore\ProjectionManagement\Internal\ProjectionConfig as InternalProjectionConfig;
+use Prooph\EventStore\ProjectionManagement\ProjectionConfig;
 use Prooph\EventStore\ProjectionManagement\ProjectionDefinition;
 use Prooph\EventStore\Projections\ProjectionMode;
 use Prooph\EventStore\Projections\ProjectionNames;
@@ -42,6 +44,7 @@ use Prooph\PostgresProjectionManager\Operations\LoadLatestCheckpointResult;
 use Prooph\PostgresProjectionManager\Operations\LoadProjectionStreamRolesOperation;
 use Prooph\PostgresProjectionManager\Operations\LoadTrackedEmittedStreamsOperation;
 use Prooph\PostgresProjectionManager\Operations\LockOperation;
+use Prooph\PostgresProjectionManager\Operations\UpdateConfigOperation;
 use Prooph\PostgresProjectionManager\Operations\WriteCheckPointOperation;
 use Prooph\PostgresProjectionManager\Operations\WriteEmittedStreamsOperation;
 use Psr\Log\LoggerInterface as PsrLogger;
@@ -56,7 +59,7 @@ class ProjectionRunner
 
     /** @var string */
     private $id;
-    /** @var ProjectionConfig */
+    /** @var InternalProjectionConfig */
     private $config;
     /** @var ProjectionDefinition */
     private $definition;
@@ -822,6 +825,18 @@ SQL;
 
             $this->shutdownDeferred->resolve(0);
         });
+    }
+
+    public function updateConfig(ProjectionConfig $config): Promise
+    {
+        $operation = new UpdateConfigOperation($this->pool);
+
+        return new Coroutine($operation(
+            $this->id,
+            $this->definition->name(),
+            $config,
+            $this->config
+        ));
     }
 
     public function getConfig(): array

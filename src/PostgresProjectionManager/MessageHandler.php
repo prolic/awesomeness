@@ -16,6 +16,7 @@ use Prooph\PostgresProjectionManager\Messages\GetStateMessage;
 use Prooph\PostgresProjectionManager\Messages\GetStatisticsMessage;
 use Prooph\PostgresProjectionManager\Messages\ResetMessage;
 use Prooph\PostgresProjectionManager\Messages\Response;
+use Prooph\PostgresProjectionManager\Messages\UpdateConfigMessage;
 use Psr\Log\LoggerInterface;
 
 class MessageHandler
@@ -73,6 +74,10 @@ class MessageHandler
                     $message->deleteCheckpointStream(),
                     $message->deleteEmittedStreams()
                 );
+                yield $this->channel->send(new Response());
+                break;
+            case $message instanceof UpdateConfigMessage:
+                yield $this->projectionRunner->updateConfig($message->config());
                 yield $this->channel->send(new Response());
                 break;
             default:

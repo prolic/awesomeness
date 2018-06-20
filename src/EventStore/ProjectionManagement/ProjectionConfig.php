@@ -150,4 +150,19 @@ class ProjectionConfig
             'maxAllowedWritesInFlight' => $this->maxAllowedWritesInFlight,
         ];
     }
+
+    public static function fromArray(array $data): ProjectionConfig
+    {
+        return new self(
+            $data['emitEnabled'] ?? false,
+            $data['checkpointsEnabled'] ?? false,
+            $data['trackEmittedStreams'] ?? false,
+            $data['checkpointAfterMs'] ?? 0,
+            $data['checkpointHandledThreshold'] ?? 4000,
+            $data['checkpointUnhandledBytesThreshold'] ?? 10000000,
+            $data['pendingEventsThreshold'] ?? 5000,
+            $data['maxWriteBatchLength'] ?? 500,
+            $data['maxAllowedWritesInFlight'] ?? null
+        );
+    }
 }
