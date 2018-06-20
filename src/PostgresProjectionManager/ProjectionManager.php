@@ -21,6 +21,7 @@ use Prooph\EventStore\Exception\RuntimeException;
 use Prooph\EventStore\SystemSettings;
 use Prooph\PostgresProjectionManager\Exception\ProjectionNotFound;
 use Prooph\PostgresProjectionManager\Messages\CreateProjectionMessage;
+use Prooph\PostgresProjectionManager\Messages\DeleteMessage;
 use Prooph\PostgresProjectionManager\Messages\Message;
 use Prooph\PostgresProjectionManager\Messages\Response;
 use Prooph\PostgresProjectionManager\Operations\CreateProjectionOperation;
@@ -244,6 +245,11 @@ class ProjectionManager
                 throw new \RuntimeException(
                     'Error sending ' . $message->messageName() . ': ' . \serialize($response->result())
                 );
+            }
+
+            if ($message instanceof DeleteMessage) {
+                yield $this->projections[$name]->join();
+                unset($this->projections[$name]);
             }
 
             return $response->result();
