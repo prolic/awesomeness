@@ -97,7 +97,7 @@ SQL;
         }
     }
 
-    public function head(): Generator
+    public function progress(): Generator
     {
         $placeholder = \implode(', ', \array_fill(0, \count($this->streamNames), '?'));
 
@@ -111,13 +111,19 @@ SQL;
         /** @var ResultSet $result */
         $result = yield $statement->execute([$this->streamNames]);
 
-        $data = [];
+        $total = 0;
+        $progress = 0;
 
         while (yield $result->advance(ResultSet::FETCH_OBJECT)) {
             $row = $result->getCurrent();
-            $data[$row->stream_name] = $row->head;
+            $total += $row->head;
+            $progress += $this->checkpointTag->streamPosition($row->stream_name);
         }
 
-        return $data;
+        if (0 === $total) {
+            return 100.0;
+        }
+
+        return \floor($progress * 100 / $total * 10000) / 10000;
     }
 }

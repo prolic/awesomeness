@@ -90,7 +90,7 @@ SQL;
         }
     }
 
-    public function head(): Generator
+    public function progress(): Generator
     {
         $sql = 'SELECT MAX(event_number) as head FROM events WHERE stream_name = ?;';
 
@@ -103,8 +103,10 @@ SQL;
 
         $row = $result->getCurrent();
 
-        return [
-            $this->streamName => $row->head,
-        ];
+        if (null === $row->head) {
+            return 100.0;
+        }
+
+        return \floor($this->checkpointTag->streamPosition($this->streamName) * 100 / $row->head * 10000) / 10000;
     }
 }

@@ -925,21 +925,6 @@ SQL;
     public function getStatistics(): Promise
     {
         return call(function (): Generator {
-            $progress = 0;
-            $total = 0;
-
-            $head = yield from $this->reader->head();
-
-            if (\is_int($head)) {
-                $total = $head;
-                $progress = $this->reader->checkpointTag()->preparePosition();
-            } else {
-                foreach ($head as $streamName => $position) {
-                    $total += $position;
-                    $progress += $this->reader->checkpointTag()->streamPosition($streamName);
-                }
-            }
-
             if (! $this->reader || $this->reader->paused()) {
                 $readsInProgress = 0;
             } else {
@@ -962,7 +947,7 @@ SQL;
                 'checkpointStatus' => $this->checkpointStatus,
                 'position' => $this->reader->checkpointTag()->toArray(),
                 'lastCheckpoint' => $this->lastCheckpoint->toArray(),
-                'progress' => (0 === $total) ? 100.0 : \floor($progress * 100 / $total * 10000) / 10000,
+                'progress' => yield from $this->reader->progress(),
             ];
 
             return new Success($stats);

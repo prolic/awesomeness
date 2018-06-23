@@ -74,8 +74,12 @@ SQL;
         }
     }
 
-    public function head(): Generator
+    public function progress(): Generator
     {
+        if ($this->checkpointTag->preparePosition() === -1) {
+            return 0.0;
+        }
+
         $sql = 'SELECT MAX(prepare_position) as head FROM events;';
 
         /** @var Statement $statement */
@@ -87,6 +91,6 @@ SQL;
 
         $row = $result->getCurrent();
 
-        return $row->head;
+        return \floor($this->checkpointTag->preparePosition() * 100 / $row->head * 10000) / 10000;
     }
 }

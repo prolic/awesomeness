@@ -87,5 +87,5 @@ abstract class EventReader
 
     abstract protected function doRequestEvents(): Generator;
 
-    abstract public function head(): Generator;
+    abstract public function progress(): Generator;
 }
