@@ -8,21 +8,48 @@ $connection = new \Prooph\PdoEventStore\PdoEventStoreConnection(
 );
 
 $connection->connect();
-
-for ($i = 0; $i < 10; $i++) {
-    for ($j = 0; $j < 1000; $j++) {
-        $data = [];
-        $data[] = new \Prooph\EventStore\EventData(
+$writeResult = $connection->appendToStream(
+    'sasastream',
+    \Prooph\EventStore\ExpectedVersion::NoStream,
+    [
+        new \Prooph\EventStore\EventData(
             \Prooph\EventStore\EventId::generate(),
-            'test-event',
+            'userCreated',
             true,
-            \json_encode(['data' => \Ramsey\Uuid\Uuid::uuid4()->toString()]),
+            json_encode(['user' => 'Sacha Prlc', 'email' => 'saschaprolic@googlemail.com']),
             ''
-        );
-        $writeResult = $connection->appendToStream(
-            'sasastream',
-            \Prooph\EventStore\ExpectedVersion::Any,
-            $data
-        );
-    }
-}
+        ),
+        new \Prooph\EventStore\EventData(
+            \Prooph\EventStore\EventId::generate(),
+            'userNameUpdated',
+            true,
+            json_encode(['user' => 'Sascha Prolic']),
+            ''
+        ),
+    ]
+);
+
+$streamEventsSlice = $connection->readStreamEventsForward(
+    'sasastream',
+    0,
+    100,
+    false
+);
+
+var_dump($streamEventsSlice);
+
+$writeResult = $connection->setStreamMetadata(
+    'sasastream',
+    \Prooph\EventStore\ExpectedVersion::Any,
+    new \Prooph\EventStore\StreamMetadata(null, null, null, null, null, [
+        'foo' => 'bar',
+    ])
+);
+
+var_dump($writeResult);
+
+$streamMetadataResult = $connection->getStreamMetadata('sasastream');
+
+var_dump($streamMetadataResult);
+
+$connection->deleteStream('sasastream', false);

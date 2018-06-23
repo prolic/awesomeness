@@ -8,6 +8,8 @@ CREATE TABLE streams (
 CREATE INDEX ON streams (mark_deleted);
 
 CREATE TABLE events (
+  prepare_position BIGSERIAL NOT NULL,
+  commit_position BIGSERIAL NOT NULL,
   event_id UUID NOT NULL,
   event_number BIGINT NOT NULL,
   event_type TEXT,
