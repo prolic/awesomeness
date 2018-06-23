@@ -9,6 +9,7 @@ use Amp\Postgres\ResultSet;
 use Amp\Postgres\Statement;
 use Error;
 use Generator;
+use Prooph\PostgresProjectionManager\CheckpointTag;
 use Prooph\PostgresProjectionManager\Exception\StreamNotFound;
 
 /** @internal */
@@ -43,13 +44,13 @@ SQL;
             if (yield $result->advance(ResultSet::FETCH_OBJECT)) {
                 $data = $result->getCurrent();
                 $state = \json_decode($data->data, true);
-                $streamPositions = \json_decode($data->meta_data, true);
+                $checkpoint = CheckpointTag::fromJsonString($data->meta_data);
 
                 if (0 !== \json_last_error()) {
                     throw new Error('Could not json decode checkpoint');
                 }
 
-                return new LoadLatestCheckpointResult($state, $streamPositions['$s']);
+                return new LoadLatestCheckpointResult($state, $checkpoint);
             }
         } catch (StreamNotFound $e) {
             // ignore, no checkpoint found

@@ -3,19 +3,20 @@
 declare(strict_types=1);
 
 namespace Prooph\PostgresProjectionManager\Operations;
+use Prooph\PostgresProjectionManager\CheckpointTag;
 
 /** @internal */
 class LoadLatestCheckpointResult
 {
     /** @var array */
     private $state;
-    /** @var array */
-    private $streamPositions;
+    /** @var CheckpointTag */
+    private $checkpointTag;
 
-    public function __construct(array $state, array $streamPositions)
+    public function __construct(array $state, CheckpointTag $checkpointTag)
     {
         $this->state = $state;
-        $this->streamPositions = $streamPositions;
+        $this->checkpointTag = $checkpointTag;
     }
 
     public function state(): array
@@ -23,8 +24,8 @@ class LoadLatestCheckpointResult
         return $this->state;
     }
 
-    public function streamPositions(): array
+    public function checkpointTag(): CheckpointTag
     {
-        return $this->streamPositions;
+        return $this->checkpointTag;
     }
 }

@@ -17,28 +17,20 @@ use SplQueue;
 use Throwable;
 
 /** @internal */
-class StreamsEventReader extends EventReader
+class MultiStreamEventReader extends EventReader
 {
-    /** @var string[] */
+    /** @var array */
     private $streamNames;
-    /** @var int */
-    private $fromSequenceNumber;
-    /** @var string */
-    private $rowPlaces;
 
     public function __construct(
-        LocalMutex $readMutex,
+        array $streamPositions,
         Pool $pool,
         SplQueue $queue,
-        bool $stopOnEof,
-        array $streamNames,
-        int $fromSequenceNumber
+        bool $stopOnEof
     ) {
-        parent::__construct($readMutex, $pool, $queue, $stopOnEof);
+        parent::__construct(CheckpointTag::fromStreamPositions($streamPositions), $pool, $queue, $stopOnEof);
 
-        $this->streamNames = $streamNames;
-        $this->fromSequenceNumber = $fromSequenceNumber;
-        $this->rowPlaces = \implode(', ', \array_fill(0, \count($this->streamNames), '?'));
+        $this->streamNames = \array_keys($streamPositions);
     }
 
     /** @throws Throwable */
@@ -58,39 +50,44 @@ FROM
     events e1
 LEFT JOIN events e2
     ON (e1.link_to_stream_name = e2.stream_name AND e1.link_to_event_number = e2.event_number)
-WHERE e1.stream_name IN ({$this->rowPlaces})
+WHERE e1.stream_name = ?
 AND e1.event_number > ?
 ORDER BY e1.event_number ASC
 LIMIT ?
 SQL;
-        $params = $this->streamNames;
-        $params[] = $this->fromSequenceNumber;
-        $params[] = self::MaxReads;
-
         /** @var Statement $statement */
         $statement = yield $this->pool->prepare($sql);
-        /** @var ResultSet $result */
-        $result = yield $statement->execute($params);
 
         $readEvents = 0;
 
-        while (yield $result->advance(ResultSet::FETCH_OBJECT)) {
-            $row = $result->getCurrent();
-            ++$readEvents;
+        foreach ($this->streamNames as $streamName) {
+            $params = [
+                $streamName,
+                $this->checkpointTag->streamPosition($streamName),
+                self::MaxReads
+            ];
 
-            $this->queue->enqueue(new RecordedEvent(
-                $row->stream_name,
-                EventId::fromString($row->event_id),
-                $row->event_number,
-                $row->event_type,
-                $row->data,
-                $row->meta_data,
-                $row->is_json,
-                DateTimeUtil::create($row->updated)
-            ));
+            /** @var ResultSet $result */
+            $result = yield $statement->execute($params);
+
+            while (yield $result->advance(ResultSet::FETCH_OBJECT)) {
+                $row = $result->getCurrent();
+                ++$readEvents;
+
+                $this->queue->enqueue(new RecordedEvent(
+                    $row->stream_name,
+                    EventId::fromString($row->event_id),
+                    $row->event_number,
+                    $row->event_type,
+                    $row->data,
+                    $row->meta_data,
+                    $row->is_json,
+                    DateTimeUtil::create($row->updated)
+                ));
+
+                $this->checkpointTag->updateStreamPosition($streamName, $row->event_number);
+            }
         }
-
-        $this->fromSequenceNumber += $readEvents;
 
         if (0 === $readEvents && $this->stopOnEof) {
             $this->eof = true;
@@ -103,15 +100,17 @@ SQL;
 
     public function head(): Generator
     {
+        $placeholder = \implode(', ', \array_fill(0, \count($this->streamNames), '?'));
+
         $sql = <<<SQL
-SELECT MAX(event_number) as head, stream_name FROM events WHERE stream_name IN ($this->rowPlaces)
+SELECT MAX(event_number) as head, stream_name FROM events WHERE stream_name IN ($placeholder)
 GROUP BY stream_name
 SQL;
 
         /** @var Statement $statement */
         $statement = yield $this->pool->prepare($sql);
         /** @var ResultSet $result */
-        $result = yield $statement->execute([$this->streamName]);
+        $result = yield $statement->execute([$this->streamNames]);
 
         $data = [];
 

@@ -86,8 +86,6 @@ class ProjectionRunner
     /** @var Promise */
     private $shutdownPromise;
     /** @var LocalMutex */
-    private $readMutex;
-    /** @var LocalMutex */
     private $persistMutex;
     /** @var int */
     private $projectionEventNumber;
@@ -121,10 +119,8 @@ class ProjectionRunner
     private $mode;
     /** @var bool */
     private $enabled;
-    /** @var array */
-    private $streamPositions = [];
-    /** @var array */
-    private $lastCheckpoint = [];
+    /** @var CheckpointTag|null */
+    private $lastCheckpoint;
 
     public function __construct(string $id, Pool $pool, PsrLogger $logger)
     {
@@ -136,7 +132,6 @@ class ProjectionRunner
         $this->processingQueue = new SplQueue();
         $this->shutdownDeferred = new Deferred();
         $this->shutdownPromise = $this->shutdownDeferred->promise();
-        $this->readMutex = new LocalMutex();
         $this->persistMutex = new LocalMutex();
         $this->statisticsRecorder = new StatisticsRecorder();
     }
@@ -187,8 +182,7 @@ class ProjectionRunner
 
             if ($latestCheckpoint instanceof LoadLatestCheckpointResult) {
                 $this->loadedState = $latestCheckpoint->state();
-                $this->streamPositions = $latestCheckpoint->streamPositions();
-                $this->lastCheckpoint = $latestCheckpoint->streamPositions();
+                $this->lastCheckpoint = $latestCheckpoint->checkpointTag();
             }
 
             $this->checkpointStatus = '';
@@ -365,15 +359,25 @@ SQL;
         $this->lastCheckpointMs = \microtime(true) * 10000;
 
         $readingTask = function () use (&$readingTask): void {
-            if ($this->reader->eof()) {
-                $this->persist(false);
+            if ($this->reader->eof()
+                && $this->processingQueue->isEmpty()
+            ) {
+                $this->persist(true);
 
                 return;
             }
 
-            if ($this->state->equals(ProjectionState::stopping())) {
+            if ($this->state->equals(ProjectionState::stopping()) && ! $this->reader->paused()) {
                 $this->reader->pause();
+                Loop::defer($readingTask);
 
+                return;
+            }
+
+            if ($this->processingQueue->isEmpty()
+                && $this->reader->paused()
+                && $this->state->equals(ProjectionState::stopping())
+            ) {
                 $this->persist(true);
 
                 return;
@@ -398,13 +402,19 @@ SQL;
 
                 return;
             }
-            $this->streamPositions[$event->streamId()] = $event->eventNumber();
+
             ++$this->currentBatchSize;
             ++$this->eventsProcessedAfterRestart;
 
-            if (($this->currentBatchSize >= $this->config->checkpointHandledThreshold()
-                    || $this->currentUnhandledBytes >= $this->config->checkpointUnhandledBytesThreshold())
-                && (\floor(\microtime(true) * 10000 - $this->lastCheckpointMs) >= $this->config->checkpointAfterMs())
+            if (\count($this->emittedEvents) >= $this->config->maxWriteBatchLength()
+                || (
+                    ($this->currentBatchSize >= $this->config->checkpointHandledThreshold()
+                        || $this->currentUnhandledBytes >= $this->config->checkpointUnhandledBytesThreshold()
+                    )
+                    && (
+                        \floor(\microtime(true) * 10000 - $this->lastCheckpointMs) >= $this->config->checkpointAfterMs()
+                    )
+                )
             ) {
                 $this->persist(false);
             }
@@ -430,8 +440,8 @@ SQL;
         $emittedEvents = $this->emittedEvents;
         $streamsOfEmittedEvents = $this->streamsOfEmittedEvents;
         $state = $this->processor->getState();
-        $streamPositions = $this->streamPositions;
         $unhandledTrackedEmittedStreams = $this->unhandledTrackedEmittedStreams;
+        $checkpointTag = $this->reader->checkpointTag();
 
         $this->emittedEvents = [];
         $this->streamsOfEmittedEvents = [];
@@ -461,7 +471,7 @@ SQL;
             $emittedEvents,
             $streamsOfEmittedEvents,
             $state,
-            $streamPositions,
+            $checkpointTag,
             $unhandledTrackedEmittedStreams,
             $stop
         ): Generator {
@@ -508,7 +518,7 @@ SQL;
             if ($this->config->checkpointsEnabled()) {
                 $checkpointStream = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name() . ProjectionNames::ProjectionCheckpointStreamSuffix;
                 yield from $this->acquireLock($checkpointStream);
-                yield from $this->writeCheckPoint($checkpointStream, $state, $streamPositions);
+                yield from $this->writeCheckPoint($checkpointStream, $state, $checkpointTag);
             }
 
             foreach ($streamsOfEmittedEvents as $stream) {
@@ -551,46 +561,44 @@ SQL;
             $expectedVersions[$stream] = $expectedVersion;
         }
 
-        foreach (\array_chunk($emittedEvents, $this->config->maxWriteBatchLength()) as $batch) {
-            $time = \microtime(true);
-            $batchSize = \count($batch);
+        $time = \microtime(true);
+        $batchSize = \count($emittedEvents);
 
-            $this->statisticsRecorder->record(
-                $time,
-                $batchSize
-            );
+        $this->statisticsRecorder->record(
+            $time,
+            $batchSize
+        );
 
-            $params = [];
-            foreach ($batch as $record) {
-                foreach ($record as $row) {
-                    $params[] = $row;
-                }
-
-                $now = new DateTimeImmutable('NOW', new DateTimeZone('UTC'));
-                $params[] = ++$expectedVersions[$record['stream']];
-                $params[] = DateTimeUtil::format($now);
+        $params = [];
+        foreach ($emittedEvents as $record) {
+            foreach ($record as $row) {
+                $params[] = $row;
             }
 
-            $sql = <<<SQL
+            $now = new DateTimeImmutable('NOW', new DateTimeZone('UTC'));
+            $params[] = ++$expectedVersions[$record['stream']];
+            $params[] = DateTimeUtil::format($now);
+        }
+
+        $sql = <<<SQL
 INSERT INTO events (stream_name, event_id, event_type, data, meta_data, is_json, link_to_stream_name, link_to_event_number, event_number, updated)
 VALUES 
 SQL;
-            $sql .= \str_repeat('(?, ?, ?, ?, ?, ?, ?, ?, ?, ?), ', $batchSize);
-            $sql = \substr($sql, 0, -2) . ';';
+        $sql .= \str_repeat('(?, ?, ?, ?, ?, ?, ?, ?, ?, ?), ', $batchSize);
+        $sql = \substr($sql, 0, -2) . ';';
 
-            /** @var Statement $statement */
-            $statement = yield $this->pool->prepare($sql);
-            /** @var CommandResult $result */
-            $result = yield $statement->execute($params);
+        /** @var Statement $statement */
+        $statement = yield $this->pool->prepare($sql);
+        /** @var CommandResult $result */
+        $result = yield $statement->execute($params);
 
-            if (0 === $result->affectedRows()) {
-                throw new Exception\RuntimeException('Could not write events');
-            }
+        if (0 === $result->affectedRows()) {
+            throw new Exception\RuntimeException('Could not write events');
         }
     }
 
     /** @throws Throwable */
-    private function writeCheckPoint(string $checkpointStream, array $state, array $streamPositions): Generator
+    private function writeCheckPoint(string $checkpointStream, array $state, CheckpointTag $checkpointTag): Generator
     {
         $this->checkpointStatus = 'Writing';
 
@@ -606,8 +614,8 @@ SQL;
             $this->operations[__FUNCTION__] = new WriteCheckPointOperation($this->pool);
         }
 
-        $this->lastCheckpoint = $streamPositions;
-        yield from $this->operations[__FUNCTION__]($checkpointStream, $expectedVersion, $state, $streamPositions);
+        $this->lastCheckpoint = $checkpointTag;
+        yield from $this->operations[__FUNCTION__]($checkpointStream, $expectedVersion, $state, $checkpointTag);
         $this->checkpointStatus = '';
 
         $this->logger->info('Checkpoint created');
@@ -619,46 +627,18 @@ SQL;
         return call(function (): Generator {
             $sources = $this->processor->sources();
 
-            if (\count($sources->streams()) === 1) {
-                $streamName = $sources->streams()[0];
+            $builder = new EventReaderBuilder(
+                $sources,
+                $this->lastCheckpoint,
+                function (string $streamName): Promise {
+                    return $this->checkStream($streamName);
+                },
+                $this->pool,
+                $this->processingQueue,
+                $this->config->stopOnEof()
+            );
 
-                if (! isset($this->streamPositions[$streamName])) {
-                    $this->streamPositions[$streamName] = -1;
-                    $this->lastCheckpoint[$streamName] = -1;
-                }
-
-                yield $this->checkStream($streamName);
-
-                return yield new Success(new StreamEventReader(
-                    $this->readMutex,
-                    $this->pool,
-                    $this->processingQueue,
-                    $this->config->stopOnEof(),
-                    $streamName,
-                    $this->streamPositions[$streamName]
-                ));
-            } elseif (\count($sources->streams()) > 2) {
-                foreach ($sources->streams() as $streamName) {
-                    if (! isset($this->streamPositions[$streamName])) {
-                        $this->streamPositions[$streamName] = -1;
-                        $this->lastCheckpoint[$streamName] = -1;
-                    }
-
-                    yield $this->checkStream($streamName);
-                }
-
-                return yield new Success(new StreamsEventReader(
-                    $this->readMutex,
-                    $this->pool,
-                    $this->processingQueue,
-                    $this->config->stopOnEof(),
-                    $sources->streams(),
-                    $this->streamPositions[$streamName]
-                ));
-            }
-
-            // @todo implement
-            throw new Exception\RuntimeException('Not implemented');
+            return yield from $builder->buildEventReader();
         });
     }
 
@@ -761,11 +741,11 @@ SQL;
             yield from $operation($this->definition->name(), $streamsToDelete, true);
 
             $this->loadedState = null;
-            $this->streamPositions = [];
             $this->checkedStreams->clear();
-            $this->lastCheckpoint = [];
+            $this->lastCheckpoint = null;
             $this->trackedEmittedStreams = [];
             $this->unhandledTrackedEmittedStreams = [];
+            $this->reader = yield $this->determineReader();
 
             if (null !== $enableRunAs) {
                 $this->config->runAs()->setIdentity($enableRunAs);
@@ -817,9 +797,8 @@ SQL;
             yield from $operation($this->definition->name(), $streamsToDelete, false);
 
             $this->loadedState = null;
-            $this->streamPositions = [];
             $this->checkedStreams->clear();
-            $this->lastCheckpoint = [];
+            $this->lastCheckpoint = null;
             $this->trackedEmittedStreams = [];
             $this->unhandledTrackedEmittedStreams = [];
 
@@ -953,7 +932,7 @@ SQL;
 
             foreach ($head as $streamName => $position) {
                 $total += $position;
-                $progress += $this->streamPositions[$streamName];
+                $progress += $this->reader->checkpointTag()->streamPosition($streamName);
             }
 
             if (! $this->reader || $this->reader->paused()) {
@@ -976,8 +955,8 @@ SQL;
                 'writesInProgress' => $this->currentlyWriting,
                 'writeQueue' => \count($this->emittedEvents),
                 'checkpointStatus' => $this->checkpointStatus,
-                'position' => $this->streamPositions,
-                'lastCheckpoint' => $this->lastCheckpoint,
+                'position' => $this->reader->checkpointTag()->toArray(),
+                'lastCheckpoint' => $this->lastCheckpoint->toArray(),
                 'progress' => (0 === $total) ? 100.0 : \floor($progress * 100 / $total * 10000) / 10000,
             ];
 

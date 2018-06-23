@@ -14,6 +14,7 @@ use Prooph\EventStore\EventId;
 use Prooph\EventStore\Exception\RuntimeException;
 use Prooph\EventStore\Internal\DateTimeUtil;
 use Prooph\EventStore\Projections\ProjectionEventTypes;
+use Prooph\PostgresProjectionManager\CheckpointTag;
 
 /** @internal */
 class WriteCheckPointOperation
@@ -28,7 +29,7 @@ class WriteCheckPointOperation
         $this->pool = $pool;
     }
 
-    public function __invoke(string $checkpointStream, int $expectedVersion, array $state, array $streamPositions): Generator
+    public function __invoke(string $checkpointStream, int $expectedVersion, array $state, CheckpointTag $checkpointTag): Generator
     {
         if (null === $this->statement || ! $this->statement->isAlive()) {
             $this->statement = yield $this->pool->prepare(<<<SQL
@@ -42,9 +43,7 @@ SQL
         $params[] = ++$expectedVersion;
         $params[] = ProjectionEventTypes::ProjectionCheckpoint;
         $params[] = \json_encode($state);
-        $params[] = \json_encode([
-            '$s' => $streamPositions,
-        ]);
+        $params[] = $checkpointTag->toJsonString();
         $params[] = $checkpointStream;
         $params[] = true;
         $params[] = DateTimeUtil::format(new DateTimeImmutable('NOW', new DateTimeZone('UTC')));

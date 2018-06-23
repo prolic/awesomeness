@@ -21,21 +21,17 @@ class StreamEventReader extends EventReader
 {
     /** @var string */
     private $streamName;
-    /** @var int */
-    private $fromSequenceNumber;
 
     public function __construct(
-        LocalMutex $readMutex,
+        string $streamName,
+        int $fromPosition,
         Pool $pool,
         SplQueue $queue,
-        bool $stopOnEof,
-        string $streamName,
-        int $fromSequenceNumber
+        bool $stopOnEof
     ) {
-        parent::__construct($readMutex, $pool, $queue, $stopOnEof);
+        parent::__construct(CheckpointTag::fromStreamPosition($streamName, $fromPosition), $pool, $queue, $stopOnEof);
 
         $this->streamName = $streamName;
-        $this->fromSequenceNumber = $fromSequenceNumber;
     }
 
     /** @throws Throwable */
@@ -62,8 +58,9 @@ SQL;
 
         /** @var Statement $statement */
         $statement = yield $this->pool->prepare($sql);
+
         /** @var ResultSet $result */
-        $result = yield $statement->execute([$this->streamName, $this->fromSequenceNumber, self::MaxReads]);
+        $result = yield $statement->execute([$this->streamName, $this->checkpointTag->streamPosition($this->streamName), self::MaxReads]);
 
         $readEvents = 0;
 
@@ -81,9 +78,9 @@ SQL;
                 $row->is_json,
                 DateTimeUtil::create($row->updated)
             ));
-        }
 
-        $this->fromSequenceNumber += $readEvents;
+            $this->checkpointTag->updateStreamPosition($this->streamName, $row->event_number);
+        }
 
         if (0 === $readEvents && $this->stopOnEof) {
             $this->eof = true;

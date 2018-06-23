@@ -15,7 +15,10 @@ use SplQueue;
 abstract class EventReader
 {
     public const MaxReads = 400;
+    //@todo add Principal ACL checks
 
+    /** @var CheckpointTag */
+    protected $checkpointTag;
     /** @var LocalMutex */
     protected $readMutex;
     /** @var Pool */
@@ -26,11 +29,17 @@ abstract class EventReader
     protected $stopOnEof;
     /** @var bool */
     protected $paused = true;
+    /** @var bool */
     protected $eof = false;
 
-    public function __construct(LocalMutex $readMutex, Pool $pool, SplQueue $queue, bool $stopOnEof)
-    {
-        $this->readMutex = $readMutex;
+    public function __construct(
+        CheckpointTag $checkpointTag,
+        Pool $pool,
+        SplQueue $queue,
+        bool $stopOnEof
+    ) {
+        $this->checkpointTag = $checkpointTag;
+        $this->readMutex = new LocalMutex();
         $this->pool = $pool;
         $this->queue = $queue;
         $this->stopOnEof = $stopOnEof;
@@ -69,6 +78,11 @@ abstract class EventReader
     public function eof(): bool
     {
         return $this->eof;
+    }
+
+    public function checkpointTag(): CheckpointTag
+    {
+        return $this->checkpointTag;
     }
 
     abstract protected function doRequestEvents(): Generator;
