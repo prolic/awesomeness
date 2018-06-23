@@ -930,9 +930,14 @@ SQL;
 
             $head = yield from $this->reader->head();
 
-            foreach ($head as $streamName => $position) {
-                $total += $position;
-                $progress += $this->reader->checkpointTag()->streamPosition($streamName);
+            if (\is_int($head)) {
+                $total = $head;
+                $progress = $this->reader->checkpointTag()->preparePosition();
+            } else {
+                foreach ($head as $streamName => $position) {
+                    $total += $position;
+                    $progress += $this->reader->checkpointTag()->streamPosition($streamName);
+                }
             }
 
             if (! $this->reader || $this->reader->paused()) {

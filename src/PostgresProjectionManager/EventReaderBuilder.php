@@ -78,9 +78,16 @@ class EventReaderBuilder
                 $this->stopOnEof
             );
         }
+        if (null === $this->checkpointTag) {
+            $this->checkpointTag = CheckpointTag::fromPosition(-1, -1);
+        }
 
-        // @todo implement
-        throw new \RuntimeException('Not implemented');
+        return new AllStreamEventReader(
+                $this->checkpointTag,
+                $this->pool,
+                $this->queue,
+                $this->stopOnEof
+            );
     }
 
     public function checkpointTag(): CheckpointTag
