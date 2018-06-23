@@ -16,14 +16,14 @@ $writeResult = $connection->appendToStream(
             \Prooph\EventStore\EventId::generate(),
             'userCreated',
             true,
-            json_encode(['user' => 'Sacha Prlc', 'email' => 'saschaprolic@googlemail.com']),
+            \json_encode(['user' => 'Sacha Prlc', 'email' => 'saschaprolic@googlemail.com']),
             ''
         ),
         new \Prooph\EventStore\EventData(
             \Prooph\EventStore\EventId::generate(),
             'userNameUpdated',
             true,
-            json_encode(['user' => 'Sascha Prolic']),
+            \json_encode(['user' => 'Sascha Prolic']),
             ''
         ),
     ]
@@ -36,7 +36,7 @@ $streamEventsSlice = $connection->readStreamEventsForward(
     false
 );
 
-var_dump($streamEventsSlice);
+\var_dump($streamEventsSlice);
 
 $writeResult = $connection->setStreamMetadata(
     'sasastream',
@@ -46,10 +46,10 @@ $writeResult = $connection->setStreamMetadata(
     ])
 );
 
-var_dump($writeResult);
+\var_dump($writeResult);
 
 $streamMetadataResult = $connection->getStreamMetadata('sasastream');
 
-var_dump($streamMetadataResult);
+\var_dump($streamMetadataResult);
 
 $connection->deleteStream('sasastream', false);

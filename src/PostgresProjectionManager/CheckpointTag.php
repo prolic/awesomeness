@@ -29,11 +29,11 @@ class CheckpointTag
             throw new \RuntimeException('Invalid json string passed');
         }
 
-        if (isset($data['$s']) && count($data['$s']) === 1) {
+        if (isset($data['$s']) && \count($data['$s']) === 1) {
             return new self($data, self::Stream);
         }
 
-        if (isset($data['$s']) && count($data['$s']) > 1) {
+        if (isset($data['$s']) && \count($data['$s']) > 1) {
             return new self($data, self::MultiStream);
         }
 

@@ -8,7 +8,6 @@ use Amp\Delayed;
 use Amp\Postgres\Pool;
 use Amp\Postgres\ResultSet;
 use Amp\Postgres\Statement;
-use Amp\Sync\LocalMutex;
 use Generator;
 use Prooph\EventStore\EventId;
 use Prooph\EventStore\Internal\DateTimeUtil;
@@ -64,7 +63,7 @@ SQL;
             $params = [
                 $streamName,
                 $this->checkpointTag->streamPosition($streamName),
-                self::MaxReads
+                self::MaxReads,
             ];
 
             /** @var ResultSet $result */
