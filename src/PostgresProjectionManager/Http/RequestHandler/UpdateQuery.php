@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Prooph\PostgresProjectionManager\RequestHandler;
+namespace Prooph\PostgresProjectionManager\Http\RequestHandler;
 
 use Amp\Http\Server\Request;
 use Amp\Http\Server\RequestHandler;
@@ -10,13 +10,13 @@ use Amp\Http\Server\Response;
 use Amp\Http\Server\Router;
 use Amp\Promise;
 use Prooph\PostgresProjectionManager\Exception\ProjectionNotFound;
-use Prooph\PostgresProjectionManager\Messages\EnableMessage;
+use Prooph\PostgresProjectionManager\Messages\UpdateQueryMessage;
 use Prooph\PostgresProjectionManager\ProjectionManager;
 use Throwable;
 use function Amp\call;
 
 /** @internal */
-class EnableProjection implements RequestHandler
+class UpdateQuery implements RequestHandler
 {
     /** @var ProjectionManager */
     private $projectionManager;
@@ -29,16 +29,18 @@ class EnableProjection implements RequestHandler
     public function handleRequest(Request $request): Promise
     {
         $args = $request->getAttribute(Router::class);
-        $name = $args['name'];
-
-        $rawQuery = $request->getUri()->getQuery();
+        $projectionName = $args['name'];
 
         \parse_str($request->getUri()->getQuery(), $query);
-        $enableRunAs = $query['enableRunAs'] ?? null;
 
-        return call(function () use ($name, $enableRunAs) {
+        $type = $query['type'] ?? 'PHP';
+        $emitEnabled = $query['emitEnabled'] ?? false;
+
+        return call(function () use ($projectionName, $request, $type, $emitEnabled) {
+            $query = yield $request->getBody()->buffer();
+
             try {
-                $message = new EnableMessage($name, $enableRunAs);
+                $message = new UpdateQueryMessage($projectionName, $type, $query, $emitEnabled);
                 yield $this->projectionManager->handle($message);
             } catch (ProjectionNotFound $e) {
                 return new Response(404, ['Content-Type' => 'text/plain'], 'Not Found');
@@ -46,7 +48,7 @@ class EnableProjection implements RequestHandler
                 return new Response(500, ['Content-Type' => 'text/plain'], 'Error');
             }
 
-            return new Response(202, ['Content-Type' => 'text/html'], 'OK');
+            return new Response(200, ['Content-Type' => 'text/plain'], 'OK');
         });
     }
 }

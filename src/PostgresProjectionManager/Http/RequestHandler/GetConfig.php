@@ -2,22 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Prooph\PostgresProjectionManager\RequestHandler;
+namespace Prooph\PostgresProjectionManager\Http\RequestHandler;
 
 use Amp\Http\Server\Request;
 use Amp\Http\Server\RequestHandler;
 use Amp\Http\Server\Response;
 use Amp\Http\Server\Router;
 use Amp\Promise;
-use Prooph\EventStore\ProjectionManagement\ProjectionConfig;
 use Prooph\PostgresProjectionManager\Exception\ProjectionNotFound;
-use Prooph\PostgresProjectionManager\Messages\UpdateConfigMessage;
+use Prooph\PostgresProjectionManager\Messages\GetConfigMessage;
 use Prooph\PostgresProjectionManager\ProjectionManager;
 use Throwable;
 use function Amp\call;
 
 /** @internal */
-class UpdateConfig implements RequestHandler
+class GetConfig implements RequestHandler
 {
     /** @var ProjectionManager */
     private $projectionManager;
@@ -32,30 +31,17 @@ class UpdateConfig implements RequestHandler
         $args = $request->getAttribute(Router::class);
         $projectionName = $args['name'];
 
-        return call(function () use ($projectionName, $request) {
-            $config = yield $request->getBody()->buffer();
-            $config = \json_decode($config, true);
-
-            if (\json_last_error() !== \JSON_ERROR_NONE) {
-                return new Response(400, ['Content-Type' => 'text/plain'], 'Invalid request');
-            }
-
+        return call(function () use ($projectionName) {
             try {
-                $config = ProjectionConfig::fromArray($config);
-            } catch (Throwable $e) {
-                return new Response(400, ['Content-Type' => 'text/plain'], 'Invalid request');
-            }
-
-            try {
-                $message = new UpdateConfigMessage($projectionName, $config);
-                yield $this->projectionManager->handle($message);
+                $message = new GetConfigMessage($projectionName);
+                $config = yield $this->projectionManager->handle($message);
             } catch (ProjectionNotFound $e) {
                 return new Response(404, ['Content-Type' => 'text/plain'], 'Not Found');
             } catch (Throwable $e) {
                 return new Response(500, ['Content-Type' => 'text/plain'], 'Error');
             }
 
-            return new Response(200, ['Content-Type' => 'text/plain'], 'OK');
+            return new Response(200, ['Content-Type' => 'application/json'], \json_encode($config));
         });
     }
 }

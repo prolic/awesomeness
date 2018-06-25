@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Prooph\PostgresProjectionManager\RequestHandler;
+namespace Prooph\PostgresProjectionManager\Http\RequestHandler;
 
 use Amp\Http\Server\Request;
 use Amp\Http\Server\RequestHandler;
