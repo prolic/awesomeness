@@ -212,7 +212,7 @@ class ProjectionManager
                 'prooph_connection_string' => $this->connectionString,
                 'prooph_projection_id' => $id,
                 'prooph_projection_name' => $name,
-                'prooph_log_level' => 'DEBUG', //@todo make configurable
+                'prooph_log_level' => $this->logLevel,
                 'AMP_LOG_COLOR' => hasColorSupport(),
             ]);
 
