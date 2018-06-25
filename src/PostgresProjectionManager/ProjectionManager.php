@@ -56,6 +56,8 @@ class ProjectionManager
     private $pool;
     /** @var PsrLogger */
     private $logger;
+    /** @var string */
+    private $logLevel;
     /** @var Process[] */
     private $projections = [];
     /** @var SystemSettings */
@@ -63,11 +65,12 @@ class ProjectionManager
     /** @var Connection */
     private $lockConnection;
 
-    public function __construct(string $connectionString, PsrLogger $logger)
+    public function __construct(string $connectionString, PsrLogger $logger, string $logLevel)
     {
         $this->connectionString = $connectionString;
         $this->pool = new Pool($connectionString);
         $this->logger = $logger;
+        $this->logLevel = $logLevel;
     }
 
     public function start(): Promise
@@ -119,7 +122,7 @@ class ProjectionManager
                     'prooph_connection_string' => $this->connectionString,
                     'prooph_projection_id' => $projectionId,
                     'prooph_projection_name' => $projectionName,
-                    'prooph_log_level' => 'DEBUG', //@todo make configurable
+                    'prooph_log_level' => $this->logLevel,
                     'AMP_LOG_COLOR' => hasColorSupport(),
                 ]);
 

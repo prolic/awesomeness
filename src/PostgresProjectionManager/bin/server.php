@@ -18,37 +18,69 @@ use Amp\Loop;
 use Amp\Socket;
 use DateTimeZone;
 use Monolog\Logger;
+use Psr\Log\LogLevel;
+use ReflectionClass;
+use Zend\Console\Exception\RuntimeException as GetOptException;
+use Zend\Console\Getopt;
 use const SIGINT;
 use const SIGTERM;
 
+try {
+    $opts = new Getopt([
+        'loglevel|l-s' => 'the log level, defaults to INFO',
+        'port|p=i' => 'the port to use, defaults to 2113',
+        'dbhost|h=s' => 'the db host to use, defaults to localhost',
+        'dbuser|u=s' => 'the db username to use, defaults to postgres',
+        'dbpass=s' => 'the db password to use, defaults to postgres',
+        'dbname|d=s' => 'the db name to use, defaults to event_store',
+    ]);
+    $opts->parse();
+} catch (GetOptException $e) {
+    echo $e->getUsageMessage();
+    exit;
+}
+
+$logLevel = \strtolower($opts->getOption('loglevel')) ?? 'info';
+$port = $opts->getOption('port') ?? 2113;
+$dsn = \sprintf(
+    'host=%s port=%d dbname=%s user=%s password=%s',
+    $opts->getOption('dbhost') ?? 'localhost',
+    $opts->getOption('dbport') ?? 5432,
+    $opts->getOption('dbname') ?? 'event_store',
+    $opts->getOption('dbuser') ?? 'postgres',
+    $opts->getOption('dbpass') ?? 'postgres'
+);
+
+$r = new ReflectionClass(LogLevel::class);
+$logLevels = $r->getConstants();
+
+if (! \in_array($logLevel, $logLevels, true)) {
+    echo 'Invalid log level "' . $logLevel . '" provided, use one of ' . \implode(', ', $logLevels);
+    exit;
+}
+
 Logger::setTimezone(new DateTimeZone('UTC'));
 
-Loop::run(function () {
+Loop::run(function () use ($logLevel, $port, $dsn) {
     // start projection manager
-    $logHandler = new StreamHandler(new ResourceOutputStream(\STDOUT));
+    $logHandler = new StreamHandler(new ResourceOutputStream(\STDOUT), $logLevel);
     $logHandler->setFormatter(new ConsoleFormatter());
-    // @todo make configurable
-    $logHandler->setLevel(Logger::DEBUG);
 
     $logger = new Logger('PROJECTIONS');
     $logger->pushHandler($logHandler);
 
-    // @todo make configurable
-    $connectionString = 'host=localhost user=postgres dbname=new_event_store password=postgres';
-    $projectionManager = new ProjectionManager($connectionString, $logger);
+    $projectionManager = new ProjectionManager($dsn, $logger, $logLevel);
 
     yield $projectionManager->start();
 
     // start http server
     $servers = [
-        // @todo make configurable
-        Socket\listen('0.0.0.0:1337'),
-        Socket\listen('[::]:1337'),
+        Socket\listen('0.0.0.0:' . $port),
+        Socket\listen('[::]:' . $port),
     ];
 
-    $logHandler = new StreamHandler(new ResourceOutputStream(\STDOUT));
+    $logHandler = new StreamHandler(new ResourceOutputStream(\STDOUT), $logLevel);
     $logHandler->setFormatter(new ConsoleFormatter());
-    $logHandler->setLevel(Logger::DEBUG);
 
     $logger = new Logger('HTTP');
     $logger->pushHandler($logHandler);
