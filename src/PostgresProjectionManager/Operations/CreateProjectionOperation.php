@@ -17,7 +17,7 @@ use Prooph\EventStore\Internal\DateTimeUtil;
 use Prooph\EventStore\Internal\Principal;
 use Prooph\EventStore\ProjectionManagement\CreateProjectionResult;
 use Prooph\EventStore\Projections\ProjectionEventTypes;
-use Prooph\EventStore\Projections\ProjectionNames;
+use Prooph\EventStore\Projections\ProjectionNamesBuilder;
 use Prooph\EventStore\Projections\StandardProjections;
 use Ramsey\Uuid\Uuid;
 use function Amp\Promise\all;
@@ -64,12 +64,12 @@ class CreateProjectionOperation
 
         yield from $this->lockMulti([
             'projection-' . $name,
-            ProjectionNames::ProjectionsRegistrationStream,
-            ProjectionNames::ProjectionsMasterStream,
-            ProjectionNames::ProjectionsStreamPrefix . $name,
-            ProjectionNames::ProjectionsStreamPrefix . $name . ProjectionNames::ProjectionCheckpointStreamSuffix,
-            ProjectionNames::ProjectionsStreamPrefix . $name . ProjectionNames::ProjectionEmittedStreamSuffix,
-            ProjectionNames::ProjectionsStreamPrefix . $name . ProjectionNames::ProjectionsStateStreamSuffix,
+            ProjectionNamesBuilder::ProjectionsRegistrationStream,
+            ProjectionNamesBuilder::ProjectionsMasterStream,
+            ProjectionNamesBuilder::ProjectionsStreamPrefix . $name,
+            ProjectionNamesBuilder::ProjectionsStreamPrefix . $name . '-checkpoint', // @todo do we need it here?
+            ProjectionNamesBuilder::ProjectionsStreamPrefix . $name . '-emittedstreams', // @todo do we need it here?
+            ProjectionNamesBuilder::ProjectionsStreamPrefix . $name . '-result', // @todo do we need it here?
         ]);
 
         $getExpectedVersionOperation = $this->getExpectedVersionOperation;
@@ -78,10 +78,10 @@ class CreateProjectionOperation
         $transaction = yield $this->pool->transaction();
 
         $streamsToReactivate = [
-            ProjectionNames::ProjectionsStreamPrefix . $name,
-            ProjectionNames::ProjectionsStreamPrefix . $name . ProjectionNames::ProjectionCheckpointStreamSuffix,
-            ProjectionNames::ProjectionsStreamPrefix . $name . ProjectionNames::ProjectionEmittedStreamSuffix,
-            ProjectionNames::ProjectionsStreamPrefix . $name . ProjectionNames::ProjectionsStateStreamSuffix,
+            ProjectionNamesBuilder::ProjectionsStreamPrefix . $name,
+            ProjectionNamesBuilder::ProjectionsStreamPrefix . $name . '-checkpoint', // @todo do we need it here?
+            ProjectionNamesBuilder::ProjectionsStreamPrefix . $name . '-emittedstreams', // @todo do we need it here?
+            ProjectionNamesBuilder::ProjectionsStreamPrefix . $name . '-result', // @todo do we need it here?
         ];
 
         $placeholder = \substr(\str_repeat('?, ', \count($streamsToReactivate)), 0, -2) . ';';
@@ -140,31 +140,31 @@ SQL;
         $params = [
             // registration stream
             EventId::generate()->toString(),
-            yield from $getExpectedVersionOperation(ProjectionNames::ProjectionsRegistrationStream) + 1,
+            yield from $getExpectedVersionOperation(ProjectionNamesBuilder::ProjectionsRegistrationStream) + 1,
             ProjectionEventTypes::ProjectionCreated,
             $name,
             '',
-            ProjectionNames::ProjectionsRegistrationStream,
+            ProjectionNamesBuilder::ProjectionsRegistrationStream,
             false,
             $now,
             // master stream
             EventId::generate()->toString(),
-            yield from $getExpectedVersionOperation(ProjectionNames::ProjectionsMasterStream) + 1,
+            yield from $getExpectedVersionOperation(ProjectionNamesBuilder::ProjectionsMasterStream) + 1,
             '$prepared',
             \json_encode([
                 'id' => $projectionId,
             ]),
             '',
-            ProjectionNames::ProjectionsMasterStream,
+            ProjectionNamesBuilder::ProjectionsMasterStream,
             true,
             $now,
             // projection stream
             EventId::generate()->toString(),
-            yield from $getExpectedVersionOperation(ProjectionNames::ProjectionsStreamPrefix . $name) + 1,
+            yield from $getExpectedVersionOperation(ProjectionNamesBuilder::ProjectionsStreamPrefix . $name) + 1,
             ProjectionEventTypes::ProjectionUpdated,
             \json_encode($eventData),
             '',
-            ProjectionNames::ProjectionsStreamPrefix . $name,
+            ProjectionNamesBuilder::ProjectionsStreamPrefix . $name,
             true,
             $now,
         ];

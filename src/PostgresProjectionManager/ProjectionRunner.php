@@ -29,6 +29,7 @@ use Prooph\EventStore\ProjectionManagement\ProjectionConfig;
 use Prooph\EventStore\ProjectionManagement\ProjectionDefinition;
 use Prooph\EventStore\Projections\ProjectionMode;
 use Prooph\EventStore\Projections\ProjectionNames;
+use Prooph\EventStore\Projections\ProjectionNamesBuilder;
 use Prooph\EventStore\Projections\ProjectionState;
 use Prooph\EventStore\Projections\StandardProjections;
 use Prooph\EventStore\RecordedEvent;
@@ -126,6 +127,8 @@ class ProjectionRunner
     private $enabled;
     /** @var CheckpointTag|null */
     private $lastCheckpoint;
+    /** @var ProjectionNamesBuilder */
+    private $projectionNamesBuilder;
 
     public function __construct(string $id, Pool $pool, PsrLogger $logger)
     {
@@ -164,7 +167,7 @@ class ProjectionRunner
 
         $this->lockConnection = yield $this->pool->extractConnection();
 
-        $projectionStream = ProjectionNames::ProjectionsStreamPrefix . $name;
+        $projectionStream = ProjectionNamesBuilder::ProjectionsStreamPrefix . $name;
 
         $streamRoles = yield from (new LoadProjectionStreamRolesOperation())($this->pool, $projectionStream);
 
@@ -176,27 +179,6 @@ class ProjectionRunner
         $this->projectionEventNumber = $result->projectionEventNumber();
 
         $this->checkAcl($streamRoles, $projectionStream);
-
-        if ($this->config->checkpointsEnabled()) {
-            $this->checkpointStatus = 'Reading';
-
-            $latestCheckpoint = yield from (new LoadLatestCheckpointOperation())(
-                $this->pool,
-                $projectionStream . ProjectionNames::ProjectionCheckpointStreamSuffix
-            );
-
-            if ($latestCheckpoint instanceof LoadLatestCheckpointResult) {
-                $this->loadedState = $latestCheckpoint->state();
-                $this->lastCheckpoint = $latestCheckpoint->checkpointTag();
-            }
-
-            $this->checkpointStatus = '';
-        }
-
-        if ($this->config->trackEmittedStreams()) {
-            $emittedStream = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name() . ProjectionNames::ProjectionEmittedStreamSuffix;
-            $this->trackedEmittedStreams = yield from (new LoadTrackedEmittedStreamsOperation())($this->pool, $emittedStream);
-        }
 
         if ($this->config->emitEnabled()) {
             $notify = function (string $streamName, string $eventType, string $data, string $metadata = '', bool $isJson = false): void {
@@ -231,6 +213,30 @@ class ProjectionRunner
         );
 
         $this->reader = yield $this->determineReader();
+        $this->projectionNamesBuilder = new ProjectionNamesBuilder($name, $sources);
+
+        if ($this->config->checkpointsEnabled()) {
+            $this->checkpointStatus = 'Reading';
+
+            $latestCheckpoint = yield from (new LoadLatestCheckpointOperation())(
+                $this->pool,
+                $this->projectionNamesBuilder->checkpointStreamName()
+            );
+
+            if ($latestCheckpoint instanceof LoadLatestCheckpointResult) {
+                $this->loadedState = $latestCheckpoint->state();
+                $this->lastCheckpoint = $latestCheckpoint->checkpointTag();
+            }
+
+            $this->checkpointStatus = '';
+        }
+
+        if ($this->config->trackEmittedStreams()) {
+            $this->trackedEmittedStreams = yield from (new LoadTrackedEmittedStreamsOperation())(
+                $this->pool,
+                $this->projectionNamesBuilder->emittedStreamsName()
+            );
+        }
     }
 
     /** @throws Throwable */
@@ -264,7 +270,7 @@ SQL;
 
                 /** @var CommandResult $result */
                 $result = yield $statement->execute([
-                    ProjectionNames::ProjectionsStreamPrefix . $this->definition->name(),
+                    $this->projectionNamesBuilder->effectiveProjectionName(),
                     EventId::generate()->toString(),
                     $this->projectionEventNumber + 1,
                     '$start',
@@ -309,7 +315,7 @@ SQL;
 
             /** @var CommandResult $result */
             $result = yield $statement->execute([
-                ProjectionNames::ProjectionsStreamPrefix . $this->definition->name(),
+                $this->projectionNamesBuilder->effectiveProjectionName(),
                 EventId::generate()->toString(),
                 $this->projectionEventNumber + 1,
                 '$stop',
@@ -488,17 +494,17 @@ SQL;
             }
 
             if ($this->config->trackEmittedStreams()) {
-                $emittedStream = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name() . ProjectionNames::ProjectionEmittedStreamSuffix;
+                $emittedStreamsName = $this->projectionNamesBuilder->emittedStreamsName();
 
-                yield from $this->acquireLock($emittedStream);
+                yield from $this->acquireLock($emittedStreamsName);
 
                 $emittedStreamsExpectedVersion = ExpectedVersion::NoStream;
 
                 try {
-                    yield $this->checkStream($emittedStream);
-                    $emittedStreamsExpectedVersion = yield from $this->getExpectedVersion($emittedStream);
+                    yield $this->checkStream($emittedStreamsName);
+                    $emittedStreamsExpectedVersion = yield from $this->getExpectedVersion($emittedStreamsName);
                 } catch (StreamNotFound $e) {
-                    yield from $this->createStream($emittedStream);
+                    yield from $this->createStream($emittedStreamsName);
                 }
 
                 if (! isset($this->operations['writeEmittedStreams'])) {
@@ -506,7 +512,7 @@ SQL;
                 }
 
                 $this->operations['writeEmittedStreams'](
-                    $emittedStream,
+                    $emittedStreamsName,
                     $unhandledTrackedEmittedStreams,
                     $emittedStreamsExpectedVersion
                 );
@@ -515,13 +521,13 @@ SQL;
                     $this->trackedEmittedStreams[] = $trackedEmittedStream;
                 }
 
-                yield from $this->releaseLock($emittedStream);
+                yield from $this->releaseLock($emittedStreamsName);
             }
 
             yield from $this->writeEmittedEvents($emittedEvents, $streamsOfEmittedEvents);
 
             if ($this->config->checkpointsEnabled()) {
-                $checkpointStream = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name() . ProjectionNames::ProjectionCheckpointStreamSuffix;
+                $checkpointStream = $this->projectionNamesBuilder->checkpointStreamName();
                 yield from $this->acquireLock($checkpointStream);
                 yield from $this->writeCheckPoint($checkpointStream, $state, $checkpointTag);
             }
@@ -738,9 +744,9 @@ SQL;
             Loop::cancel($watcherId);
 
             $streamsToDelete = $this->trackedEmittedStreams;
-            $streamsToDelete[] = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name() . ProjectionNames::ProjectionCheckpointStreamSuffix;
-            $streamsToDelete[] = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name() . ProjectionNames::ProjectionEmittedStreamSuffix;
-            $streamsToDelete[] = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name() . ProjectionNames::ProjectionsStateStreamSuffix;
+            $streamsToDelete[] = $this->projectionNamesBuilder->checkpointStreamName();
+            $streamsToDelete[] = $this->projectionNamesBuilder->emittedStreamsName();
+            $streamsToDelete[] = $this->projectionNamesBuilder->resultStreamName();
 
             $operation = new DeleteProjectionOperation($this->pool);
             yield from $operation($this->definition->name(), $streamsToDelete, true);
@@ -788,15 +794,15 @@ SQL;
             }
 
             if ($deleteCheckpointStream) {
-                $streamsToDelete[] = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name() . ProjectionNames::ProjectionCheckpointStreamSuffix;
+                $streamsToDelete[] = $this->projectionNamesBuilder->checkpointStreamName();
             }
 
             if ($deleteStateStream) {
-                $streamsToDelete[] = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name() . ProjectionNames::ProjectionsStateStreamSuffix;
+                $streamsToDelete[] = $this->projectionNamesBuilder->resultStreamName();
             }
 
-            $streamsToDelete[] = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name() . ProjectionNames::ProjectionEmittedStreamSuffix;
-            $streamsToDelete[] = ProjectionNames::ProjectionsStreamPrefix . $this->definition->name();
+            $streamsToDelete[] = $this->projectionNamesBuilder->emittedStreamsName();
+            $streamsToDelete[] = $this->projectionNamesBuilder->effectiveProjectionName();
 
             $operation = new DeleteProjectionOperation($this->pool);
             yield from $operation($this->definition->name(), $streamsToDelete, false);

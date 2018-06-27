@@ -12,7 +12,7 @@ use Prooph\EventStore\Exception\ProjectionNotFound;
 use Prooph\EventStore\ExpectedVersion;
 use Prooph\EventStore\ProjectionManagement\ProjectionManagement;
 use Prooph\EventStore\Projections\ProjectionEventTypes;
-use Prooph\EventStore\Projections\ProjectionNames;
+use Prooph\EventStore\Projections\ProjectionNamesBuilder;
 use Prooph\EventStore\Projections\StandardProjections;
 use Prooph\EventStore\UserCredentials;
 use Prooph\PdoEventStore\PdoEventStoreConnection;
@@ -57,7 +57,7 @@ final class PdoProjectionManagement implements ProjectionManagement
         $projectionId = $this->fetchProjectionId($name);
 
         $this->pdoEventStoreConnection->appendToStream(
-            ProjectionNames::ProjectionsMasterStream,
+            ProjectionNamesBuilder::ProjectionsMasterStream,
             ExpectedVersion::Any,
             [
                 new EventData(
@@ -73,13 +73,13 @@ final class PdoProjectionManagement implements ProjectionManagement
             $userCredentials
         );
 
-        $streamName = ProjectionNames::ProjectionsStreamPrefix . $name;
+        $streamName = ProjectionNamesBuilder::ProjectionsStreamPrefix . $name;
 
         $data = $this->fetchLastProjectionStreamDataByEventType($streamName, ProjectionEventTypes::ProjectionUpdated);
         $data['query'] = $query;
 
         $this->pdoEventStoreConnection->appendToStream(
-            ProjectionNames::ProjectionsStreamPrefix . $name,
+            ProjectionNamesBuilder::ProjectionsStreamPrefix . $name,
             ExpectedVersion::Any,
             [
                 new EventData(

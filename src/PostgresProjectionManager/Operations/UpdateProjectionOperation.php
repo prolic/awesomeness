@@ -15,7 +15,7 @@ use Prooph\EventStore\Internal\DateTimeUtil;
 use Prooph\EventStore\ProjectionManagement\Internal\ProjectionConfig as InternalProjectionConfig;
 use Prooph\EventStore\ProjectionManagement\ProjectionConfig;
 use Prooph\EventStore\Projections\ProjectionEventTypes;
-use Prooph\EventStore\Projections\ProjectionNames;
+use Prooph\EventStore\Projections\ProjectionNamesBuilder;
 use function Amp\Promise\all;
 
 /** @internal */
@@ -46,8 +46,8 @@ class UpdateProjectionOperation
         array $currentConfiguration
     ): Generator {
         yield from $this->lockMulti([
-            ProjectionNames::ProjectionsMasterStream,
-            ProjectionNames::ProjectionsStreamPrefix . $name,
+            ProjectionNamesBuilder::ProjectionsMasterStream,
+            ProjectionNamesBuilder::ProjectionsStreamPrefix . $name,
         ]);
 
         $getExpectedVersionOperation = $this->getExpectedVersionOperation;
@@ -73,22 +73,22 @@ SQL;
         $params = [
             // master stream
             EventId::generate()->toString(),
-            yield from $getExpectedVersionOperation(ProjectionNames::ProjectionsMasterStream) + 1,
+            yield from $getExpectedVersionOperation(ProjectionNamesBuilder::ProjectionsMasterStream) + 1,
             '$prepared',
             \json_encode([
                 'id' => $id,
             ]),
             '',
-            ProjectionNames::ProjectionsMasterStream,
+            ProjectionNamesBuilder::ProjectionsMasterStream,
             true,
             $now,
             // projection stream
             EventId::generate()->toString(),
-            yield from $getExpectedVersionOperation(ProjectionNames::ProjectionsStreamPrefix . $name) + 1,
+            yield from $getExpectedVersionOperation(ProjectionNamesBuilder::ProjectionsStreamPrefix . $name) + 1,
             ProjectionEventTypes::ProjectionUpdated,
             \json_encode($data),
             '',
-            ProjectionNames::ProjectionsStreamPrefix . $name,
+            ProjectionNamesBuilder::ProjectionsStreamPrefix . $name,
             true,
             $now,
         ];
