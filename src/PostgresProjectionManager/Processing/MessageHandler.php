@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Prooph\PostgresProjectionManager;
+namespace Prooph\PostgresProjectionManager\Processing;
 
 use Amp\Loop;
 use Amp\Parallel\Sync\Channel;

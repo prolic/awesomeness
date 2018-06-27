@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Prooph\PostgresProjectionManager;
+namespace Prooph\PostgresProjectionManager\Processing;
 
 use Amp\Postgres\Pool;
 use Generator;

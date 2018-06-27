@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Prooph\PostgresProjectionManager;
+namespace Prooph\PostgresProjectionManager\Processing;
 
 use Amp\Delayed;
 use Amp\Postgres\ResultSet;

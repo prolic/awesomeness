@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Prooph\PostgresProjectionManager;
+namespace Prooph\PostgresProjectionManager\Processing;
 
 use Prooph\EventStore\Common\SystemEventTypes;
 use Prooph\EventStore\RecordedEvent;
