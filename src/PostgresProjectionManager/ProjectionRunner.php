@@ -28,7 +28,6 @@ use Prooph\EventStore\ProjectionManagement\Internal\ProjectionConfig as Internal
 use Prooph\EventStore\ProjectionManagement\ProjectionConfig;
 use Prooph\EventStore\ProjectionManagement\ProjectionDefinition;
 use Prooph\EventStore\Projections\ProjectionMode;
-use Prooph\EventStore\Projections\ProjectionNames;
 use Prooph\EventStore\Projections\ProjectionNamesBuilder;
 use Prooph\EventStore\Projections\ProjectionState;
 use Prooph\EventStore\Projections\StandardProjections;

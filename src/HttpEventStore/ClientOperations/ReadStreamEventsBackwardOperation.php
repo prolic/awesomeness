@@ -14,7 +14,6 @@ use Prooph\EventStore\Internal\DateTimeUtil;
 use Prooph\EventStore\Messages\EventRecord;
 use Prooph\EventStore\Messages\ResolvedIndexedEvent;
 use Prooph\EventStore\ReadDirection;
-use Prooph\EventStore\RecordedEvent;
 use Prooph\EventStore\SliceReadStatus;
 use Prooph\EventStore\StreamEventsSlice;
 use Prooph\EventStore\UserCredentials;

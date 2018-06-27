@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 namespace Prooph\EventStore\Projections;
+
 use Prooph\EventStore\ProjectionManagement\QuerySourcesDefinition;
 
 /** @internal */
@@ -37,7 +38,7 @@ class ProjectionNamesBuilder
     private $emittedStreamsName;
     /** @var string */
     private $emittedStreamsCheckpointName;
-    
+
     public function __construct(string $name, QuerySourcesDefinition $sources)
     {
         $this->name = $name;
@@ -55,12 +56,12 @@ class ProjectionNamesBuilder
         $this->emittedStreamsCheckpointName = self::ProjectionsStreamPrefix . $this->effectiveProjectionName()
             . self::ProjectionEmittedStreamSuffix . self::ProjectionCheckpointStreamSuffix;
     }
-    
+
     public function effectiveProjectionName(): string
     {
         return $this->name;
     }
-    
+
     public function resultStreamName(): string
     {
         return $this->resultStreamName;
