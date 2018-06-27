@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
+/**
+ * Represents an event to be written.
+ */
 class EventData
 {
     /** @var EventId */

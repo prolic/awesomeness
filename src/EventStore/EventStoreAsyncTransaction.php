@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
-use Prooph\EventStore\Task\WriteResultTask;
+use Amp\Promise;
 
 class EventStoreAsyncTransaction
 {
@@ -29,7 +29,8 @@ class EventStoreAsyncTransaction
         $this->connection = $connection;
     }
 
-    public function commit(): WriteResultTask
+    /** @return Promise<WriteResult> */
+    public function commit(): Promise
     {
         if ($this->isRolledBack) {
             throw new \RuntimeException('Cannot commit a rolledback transaction');

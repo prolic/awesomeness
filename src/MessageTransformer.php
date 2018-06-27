@@ -8,7 +8,7 @@ use Prooph\Common\Messaging\DomainMessage;
 use Prooph\Common\Messaging\Message;
 use Prooph\EventStore\EventData;
 use Prooph\EventStore\EventId;
-use Prooph\EventStore\RecordedEvent;
+use Prooph\EventStore\ResolvedEvent;
 
 class MessageTransformer
 {
@@ -20,8 +20,9 @@ class MessageTransformer
         $this->messageMap = $messageMap;
     }
 
-    public function toMessage(RecordedEvent $event): Message
+    public function toMessage(ResolvedEvent $event): Message
     {
+        $event = $event->originalEvent();
         $type = $event->eventType();
 
         if (isset($this->messageMap[$type])) {

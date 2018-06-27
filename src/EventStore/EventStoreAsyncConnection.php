@@ -4,11 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
-use Prooph\EventStore\Task\DeleteResultTask;
-use Prooph\EventStore\Task\EventReadResultTask;
-use Prooph\EventStore\Task\StreamEventsSliceTask;
-use Prooph\EventStore\Task\StreamMetadataResultTask;
-use Prooph\EventStore\Task\WriteResultTask;
+use Amp\Promise;
 
 interface EventStoreAsyncConnection
 {
@@ -16,61 +12,81 @@ interface EventStoreAsyncConnection
 
     public function close(): void;
 
+    /** @return Promise<DeleteResult> */
     public function deleteStreamAsync(
         string $stream,
         bool $hardDelete,
         UserCredentials $userCredentials = null
-    ): DeleteResultTask;
+    ): Promise;
 
     /**
      * @param string $stream
      * @param int $expectedVersion
      * @param null|UserCredentials $userCredentials
      * @param EventData[] $events
-     * @return WriteResultTask
+     * @return Promise<WriteResult>
      */
     public function appendToStreamAsync(
         string $stream,
         int $expectedVersion,
         array $events,
         UserCredentials $userCredentials = null
-    ): WriteResultTask;
+    ): Promise;
 
-    /**
-     * for event number see StreamPosition
-     */
+    /** @return Promise<EventReadResult> */
     public function readEventAsync(
         string $stream,
         int $eventNumber,
         UserCredentials $userCredentials = null
-    ): EventReadResultTask;
+    ): Promise;
 
+    /** @return Promise<StreamEventsSlice> */
     public function readStreamEventsForwardAsync(
         string $stream,
         int $start,
         int $count,
         bool $resolveLinkTos = true,
         UserCredentials $userCredentials = null
-    ): StreamEventsSliceTask;
+    ): Promise;
 
+    /** @return Promise<StreamEventsSlice> */
     public function readStreamEventsBackwardAsync(
         string $stream,
         int $start,
         int $count,
         bool $resolveLinkTos = true,
         UserCredentials $userCredentials = null
-    ): StreamEventsSliceTask;
+    ): Promise;
 
+    /** @return Promise<AllEventsSlice> */
+    public function readAllEventsForward(
+        Position $position,
+        int $count,
+        bool $resolveLinkTos = true,
+        UserCredentials $userCredentials = null
+    ): Promise;
+
+    /** @return Promise<AllEventsSlice> */
+    public function readAllEventsBackward(
+        Position $position,
+        int $count,
+        bool $resolveLinkTos = true,
+        UserCredentials $userCredentials = null
+    ): Promise;
+
+    /** @return Promise<WriteResult> */
     public function setStreamMetadataAsync(
         string $stream,
         int $expectedMetaStreamVersion,
         StreamMetadata $metadata,
         UserCredentials $userCredentials = null
-    ): WriteResultTask;
+    ): Promise;
 
-    public function getStreamMetadataAsync(string $stream, UserCredentials $userCredentials = null): StreamMetadataResultTask;
+    /** @return Promise<StreamMetadataResult> */
+    public function getStreamMetadataAsync(string $stream, UserCredentials $userCredentials = null): Promise;
 
-    public function setSystemSettingsAsync(SystemSettings $settings, UserCredentials $userCredentials = null): WriteResultTask;
+    /** @return Promise<WriteResult> */
+    public function setSystemSettingsAsync(SystemSettings $settings, UserCredentials $userCredentials = null): Promise;
 
     // @todo event handlers
 }

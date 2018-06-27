@@ -14,7 +14,7 @@ class StreamEventsSlice
     private $fromEventNumber;
     /** @var ReadDirection */
     private $readDirection;
-    /** @var RecordedEvent[] */
+    /** @var ResolvedEvent[] */
     private $events;
     /** @var int */
     private $nextEventNumber;
@@ -64,7 +64,7 @@ class StreamEventsSlice
     }
 
     /**
-     * @return RecordedEvent[]
+     * @return ResolvedEvent[]
      */
     public function events(): array
     {

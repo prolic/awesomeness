@@ -4,34 +4,32 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
-use Prooph\EventStore\Task\CreatePersistentSubscriptionTask;
-use Prooph\EventStore\Task\DeletePersistentSubscriptionTask;
-use Prooph\EventStore\Task\GetInformationForSubscriptionsTask;
-use Prooph\EventStore\Task\GetInformationForSubscriptionTask;
-use Prooph\EventStore\Task\ReplayParkedTask;
-use Prooph\EventStore\Task\UpdatePersistentSubscriptionTask;
+use Amp\Promise;
 
 interface EventStoreAsyncSubscriptionConnection extends EventStoreAsyncConnection
 {
+    /** @return Promise<CreatePersistentSubscription> */
     public function createPersistentSubscriptionAsync(
         string $stream,
         string $groupName,
         PersistentSubscriptionSettings $settings,
         UserCredentials $userCredentials = null
-    ): CreatePersistentSubscriptionTask;
+    ): Promise;
 
+    /** @return Promise<UpdatePersistentSubscription> */
     public function updatePersistentSubscriptionAsync(
         string $stream,
         string $groupName,
         PersistentSubscriptionSettings $settings,
         UserCredentials $userCredentials = null
-    ): UpdatePersistentSubscriptionTask;
+    ): Promise;
 
+    /** @return Promise<DeletePersistentSubscription> */
     public function deletePersistentSubscriptionAsync(
         string $stream,
         string $groupName,
         UserCredentials $userCredentials = null
-    ): DeletePersistentSubscriptionTask;
+    ): Promise;
 
     /**
      * @param string $stream
@@ -53,24 +51,28 @@ interface EventStoreAsyncSubscriptionConnection extends EventStoreAsyncConnectio
         UserCredentials $userCredentials = null
     ): EventStorePersistentSubscription;
 
+    /** @return Promise<ReplayParkedResult> */
     public function replayParkedAsync(
         string $stream,
         string $groupName,
         UserCredentials $userCredentials = null
-    ): ReplayParkedTask;
+    ): Promise;
 
+    /** @return Promise<GetInformationForSubscriptions> */
     public function getInformationForAllSubscriptionsAsync(
         UserCredentials $userCredentials = null
-    ): GetInformationForSubscriptionsTask;
+    ): Promise;
 
+    /** @return Promise<GetInformationForSubscriptions> */
     public function getInformationForSubscriptionsWithStreamAsync(
         string $stream,
         UserCredentials $userCredentials = null
-    ): GetInformationForSubscriptionsTask;
+    ): Promise;
 
+    /** @return Promise<GetInformationForSubscription> */
     public function getInformationForSubscriptionAsync(
         string $stream,
         string $groupName,
         UserCredentials $userCredentials = null
-    ): GetInformationForSubscriptionTask;
+    ): Promise;
 }

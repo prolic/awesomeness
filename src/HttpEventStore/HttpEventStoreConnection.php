@@ -26,6 +26,7 @@ use Prooph\EventStore\Internal\PersistentSubscriptionDeleteResult;
 use Prooph\EventStore\Internal\PersistentSubscriptionUpdateResult;
 use Prooph\EventStore\Internal\ReplayParkedResult;
 use Prooph\EventStore\PersistentSubscriptionSettings;
+use Prooph\EventStore\Position;
 use Prooph\EventStore\StreamEventsSlice;
 use Prooph\EventStore\StreamMetadata;
 use Prooph\EventStore\StreamMetadataResult;
@@ -140,10 +141,15 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
     public function readEvent(
         string $stream,
         int $eventNumber,
+        bool $resolveLinkTo = true,
         UserCredentials $userCredentials = null
     ): EventReadResult {
         if (empty($stream)) {
             throw new InvalidArgumentException('Stream cannot be empty');
+        }
+
+        if ('$all' === $stream) {
+            throw new InvalidArgumentException('Stream cannot be $all');
         }
 
         if ($eventNumber < -1) {
@@ -157,6 +163,7 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
             $this->baseUri,
             $stream,
             $eventNumber,
+            $resolveLinkTo,
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
     }
@@ -235,6 +242,24 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
             $resolveLinkTos,
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
+    }
+
+    public function readAllEventsForward(
+        Position $position,
+        int $count,
+        bool $resolveLinkTos = true,
+        UserCredentials $userCredentials = null
+    ): StreamEventsSlice {
+        // TODO: Implement readAllEventsForward() method.
+    }
+
+    public function readAllEventsBackward(
+        Position $position,
+        int $count,
+        bool $resolveLinkTos = true,
+        UserCredentials $userCredentials = null
+    ): StreamEventsSlice {
+        // TODO: Implement readAllEventsBackward() method.
     }
 
     public function setStreamMetadata(

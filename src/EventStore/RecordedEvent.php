@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Prooph\EventStore;
 
 use DateTimeImmutable;
+use Prooph\EventStore\Messages\EventRecord;
 
 class RecordedEvent
 {
     /** @var string */
-    private $streamId;
+    private $streamName;
     /** @var EventId */
     private $eventId;
     /** @var int */
@@ -26,29 +27,21 @@ class RecordedEvent
     private $created;
 
     /** @internal */
-    public function __construct(
-        string $streamId,
-        EventId $eventId,
-        int $eventNumber,
-        string $eventType,
-        string $data,
-        string $metaData,
-        bool $isJson,
-        DateTimeImmutable $created
-    ) {
-        $this->streamId = $streamId;
-        $this->eventId = $eventId;
-        $this->eventNumber = $eventNumber;
-        $this->eventType = $eventType;
-        $this->data = $data;
-        $this->metaData = $metaData;
-        $this->isJson = $isJson;
-        $this->created = $created;
+    public function __construct(EventRecord $eventRecord)
+    {
+        $this->streamName = $eventRecord->eventStreamId();
+        $this->eventId = $eventRecord->eventId();
+        $this->eventNumber = $eventRecord->eventNumber();
+        $this->eventType = $eventRecord->eventType();
+        $this->data = $eventRecord->data();
+        $this->metaData = $eventRecord->metadata();
+        $this->isJson = $eventRecord->isJson();
+        $this->created = $eventRecord->created();
     }
 
-    public function streamId(): string
+    public function streamName(): string
     {
-        return $this->streamId;
+        return $this->streamName;
     }
 
     public function eventId(): EventId

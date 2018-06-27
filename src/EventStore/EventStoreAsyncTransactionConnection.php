@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
+use Amp\Promise;
+
 /** @internal */
 interface EventStoreAsyncTransactionConnection
 {
@@ -14,13 +16,14 @@ interface EventStoreAsyncTransactionConnection
     ): EventStoreAsyncTransaction;
 
     public function transactionalWriteAsync(
-        EventStoreTransaction $transaction,
+        EventStoreAsyncTransaction $transaction,
         array $events,
         ?UserCredentials $userCredentials
-    ): Task;
+    ): Promise;
 
+    /** @return Promise<WriteResult> */
     public function commitTransactionAsync(
-        EventStoreTransaction $transaction,
+        EventStoreAsyncTransaction $transaction,
         ?UserCredentials $userCredentials
-    ): Task\WriteResultTask;
+    ): Promise;
 }

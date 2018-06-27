@@ -36,6 +36,7 @@ interface EventStoreConnection
     public function readEvent(
         string $stream,
         int $eventNumber,
+        bool $resolveLinkTo = true,
         UserCredentials $userCredentials = null
     ): EventReadResult;
 
@@ -50,6 +51,20 @@ interface EventStoreConnection
     public function readStreamEventsBackward(
         string $stream,
         int $start,
+        int $count,
+        bool $resolveLinkTos = true,
+        UserCredentials $userCredentials = null
+    ): StreamEventsSlice;
+
+    public function readAllEventsForward(
+        Position $position,
+        int $count,
+        bool $resolveLinkTos = true,
+        UserCredentials $userCredentials = null
+    ): StreamEventsSlice;
+
+    public function readAllEventsBackward(
+        Position $position,
         int $count,
         bool $resolveLinkTos = true,
         UserCredentials $userCredentials = null

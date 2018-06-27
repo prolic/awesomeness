@@ -13,9 +13,9 @@ $connection = new \Prooph\HttpEventStore\HttpEventStoreConnection(
 $subscription = $connection->connectToPersistentSubscription(
     'sasastream',
     'test',
-    function (\Prooph\EventStore\EventStorePersistentSubscription $subscription, \Prooph\EventStore\RecordedEvent $event): void {
-        echo $event->eventId()->toString() . PHP_EOL;
-        echo $event->data() . PHP_EOL;
+    function (\Prooph\EventStore\EventStorePersistentSubscription $subscription, \Prooph\EventStore\ResolvedEvent $event): void {
+        echo $event->originalEvent()->eventId()->toString() . PHP_EOL;
+        echo $event->originalEvent()->data() . PHP_EOL;
         echo '#########################' . PHP_EOL;
     }
 );

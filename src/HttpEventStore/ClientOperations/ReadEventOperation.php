@@ -7,12 +7,14 @@ namespace Prooph\HttpEventStore\ClientOperations;
 use Http\Client\HttpClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
+use Prooph\EventStore\Common\SystemEventTypes;
 use Prooph\EventStore\EventId;
 use Prooph\EventStore\EventReadResult;
 use Prooph\EventStore\EventReadStatus;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Internal\DateTimeUtil;
-use Prooph\EventStore\RecordedEvent;
+use Prooph\EventStore\Messages\EventRecord;
+use Prooph\EventStore\Messages\ResolvedIndexedEvent;
 use Prooph\EventStore\UserCredentials;
 use Prooph\HttpEventStore\Http\RequestMethod;
 
@@ -26,6 +28,7 @@ class ReadEventOperation extends Operation
         string $baseUri,
         string $stream,
         int $eventNumber,
+        bool $resolveLinkTo,
         ?UserCredentials $userCredentials
     ): EventReadResult {
         $headers = [
@@ -62,30 +65,47 @@ class ReadEventOperation extends Operation
                     return new EventReadResult(EventReadStatus::notFound(), $stream, $eventNumber, null);
                 }
 
-                $data = $json['data'] ?? '';
+                if ($resolveLinkTo && $json['streamId'] !== $stream) {
+                    $data = $json['data'] ?? '';
 
-                if (\is_array($data)) {
-                    $data = \json_encode($data);
+                    if (\is_array($data)) {
+                        $data = \json_encode($data);
+                    }
+
+                    $field = isset($json['isLinkMetaData']) && $json['isLinkMetaData'] ? 'linkMetaData' : 'metaData';
+
+                    $metadata = $json[$field] ?? '';
+
+                    if (\is_array($metadata)) {
+                        $metadata = \json_encode($metadata);
+                    }
+
+                    $link = new EventRecord(
+                        $stream,
+                        $json['positionEventNumber'],
+                        EventId::fromString($json['eventId']),
+                        $json['eventType'],
+                        $json['isJson'],
+                        $data,
+                        $metadata,
+                        DateTimeUtil::create($json['updated'])
+                    );
+                } else {
+                    $link = null;
                 }
 
-                $field = isset($json['isLinkMetaData']) && $json['isLinkMetaData'] ? 'linkMetaData' : 'metaData';
-
-                $metadata = $json[$field] ?? '';
-
-                if (\is_array($metadata)) {
-                    $metadata = \json_encode($metadata);
-                }
-
-                $event = new RecordedEvent(
-                    $json['positionStreamId'],
+                $record = new EventRecord(
+                    $json['streamId'],
+                    $json['eventNumber'],
                     EventId::fromString($json['eventId']),
-                    $json['positionEventNumber'],
-                    $json['eventType'],
-                    $data,
-                    $metadata,
-                    $json['isJson'],
+                    SystemEventTypes::LinkTo,
+                    false,
+                    $json['title'],
+                    '',
                     DateTimeUtil::create($json['updated'])
                 );
+
+                $event = new ResolvedIndexedEvent($record, $link);
 
                 return new EventReadResult(EventReadStatus::success(), $stream, $eventNumber, $event);
             default:

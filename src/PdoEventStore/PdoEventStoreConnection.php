@@ -23,6 +23,7 @@ use Prooph\EventStore\Exception\StreamDeleted;
 use Prooph\EventStore\Exception\UnexpectedValueException;
 use Prooph\EventStore\ExpectedVersion;
 use Prooph\EventStore\Internal\Consts;
+use Prooph\EventStore\Position;
 use Prooph\EventStore\ReadDirection;
 use Prooph\EventStore\SliceReadStatus;
 use Prooph\EventStore\StreamEventsSlice;
@@ -173,10 +174,15 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
     public function readEvent(
         string $stream,
         int $eventNumber,
+        bool $resolveLinkTo = true,
         UserCredentials $userCredentials = null
     ): EventReadResult {
         if (empty($stream)) {
             throw new InvalidArgumentException('Stream cannot be empty');
+        }
+
+        if ('$all' === $stream) {
+            throw new InvalidArgumentException('Stream cannot be $all');
         }
 
         if ($eventNumber < -1) {
@@ -206,6 +212,7 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
             $this->connection,
             $stream,
             $eventNumber,
+            $resolveLinkTo,
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
     }
@@ -351,6 +358,24 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
             $count,
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
+    }
+
+    public function readAllEventsForward(
+        Position $position,
+        int $count,
+        bool $resolveLinkTos = true,
+        UserCredentials $userCredentials = null
+    ): StreamEventsSlice {
+        // TODO: Implement readAllEventsForward() method.
+    }
+
+    public function readAllEventsBackward(
+        Position $position,
+        int $count,
+        bool $resolveLinkTos = true,
+        UserCredentials $userCredentials = null
+    ): StreamEventsSlice {
+        // TODO: Implement readAllEventsBackward() method.
     }
 
     public function setStreamMetadata(

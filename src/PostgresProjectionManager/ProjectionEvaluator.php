@@ -371,7 +371,7 @@ class ProjectionEvaluator
 
     public function linkTo(string $streamName, RecordedEvent $event, string $metadata = ''): void
     {
-        $this->eventProcessor->emit($streamName, SystemEventTypes::LinkTo, $event->eventNumber() . '@' . $event->streamId(), $metadata, false);
+        $this->eventProcessor->emit($streamName, SystemEventTypes::LinkTo, $event->eventNumber() . '@' . $event->streamName(), $metadata, false);
     }
 
     public function copyTo(string $streamName, RecordedEvent $event, string $metadata = ''): void
