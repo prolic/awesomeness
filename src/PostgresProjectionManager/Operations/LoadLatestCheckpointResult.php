@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\PostgresProjectionManager\Operations;
 
-use Prooph\PostgresProjectionManager\CheckpointTag;
+use Prooph\PostgresProjectionManager\Processing\CheckpointTag;
 
 /** @internal */
 class LoadLatestCheckpointResult

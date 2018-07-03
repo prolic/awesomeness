@@ -9,6 +9,7 @@ use Amp\Loop;
 use Amp\Parallel\Sync;
 use Amp\Postgres\Pool;
 use Monolog\Logger;
+use Prooph\PostgresProjectionManager\Processing\MessageHandler;
 use Throwable;
 use const PHP_EOL;
 use const PHP_OUTPUT_HANDLER_CLEANABLE;

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\PostgresProjectionManager\Processing;
 
+use Closure;
 use Prooph\EventStore\Common\SystemEventTypes;
 use Prooph\PostgresProjectionManager\Exception\QueryEvaluationError;
 use Throwable;
@@ -199,11 +200,11 @@ class ProjectionEvaluator
     {
         foreach ($handlers as $name => $handler) {
             if ($name === '$init') {
-                $this->eventProcessor->onInitState($handler);
+                $this->eventProcessor->onInitState($this->buildInitHandlerScope($handler));
             } elseif ($name === '$any') {
-                $this->eventProcessor->onAny($handler);
+                $this->eventProcessor->onAny($this->buildHandlerScope($handler));
             } else {
-                $this->eventProcessor->onEvent($name, $handler);
+                $this->eventProcessor->onEvent($name, $this->buildHandlerScope($handler));
             }
         }
 
@@ -450,5 +451,50 @@ class ProjectionEvaluator
                 return $this->context->fromStreamsMatching($filter);
             }
         };
+    }
+
+    private function buildHandlerScope(callable $handler): Closure
+    {
+        $context = $this;
+        $handler = Closure::fromCallable($handler);
+        $handler = Closure::bind($handler, new class($context) {
+            /** @var ProjectionEvaluator */
+            private $context;
+
+            public function __construct(ProjectionEvaluator $context)
+            {
+                $this->context = $context;
+            }
+
+            public function emit(string $streamName, string $eventType, string $data, string $metadata = '', bool $isJson = false): void
+            {
+                $this->context->emit($streamName, $eventType, $data, $metadata, $isJson);
+            }
+
+            public function linkTo(string $streamName, ResolvedEvent $event, string $metadata = ''): void
+            {
+                $this->context->linkTo($streamName, $event, $metadata);
+            }
+
+            public function copyTo(string $streamName, ResolvedEvent $event, string $metadata = ''): void
+            {
+                $this->context->copyTo($streamName, $event, $metadata);
+            }
+
+            public function linkStreamTo(string $streamName, string $linkedStreamName, string $metadata = ''): void
+            {
+                $this->context->linkStreamTo($streamName, $linkedStreamName, $metadata);
+            }
+        });
+
+        return $handler;
+    }
+
+    private function buildInitHandlerScope(callable $handler): Closure
+    {
+        $handler = Closure::fromCallable($handler);
+        $handler = Closure::bind($handler, new class() {});
+
+        return $handler;
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\PostgresProjectionManager\Processing;
 
+/** @internal */
 class CheckpointTag
 {
     private const Stream = 0;

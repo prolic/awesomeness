@@ -9,8 +9,8 @@ use Amp\Postgres\ResultSet;
 use Amp\Postgres\Statement;
 use Error;
 use Generator;
-use Prooph\PostgresProjectionManager\CheckpointTag;
 use Prooph\PostgresProjectionManager\Exception\StreamNotFound;
+use Prooph\PostgresProjectionManager\Processing\CheckpointTag;
 
 /** @internal */
 class LoadLatestCheckpointOperation

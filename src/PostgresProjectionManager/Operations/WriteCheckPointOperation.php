@@ -14,7 +14,7 @@ use Prooph\EventStore\EventId;
 use Prooph\EventStore\Exception\RuntimeException;
 use Prooph\EventStore\Internal\DateTimeUtil;
 use Prooph\EventStore\Projections\ProjectionEventTypes;
-use Prooph\PostgresProjectionManager\CheckpointTag;
+use Prooph\PostgresProjectionManager\Processing\CheckpointTag;
 
 /** @internal */
 class WriteCheckPointOperation
