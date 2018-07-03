@@ -20,7 +20,7 @@ class EventData
     /** @var string */
     private $metaData;
 
-    public function __construct(EventId $eventId, string $eventType, bool $isJson, string $data, string $metaData)
+    public function __construct(EventId $eventId, string $eventType, bool $isJson, string $data = '', string $metaData = '')
     {
         $this->eventId = $eventId;
         $this->eventType = $eventType;

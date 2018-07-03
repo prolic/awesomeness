@@ -18,6 +18,7 @@ use Prooph\PostgresProjectionManager\Messages\ResetMessage;
 use Prooph\PostgresProjectionManager\Messages\Response;
 use Prooph\PostgresProjectionManager\Messages\UpdateConfigMessage;
 use Prooph\PostgresProjectionManager\Messages\UpdateQueryMessage;
+use Prooph\PostgresProjectionManager\ProjectionRunner;
 use Psr\Log\LoggerInterface;
 
 class MessageHandler

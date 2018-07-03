@@ -31,7 +31,6 @@ use Prooph\EventStore\Projections\ProjectionMode;
 use Prooph\EventStore\Projections\ProjectionNamesBuilder;
 use Prooph\EventStore\Projections\ProjectionState;
 use Prooph\EventStore\Projections\StandardProjections;
-use Prooph\EventStore\RecordedEvent;
 use Prooph\PostgresProjectionManager\Exception\QueryEvaluationError;
 use Prooph\PostgresProjectionManager\Exception\StreamNotFound;
 use Prooph\PostgresProjectionManager\Operations\CreateStreamOperation;
@@ -52,6 +51,7 @@ use Prooph\PostgresProjectionManager\Processing\EventProcessor;
 use Prooph\PostgresProjectionManager\Processing\EventReader;
 use Prooph\PostgresProjectionManager\Processing\EventReaderBuilder;
 use Prooph\PostgresProjectionManager\Processing\ProjectionEvaluator;
+use Prooph\PostgresProjectionManager\Processing\ResolvedEvent;
 use Psr\Log\LoggerInterface as PsrLogger;
 use SplQueue;
 use Throwable;
@@ -401,7 +401,7 @@ SQL;
                 return;
             }
 
-            /** @var RecordedEvent $event */
+            /** @var ResolvedEvent $event */
             $event = $this->processingQueue->dequeue();
             try {
                 $this->processor->processEvent($event);

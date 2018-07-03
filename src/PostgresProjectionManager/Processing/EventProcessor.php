@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Prooph\PostgresProjectionManager\Processing;
 
 use Prooph\EventStore\ProjectionManagement\QuerySourcesDefinition;
-use Prooph\EventStore\RecordedEvent;
 
 /** @internal */
 class EventProcessor
@@ -90,7 +89,7 @@ class EventProcessor
         $this->sources['options']['definesFold'] = true;
     }
 
-    public function callHandler(callable $handler, array $state, RecordedEvent $event): array
+    public function callHandler(callable $handler, array $state, ResolvedEvent $event): array
     {
         $newState = $handler($state, $event);
 
@@ -101,7 +100,7 @@ class EventProcessor
         return $newState;
     }
 
-    public function processEvent(RecordedEvent $event): void
+    public function processEvent(ResolvedEvent $event): void
     {
         $state = $this->projectionState;
 
@@ -130,7 +129,7 @@ class EventProcessor
     {
         $this->sources['catalogStream'] = '$all';
         $this->sources['options']['definesCatalogTransform'] = true;
-        $this->catalogEventTransformer = function (string $streamId, RecordedEvent $event) use (&$filter) {
+        $this->catalogEventTransformer = function (string $streamId, ResolvedEvent $event) use (&$filter) {
             return $filter($streamId, $event) ? $streamId : null;
         };
         $this->byStream();

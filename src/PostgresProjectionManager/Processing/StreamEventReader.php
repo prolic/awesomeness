@@ -11,7 +11,6 @@ use Amp\Postgres\Statement;
 use Generator;
 use Prooph\EventStore\EventId;
 use Prooph\EventStore\Internal\DateTimeUtil;
-use Prooph\EventStore\RecordedEvent;
 use SplQueue;
 use Throwable;
 
@@ -67,7 +66,7 @@ SQL;
             $row = $result->getCurrent();
             ++$readEvents;
 
-            $this->queue->enqueue(new RecordedEvent(
+            $this->queue->enqueue(new ResolvedEvent(
                 $this->streamName,
                 EventId::fromString($row->event_id),
                 $row->event_number,
@@ -75,7 +74,8 @@ SQL;
                 $row->data,
                 $row->meta_data,
                 $row->is_json,
-                DateTimeUtil::create($row->updated)
+                DateTimeUtil::create($row->updated),
+                '' // @todo fetch stream metadata
             ));
 
             $this->checkpointTag->updateStreamPosition($this->streamName, $row->event_number);
