@@ -493,7 +493,8 @@ class ProjectionEvaluator
     private function buildInitHandlerScope(callable $handler): Closure
     {
         $handler = Closure::fromCallable($handler);
-        $handler = Closure::bind($handler, new class() {});
+        $handler = Closure::bind($handler, new class() {
+        });
 
         return $handler;
     }
