@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package Prooph.EventStoreClient.Data;
+package Prooph.EventStoreClient.Internal.Messages;
 
 enum OperationResult
 {
