@@ -8,7 +8,6 @@ use Amp\Promise;
 use Amp\Socket\Socket;
 use Generator;
 use Google\Protobuf\Internal\Message;
-use Prooph\EventStore\EventData;
 use Prooph\EventStore\EventStoreAsyncConnection;
 use Prooph\EventStore\EventStoreAsyncSubscriptionConnection;
 use Prooph\EventStore\EventStoreAsyncTransaction;
@@ -25,19 +24,15 @@ use Prooph\EventStore\StreamEventsSlice;
 use Prooph\EventStore\StreamMetadata;
 use Prooph\EventStore\SystemSettings;
 use Prooph\EventStore\UserCredentials;
-use function Amp\call;
-use function Amp\Socket\connect;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
-use Prooph\EventStoreClient\Internal\Data\ReadEventCompleted;
 use Prooph\EventStoreClient\Internal\Data\ReadStreamEvents;
 use Prooph\EventStoreClient\Internal\Data\ReadStreamEventsCompleted;
 use Prooph\EventStoreClient\Internal\Data\ResolvedIndexedEvent;
 use Prooph\EventStoreClient\Internal\EventRecordConverter;
-use Prooph\EventStoreClient\Internal\Message\MessageConfiguration;
 use Prooph\EventStoreClient\Internal\Message\MessageType;
 use Prooph\EventStoreClient\Internal\Message\SocketMessage;
-use Rx\Observable;
-use Rx\ObserverInterface;
+use function Amp\call;
+use function Amp\Socket\connect;
 
 final class EventStore implements EventStoreAsyncConnection, EventStoreAsyncTransactionConnection, EventStoreAsyncSubscriptionConnection
 {
@@ -81,8 +76,7 @@ final class EventStore implements EventStoreAsyncConnection, EventStoreAsyncTran
         string $stream,
         bool $hardDelete,
         UserCredentials $userCredentials = null
-    ): Promise
-    {
+    ): Promise {
         // TODO: Implement deleteStreamAsync() method.
     }
 
@@ -91,8 +85,7 @@ final class EventStore implements EventStoreAsyncConnection, EventStoreAsyncTran
         int $expectedVersion,
         array $events,
         UserCredentials $userCredentials = null
-    ): Promise
-    {
+    ): Promise {
         // TODO: Implement appendToStreamAsync() method.
     }
 
@@ -100,8 +93,7 @@ final class EventStore implements EventStoreAsyncConnection, EventStoreAsyncTran
         string $stream,
         int $eventNumber,
         UserCredentials $userCredentials = null
-    ): Promise
-    {
+    ): Promise {
         // TODO: Implement readEventAsync() method.
     }
 
@@ -111,10 +103,9 @@ final class EventStore implements EventStoreAsyncConnection, EventStoreAsyncTran
         int $count,
         bool $resolveLinkTos = true,
         UserCredentials $userCredentials = null
-    ): Promise
-    {
+    ): Promise {
         if ($count > Consts::MaxReadSize) {
-            throw new InvalidArgumentException(sprintf(
+            throw new InvalidArgumentException(\sprintf(
                 'Count should be less than %s. For larger reads you should page.',
                 Consts::MaxReadSize
             ));
@@ -141,8 +132,7 @@ final class EventStore implements EventStoreAsyncConnection, EventStoreAsyncTran
         int $count,
         bool $resolveLinkTos = true,
         UserCredentials $userCredentials = null
-    ): Promise
-    {
+    ): Promise {
         // TODO: Implement readStreamEventsBackwardAsync() method.
     }
 
@@ -151,8 +141,7 @@ final class EventStore implements EventStoreAsyncConnection, EventStoreAsyncTran
         int $count,
         bool $resolveLinkTos = true,
         UserCredentials $userCredentials = null
-    ): Promise
-    {
+    ): Promise {
         // TODO: Implement readAllEventsForward() method.
     }
 
@@ -161,8 +150,7 @@ final class EventStore implements EventStoreAsyncConnection, EventStoreAsyncTran
         int $count,
         bool $resolveLinkTos = true,
         UserCredentials $userCredentials = null
-    ): Promise
-    {
+    ): Promise {
         // TODO: Implement readAllEventsBackward() method.
     }
 
@@ -171,8 +159,7 @@ final class EventStore implements EventStoreAsyncConnection, EventStoreAsyncTran
         int $expectedMetaStreamVersion,
         StreamMetadata $metadata,
         UserCredentials $userCredentials = null
-    ): Promise
-    {
+    ): Promise {
         // TODO: Implement setStreamMetadataAsync() method.
     }
 
@@ -191,8 +178,7 @@ final class EventStore implements EventStoreAsyncConnection, EventStoreAsyncTran
         string $groupName,
         PersistentSubscriptionSettings $settings,
         UserCredentials $userCredentials = null
-    ): Promise
-    {
+    ): Promise {
         // TODO: Implement createPersistentSubscriptionAsync() method.
     }
 
@@ -201,8 +187,7 @@ final class EventStore implements EventStoreAsyncConnection, EventStoreAsyncTran
         string $groupName,
         PersistentSubscriptionSettings $settings,
         UserCredentials $userCredentials = null
-    ): Promise
-    {
+    ): Promise {
         // TODO: Implement updatePersistentSubscriptionAsync() method.
     }
 
@@ -210,8 +195,7 @@ final class EventStore implements EventStoreAsyncConnection, EventStoreAsyncTran
         string $stream,
         string $groupName,
         UserCredentials $userCredentials = null
-    ): Promise
-    {
+    ): Promise {
         // TODO: Implement deletePersistentSubscriptionAsync() method.
     }
 
@@ -223,8 +207,7 @@ final class EventStore implements EventStoreAsyncConnection, EventStoreAsyncTran
         int $bufferSize = 10,
         bool $autoAck = true,
         UserCredentials $userCredentials = null
-    ): EventStorePersistentSubscription
-    {
+    ): EventStorePersistentSubscription {
         // TODO: Implement connectToPersistentSubscription() method.
     }
 
@@ -232,23 +215,20 @@ final class EventStore implements EventStoreAsyncConnection, EventStoreAsyncTran
         string $stream,
         string $groupName,
         UserCredentials $userCredentials = null
-    ): Promise
-    {
+    ): Promise {
         // TODO: Implement replayParkedAsync() method.
     }
 
     public function getInformationForAllSubscriptionsAsync(
         UserCredentials $userCredentials = null
-    ): Promise
-    {
+    ): Promise {
         // TODO: Implement getInformationForAllSubscriptionsAsync() method.
     }
 
     public function getInformationForSubscriptionsWithStreamAsync(
         string $stream,
         UserCredentials $userCredentials = null
-    ): Promise
-    {
+    ): Promise {
         // TODO: Implement getInformationForSubscriptionsWithStreamAsync() method.
     }
 
@@ -256,8 +236,7 @@ final class EventStore implements EventStoreAsyncConnection, EventStoreAsyncTran
         string $stream,
         string $groupName,
         UserCredentials $userCredentials = null
-    ): Promise
-    {
+    ): Promise {
         // TODO: Implement getInformationForSubscriptionAsync() method.
     }
 
@@ -265,8 +244,7 @@ final class EventStore implements EventStoreAsyncConnection, EventStoreAsyncTran
         string $stream,
         int $expectedVersion,
         UserCredentials $userCredentials = null
-    ): EventStoreAsyncTransaction
-    {
+    ): EventStoreAsyncTransaction {
         // TODO: Implement startTransactionAsync() method.
     }
 
@@ -274,16 +252,14 @@ final class EventStore implements EventStoreAsyncConnection, EventStoreAsyncTran
         EventStoreAsyncTransaction $transaction,
         array $events,
         ?UserCredentials $userCredentials
-    ): Promise
-    {
+    ): Promise {
         // TODO: Implement transactionalWriteAsync() method.
     }
 
     public function commitTransactionAsync(
         EventStoreAsyncTransaction $transaction,
         ?UserCredentials $userCredentials
-    ): Promise
-    {
+    ): Promise {
         // TODO: Implement commitTransactionAsync() method.
     }
 
@@ -293,8 +269,7 @@ final class EventStore implements EventStoreAsyncConnection, EventStoreAsyncTran
         ReadDirection $readDirection,
         int $messageType,
         array $socketMessages = []
-    ): Promise
-    {
+    ): Promise {
         /** @var ReadStreamEvents $query */
         $originalFrom = $query->getFromEventNumber();
 
@@ -317,20 +292,20 @@ final class EventStore implements EventStoreAsyncConnection, EventStoreAsyncTran
                     }
 
                     $records = $message->getEvents();
-                    $asked -= count($records);
+                    $asked -= \count($records);
 
                     if (! $message->getIsEndOfStream()
-                        && !(
-                            $asked <= 0 && $max != self::PositionLatest
+                        && ! (
+                            $asked <= 0 && $max !== self::PositionLatest
                         )
                     ) {
-                        $start = $records[count($records) - 1];
+                        $start = $records[\count($records) - 1];
                         /* @var ResolvedIndexedEvent $start */
 
                         if (null === $start->getLink()) {
-                            $start = ($messageType == MessageType::ReadStreamEventsForward) ? $start->getEvent()->getEventNumber() + 1 : $start->getEvent()->getEventNumber() - 1;
+                            $start = ($messageType === MessageType::ReadStreamEventsForward) ? $start->getEvent()->getEventNumber() + 1 : $start->getEvent()->getEventNumber() - 1;
                         } else {
-                            $start = ($messageType == MessageType::ReadStreamEventsForward) ? $start->getLink()->getEventNumber() + 1 : $start->getLink()->getEventNumber() - 1;
+                            $start = ($messageType === MessageType::ReadStreamEventsForward) ? $start->getLink()->getEventNumber() + 1 : $start->getLink()->getEventNumber() - 1;
                         }
 
                         $query->setFromEventNumber($start);

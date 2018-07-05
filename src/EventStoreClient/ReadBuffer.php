@@ -39,7 +39,7 @@ class ReadBuffer
 
             do {
                 $value = yield $this->inputStream->read();
-
+                \var_dump($value);
                 $buffer = Buffer::fromString($value);
                 $dataLength = \strlen($value);
                 $messageLength = $buffer->readInt32LE(0) + MessageConfiguration::Int32Length;

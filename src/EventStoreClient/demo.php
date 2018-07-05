@@ -24,5 +24,5 @@ Loop::run(function () {
         true
     );
 
-    var_dump($slice);
+    \var_dump($slice);
 });

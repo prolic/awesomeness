@@ -23,4 +23,4 @@ $slice = wait($connection->readStreamEventsForwardAsync(
     true
 ));
 
-var_dump($slice);
+\var_dump($slice);
