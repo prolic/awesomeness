@@ -10,21 +10,21 @@ use Prooph\EventStore\EventId;
 class EventRecord
 {
     /** @var string */
-    private $eventStreamId;
+    protected $eventStreamId;
     /** @var int */
-    private $eventNumber;
+    protected $eventNumber;
     /** @var EventId */
-    private $eventId;
+    protected $eventId;
     /** @var string */
-    private $eventType;
+    protected $eventType;
     /** @var bool */
-    private $isJson;
+    protected $isJson;
     /** @var string */
-    private $data;
+    protected $data;
     /** @var string */
-    private $metadata;
+    protected $metadata;
     /** @var DateTimeImmutable */
-    private $created;
+    protected $created;
 
     public function __construct(
         string $eventStreamId,

@@ -15,8 +15,8 @@ class EventRecordConverter
     public static function convert(EventRecordData $eventData): EventRecord
     {
         $epoch = $eventData->getCreatedEpoch();
-        $date = substr($epoch, 0, -3);
-        $micro = substr($epoch, -3);
+        $date = \substr($epoch, 0, -3);
+        $micro = \substr($epoch, -3);
 
         $created = DateTimeImmutable::createFromFormat(
             'U.u',
