@@ -20,8 +20,12 @@ class EventData
     /** @var string */
     private $metaData;
 
-    public function __construct(EventId $eventId, string $eventType, bool $isJson, string $data = '', string $metaData = '')
+    public function __construct(?EventId $eventId, string $eventType, bool $isJson, string $data = '', string $metaData = '')
     {
+        if (null === $eventId) {
+            $eventId = EventId::generate();
+        }
+
         $this->eventId = $eventId;
         $this->eventType = $eventType;
         $this->isJson = $isJson;

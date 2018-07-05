@@ -28,6 +28,16 @@ class EventId
         return $this->uuid->toString();
     }
 
+    public function toHex(): string
+    {
+        return $this->uuid->getHex();
+    }
+
+    public function toBinary(): string
+    {
+        return $this->uuid->getBytes();
+    }
+
     public function __toString(): string
     {
         return $this->uuid->toString();
