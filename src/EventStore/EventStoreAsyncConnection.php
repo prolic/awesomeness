@@ -8,7 +8,7 @@ use Amp\Promise;
 
 interface EventStoreAsyncConnection
 {
-    public function connectAsync(): Task;
+    public function connectAsync(): Promise;
 
     public function close(): void;
 

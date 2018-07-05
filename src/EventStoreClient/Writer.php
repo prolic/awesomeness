@@ -7,6 +7,7 @@ namespace Prooph\EventStoreClient;
 use Amp\ByteStream\ClosedException;
 use Amp\ByteStream\OutputStream;
 use Amp\Promise;
+use Generator;
 use Google\Protobuf\Internal\Message;
 use Prooph\EventStore\UserCredentials;
 use Prooph\EventStoreClient\ByteBuffer\Buffer;
@@ -14,7 +15,9 @@ use Prooph\EventStoreClient\Internal\Message\MessageConfiguration;
 use Prooph\EventStoreClient\Internal\Message\MessageType;
 use Prooph\EventStoreClient\Internal\Message\SocketMessage;
 use Ramsey\Uuid\Uuid;
+use Rx\Observable;
 use SplQueue;
+use function Amp\call;
 
 class Writer
 {
@@ -98,7 +101,7 @@ class Writer
         return $buffer->__toString();
     }
 
-    private function correlationId(string $uuid = null)
+    public function correlationId(string $uuid = null)
     {
         return $uuid ?: \str_replace('-', '', Uuid::uuid4()->toString());
     }

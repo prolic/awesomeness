@@ -14,7 +14,7 @@ class EventRecordConverter
 {
     public static function convert(EventRecordData $eventData): EventRecord
     {
-        $epoch = $eventData->getCreatedEpoch();
+        $epoch = (string) $eventData->getCreatedEpoch();
         $date = \substr($epoch, 0, -3);
         $micro = \substr($epoch, -3);
 
