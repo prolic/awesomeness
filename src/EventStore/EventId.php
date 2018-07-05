@@ -4,21 +4,29 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
+use Ramsey\Uuid\Uuid;
+use Ramsey\Uuid\UuidInterface;
+
 class EventId
 {
     private $uuid;
 
     public static function generate(): EventId
     {
-        return new self(\Ramsey\Uuid\Uuid::uuid4());
+        return new self(Uuid::uuid4());
     }
 
     public static function fromString(string $eventId): EventId
     {
-        return new self(\Ramsey\Uuid\Uuid::fromString($eventId));
+        return new self(Uuid::fromString($eventId));
     }
 
-    private function __construct(\Ramsey\Uuid\UuidInterface $eventId)
+    public static function fromBinary(string $bytes): EventId
+    {
+        return new self(Uuid::fromBytes($bytes));
+    }
+
+    private function __construct(UuidInterface $eventId)
     {
         $this->uuid = $eventId;
     }
@@ -26,11 +34,6 @@ class EventId
     public function toString(): string
     {
         return $this->uuid->toString();
-    }
-
-    public function toHex(): string
-    {
-        return $this->uuid->getHex();
     }
 
     public function toBinary(): string
