@@ -44,8 +44,14 @@ class AcknowledgeableEventRecord extends EventRecord
     protected $linkedEvent;
     private $writer;
 
-    public function __construct(EventRecordData $event, string $correlationId, string $group, Writer $writer, EventRecordData $linkedEvent = null)
-    {
+    /** @internal */
+    public function __construct(
+        EventRecordData $event,
+        string $correlationId,
+        string $group,
+        Writer $writer,
+        EventRecordData $linkedEvent = null
+    ) {
         $this->binaryId = ($linkedEvent) ? $linkedEvent->getEventId() : $event->getEventId();
 
         $event = EventRecordConverter::convert($event);
