@@ -23,17 +23,15 @@ final class Buffer extends AbstractBuffer
     public static function fromString(string $string): Buffer
     {
         $self = new self();
-
         $self->initializeStructs(\strlen($string), $string);
 
         return $self;
     }
 
-    public static function fromInteger(int $int): Buffer
+    public static function withSize(int $size): Buffer
     {
         $self = new self();
-
-        $self->initializeStructs($int, \pack(self::DefaultFormat . $int));
+        $self->initializeStructs($size, \pack(self::DefaultFormat . $size));
 
         return $self;
     }

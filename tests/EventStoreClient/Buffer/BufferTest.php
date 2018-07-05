@@ -12,7 +12,7 @@ class BufferTest extends TestCase
     /** @test */
     public function trailing_empty_byte(): void
     {
-        $buffer = Buffer::fromInteger(5);
+        $buffer = Buffer::withSize(5);
         $buffer->writeInt32LE(0xfeedface, 0);
         $this->assertSame(\pack('Vx', 0xfeedface), (string) $buffer);
     }
@@ -20,7 +20,7 @@ class BufferTest extends TestCase
     /** @test */
     public function surrounded_empty_byte(): void
     {
-        $buffer = Buffer::fromInteger(9);
+        $buffer = Buffer::withSize(9);
         $buffer->writeInt32BE(0xfeedface, 0);
         $buffer->writeInt32BE(0xcafebabe, 5);
         $this->assertSame(\pack('NxN', 0xfeedface, 0xcafebabe), (string) $buffer);
@@ -29,7 +29,7 @@ class BufferTest extends TestCase
     /** @test */
     public function deny_too_small_buffer(): void
     {
-        $buffer = Buffer::fromInteger(4);
+        $buffer = Buffer::withSize(4);
         $buffer->writeInt32BE(0xfeedface, 0);
         $this->expectException(\RuntimeException::class);
         $buffer->writeInt32LE(0xfeedface, 4);
@@ -38,7 +38,7 @@ class BufferTest extends TestCase
     /** @test */
     public function it_works_with_two_4_byte_integers(): void
     {
-        $buffer = Buffer::fromInteger(8);
+        $buffer = Buffer::withSize(8);
         $buffer->writeInt32BE(0xfeedface, 0);
         $buffer->writeInt32LE(0xfeedface, 4);
         $this->assertSame(\pack('NV', 0xfeedface, 0xfeedface), (string) $buffer);
@@ -47,7 +47,7 @@ class BufferTest extends TestCase
     /** @test */
     public function it_is_writing_string(): void
     {
-        $buffer = Buffer::fromInteger(10);
+        $buffer = Buffer::withSize(10);
         $buffer->writeInt32BE(0xcafebabe, 0);
         $buffer->write('please', 4);
         $this->assertSame(\pack('Na6', 0xcafebabe, 'please'), (string) $buffer);
@@ -56,7 +56,7 @@ class BufferTest extends TestCase
     /** @test */
     public function deny_too_long_integers(): void
     {
-        $buffer = Buffer::fromInteger(12);
+        $buffer = Buffer::withSize(12);
         $this->expectException(\InvalidArgumentException::class);
         $buffer->writeInt32BE(0xfeedfacefeed, 0);
     }
@@ -64,14 +64,14 @@ class BufferTest extends TestCase
     /** @test */
     public function it_keeps_length(): void
     {
-        $buffer = Buffer::fromInteger(8);
+        $buffer = Buffer::withSize(8);
         $this->assertEquals(8, $buffer->length());
     }
 
     /** @test */
     public function write_int8(): void
     {
-        $buffer = Buffer::fromInteger(1);
+        $buffer = Buffer::withSize(1);
         $buffer->writeInt8(0xfe, 0);
         $this->assertSame(\pack('C', 0xfe), (string) $buffer);
     }
@@ -79,7 +79,7 @@ class BufferTest extends TestCase
     /** @test */
     public function write_int16BE(): void
     {
-        $buffer = Buffer::fromInteger(2);
+        $buffer = Buffer::withSize(2);
         $buffer->writeInt16BE(0xbabe, 0);
         $this->assertSame(\pack('n', 0xbabe), (string) $buffer);
     }
@@ -87,7 +87,7 @@ class BufferTest extends TestCase
     /** @test */
     public function write_int16LE(): void
     {
-        $buffer = Buffer::fromInteger(2);
+        $buffer = Buffer::withSize(2);
         $buffer->writeInt16LE(0xabeb, 0);
         $this->assertSame(\pack('v', 0xabeb), (string) $buffer);
     }
@@ -95,7 +95,7 @@ class BufferTest extends TestCase
     /** @test */
     public function write_int32BE(): void
     {
-        $buffer = Buffer::fromInteger(4);
+        $buffer = Buffer::withSize(4);
         $buffer->writeInt32BE(0xfeedface, 0);
         $this->assertSame(\pack('N', 0xfeedface), (string) $buffer);
     }
@@ -103,7 +103,7 @@ class BufferTest extends TestCase
     /** @test */
     public function write_int32LE(): void
     {
-        $buffer = Buffer::fromInteger(4);
+        $buffer = Buffer::withSize(4);
         $buffer->writeInt32LE(0xfeedface, 0);
         $this->assertSame(\pack('V', 0xfeedface), (string) $buffer);
     }
@@ -168,7 +168,7 @@ class BufferTest extends TestCase
     /** @test */
     public function it_is_writing_and_reading_on_the_same_buffer(): void
     {
-        $buffer = Buffer::fromInteger(10);
+        $buffer = Buffer::withSize(10);
         $int32be = 0xfeedface;
         $string = 'hello!';
         $buffer->writeInt32BE($int32be, 0);

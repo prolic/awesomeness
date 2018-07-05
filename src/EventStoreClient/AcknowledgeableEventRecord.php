@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient;
 
+use Amp\ByteStream\ClosedException;
 use Amp\Promise;
 use Google\Protobuf\Internal\GPBType;
 use Google\Protobuf\Internal\RepeatedField;
@@ -90,6 +91,7 @@ class AcknowledgeableEventRecord extends EventRecord
         return $this->group;
     }
 
+    /** @throws ClosedException */
     public function ack(): Promise
     {
         $ack = new PersistentSubscriptionAckEvents();
@@ -107,6 +109,7 @@ class AcknowledgeableEventRecord extends EventRecord
         );
     }
 
+    /** @throws ClosedException */
     public function nack(int $action = self::NackActionUnknown, string $msg = ''): Promise
     {
         $nack = new PersistentSubscriptionNakEvents();
