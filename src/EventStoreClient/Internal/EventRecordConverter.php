@@ -7,12 +7,13 @@ namespace Prooph\EventStoreClient\Internal;
 use DateTimeImmutable;
 use DateTimeZone;
 use Prooph\EventStore\EventId;
+use Prooph\EventStore\Internal\Messages\EventRecord as EventRecordMessage;
 use Prooph\EventStore\Messages\EventRecord;
-use Prooph\EventStoreClient\Internal\Data\EventRecord as EventRecordData;
 
+/** @internal */
 class EventRecordConverter
 {
-    public static function convert(EventRecordData $eventData): EventRecord
+    public static function convert(EventRecordMessage $eventData): EventRecord
     {
         $epoch = (string) $eventData->getCreatedEpoch();
         $date = \substr($epoch, 0, -3);

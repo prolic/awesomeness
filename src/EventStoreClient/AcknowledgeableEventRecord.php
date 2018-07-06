@@ -8,12 +8,13 @@ use Amp\ByteStream\ClosedException;
 use Amp\Promise;
 use Google\Protobuf\Internal\GPBType;
 use Google\Protobuf\Internal\RepeatedField;
+use Prooph\EventStore\Internal\Messages\EventRecord as EventRecordMessage;
+use Prooph\EventStore\Internal\Messages\PersistentSubscriptionAckEvents;
+use Prooph\EventStore\Internal\Messages\PersistentSubscriptionNakEvents;
 use Prooph\EventStore\Messages\EventRecord;
-use Prooph\EventStoreClient\Internal\Data\EventRecord as EventRecordData;
-use Prooph\EventStoreClient\Internal\Data\PersistentSubscriptionAckEvents;
-use Prooph\EventStoreClient\Internal\Data\PersistentSubscriptionNakEvents;
+use Prooph\EventStore\Transport\Tcp\TcpCommand;
 use Prooph\EventStoreClient\Internal\EventRecordConverter;
-use Prooph\EventStoreClient\Internal\Message\MessageType;
+use Prooph\EventStoreClient\Internal\Writer;
 
 class AcknowledgeableEventRecord extends EventRecord
 {
@@ -39,23 +40,23 @@ class AcknowledgeableEventRecord extends EventRecord
      */
     public const NackActionStop = 4;
 
-    protected $binaryId;
-    protected $correlationId;
-    protected $group;
-    protected $linkedEvent;
+    private $binaryId;
+    private $correlationId;
+    private $group;
+    private $linkedEvent;
     private $writer;
 
     /** @internal */
     public function __construct(
-        EventRecordData $event,
+        EventRecordMessage $message,
         string $correlationId,
         string $group,
         Writer $writer,
-        EventRecordData $linkedEvent = null
+        EventRecordMessage $linkedEvent = null
     ) {
-        $this->binaryId = ($linkedEvent) ? $linkedEvent->getEventId() : $event->getEventId();
+        $this->binaryId = ($linkedEvent) ? $linkedEvent->getEventId() : $message->getEventId();
 
-        $event = EventRecordConverter::convert($event);
+        $event = EventRecordConverter::convert($message);
 
         parent::__construct(
             $event->eventStreamId(),
@@ -103,7 +104,7 @@ class AcknowledgeableEventRecord extends EventRecord
         $ack->setProcessedEventIds($events);
 
         return $this->writer->composeAndWrite(
-            MessageType::PersistentSubscriptionAckEvents,
+            TcpCommand::persistentSubscriptionAckEvents(),
             $ack,
             $this->correlationId
         );
@@ -122,7 +123,7 @@ class AcknowledgeableEventRecord extends EventRecord
         $events[] = $this->binaryId;
 
         return $this->writer->composeAndWrite(
-            MessageType::PersistentSubscriptionNackEvents,
+            TcpCommand::persistentSubscriptionNakEvents(),
             $nack,
             $this->correlationId
         );

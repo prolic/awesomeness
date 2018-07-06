@@ -11,7 +11,7 @@ require __DIR__ . '/../../vendor/autoload.php';
 Loop::run(function () {
     $settings = ConnectionSettings::default();
 
-    $connection = new EventStore($settings);
+    $connection = new EventStoreAsyncConnection($settings);
 
     yield $connection->connectAsync();
 

@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace Prooph\EventStoreClient\Internal;
 
 use Prooph\EventStore\EventData;
-use Prooph\EventStoreClient\Internal\Data\NewEvent;
+use Prooph\EventStore\Internal\Messages\NewEvent;
 
+/** @internal */
 class NewEventConverter
 {
     public static function convert(EventData $eventData): NewEvent
