@@ -4,23 +4,21 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient;
 
-use function Amp\Promise\wait;
-
 require __DIR__ . '/../../vendor/autoload.php';
 
 $settings = ConnectionSettings::default();
 
-$connection = new EventStoreAsyncConnection($settings);
+$connection = new EventStoreConnection(new EventStoreAsyncConnection($settings));
 
-wait($connection->connectAsync());
+$connection->connect();
 
 echo 'connected';
 
-$slice = wait($connection->readStreamEventsForwardAsync(
+$slice = $connection->readStreamEventsForward(
     'opium2-bar',
     100,
     20,
     true
-));
+);
 
 \var_dump($slice);

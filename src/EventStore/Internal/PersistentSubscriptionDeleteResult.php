@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\Internal;
 
-/** @internal */
 class PersistentSubscriptionDeleteResult
 {
     /** @var string */
@@ -14,6 +13,7 @@ class PersistentSubscriptionDeleteResult
     /** @var PersistentSubscriptionDeleteStatus */
     private $status;
 
+    /** @internal */
     public function __construct(string $correlationId, string $reason, PersistentSubscriptionDeleteStatus $status)
     {
         $this->correlationId = $correlationId;

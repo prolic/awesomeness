@@ -6,7 +6,6 @@ namespace Prooph\EventStore;
 
 use Prooph\EventStore\Messages\ResolvedIndexedEvent;
 
-/** @internal */
 class EventReadResult
 {
     /** @var EventReadStatus */

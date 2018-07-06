@@ -9,6 +9,7 @@ use Prooph\EventStore\Internal\PersistentSubscriptionDeleteResult;
 use Prooph\EventStore\Internal\PersistentSubscriptionUpdateResult;
 use Prooph\EventStore\Internal\ReplayParkedResult;
 
+/** @internal */
 interface EventStoreSubscriptionConnection extends EventStoreConnection
 {
     public function createPersistentSubscription(

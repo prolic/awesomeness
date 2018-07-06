@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\Internal;
 
-/** @internal */
 class PersistentSubscriptionUpdateResult
 {
     /** @var string */
@@ -14,6 +13,7 @@ class PersistentSubscriptionUpdateResult
     /** @var PersistentSubscriptionUpdateStatus */
     private $status;
 
+    /** @internal */
     public function __construct(string $correlationId, string $reason, PersistentSubscriptionUpdateStatus $status)
     {
         $this->correlationId = $correlationId;
