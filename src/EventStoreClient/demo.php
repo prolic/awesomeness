@@ -20,11 +20,21 @@ Loop::run(function () {
     $slice = yield $connection->readStreamEventsForwardAsync(
         'opium2-bar',
         10,
-        4000,
+        2,
         true
     );
 
     \var_dump($slice);
+
+    $slice = yield $connection->readStreamEventsBackwardAsync(
+        'opium2-bar',
+        10,
+        2,
+        true
+    );
+
+    \var_dump($slice);
+    die;
 
     Loop::repeat(500, function () {
         echo '.';
