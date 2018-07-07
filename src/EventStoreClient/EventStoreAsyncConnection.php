@@ -97,6 +97,7 @@ final class EventStoreAsyncConnection implements
     public function readEventAsync(
         string $stream,
         int $eventNumber,
+        bool $resolveLinkTos = true,
         UserCredentials $userCredentials = null
     ): Promise {
         // TODO: Implement readEventAsync() method.

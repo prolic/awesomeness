@@ -37,6 +37,7 @@ interface EventStoreAsyncConnection
     public function readEventAsync(
         string $stream,
         int $eventNumber,
+        bool $resolveLinkTos = true,
         UserCredentials $userCredentials = null
     ): Promise;
 
