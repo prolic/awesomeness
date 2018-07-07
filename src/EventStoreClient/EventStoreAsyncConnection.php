@@ -23,7 +23,7 @@ use Prooph\EventStore\SystemSettings;
 use Prooph\EventStore\Transport\Tcp\TcpCommand;
 use Prooph\EventStore\Transport\Tcp\TcpDispatcher;
 use Prooph\EventStore\UserCredentials;
-use Prooph\EventStoreClient\Exception\HeartBeatTimedOut;
+use Prooph\EventStoreClient\Exception\HeartBeatTimedOutException;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 use Prooph\EventStoreClient\Internal\ClientOperations\ReadStreamEventsBackwardOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\ReadStreamEventsForwardOperation;
@@ -296,7 +296,7 @@ final class EventStoreAsyncConnection implements
             } catch (TimeoutException $e) {
                 Loop::disable($watcher);
                 $this->close();
-                throw new HeartBeatTimedOut();
+                throw new HeartBeatTimedOutException();
             }
         });
     }
