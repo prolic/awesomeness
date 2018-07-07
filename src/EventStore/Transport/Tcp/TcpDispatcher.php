@@ -2,62 +2,65 @@
 
 declare(strict_types=1);
 
-namespace Prooph\EventStoreClient\Internal;
+namespace Prooph\EventStore\Transport\Tcp;
 
 use Amp\ByteStream\ClosedException;
 use Amp\ByteStream\OutputStream;
 use Amp\Promise;
 use Google\Protobuf\Internal\Message;
-use Prooph\EventStore\Transport\Tcp\TcpCommand;
-use Prooph\EventStore\Transport\Tcp\TcpFlags;
-use Prooph\EventStore\Transport\Tcp\TcpOffset;
-use Prooph\EventStore\Transport\Tcp\TcpPackage;
 use Prooph\EventStore\UserCredentials;
 use Prooph\EventStoreClient\Internal\ByteBuffer\Buffer;
 use Ramsey\Uuid\Uuid;
-use SplQueue;
 
 /** @internal */
-class Writer
+class TcpDispatcher
 {
     /** @var OutputStream */
     private $stream;
-    /** @var UserCredentials|null */
-    private $credentials;
-    /** @var SplQueue */
-    private $queue;
 
-    public function __construct(OutputStream $stream, UserCredentials $credentials = null)
+    public function __construct(OutputStream $stream)
     {
         $this->stream = $stream;
-        $this->credentials = $credentials;
-        $this->queue = new SplQueue();
     }
 
-    public function compose(TcpCommand $tcpCommand, Message $data = null, string $correlationId = null): TcpPackage
+    public function compose(
+        TcpCommand $command,
+        Message $data = null,
+        string $correlationId = null,
+        UserCredentials $credentials = null
+    ): TcpPackage
     {
+        if (null === $correlationId) {
+            $correlationId = $this->createCorrelationId();
+        }
+
         return new TcpPackage(
-            $tcpCommand,
-            $this->credentials ? TcpFlags::authenticated() : TcpFlags::none(),
-            $this->correlationId($correlationId),
+            $command,
+            $credentials ? TcpFlags::authenticated() : TcpFlags::none(),
+            $correlationId,
             $data,
-            $this->credentials
+            $credentials
         );
     }
 
     /** @throws ClosedException */
-    public function write(TcpPackage $package): Promise
+    public function dispatch(TcpPackage $package): Promise
     {
         return $this->stream->write($this->encode($package));
     }
 
     /** @throws ClosedException */
-    public function composeAndWrite(TcpCommand $tcpCommand, Message $data = null, $correlationId = null): Promise
+    public function composeAndDispatch(
+        TcpCommand $command,
+        Message $data = null,
+        string $correlationId = null,
+        UserCredentials $credentials = null
+    ): Promise
     {
-        return $this->write($this->compose($tcpCommand, $data, $correlationId));
+        return $this->dispatch($this->compose($command, $data, $correlationId, $credentials));
     }
 
-    public function encode(TcpPackage $package): string
+    private function encode(TcpPackage $package): string
     {
         $messageLength = TcpOffset::HeaderLenth;
 
@@ -101,8 +104,8 @@ class Writer
         return $buffer->__toString();
     }
 
-    public function correlationId(string $uuid = null): string
+    public function createCorrelationId(): string
     {
-        return $uuid ?: \str_replace('-', '', Uuid::uuid4()->toString());
+        return \str_replace('-', '', Uuid::uuid4()->toString());
     }
 }

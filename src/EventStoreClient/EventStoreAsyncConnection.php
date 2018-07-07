@@ -27,12 +27,12 @@ use Prooph\EventStore\StreamEventsSlice;
 use Prooph\EventStore\StreamMetadata;
 use Prooph\EventStore\SystemSettings;
 use Prooph\EventStore\Transport\Tcp\TcpCommand;
+use Prooph\EventStore\Transport\Tcp\TcpDispatcher;
 use Prooph\EventStore\Transport\Tcp\TcpPackage;
 use Prooph\EventStore\UserCredentials;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 use Prooph\EventStoreClient\Internal\EventRecordConverter;
 use Prooph\EventStoreClient\Internal\ReadBuffer;
-use Prooph\EventStoreClient\Internal\Writer;
 use function Amp\call;
 use function Amp\Socket\connect;
 
@@ -51,6 +51,8 @@ final class EventStoreAsyncConnection implements
     private $connection;
     /** @var ReadBuffer */
     private $readBuffer;
+    /** @var TcpDispatcher */
+    private $dispatcher;
 
     public function __construct(ConnectionSettings $settings)
     {
@@ -67,6 +69,7 @@ final class EventStoreAsyncConnection implements
             }
 
             $this->readBuffer = new ReadBuffer($this->connection);
+            $this->dispatcher = new TcpDispatcher($this->connection);
         });
     }
 
@@ -124,7 +127,6 @@ final class EventStoreAsyncConnection implements
         $query->setResolveLinkTos($resolveLinkTos);
 
         return $this->readEvents(
-            $this->writer($userCredentials),
             $query,
             ReadDirection::forward(),
             TcpCommand::readStreamEventsForward()
@@ -269,7 +271,7 @@ final class EventStoreAsyncConnection implements
     }
 
     /**
-     * @param Writer $writer
+     * @param TcpDispatcher $dispatcher
      * @param Message $query
      * @param ReadDirection $readDirection
      * @param TcpCommand $command
@@ -277,7 +279,6 @@ final class EventStoreAsyncConnection implements
      * @return Promise
      */
     private function readEvents(
-        Writer $writer,
         Message $query,
         ReadDirection $readDirection,
         TcpCommand $command,
@@ -286,12 +287,12 @@ final class EventStoreAsyncConnection implements
         /** @var ReadStreamEvents $query */
         $originalFrom = $query->getFromEventNumber();
 
-        return call(function () use ($writer, $query, $readDirection, $command, $packages, $originalFrom): Generator {
-            $correlationId = $writer->correlationId();
+        return call(function () use ($query, $readDirection, $command, $packages, $originalFrom): Generator {
+            $correlationId = $this->dispatcher->createCorrelationId();
             $max = $query->getMaxCount();
             $asked = $max;
 
-            yield $writer->composeAndWrite($command, $query, $correlationId);
+            yield $this->dispatcher->composeAndDispatch($command, $query, $correlationId);
 
             /** @var TcpPackage[] $packages */
             $packages = \array_merge($packages, yield $this->readBuffer->waitFor($correlationId));
@@ -328,7 +329,7 @@ final class EventStoreAsyncConnection implements
                         $query->setFromEventNumber($start);
                         $query->setMaxCount($asked);
 
-                        yield $this->readEvents($writer, $query, $readDirection, $command, $packages);
+                        yield $this->readEvents($query, $readDirection, $command, $packages);
                     }
 
                     $resolvedEvents = [];
@@ -360,10 +361,5 @@ final class EventStoreAsyncConnection implements
                 }
             }
         });
-    }
-
-    private function writer(UserCredentials $credentials = null): Writer
-    {
-        return new Writer($this->connection, $credentials ?? $this->settings->defaultUserCredentials());
     }
 }

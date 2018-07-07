@@ -14,7 +14,7 @@ use Prooph\EventStore\Internal\Messages\PersistentSubscriptionNakEvents;
 use Prooph\EventStore\Messages\EventRecord;
 use Prooph\EventStore\Transport\Tcp\TcpCommand;
 use Prooph\EventStoreClient\Internal\EventRecordConverter;
-use Prooph\EventStoreClient\Internal\Writer;
+use Prooph\EventStore\Transport\Tcp\TcpDispatcher;
 
 class AcknowledgeableEventRecord extends EventRecord
 {
@@ -44,14 +44,16 @@ class AcknowledgeableEventRecord extends EventRecord
     private $correlationId;
     private $group;
     private $linkedEvent;
-    private $writer;
+
+    /** @var TcpDispatcher */
+    private $dispatcher;
 
     /** @internal */
     public function __construct(
         EventRecordMessage $message,
         string $correlationId,
         string $group,
-        Writer $writer,
+        TcpDispatcher $dispatcher,
         EventRecordMessage $linkedEvent = null
     ) {
         $this->binaryId = ($linkedEvent) ? $linkedEvent->getEventId() : $message->getEventId();
@@ -76,7 +78,7 @@ class AcknowledgeableEventRecord extends EventRecord
         }
 
         $this->correlationId = $correlationId;
-        $this->writer = $writer;
+        $this->dispatcher = $dispatcher;
         $this->group = $group;
     }
 
@@ -103,7 +105,7 @@ class AcknowledgeableEventRecord extends EventRecord
 
         $ack->setProcessedEventIds($events);
 
-        return $this->writer->composeAndWrite(
+        return $this->dispatcher->composeAndDispatch(
             TcpCommand::persistentSubscriptionAckEvents(),
             $ack,
             $this->correlationId
