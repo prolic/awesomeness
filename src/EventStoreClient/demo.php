@@ -34,4 +34,8 @@ Loop::run(function () {
     );
 
     \var_dump($slice);
+
+    $event = yield $connection->readEventAsync('opium2-bar', 2, true);
+
+    \var_dump($event);
 });

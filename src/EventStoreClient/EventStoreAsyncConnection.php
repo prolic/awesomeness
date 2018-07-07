@@ -25,6 +25,7 @@ use Prooph\EventStore\Transport\Tcp\TcpDispatcher;
 use Prooph\EventStore\UserCredentials;
 use Prooph\EventStoreClient\Exception\HeartBeatTimedOutException;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
+use Prooph\EventStoreClient\Internal\ClientOperations\ReadEventOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\ReadStreamEventsBackwardOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\ReadStreamEventsForwardOperation;
 use Prooph\EventStoreClient\Internal\ReadBuffer;
@@ -100,7 +101,17 @@ final class EventStoreAsyncConnection implements
         bool $resolveLinkTos = true,
         UserCredentials $userCredentials = null
     ): Promise {
-        // TODO: Implement readEventAsync() method.
+        $operation = new ReadEventOperation(
+            $this->dispatcher,
+            $this->readBuffer,
+            $this->settings->requireMaster(),
+            $stream,
+            $eventNumber,
+            $resolveLinkTos,
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
+
+        return $operation();
     }
 
     public function readStreamEventsForwardAsync(
