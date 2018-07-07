@@ -101,6 +101,10 @@ final class EventStoreAsyncConnection implements
         bool $resolveLinkTos = true,
         UserCredentials $userCredentials = null
     ): Promise {
+        if (empty($stream)) {
+            throw new InvalidArgumentException('Stream cannot be empty');
+        }
+
         $operation = new ReadEventOperation(
             $this->dispatcher,
             $this->readBuffer,
@@ -121,6 +125,10 @@ final class EventStoreAsyncConnection implements
         bool $resolveLinkTos = true,
         UserCredentials $userCredentials = null
     ): Promise {
+        if (empty($stream)) {
+            throw new InvalidArgumentException('Stream cannot be empty');
+        }
+
         if ($count > Consts::MaxReadSize) {
             throw new InvalidArgumentException(\sprintf(
                 'Count should be less than %s. For larger reads you should page.',
@@ -149,6 +157,10 @@ final class EventStoreAsyncConnection implements
         bool $resolveLinkTos = true,
         UserCredentials $userCredentials = null
     ): Promise {
+        if (empty($stream)) {
+            throw new InvalidArgumentException('Stream cannot be empty');
+        }
+
         if ($count > Consts::MaxReadSize) {
             throw new InvalidArgumentException(\sprintf(
                 'Count should be less than %s. For larger reads you should page.',
