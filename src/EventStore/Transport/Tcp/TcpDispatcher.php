@@ -7,6 +7,7 @@ namespace Prooph\EventStore\Transport\Tcp;
 use Amp\ByteStream\ClosedException;
 use Amp\ByteStream\OutputStream;
 use Amp\Promise;
+use Amp\TimeoutException;
 use Google\Protobuf\Internal\Message;
 use Prooph\EventStore\UserCredentials;
 use Prooph\EventStoreClient\Internal\ByteBuffer\Buffer;
@@ -17,10 +18,13 @@ class TcpDispatcher
 {
     /** @var OutputStream */
     private $stream;
+    /** @var int */
+    private $operationTimeout;
 
-    public function __construct(OutputStream $stream)
+    public function __construct(OutputStream $stream, int $operationTimeout)
     {
         $this->stream = $stream;
+        $this->operationTimeout = $operationTimeout;
     }
 
     public function compose(
@@ -28,8 +32,7 @@ class TcpDispatcher
         Message $data = null,
         string $correlationId = null,
         UserCredentials $credentials = null
-    ): TcpPackage
-    {
+    ): TcpPackage {
         if (null === $correlationId) {
             $correlationId = $this->createCorrelationId();
         }
@@ -43,20 +46,27 @@ class TcpDispatcher
         );
     }
 
-    /** @throws ClosedException */
+    /**
+     * @throws ClosedException
+     * @throws TimeoutException
+     */
     public function dispatch(TcpPackage $package): Promise
     {
-        return $this->stream->write($this->encode($package));
+        $promise = $this->stream->write($this->encode($package));
+
+        return Promise\timeout($promise, $this->operationTimeout);
     }
 
-    /** @throws ClosedException */
+    /**
+     * @throws ClosedException
+     * @throws TimeoutException
+     */
     public function composeAndDispatch(
         TcpCommand $command,
         Message $data = null,
         string $correlationId = null,
         UserCredentials $credentials = null
-    ): Promise
-    {
+    ): Promise {
         return $this->dispatch($this->compose($command, $data, $correlationId, $credentials));
     }
 

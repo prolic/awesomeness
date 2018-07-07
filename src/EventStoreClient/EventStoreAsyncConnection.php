@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Prooph\EventStoreClient;
 
 use Amp\Promise;
+use Amp\Socket\ClientConnectContext;
 use Amp\Socket\Socket;
 use Generator;
 use Google\Protobuf\Internal\Message;
@@ -62,14 +63,15 @@ final class EventStoreAsyncConnection implements
     public function connectAsync(): Promise
     {
         return call(function (): Generator {
-            $this->connection = yield connect($this->settings->uri());
+            $context = (new ClientConnectContext())->withConnectTimeout($this->settings->operationTimeout());
+            $this->connection = yield connect($this->settings->uri(), $context);
 
             if ($this->settings->useSslConnection()) {
                 yield $this->connection->enableCrypto();
             }
 
-            $this->readBuffer = new ReadBuffer($this->connection);
-            $this->dispatcher = new TcpDispatcher($this->connection);
+            $this->readBuffer = new ReadBuffer($this->connection, $this->settings->operationTimeout());
+            $this->dispatcher = new TcpDispatcher($this->connection, $this->settings->operationTimeout());
         });
     }
 
@@ -294,71 +296,69 @@ final class EventStoreAsyncConnection implements
 
             yield $this->dispatcher->composeAndDispatch($command, $query, $correlationId);
 
-            /** @var TcpPackage[] $packages */
-            $packages = \array_merge($packages, yield $this->readBuffer->waitFor($correlationId));
+            /** @var TcpPackage $package */
+            $package = yield $this->readBuffer->waitFor($correlationId);
 
-            foreach ($packages as $package) {
-                if ($package->command()->equals(TcpCommand::readStreamEventsForwardCompleted())) {
-                    $package = $package->data();
-                    /** @var ReadStreamEventsCompleted $package */
-                    if ($error = $package->getError()) {
-                        throw new \RuntimeException($error);
+            if ($package->command()->equals(TcpCommand::readStreamEventsForwardCompleted())) {
+                $package = $package->data();
+                /** @var ReadStreamEventsCompleted $package */
+                if ($error = $package->getError()) {
+                    throw new \RuntimeException($error);
+                }
+
+                $records = $package->getEvents();
+                $asked -= \count($records);
+
+                if (! $package->getIsEndOfStream()
+                    && ! (
+                        $asked <= 0 && $max !== self::PositionLatest
+                    )
+                ) {
+                    $start = $records[\count($records) - 1];
+                    /* @var ResolvedIndexedEvent $start */
+
+                    if (null === $start->getLink()) {
+                        $start = $command->equals(TcpCommand::readStreamEventsForward())
+                            ? $start->getEvent()->getEventNumber() + 1
+                            : $start->getEvent()->getEventNumber() - 1;
+                    } else {
+                        $start = $command->equals(TcpCommand::readStreamEventsForward())
+                            ? $start->getLink()->getEventNumber() + 1
+                            : $start->getLink()->getEventNumber() - 1;
                     }
 
-                    $records = $package->getEvents();
-                    $asked -= \count($records);
+                    $query->setFromEventNumber($start);
+                    $query->setMaxCount($asked);
 
-                    if (! $package->getIsEndOfStream()
-                        && ! (
-                            $asked <= 0 && $max !== self::PositionLatest
-                        )
-                    ) {
-                        $start = $records[\count($records) - 1];
-                        /* @var ResolvedIndexedEvent $start */
+                    yield $this->readEvents($query, $readDirection, $command, $packages);
+                }
 
-                        if (null === $start->getLink()) {
-                            $start = $command->equals(TcpCommand::readStreamEventsForward())
-                                ? $start->getEvent()->getEventNumber() + 1
-                                : $start->getEvent()->getEventNumber() - 1;
-                        } else {
-                            $start = $command->equals(TcpCommand::readStreamEventsForward())
-                                ? $start->getLink()->getEventNumber() + 1
-                                : $start->getLink()->getEventNumber() - 1;
-                        }
+                $resolvedEvents = [];
 
-                        $query->setFromEventNumber($start);
-                        $query->setMaxCount($asked);
+                foreach ($records as $record) {
+                    /** @var ResolvedIndexedEvent $record */
+                    $event = EventRecordConverter::convert($record->getEvent());
+                    $link = null;
 
-                        yield $this->readEvents($query, $readDirection, $command, $packages);
+                    if ($link = $record->getLink()) {
+                        $link = EventRecordConverter::convert($link);
                     }
 
-                    $resolvedEvents = [];
-
-                    foreach ($records as $record) {
-                        /** @var ResolvedIndexedEvent $record */
-                        $event = EventRecordConverter::convert($record->getEvent());
-                        $link = null;
-
-                        if ($link = $record->getLink()) {
-                            $link = EventRecordConverter::convert($link);
-                        }
-
-                        $resolvedEvents[] = ResolvedEvent::fromResolvedIndexedEventMessage(
-                            new ResolvedIndexedEventMessage($event, $link)
-                        );
-                    }
-
-                    return new StreamEventsSlice(
-                        SliceReadStatus::success(),
-                        $query->getEventStreamId(),
-                        $originalFrom,
-                        $readDirection,
-                        $resolvedEvents,
-                        $package->getNextEventNumber(),
-                        $package->getLastEventNumber(),
-                        $package->getIsEndOfStream()
+                    $resolvedEvents[] = ResolvedEvent::fromResolvedIndexedEventMessage(
+                        new ResolvedIndexedEventMessage($event, $link)
                     );
                 }
+
+                return new StreamEventsSlice(
+                    SliceReadStatus::success(),
+                    $query->getEventStreamId(),
+                    $originalFrom,
+                    $readDirection,
+                    $resolvedEvents,
+                    $package->getNextEventNumber(),
+                    $package->getLastEventNumber(),
+                    $package->getIsEndOfStream()
+                );
             }
         });
     }

@@ -19,6 +19,8 @@ class ConnectionSettings
     private $requireMaster;
     /** @var UserCredentials|null */
     private $defaultUserCredentials;
+    /** @var int */
+    private $operationTimeout;
 
     public static function default(): ConnectionSettings
     {
@@ -27,6 +29,7 @@ class ConnectionSettings
             false,
             false,
             true,
+            1000,
             null
         );
     }
@@ -36,12 +39,14 @@ class ConnectionSettings
         bool $isCluster,
         bool $useSslConnection,
         bool $requireMaster,
+        int $operationTimeout,
         UserCredentials $defaultUserCredentials = null
     ) {
         $this->endPoint = $endpoint;
         $this->isCluster = $isCluster;
         $this->useSslConnection = $useSslConnection;
         $this->requireMaster = $requireMaster;
+        $this->operationTimeout = $operationTimeout;
         $this->defaultUserCredentials = $defaultUserCredentials;
     }
 
@@ -68,6 +73,11 @@ class ConnectionSettings
     public function requireMaster(): bool
     {
         return $this->requireMaster;
+    }
+
+    public function operationTimeout(): int
+    {
+        return $this->operationTimeout;
     }
 
     public function uri(): string

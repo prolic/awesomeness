@@ -19,8 +19,8 @@ Loop::run(function () {
 
     $slice = yield $connection->readStreamEventsForwardAsync(
         'opium2-bar',
-        100,
-        20,
+        10,
+        4000,
         true
     );
 

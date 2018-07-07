@@ -13,8 +13,8 @@ use Prooph\EventStore\Internal\Messages\PersistentSubscriptionAckEvents;
 use Prooph\EventStore\Internal\Messages\PersistentSubscriptionNakEvents;
 use Prooph\EventStore\Messages\EventRecord;
 use Prooph\EventStore\Transport\Tcp\TcpCommand;
-use Prooph\EventStoreClient\Internal\EventRecordConverter;
 use Prooph\EventStore\Transport\Tcp\TcpDispatcher;
+use Prooph\EventStoreClient\Internal\EventRecordConverter;
 
 class AcknowledgeableEventRecord extends EventRecord
 {
