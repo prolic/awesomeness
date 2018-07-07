@@ -227,8 +227,6 @@ final class EventStoreAsyncConnection implements
 
         $deferred = new Deferred();
 
-        $promise = $deferred->promise();
-
         $readEventPromise->onResolve(function (?\Throwable $e, $eventReadResult) use ($stream, $deferred) {
             if ($e) {
                 $deferred->fail($e);
@@ -266,7 +264,7 @@ final class EventStoreAsyncConnection implements
             }
         });
 
-        return $promise;
+        return $deferred->promise();
     }
 
     public function setSystemSettingsAsync(SystemSettings $settings, UserCredentials $userCredentials = null): Promise
