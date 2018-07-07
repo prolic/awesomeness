@@ -6,6 +6,7 @@ namespace Prooph\EventStoreClient;
 
 use Prooph\EventStore\IpEndPoint;
 use Prooph\EventStore\UserCredentials;
+use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 
 class ConnectionSettings
 {
@@ -50,6 +51,10 @@ class ConnectionSettings
         int $heartbeatTimeout,
         UserCredentials $defaultUserCredentials = null
     ) {
+        if ($heartbeatInterval >= 5000) {
+            throw new InvalidArgumentException('Heartbeat interval must be less then 5000ms');
+        }
+
         $this->endPoint = $endpoint;
         $this->isCluster = $isCluster;
         $this->useSslConnection = $useSslConnection;
