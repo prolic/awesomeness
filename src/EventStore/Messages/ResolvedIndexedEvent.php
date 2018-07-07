@@ -6,18 +6,18 @@ namespace Prooph\EventStore\Messages;
 
 class ResolvedIndexedEvent
 {
-    /** @var EventRecord */
+    /** @var EventRecord|null */
     private $event;
     /** @var EventRecord|null */
     private $link;
 
-    public function __construct(EventRecord $event, ?EventRecord $link)
+    public function __construct(?EventRecord $event, ?EventRecord $link)
     {
         $this->event = $event;
         $this->link = $link;
     }
 
-    public function event(): EventRecord
+    public function event(): ?EventRecord
     {
         return $this->event;
     }

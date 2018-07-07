@@ -435,6 +435,7 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
         $eventReadResult = $this->readEvent(
             SystemStreams::metastreamOf($stream),
             -1,
+            false,
             $userCredentials
         );
 
@@ -446,11 +447,13 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
                     throw new UnexpectedValueException('Event is null while operation result is Success');
                 }
 
+                $event = $event->originalEvent();
+
                 return new StreamMetadataResult(
                     $stream,
                     false,
                     $event->eventNumber(),
-                    $event->data()
+                    $event ? $event->data() : ''
                 );
             case EventReadStatus::NotFound:
             case EventReadStatus::NoStream:

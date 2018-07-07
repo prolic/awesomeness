@@ -14,7 +14,7 @@ class ResolvedEvent
 {
     /**
      * The event, or the resolved link event if this is a link event
-     * @var RecordedEvent
+     * @var RecordedEvent|null
      */
     private $event;
     /**
@@ -27,7 +27,7 @@ class ResolvedEvent
      *
      * If this ResolvedEvent represents a link event, the Link
      * will be the OriginalEvent otherwise it will be the event.
-     * @var RecordedEvent
+     * @var RecordedEvent|null
      */
     private $originalEvent;
     /**
@@ -46,7 +46,7 @@ class ResolvedEvent
     {
         $self = new self();
 
-        $self->event = new RecordedEvent($event->event());
+        $self->event = $event->event() ? new RecordedEvent($event->event()) : null;
         $self->link = $event->link() ? new RecordedEvent($event->link()) : null;
         $self->originalEvent = $self->link ?? $self->event;
         $self->isResolved = null !== $self->link;
@@ -59,7 +59,7 @@ class ResolvedEvent
     {
         $self = new self();
 
-        $self->event = new RecordedEvent($event->event());
+        $self->event = $event->event() ? new RecordedEvent($event->event()) : null;
         $self->link = $event->link() ? new RecordedEvent($event->link()) : null;
         $self->originalEvent = $self->link ?? $self->event;
         $self->isResolved = null !== $self->link;
@@ -72,7 +72,7 @@ class ResolvedEvent
     {
     }
 
-    public function event(): RecordedEvent
+    public function event(): ?RecordedEvent
     {
         return $this->event;
     }
@@ -82,7 +82,7 @@ class ResolvedEvent
         return $this->link;
     }
 
-    public function originalEvent(): RecordedEvent
+    public function originalEvent(): ?RecordedEvent
     {
         return $this->originalEvent;
     }

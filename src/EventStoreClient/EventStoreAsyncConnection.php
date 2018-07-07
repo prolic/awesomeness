@@ -4,21 +4,28 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient;
 
+use Amp\Deferred;
 use Amp\Loop;
 use Amp\Promise;
 use Amp\Socket\ClientConnectContext;
 use Amp\Socket\Socket;
 use Amp\TimeoutException;
 use Generator;
+use Prooph\EventStore\Common\SystemStreams;
+use Prooph\EventStore\EventReadResult;
+use Prooph\EventStore\EventReadStatus;
 use Prooph\EventStore\EventStoreAsyncConnection as AsyncConnection;
 use Prooph\EventStore\EventStoreAsyncSubscriptionConnection as AsyncSubscriptionConnection;
 use Prooph\EventStore\EventStoreAsyncTransaction;
 use Prooph\EventStore\EventStoreAsyncTransactionConnection as AsyncTransactionConnection;
 use Prooph\EventStore\EventStorePersistentSubscription;
+use Prooph\EventStore\Exception\OutOfRangeException;
+use Prooph\EventStore\Exception\UnexpectedValueException;
 use Prooph\EventStore\Internal\Consts;
 use Prooph\EventStore\PersistentSubscriptionSettings;
 use Prooph\EventStore\Position;
 use Prooph\EventStore\StreamMetadata;
+use Prooph\EventStore\StreamMetadataResult;
 use Prooph\EventStore\SystemSettings;
 use Prooph\EventStore\Transport\Tcp\TcpCommand;
 use Prooph\EventStore\Transport\Tcp\TcpDispatcher;
@@ -211,7 +218,55 @@ final class EventStoreAsyncConnection implements
 
     public function getStreamMetadataAsync(string $stream, UserCredentials $userCredentials = null): Promise
     {
-        // TODO: Implement getStreamMetadataAsync() method.
+        $readEventPromise = $this->readEventAsync(
+            SystemStreams::metastreamOf($stream),
+            -1,
+            false,
+            $userCredentials
+        );
+
+        $deferred = new Deferred();
+
+        $promise = $deferred->promise();
+
+        $readEventPromise->onResolve(function (?\Throwable $e, $eventReadResult) use ($stream, $deferred) {
+            if ($e) {
+                $deferred->fail($e);
+            }
+
+            /** @var EventReadResult $eventReadResult */
+
+            switch ($eventReadResult->status()->value()) {
+                case EventReadStatus::Success:
+                    $event = $eventReadResult->event();
+
+                    if (null === $event) {
+                        throw new UnexpectedValueException('Event is null while operation result is Success');
+                    }
+
+                    $event = $event->originalEvent();
+
+                    $deferred->resolve(new StreamMetadataResult(
+                        $stream,
+                        false,
+                        $event ? $event->eventNumber() : -1,
+                        $event ? $event->data() : ''
+                    ));
+                    break;
+                case EventReadStatus::NotFound:
+                case EventReadStatus::NoStream:
+                    $deferred->resolve(new StreamMetadataResult($stream, false, -1, ''));
+                    break;
+                case EventReadStatus::StreamDeleted:
+                    $deferred->resolve(new StreamMetadataResult($stream, true, PHP_INT_MAX, ''));
+                    break;
+                default:
+                    $deferred->fail(new OutOfRangeException('Unexpected ReadEventResult: ' . $eventReadResult->status()->value()));
+                    break;
+            }
+        });
+
+        return $promise;
     }
 
     public function setSystemSettingsAsync(SystemSettings $settings, UserCredentials $userCredentials = null): Promise
