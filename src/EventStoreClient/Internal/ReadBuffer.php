@@ -20,6 +20,8 @@ use Prooph\EventStoreClient\Internal\ByteBuffer\Buffer;
 /** @internal */
 class ReadBuffer
 {
+    private const HeartBeatCorrelationId = 'heartbeat';
+
     /** @var InputStream */
     private $inputStream;
     /** @var int */
@@ -29,7 +31,7 @@ class ReadBuffer
     /** @var string */
     private $currentMessage;
     /** @var TcpPackage[] */
-    private $queue = [];
+    private $ready = [];
     /** @var Deferred[] */
     private $waiting = [];
 
@@ -43,6 +45,7 @@ class ReadBuffer
             $value = yield $this->inputStream->read();
 
             if (null === $value) {
+                // stream got closed
                 Loop::disable($watcher);
 
                 return;
@@ -77,8 +80,11 @@ class ReadBuffer
      */
     public function waitFor(string $correlationId): Promise
     {
-        if (isset($this->queue[$correlationId])) {
-            return new Success($this->queue[$correlationId]);
+        if (isset($this->ready[$correlationId])) {
+            $package = $this->ready[$correlationId];
+            unset($this->ready[$correlationId]);
+
+            return new Success($package);
         }
 
         $deferred = new Deferred();
@@ -86,6 +92,14 @@ class ReadBuffer
         $this->waiting[$correlationId] = $deferred;
 
         return $promise;
+    }
+
+    /**
+     * @return Promise<TcpPackage>
+     */
+    public function waitForHeartBeat(): Promise
+    {
+        return $this->waitFor(self::HeartBeatCorrelationId);
     }
 
     private function handleMessage(string $message): void
@@ -103,12 +117,18 @@ class ReadBuffer
 
         $package = $this->tcpPackageFactory->build($command, $flags, $correlationId, $data);
 
-        $correlationId = $package->correlationId();
+        if ($package->command()->equals(TcpCommand::heartbeatResponseCommand())) {
+            $correlationId = self::HeartBeatCorrelationId;
+        } else {
+            $correlationId = $package->correlationId();
+        }
 
         if (isset($this->waiting[$correlationId])) {
             $this->waiting[$correlationId]->resolve($package);
+            unset($this->waiting[$correlationId]);
         }
 
-        $this->queue[$correlationId] = $package;
+        $this->ready[$correlationId] = $package;
+        unset($this->ready[$correlationId]);
     }
 }

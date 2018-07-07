@@ -28,6 +28,7 @@ class TcpPackageFactory
             case TcpCommand::Pong:
                 return new TcpPackage($command, $flags, $correlationId);
             case TcpCommand::HeartbeatRequestCommand:
+            case TcpCommand::HeartbeatResponseCommand:
                 return new TcpPackage($command, $flags, $correlationId);
             case TcpCommand::ReadEventCompleted:
                 $dataObject = new ReadEventCompleted();
@@ -106,7 +107,7 @@ class TcpPackageFactory
 
                 return new TcpPackage($command, $flags, $correlationId, $dataObject);
             default:
-                throw new RuntimeException('Unsupported message type "' . $command->value() . '"');
+                throw new RuntimeException('Unsupported command "' . $command->value() . '"');
         }
     }
 }

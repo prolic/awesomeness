@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient;
 
+use Amp\Loop;
 use Amp\Promise;
 use Amp\Socket\ClientConnectContext;
 use Amp\Socket\Socket;
+use Amp\TimeoutException;
 use Generator;
 use Google\Protobuf\Internal\Message;
 use Prooph\EventStore\EventStoreAsyncConnection as AsyncConnection;
@@ -31,6 +33,7 @@ use Prooph\EventStore\Transport\Tcp\TcpCommand;
 use Prooph\EventStore\Transport\Tcp\TcpDispatcher;
 use Prooph\EventStore\Transport\Tcp\TcpPackage;
 use Prooph\EventStore\UserCredentials;
+use Prooph\EventStoreClient\Exception\HeartBeatTimedOut;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 use Prooph\EventStoreClient\Internal\EventRecordConverter;
 use Prooph\EventStoreClient\Internal\ReadBuffer;
@@ -72,6 +75,7 @@ final class EventStoreAsyncConnection implements
 
             $this->readBuffer = new ReadBuffer($this->connection, $this->settings->operationTimeout());
             $this->dispatcher = new TcpDispatcher($this->connection, $this->settings->operationTimeout());
+            $this->manageHeartBeats();
         });
     }
 
@@ -270,6 +274,22 @@ final class EventStoreAsyncConnection implements
         ?UserCredentials $userCredentials
     ): Promise {
         // TODO: Implement commitTransactionAsync() method.
+    }
+
+    private function manageHeartBeats(): void
+    {
+        Loop::repeat($this->settings->heartbeatInterval(), function (string $watcher): Generator {
+            yield $this->dispatcher->composeAndDispatch(
+                TcpCommand::heartbeatRequestCommand()
+            );
+            try {
+                yield Promise\timeout($this->readBuffer->waitForHeartBeat(), $this->settings->heartbeatTimeout());
+            } catch (TimeoutException $e) {
+                Loop::disable($watcher);
+                $this->close();
+                throw new HeartBeatTimedOut();
+            }
+        });
     }
 
     /**

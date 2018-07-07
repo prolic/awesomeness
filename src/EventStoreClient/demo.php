@@ -24,5 +24,20 @@ Loop::run(function () {
         true
     );
 
-    \var_dump($slice);
+    \var_dump(\get_class($slice));
+
+    Loop::repeat(500, function () {
+        echo '.';
+    });
+
+    Loop::repeat(5000, function () use ($connection) {
+        $slice = yield $connection->readStreamEventsForwardAsync(
+            'opium2-bar',
+            10,
+            4000,
+            true
+        );
+
+        \var_dump(\get_class($slice));
+    });
 });

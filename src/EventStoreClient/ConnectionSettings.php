@@ -21,6 +21,10 @@ class ConnectionSettings
     private $defaultUserCredentials;
     /** @var int */
     private $operationTimeout;
+    /** @var int */
+    private $heartbeatInterval;
+    /** @var int */
+    private $heartbeatTimeout;
 
     public static function default(): ConnectionSettings
     {
@@ -30,6 +34,8 @@ class ConnectionSettings
             false,
             true,
             1000,
+            2500,
+            1500,
             null
         );
     }
@@ -40,6 +46,8 @@ class ConnectionSettings
         bool $useSslConnection,
         bool $requireMaster,
         int $operationTimeout,
+        int $heartbeatInterval,
+        int $heartbeatTimeout,
         UserCredentials $defaultUserCredentials = null
     ) {
         $this->endPoint = $endpoint;
@@ -47,6 +55,8 @@ class ConnectionSettings
         $this->useSslConnection = $useSslConnection;
         $this->requireMaster = $requireMaster;
         $this->operationTimeout = $operationTimeout;
+        $this->heartbeatInterval = $heartbeatInterval;
+        $this->heartbeatTimeout = $heartbeatTimeout;
         $this->defaultUserCredentials = $defaultUserCredentials;
     }
 
@@ -78,6 +88,16 @@ class ConnectionSettings
     public function operationTimeout(): int
     {
         return $this->operationTimeout;
+    }
+
+    public function heartbeatInterval(): int
+    {
+        return $this->heartbeatInterval;
+    }
+
+    public function heartbeatTimeout(): int
+    {
+        return $this->heartbeatTimeout;
     }
 
     public function uri(): string
