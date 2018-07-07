@@ -24,7 +24,7 @@ Loop::run(function () {
         true
     );
 
-    \var_dump(\get_class($slice));
+    \var_dump($slice);
 
     Loop::repeat(500, function () {
         echo '.';
