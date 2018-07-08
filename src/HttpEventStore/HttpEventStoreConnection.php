@@ -22,7 +22,7 @@ use Prooph\EventStore\Data\StreamMetadataResult;
 use Prooph\EventStore\Data\SystemSettings;
 use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Data\WriteResult;
-use Prooph\EventStore\EventData;
+use Prooph\EventStore\Data\EventData;
 use Prooph\EventStore\EventStorePersistentSubscription;
 use Prooph\EventStore\EventStoreSubscriptionConnection;
 use Prooph\EventStore\Exception\InvalidArgumentException;

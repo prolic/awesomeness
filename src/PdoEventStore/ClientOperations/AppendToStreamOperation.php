@@ -8,7 +8,7 @@ use PDO;
 use Prooph\EventStore\Data\ExpectedVersion;
 use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Data\WriteResult;
-use Prooph\EventStore\EventData;
+use Prooph\EventStore\Data\EventData;
 use Prooph\EventStore\Exception\WrongExpectedVersion;
 use Prooph\EventStore\Internal\DateTimeUtil;
 

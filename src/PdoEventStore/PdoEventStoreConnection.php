@@ -21,7 +21,7 @@ use Prooph\EventStore\Data\StreamMetadataResult;
 use Prooph\EventStore\Data\SystemSettings;
 use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Data\WriteResult;
-use Prooph\EventStore\EventData;
+use Prooph\EventStore\Data\EventData;
 use Prooph\EventStore\EventStoreConnection;
 use Prooph\EventStore\EventStoreTransaction;
 use Prooph\EventStore\EventStoreTransactionConnection;

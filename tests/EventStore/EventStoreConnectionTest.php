@@ -6,7 +6,7 @@ namespace ProophTest\EventStore;
 
 use PHPUnit\Exception;
 use PHPUnit\Framework\TestCase;
-use Prooph\EventStore\EventData;
+use Prooph\EventStore\Data\EventData;
 use Prooph\EventStore\Data\EventId;
 use Prooph\EventStore\EventStoreConnection;
 use Prooph\EventStore\Exception\AccessDenied;

@@ -11,17 +11,17 @@ $connection = new \Prooph\HttpEventStore\HttpEventStoreConnection(
 
 $writeResult = $connection->appendToStream(
     'sasastream',
-    \Prooph\EventStore\ExpectedVersion::NoStream,
+    \Prooph\EventStore\Data\ExpectedVersion::NoStream,
     [
-        new \Prooph\EventStore\EventData(
-            \Prooph\EventStore\EventId::generate(),
+        new \Prooph\EventStore\Data\EventData(
+            \Prooph\EventStore\Data\EventId::generate(),
             'userCreated',
             true,
             \json_encode(['user' => 'Sacha Prlc', 'email' => 'saschaprolic@googlemail.com']),
             ''
         ),
-        new \Prooph\EventStore\EventData(
-            \Prooph\EventStore\EventId::generate(),
+        new \Prooph\EventStore\Data\EventData(
+            \Prooph\EventStore\Data\EventId::generate(),
             'userNameUpdated',
             true,
             \json_encode(['user' => 'Sascha Prolic']),

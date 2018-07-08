@@ -8,7 +8,7 @@ use Amp\ByteStream\ClosedException;
 use Amp\Promise;
 use Google\Protobuf\Internal\GPBType;
 use Google\Protobuf\Internal\RepeatedField;
-use Prooph\EventStore\EventRecord;
+use Prooph\EventStore\Data\EventRecord;
 use Prooph\EventStore\Internal\Messages\EventRecord as EventRecordMessage;
 use Prooph\EventStore\Internal\Messages\PersistentSubscriptionAckEvents;
 use Prooph\EventStore\Internal\Messages\PersistentSubscriptionNakEvents;

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
+use Prooph\EventStore\Data\EventData;
 use Prooph\EventStore\Data\EventReadResult;
 use Prooph\EventStore\Data\Position;
 use Prooph\EventStore\Data\StreamEventsSlice;

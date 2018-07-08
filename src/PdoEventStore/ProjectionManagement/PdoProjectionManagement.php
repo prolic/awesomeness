@@ -8,7 +8,7 @@ use PDO;
 use Prooph\EventStore\Data\EventId;
 use Prooph\EventStore\Data\ExpectedVersion;
 use Prooph\EventStore\Data\UserCredentials;
-use Prooph\EventStore\EventData;
+use Prooph\EventStore\Data\EventData;
 use Prooph\EventStore\Exception\ProjectionException;
 use Prooph\EventStore\Exception\ProjectionNotFound;
 use Prooph\EventStore\ProjectionManagement\ProjectionManagement;

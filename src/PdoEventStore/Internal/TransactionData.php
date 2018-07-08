@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Prooph\PdoEventStore\Internal;
 
 use Prooph\EventStore\Data\UserCredentials;
-use Prooph\EventStore\EventData;
+use Prooph\EventStore\Data\EventData;
 
 /** @internal  */
 class TransactionData
