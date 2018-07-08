@@ -7,17 +7,19 @@ namespace Prooph\HttpEventStore\UserManagement\ClientOperations;
 use Http\Client\HttpClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
+use Prooph\EventStore\Data\UserCredentials;
+use Prooph\EventStore\Data\UserData;
 use Prooph\EventStore\Exception\AccessDenied;
-use Prooph\EventStore\UserCredentials;
-use Prooph\EventStore\UserManagement\UserDetails;
 use Prooph\HttpEventStore\ClientOperations\Operation;
 use Prooph\HttpEventStore\Http\RequestMethod;
+
+// @todo refactor to use new UserData object
 
 /** @internal */
 class GetAllUsersOperation extends Operation
 {
     /**
-     * @return UserDetails[]
+     * @return UserData[]
      */
     public function __invoke(
         HttpClient $httpClient,
@@ -37,9 +39,9 @@ class GetAllUsersOperation extends Operation
             case 200:
                 $json = \json_decode($response->getBody()->getContents(), true);
 
-                $userDetails = [];
+                $userData = [];
                 foreach ($json['data'] as $user) {
-                    $userDetails[] = new UserDetails(
+                    $userData[] = new UserData( // @todo
                         $user['login'],
                         $user['fullName'],
                         $user['groups'],
@@ -47,7 +49,7 @@ class GetAllUsersOperation extends Operation
                     );
                 }
 
-                return $userDetails;
+                return $userData;
             case 401:
                 throw AccessDenied::toUserManagementOperation();
             default:

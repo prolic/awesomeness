@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace Prooph\PdoEventStore\ClientOperations;
 
 use PDO;
-use Prooph\EventStore\EventId;
+use Prooph\EventStore\Data\EventId;
+use Prooph\EventStore\Data\EventRecord;
+use Prooph\EventStore\Data\ReadDirection;
+use Prooph\EventStore\Data\SliceReadStatus;
+use Prooph\EventStore\Data\StreamEventsSlice;
+use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Internal\DateTimeUtil;
-use Prooph\EventStore\Messages\EventRecord;
-use Prooph\EventStore\Messages\ResolvedIndexedEvent;
-use Prooph\EventStore\ReadDirection;
-use Prooph\EventStore\SliceReadStatus;
-use Prooph\EventStore\StreamEventsSlice;
-use Prooph\EventStore\UserCredentials;
+use Prooph\EventStore\Internal\Messages\ResolvedIndexedEvent;
 
 /** @internal */
 class ReadStreamEventsBackwardOperation

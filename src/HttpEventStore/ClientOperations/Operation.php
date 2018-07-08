@@ -7,8 +7,8 @@ namespace Prooph\HttpEventStore\ClientOperations;
 use Http\Client\Exception as HttpException;
 use Http\Client\HttpClient;
 use Http\Message\Authentication\BasicAuth;
+use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Exception\ConnectionException;
-use Prooph\EventStore\UserCredentials;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 

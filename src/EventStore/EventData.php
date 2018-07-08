@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
+// @todo
+
 /**
  * Represents an event to be written.
  */

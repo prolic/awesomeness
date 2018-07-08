@@ -7,22 +7,21 @@ namespace Prooph\EventStoreClient\Internal\ClientOperations;
 use Amp\Promise;
 use Generator;
 use Google\Protobuf\Internal\Message;
+use Prooph\EventStore\Data\ReadDirection;
+use Prooph\EventStore\Data\ResolvedEvent;
+use Prooph\EventStore\Data\SliceReadStatus;
+use Prooph\EventStore\Data\StreamEventsSlice;
+use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Internal\Messages\ReadStreamEvents;
 use Prooph\EventStore\Internal\Messages\ReadStreamEventsCompleted;
 use Prooph\EventStore\Internal\Messages\ReadStreamEventsCompleted_ReadStreamResult;
 use Prooph\EventStore\Internal\Messages\ResolvedIndexedEvent;
-use Prooph\EventStore\Messages\ResolvedIndexedEvent as ResolvedIndexedEventMessage;
-use Prooph\EventStore\ReadDirection;
-use Prooph\EventStore\ResolvedEvent;
-use Prooph\EventStore\SliceReadStatus;
-use Prooph\EventStore\StreamEventsSlice;
 use Prooph\EventStore\Transport\Tcp\TcpCommand;
 use Prooph\EventStore\Transport\Tcp\TcpDispatcher;
 use Prooph\EventStore\Transport\Tcp\TcpPackage;
-use Prooph\EventStore\UserCredentials;
 use Prooph\EventStoreClient\Exception\ServerError;
-use Prooph\EventStoreClient\Internal\EventRecordConverter;
+use Prooph\EventStoreClient\Internal\EventMessageConverter;
 use Prooph\EventStoreClient\Internal\ReadBuffer;
 use function Amp\call;
 
@@ -81,16 +80,14 @@ class ReadStreamEventsForwardOperation extends AbstractOperation
 
             foreach ($records as $record) {
                 /** @var ResolvedIndexedEvent $record */
-                $event = EventRecordConverter::convert($record->getEvent());
+                $event = EventMessageConverter::convertEventRecordMessageToEventRecord($record->getEvent());
                 $link = null;
 
                 if ($link = $record->getLink()) {
-                    $link = EventRecordConverter::convert($link);
+                    $link = EventMessageConverter::convertEventRecordMessageToEventRecord($link);
                 }
 
-                $resolvedEvents[] = ResolvedEvent::fromResolvedIndexedEventMessage(
-                    new ResolvedIndexedEventMessage($event, $link)
-                );
+                $resolvedEvents[] = new ResolvedEvent($event, $link, null);
             }
 
             return new StreamEventsSlice(

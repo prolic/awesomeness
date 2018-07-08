@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Prooph\PdoEventStore\ClientOperations;
 
 use PDO;
+use Prooph\EventStore\Data\ExpectedVersion;
+use Prooph\EventStore\Data\SliceReadStatus;
+use Prooph\EventStore\Data\StreamEventsSlice;
+use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Exception\WrongExpectedVersion;
-use Prooph\EventStore\ExpectedVersion;
-use Prooph\EventStore\SliceReadStatus;
-use Prooph\EventStore\StreamEventsSlice;
-use Prooph\EventStore\UserCredentials;
 use Prooph\PdoEventStore\Internal\LockData;
 
 /** @internal */

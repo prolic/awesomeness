@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\Internal;
 
-use Prooph\EventStore\EventId;
-use Prooph\EventStore\PersistentSubscriptionNakEventAction;
-use Prooph\EventStore\RecordedEvent;
+use Prooph\EventStore\Data\EventId;
+use Prooph\EventStore\Data\EventRecord;
+use Prooph\EventStore\Data\PersistentSubscriptionNakEventAction;
 
 /** @internal */
 interface PersistentSubscriptionOperations
 {
     /**
-     * @return RecordedEvent[]
+     * @return EventRecord[]
      */
     public function readFromSubscription(int $amount): array;
 

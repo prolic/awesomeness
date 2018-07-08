@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Prooph\PostgresProjectionManager\Processing;
 
 use DateTimeImmutable;
-use Prooph\EventStore\EventId;
+use Prooph\EventStore\Data\EventId;
 
 class ResolvedEvent
 {

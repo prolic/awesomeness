@@ -9,7 +9,7 @@ use Amp\ByteStream\OutputStream;
 use Amp\Promise;
 use Amp\TimeoutException;
 use Google\Protobuf\Internal\Message;
-use Prooph\EventStore\UserCredentials;
+use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStoreClient\Internal\ByteBuffer\Buffer;
 use Ramsey\Uuid\Uuid;
 

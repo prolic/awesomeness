@@ -7,19 +7,19 @@ namespace Prooph\EventStoreClient\Internal\ClientOperations;
 use Amp\Promise;
 use Generator;
 use Google\Protobuf\Internal\Message;
-use Prooph\EventStore\EventReadResult;
-use Prooph\EventStore\EventReadStatus;
+use Prooph\EventStore\Data\EventReadResult;
+use Prooph\EventStore\Data\EventReadStatus;
+use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Internal\Messages\ReadEvent;
 use Prooph\EventStore\Internal\Messages\ReadEventCompleted;
 use Prooph\EventStore\Internal\Messages\ReadEventCompleted_ReadEventResult;
-use Prooph\EventStore\Messages\ResolvedIndexedEvent;
+use Prooph\EventStore\Internal\Messages\ResolvedIndexedEvent;
 use Prooph\EventStore\Transport\Tcp\TcpCommand;
 use Prooph\EventStore\Transport\Tcp\TcpDispatcher;
 use Prooph\EventStore\Transport\Tcp\TcpPackage;
-use Prooph\EventStore\UserCredentials;
 use Prooph\EventStoreClient\Exception\ServerError;
-use Prooph\EventStoreClient\Internal\EventRecordConverter;
+use Prooph\EventStoreClient\Internal\EventMessageConverter;
 use Prooph\EventStoreClient\Internal\ReadBuffer;
 use function Amp\call;
 
@@ -73,11 +73,11 @@ class ReadEventOperation extends AbstractOperation
             $link = null;
 
             if ($eventMessage->getEvent()) {
-                $event = EventRecordConverter::convert($eventMessage->getEvent());
+                $event = EventMessageConverter::convertEventRecordMessageToEventRecord($eventMessage->getEvent());
             }
 
             if ($link = $eventMessage->getLink()) {
-                $link = EventRecordConverter::convert($link);
+                $link = EventMessageConverter::convertEventRecordMessageToEventRecord($link);
             }
 
             $resolvedEvent = new ResolvedIndexedEvent($event, $link);

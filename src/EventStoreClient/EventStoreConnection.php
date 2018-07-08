@@ -5,8 +5,16 @@ declare(strict_types=1);
 namespace Prooph\EventStoreClient;
 
 use Amp\Promise;
-use Prooph\EventStore\DetailedSubscriptionInformation;
-use Prooph\EventStore\EventReadResult;
+use Prooph\EventStore\Data\DetailedSubscriptionInformation;
+use Prooph\EventStore\Data\EventReadResult;
+use Prooph\EventStore\Data\PersistentSubscriptionSettings;
+use Prooph\EventStore\Data\Position;
+use Prooph\EventStore\Data\StreamEventsSlice;
+use Prooph\EventStore\Data\StreamMetadata;
+use Prooph\EventStore\Data\StreamMetadataResult;
+use Prooph\EventStore\Data\SystemSettings;
+use Prooph\EventStore\Data\UserCredentials;
+use Prooph\EventStore\Data\WriteResult;
 use Prooph\EventStore\EventStoreConnection as Connection;
 use Prooph\EventStore\EventStorePersistentSubscription;
 use Prooph\EventStore\EventStoreSubscriptionConnection as SubscriptionConnection;
@@ -16,14 +24,6 @@ use Prooph\EventStore\Internal\PersistentSubscriptionCreateResult;
 use Prooph\EventStore\Internal\PersistentSubscriptionDeleteResult;
 use Prooph\EventStore\Internal\PersistentSubscriptionUpdateResult;
 use Prooph\EventStore\Internal\ReplayParkedResult;
-use Prooph\EventStore\PersistentSubscriptionSettings;
-use Prooph\EventStore\Position;
-use Prooph\EventStore\StreamEventsSlice;
-use Prooph\EventStore\StreamMetadata;
-use Prooph\EventStore\StreamMetadataResult;
-use Prooph\EventStore\SystemSettings;
-use Prooph\EventStore\UserCredentials;
-use Prooph\EventStore\WriteResult;
 
 final class EventStoreConnection implements
     Connection,

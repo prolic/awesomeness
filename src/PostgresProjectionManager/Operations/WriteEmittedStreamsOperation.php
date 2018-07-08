@@ -10,7 +10,7 @@ use Amp\Postgres\Statement;
 use DateTimeImmutable;
 use DateTimeZone;
 use Generator;
-use Prooph\EventStore\EventId;
+use Prooph\EventStore\Data\EventId;
 use Prooph\EventStore\Exception\RuntimeException;
 use Prooph\EventStore\Internal\DateTimeUtil;
 use Prooph\EventStore\Projections\ProjectionEventTypes;

@@ -13,8 +13,8 @@ $connection = new \Prooph\HttpEventStore\HttpEventStoreConnection(
 $result = $connection->createPersistentSubscription(
     'sasastream',
     'test',
-    \Prooph\EventStore\PersistentSubscriptionSettings::default(),
-    new \Prooph\EventStore\UserCredentials('admin', 'changeit')
+    \Prooph\EventStore\Data\PersistentSubscriptionSettings::default(),
+    new \Prooph\EventStore\Data\UserCredentials('admin', 'changeit')
 );
 
 \var_dump($result);
@@ -22,7 +22,7 @@ $result = $connection->createPersistentSubscription(
 $result = $connection->updatePersistentSubscription(
     'sasastream',
     'test',
-    new \Prooph\EventStore\PersistentSubscriptionSettings(
+    new \Prooph\EventStore\Data\PersistentSubscriptionSettings(
         true,
         0,
         false,

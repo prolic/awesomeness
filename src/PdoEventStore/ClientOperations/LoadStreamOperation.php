@@ -7,10 +7,10 @@ namespace Prooph\PdoEventStore\ClientOperations;
 use PDO;
 use Prooph\EventStore\Common\SystemRoles;
 use Prooph\EventStore\Common\SystemStreams;
+use Prooph\EventStore\Data\SystemSettings;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Exception\RuntimeException;
 use Prooph\EventStore\Exception\StreamDeleted;
-use Prooph\EventStore\SystemSettings;
 use Prooph\PdoEventStore\Internal\LoadStreamResult;
 use Prooph\PdoEventStore\Internal\StreamOperation;
 

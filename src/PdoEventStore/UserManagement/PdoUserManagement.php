@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Prooph\PdoEventStore\UserManagement;
 
 use PDO;
-use Prooph\EventStore\UserCredentials;
-use Prooph\EventStore\UserManagement\UserDetails;
+use Prooph\EventStore\Data\UserCredentials;
+use Prooph\EventStore\Data\UserData;
 use Prooph\EventStore\UserManagement\UserManagement;
 use Prooph\PdoEventStore\PdoEventStoreConnection;
 use Prooph\PdoEventStore\UserManagement\ClientOperations\ChangePasswordOperation;
@@ -19,6 +19,8 @@ use Prooph\PdoEventStore\UserManagement\ClientOperations\GetUserOperation;
 use Prooph\PdoEventStore\UserManagement\ClientOperations\ResetPasswordOperation;
 use Prooph\PdoEventStore\UserManagement\ClientOperations\UpdateUserOperation;
 use Webmozart\Assert\Assert;
+
+// @todo refactor to use new UserData object
 
 final class PdoUserManagement implements UserManagement
 {
@@ -107,7 +109,7 @@ final class PdoUserManagement implements UserManagement
         );
     }
 
-    public function getUser(string $login, UserCredentials $userCredentials = null): UserDetails
+    public function getUser(string $login, UserCredentials $userCredentials = null): UserData
     {
         return (new GetUserOperation())(
             $this->eventStoreConnection,
@@ -118,7 +120,7 @@ final class PdoUserManagement implements UserManagement
     }
 
     /**
-     * @return UserDetails[]
+     * @return UserData[]
      */
     public function getAllUsers(UserCredentials $userCredentials = null): array
     {

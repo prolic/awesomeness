@@ -8,15 +8,15 @@ use Http\Client\HttpClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
 use Prooph\EventStore\Common\SystemEventTypes;
-use Prooph\EventStore\EventId;
+use Prooph\EventStore\Data\EventId;
+use Prooph\EventStore\Data\EventRecord;
+use Prooph\EventStore\Data\ReadDirection;
+use Prooph\EventStore\Data\SliceReadStatus;
+use Prooph\EventStore\Data\StreamEventsSlice;
+use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Internal\DateTimeUtil;
-use Prooph\EventStore\Messages\EventRecord;
-use Prooph\EventStore\Messages\ResolvedIndexedEvent;
-use Prooph\EventStore\ReadDirection;
-use Prooph\EventStore\SliceReadStatus;
-use Prooph\EventStore\StreamEventsSlice;
-use Prooph\EventStore\UserCredentials;
+use Prooph\EventStore\Internal\Messages\ResolvedIndexedEvent;
 use Prooph\HttpEventStore\Http\RequestMethod;
 
 /** @internal */

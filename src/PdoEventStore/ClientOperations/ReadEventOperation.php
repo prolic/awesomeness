@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Prooph\PdoEventStore\ClientOperations;
 
 use PDO;
-use Prooph\EventStore\EventId;
-use Prooph\EventStore\EventReadResult;
-use Prooph\EventStore\EventReadStatus;
+use Prooph\EventStore\Data\EventId;
+use Prooph\EventStore\Data\EventReadResult;
+use Prooph\EventStore\Data\EventReadStatus;
+use Prooph\EventStore\Data\EventRecord;
+use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Internal\DateTimeUtil;
-use Prooph\EventStore\Messages\EventRecord;
-use Prooph\EventStore\Messages\ResolvedIndexedEvent;
-use Prooph\EventStore\UserCredentials;
+use Prooph\EventStore\Internal\Messages\ResolvedIndexedEvent;
 
 /** @internal */
 class ReadEventOperation

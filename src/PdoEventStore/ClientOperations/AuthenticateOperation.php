@@ -6,8 +6,8 @@ namespace Prooph\PdoEventStore\ClientOperations;
 
 use PDO;
 use Prooph\EventStore\Common\SystemRoles;
+use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Exception\AccessDenied;
-use Prooph\EventStore\UserCredentials;
 
 /** @internal */
 class AuthenticateOperation

@@ -9,31 +9,31 @@ use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
 use Prooph\EventStore\Common\SystemEventTypes;
 use Prooph\EventStore\Common\SystemStreams;
-use Prooph\EventStore\DetailedSubscriptionInformation;
+use Prooph\EventStore\Data\DetailedSubscriptionInformation;
+use Prooph\EventStore\Data\EventId;
+use Prooph\EventStore\Data\EventReadResult;
+use Prooph\EventStore\Data\EventReadStatus;
+use Prooph\EventStore\Data\ExpectedVersion;
+use Prooph\EventStore\Data\PersistentSubscriptionSettings;
+use Prooph\EventStore\Data\Position;
+use Prooph\EventStore\Data\StreamEventsSlice;
+use Prooph\EventStore\Data\StreamMetadata;
+use Prooph\EventStore\Data\StreamMetadataResult;
+use Prooph\EventStore\Data\SystemSettings;
+use Prooph\EventStore\Data\UserCredentials;
+use Prooph\EventStore\Data\WriteResult;
 use Prooph\EventStore\EventData;
-use Prooph\EventStore\EventId;
-use Prooph\EventStore\EventReadResult;
-use Prooph\EventStore\EventReadStatus;
 use Prooph\EventStore\EventStorePersistentSubscription;
 use Prooph\EventStore\EventStoreSubscriptionConnection;
 use Prooph\EventStore\Exception\InvalidArgumentException;
 use Prooph\EventStore\Exception\OutOfRangeException;
 use Prooph\EventStore\Exception\UnexpectedValueException;
-use Prooph\EventStore\ExpectedVersion;
 use Prooph\EventStore\Internal\Consts;
 use Prooph\EventStore\Internal\PersistentSubscriptionCreateResult;
 use Prooph\EventStore\Internal\PersistentSubscriptionDeleteResult;
 use Prooph\EventStore\Internal\PersistentSubscriptionUpdateResult;
 use Prooph\EventStore\Internal\ReplayParkedResult;
-use Prooph\EventStore\PersistentSubscriptionSettings;
-use Prooph\EventStore\Position;
-use Prooph\EventStore\StreamEventsSlice;
-use Prooph\EventStore\StreamMetadata;
-use Prooph\EventStore\StreamMetadataResult;
 use Prooph\EventStore\SubscriptionInformation;
-use Prooph\EventStore\SystemSettings;
-use Prooph\EventStore\UserCredentials;
-use Prooph\EventStore\WriteResult;
 use Prooph\HttpEventStore\ClientOperations\AppendToStreamOperation;
 use Prooph\HttpEventStore\ClientOperations\CreatePersistentSubscriptionOperation;
 use Prooph\HttpEventStore\ClientOperations\DeletePersistentSubscriptionOperation;
@@ -308,6 +308,7 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
         $eventReadResult = $this->readEvent(
             SystemStreams::metastreamOf($stream),
             -1,
+            false,
             $userCredentials ?? $this->settings->defaultUserCredentials()
         );
 

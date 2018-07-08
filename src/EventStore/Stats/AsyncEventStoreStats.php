@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\Stats;
 
+use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Task\GetArrayTask;
-use Prooph\EventStore\UserCredentials;
 
 interface AsyncEventStoreStats
 {

@@ -11,7 +11,7 @@ use Amp\Postgres\Transaction;
 use DateTimeImmutable;
 use DateTimeZone;
 use Generator;
-use Prooph\EventStore\EventId;
+use Prooph\EventStore\Data\EventId;
 use Prooph\EventStore\Exception\ProjectionException;
 use Prooph\EventStore\Internal\DateTimeUtil;
 use Prooph\EventStore\Internal\Principal;

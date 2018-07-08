@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\UserManagement;
 
-use Prooph\EventStore\UserCredentials;
+use Prooph\EventStore\Data\UserCredentials;
+use Prooph\EventStore\Data\UserData;
 
 /** @internal */
 interface UserManagement
@@ -47,10 +48,10 @@ interface UserManagement
 
     public function enableUser(string $login, UserCredentials $userCredentials = null): void;
 
-    public function getUser(string $login, UserCredentials $userCredentials = null): UserDetails;
+    public function getUser(string $login, UserCredentials $userCredentials = null): UserData;
 
     /**
-     * @return UserDetails[]
+     * @return UserData[]
      */
     public function getAllUsers(UserCredentials $userCredentials = null): array;
 

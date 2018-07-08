@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\UserManagement;
 
+use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Task;
 use Prooph\EventStore\Task\GetAllUsersTask;
 use Prooph\EventStore\Task\GetUserTask;
-use Prooph\EventStore\UserCredentials;
 
 /** @internal */
 interface AsyncUserManagement

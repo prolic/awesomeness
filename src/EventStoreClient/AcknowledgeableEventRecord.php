@@ -8,13 +8,13 @@ use Amp\ByteStream\ClosedException;
 use Amp\Promise;
 use Google\Protobuf\Internal\GPBType;
 use Google\Protobuf\Internal\RepeatedField;
+use Prooph\EventStore\EventRecord;
 use Prooph\EventStore\Internal\Messages\EventRecord as EventRecordMessage;
 use Prooph\EventStore\Internal\Messages\PersistentSubscriptionAckEvents;
 use Prooph\EventStore\Internal\Messages\PersistentSubscriptionNakEvents;
-use Prooph\EventStore\Messages\EventRecord;
 use Prooph\EventStore\Transport\Tcp\TcpCommand;
 use Prooph\EventStore\Transport\Tcp\TcpDispatcher;
-use Prooph\EventStoreClient\Internal\EventRecordConverter;
+use Prooph\EventStoreClient\Internal\EventMessageConverter;
 
 class AcknowledgeableEventRecord extends EventRecord
 {
@@ -58,7 +58,7 @@ class AcknowledgeableEventRecord extends EventRecord
     ) {
         $this->binaryId = ($linkedEvent) ? $linkedEvent->getEventId() : $message->getEventId();
 
-        $event = EventRecordConverter::convert($message);
+        $event = EventMessageConverter::convertEventRecordMessageToEventRecord($message);
 
         parent::__construct(
             $event->eventStreamId(),
@@ -74,7 +74,7 @@ class AcknowledgeableEventRecord extends EventRecord
         if ($linkedEvent) {
             $this->eventStreamId = $linkedEvent->getEventStreamId();
             $this->eventNumber = $linkedEvent->getEventNumber();
-            $this->linkedEvent = EventRecordConverter::convert($linkedEvent);
+            $this->linkedEvent = EventMessageConverter::convertEventRecordMessageToEventRecord($linkedEvent);
         }
 
         $this->correlationId = $correlationId;

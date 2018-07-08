@@ -7,11 +7,11 @@ namespace ProophTest\EventStore;
 use PHPUnit\Exception;
 use PHPUnit\Framework\TestCase;
 use Prooph\EventStore\EventData;
-use Prooph\EventStore\EventId;
+use Prooph\EventStore\Data\EventId;
 use Prooph\EventStore\EventStoreConnection;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Exception\InvalidArgumentException;
-use Prooph\EventStore\ExpectedVersion;
+use Prooph\EventStore\Data\ExpectedVersion;
 use Prooph\PdoEventStore\PdoEventStoreConnection;
 
 abstract class EventStoreConnectionTest extends TestCase

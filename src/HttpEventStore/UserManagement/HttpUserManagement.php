@@ -7,8 +7,8 @@ namespace Prooph\HttpEventStore\UserManagement;
 use Http\Client\HttpClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
-use Prooph\EventStore\UserCredentials;
-use Prooph\EventStore\UserManagement\UserDetails;
+use Prooph\EventStore\Data\UserCredentials;
+use Prooph\EventStore\Data\UserData;
 use Prooph\EventStore\UserManagement\UserManagement;
 use Prooph\HttpEventStore\ConnectionSettings;
 use Prooph\HttpEventStore\UserManagement\ClientOperations\ChangePasswordOperation;
@@ -21,6 +21,8 @@ use Prooph\HttpEventStore\UserManagement\ClientOperations\GetUserOperation;
 use Prooph\HttpEventStore\UserManagement\ClientOperations\ResetPasswordOperation;
 use Prooph\HttpEventStore\UserManagement\ClientOperations\UpdateUserOperation;
 use Webmozart\Assert\Assert;
+
+// @todo refactor to use new UserData object
 
 final class HttpUserManagement implements UserManagement
 {
@@ -137,7 +139,7 @@ final class HttpUserManagement implements UserManagement
         );
     }
 
-    public function getUser(string $login, UserCredentials $userCredentials = null): UserDetails
+    public function getUser(string $login, UserCredentials $userCredentials = null): UserData
     {
         return (new GetUserOperation())(
             $this->httpClient,
@@ -150,7 +152,7 @@ final class HttpUserManagement implements UserManagement
     }
 
     /**
-     * @return UserDetails[]
+     * @return UserData[]
      */
     public function getAllUsers(UserCredentials $userCredentials = null): array
     {

@@ -7,11 +7,11 @@ namespace Prooph\HttpEventStore\ClientOperations;
 use Http\Client\HttpClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
+use Prooph\EventStore\Data\PersistentSubscriptionSettings;
+use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Internal\PersistentSubscriptionUpdateResult;
 use Prooph\EventStore\Internal\PersistentSubscriptionUpdateStatus;
-use Prooph\EventStore\PersistentSubscriptionSettings;
-use Prooph\EventStore\UserCredentials;
 use Prooph\HttpEventStore\Http\RequestMethod;
 
 /** @internal  */

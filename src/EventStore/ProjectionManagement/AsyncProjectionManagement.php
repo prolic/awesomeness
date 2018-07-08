@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\ProjectionManagement;
 
+use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Task;
 use Prooph\EventStore\Task\CreateProjectionResultTask;
 use Prooph\EventStore\Task\GetArrayTask;
@@ -12,7 +13,6 @@ use Prooph\EventStore\Task\GetProjectionDefinitionTask;
 use Prooph\EventStore\Task\GetProjectionQueryTask;
 use Prooph\EventStore\Task\GetProjectionsTask;
 use Prooph\EventStore\Task\GetProjectionTask;
-use Prooph\EventStore\UserCredentials;
 
 interface AsyncProjectionManagement
 {

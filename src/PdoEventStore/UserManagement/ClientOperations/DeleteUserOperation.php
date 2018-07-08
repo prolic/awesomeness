@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Prooph\PdoEventStore\UserManagement\ClientOperations;
 
 use PDO;
+use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Exception\AccessDenied;
-use Prooph\EventStore\UserCredentials;
 use Prooph\EventStore\UserManagement\UserManagement;
 use Prooph\PdoEventStore\PdoEventStoreConnection;
 

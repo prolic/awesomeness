@@ -8,14 +8,14 @@ use Http\Client\HttpClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
 use Prooph\EventStore\Common\SystemEventTypes;
-use Prooph\EventStore\EventId;
-use Prooph\EventStore\EventReadResult;
-use Prooph\EventStore\EventReadStatus;
+use Prooph\EventStore\Data\EventId;
+use Prooph\EventStore\Data\EventReadResult;
+use Prooph\EventStore\Data\EventReadStatus;
+use Prooph\EventStore\Data\EventRecord;
+use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Internal\DateTimeUtil;
-use Prooph\EventStore\Messages\EventRecord;
-use Prooph\EventStore\Messages\ResolvedIndexedEvent;
-use Prooph\EventStore\UserCredentials;
+use Prooph\EventStore\Internal\Messages\ResolvedIndexedEvent;
 use Prooph\HttpEventStore\Http\RequestMethod;
 
 /** @internal */

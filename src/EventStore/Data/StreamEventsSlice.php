@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Prooph\EventStore;
+namespace Prooph\EventStore\Data;
 
 class StreamEventsSlice
 {
@@ -23,6 +23,7 @@ class StreamEventsSlice
     /** @var bool */
     private $isEndOfStream;
 
+    /** @internal */
     public function __construct(
         SliceReadStatus $status,
         string $stream,

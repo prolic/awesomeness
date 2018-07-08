@@ -10,7 +10,7 @@ use Amp\Postgres\Statement;
 use Error;
 use Generator;
 use Prooph\EventStore\Common\SystemStreams;
-use Prooph\EventStore\SystemSettings;
+use Prooph\EventStore\Data\SystemSettings;
 
 /** @internal */
 class LoadSystemSettingsOperation

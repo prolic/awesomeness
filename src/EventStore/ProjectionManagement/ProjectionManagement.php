@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\ProjectionManagement;
 
-use Prooph\EventStore\UserCredentials;
+use Prooph\EventStore\Data\UserCredentials;
 
 interface ProjectionManagement
 {

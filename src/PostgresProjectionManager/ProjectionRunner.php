@@ -20,7 +20,7 @@ use DateTimeZone;
 use Error;
 use Generator;
 use Prooph\EventStore\Common\SystemEventTypes;
-use Prooph\EventStore\EventId;
+use Prooph\EventStore\Data\EventId;
 use Prooph\EventStore\Exception;
 use Prooph\EventStore\ExpectedVersion;
 use Prooph\EventStore\Internal\DateTimeUtil;

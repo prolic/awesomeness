@@ -2,12 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Prooph\EventStore;
+namespace Prooph\EventStore\Data;
 
-class DetailedSubscriptionInformation
+class SubscriptionInformation
 {
-    /** @var PersistentSubscriptionSettings */
-    private $settings;
     /** @var string */
     private $eventStreamId;
     /** @var string */
@@ -19,48 +17,34 @@ class DetailedSubscriptionInformation
     /** @var int */
     private $totalItemsProcessed;
     /** @var int */
-    private $countSinceLastMeasurement;
-    /** @var int */
     private $lastProcessedEventNumber;
     /** @var int */
     private $lastKnownEventNumber;
     /** @var int */
-    private $readBufferCount;
-    /** @var int */
-    private $liveBufferCount;
-    /** @var int */
-    private $retryBufferCount;
+    private $connectionCount;
     /** @var int */
     private $totalInFlightMessages;
 
     /** @internal */
     public function __construct(
-        PersistentSubscriptionSettings $settings,
         string $eventStreamId,
         string $groupName,
         string $status,
         float $averageItemsPerSecond,
         int $totalItemsProcessed,
-        int $countSinceLastMeasurement,
         int $lastProcessedEventNumber,
         int $lastKnownEventNumber,
-        int $readBufferCount,
-        int $liveBufferCount,
-        int $retryBufferCount,
+        int $connectionCount,
         int $totalInFlightMessages
     ) {
-        $this->settings = $settings;
         $this->eventStreamId = $eventStreamId;
         $this->groupName = $groupName;
         $this->status = $status;
         $this->averageItemsPerSecond = $averageItemsPerSecond;
         $this->totalItemsProcessed = $totalItemsProcessed;
-        $this->countSinceLastMeasurement = $countSinceLastMeasurement;
         $this->lastProcessedEventNumber = $lastProcessedEventNumber;
         $this->lastKnownEventNumber = $lastKnownEventNumber;
-        $this->readBufferCount = $readBufferCount;
-        $this->liveBufferCount = $liveBufferCount;
-        $this->retryBufferCount = $retryBufferCount;
+        $this->connectionCount = $connectionCount;
         $this->totalInFlightMessages = $totalInFlightMessages;
     }
 
@@ -89,11 +73,6 @@ class DetailedSubscriptionInformation
         return $this->totalItemsProcessed;
     }
 
-    public function countSinceLastMeasurement(): int
-    {
-        return $this->countSinceLastMeasurement;
-    }
-
     public function lastProcessedEventNumber(): int
     {
         return $this->lastProcessedEventNumber;
@@ -104,19 +83,9 @@ class DetailedSubscriptionInformation
         return $this->lastKnownEventNumber;
     }
 
-    public function readBufferCount(): int
+    public function connectionCount(): int
     {
-        return $this->readBufferCount;
-    }
-
-    public function liveBufferCount(): int
-    {
-        return $this->liveBufferCount;
-    }
-
-    public function retryBufferCount(): int
-    {
-        return $this->retryBufferCount;
+        return $this->connectionCount;
     }
 
     public function totalInFlightMessages(): int

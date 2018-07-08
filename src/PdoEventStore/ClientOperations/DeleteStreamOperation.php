@@ -6,7 +6,7 @@ namespace Prooph\PdoEventStore\ClientOperations;
 
 use PDO;
 use Prooph\EventStore\Common\SystemStreams;
-use Prooph\EventStore\UserCredentials;
+use Prooph\EventStore\Data\UserCredentials;
 
 /** @internal */
 class DeleteStreamOperation

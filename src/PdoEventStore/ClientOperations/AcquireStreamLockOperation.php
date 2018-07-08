@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Prooph\PdoEventStore\ClientOperations;
 
 use PDO;
+use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Exception\RuntimeException;
-use Prooph\EventStore\UserCredentials;
 
 /** @internal */
 class AcquireStreamLockOperation

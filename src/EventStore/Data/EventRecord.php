@@ -2,10 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Prooph\EventStore\Messages;
+namespace Prooph\EventStore\Data;
 
 use DateTimeImmutable;
-use Prooph\EventStore\EventId;
 
 class EventRecord
 {
@@ -26,6 +25,7 @@ class EventRecord
     /** @var DateTimeImmutable */
     protected $created;
 
+    /** @internal */
     public function __construct(
         string $eventStreamId,
         int $eventNumber,

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Prooph\EventStore;
+namespace Prooph\EventStore\Data;
 
 class StreamMetadataResult
 {
@@ -15,6 +15,7 @@ class StreamMetadataResult
     /** @var string */
     private $streamMetadata;
 
+    /** @internal */
     public function __construct(string $stream, bool $isStreamDeleted, int $metastreamVersion, string $streamMetadata)
     {
         if (empty($stream)) {

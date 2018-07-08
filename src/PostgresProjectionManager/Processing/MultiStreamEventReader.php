@@ -9,7 +9,7 @@ use Amp\Postgres\Pool;
 use Amp\Postgres\ResultSet;
 use Amp\Postgres\Statement;
 use Generator;
-use Prooph\EventStore\EventId;
+use Prooph\EventStore\Data\EventId;
 use Prooph\EventStore\Internal\DateTimeUtil;
 use SplQueue;
 use Throwable;

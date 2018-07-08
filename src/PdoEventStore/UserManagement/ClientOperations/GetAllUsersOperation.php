@@ -5,18 +5,20 @@ declare(strict_types=1);
 namespace Prooph\PdoEventStore\UserManagement\ClientOperations;
 
 use PDO;
+use Prooph\EventStore\Data\UserCredentials;
+use Prooph\EventStore\Data\UserData;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Exception\RuntimeException;
-use Prooph\EventStore\UserCredentials;
-use Prooph\EventStore\UserManagement\UserDetails;
 use Prooph\EventStore\UserManagement\UserManagement;
 use Prooph\PdoEventStore\PdoEventStoreConnection;
+
+// @todo refactor to use new UserData object
 
 /** @internal */
 class GetAllUsersOperation
 {
     /**
-     * @return UserDetails[]
+     * @return UserData[]
      */
     public function __invoke(
         PdoEventStoreConnection $eventStoreConnection,
@@ -51,10 +53,10 @@ class GetAllUsersOperation
         $statement->execute();
         $statement->setFetchMode(PDO::FETCH_OBJ);
 
-        $userDetails = [];
+        $userData = [];
 
         while ($row = $statement->fetch()) {
-            $userDetails[] = new UserDetails(
+            $userData[] = new UserData( // @todo
                 $row->username,
                 $row->full_name,
                 \explode(',', $row->rolenames),
@@ -62,6 +64,6 @@ class GetAllUsersOperation
             );
         }
 
-        return $userDetails;
+        return $userData;
     }
 }

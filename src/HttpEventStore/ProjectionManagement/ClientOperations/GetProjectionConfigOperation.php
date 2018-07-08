@@ -7,10 +7,10 @@ namespace Prooph\HttpEventStore\ProjectionManagement\ClientOperations;
 use Http\Client\HttpClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
+use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Exception\ProjectionNotFound;
 use Prooph\EventStore\ProjectionManagement\ProjectionConfig;
-use Prooph\EventStore\UserCredentials;
 use Prooph\HttpEventStore\ClientOperations\Operation;
 use Prooph\HttpEventStore\Http\RequestMethod;
 

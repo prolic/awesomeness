@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
+use Prooph\EventStore\Data\EventId;
+use Prooph\EventStore\Data\PersistentSubscriptionNakEventAction;
+use Prooph\EventStore\Data\SubscriptionDropReason;
 use Prooph\EventStore\Internal\PersistentSubscriptionOperations;
 use Throwable;
 

@@ -14,9 +14,9 @@ namespace Prooph\EventSourcing\Aggregate;
 
 use ArrayIterator;
 use Prooph\Common\Messaging\Message;
+use Prooph\EventStore\Data\ExpectedVersion;
+use Prooph\EventStore\Data\SliceReadStatus;
 use Prooph\EventStore\EventStoreAsyncConnection;
-use Prooph\EventStore\ExpectedVersion;
-use Prooph\EventStore\SliceReadStatus;
 use Prooph\MessageTransformer;
 
 class AggregateRepository

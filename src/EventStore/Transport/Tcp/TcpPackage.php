@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Prooph\EventStore\Transport\Tcp;
 
 use Google\Protobuf\Internal\Message;
-use Prooph\EventStore\UserCredentials;
+use Prooph\EventStore\Data\UserCredentials;
 
 class TcpPackage
 {

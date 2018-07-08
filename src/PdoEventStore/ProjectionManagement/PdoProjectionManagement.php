@@ -5,16 +5,16 @@ declare(strict_types=1);
 namespace Prooph\PdoEventStore\ProjectionManagement;
 
 use PDO;
+use Prooph\EventStore\Data\EventId;
+use Prooph\EventStore\Data\ExpectedVersion;
+use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\EventData;
-use Prooph\EventStore\EventId;
 use Prooph\EventStore\Exception\ProjectionException;
 use Prooph\EventStore\Exception\ProjectionNotFound;
-use Prooph\EventStore\ExpectedVersion;
 use Prooph\EventStore\ProjectionManagement\ProjectionManagement;
 use Prooph\EventStore\Projections\ProjectionEventTypes;
 use Prooph\EventStore\Projections\ProjectionNamesBuilder;
 use Prooph\EventStore\Projections\StandardProjections;
-use Prooph\EventStore\UserCredentials;
 use Prooph\PdoEventStore\PdoEventStoreConnection;
 use ReflectionMethod;
 

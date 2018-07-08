@@ -7,12 +7,12 @@ namespace Prooph\HttpEventStore\ClientOperations;
 use Http\Client\HttpClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
-use Prooph\EventStore\EventId;
+use Prooph\EventStore\Data\EventId;
+use Prooph\EventStore\Data\EventRecord;
+use Prooph\EventStore\Data\PersistentSubscriptionNakEventAction;
+use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Internal\PersistentSubscriptionOperations as BasePersistentSubscriptionOperations;
-use Prooph\EventStore\PersistentSubscriptionNakEventAction;
-use Prooph\EventStore\RecordedEvent;
-use Prooph\EventStore\UserCredentials;
 use Prooph\HttpEventStore\Http\RequestMethod;
 
 /** @internal */
@@ -53,7 +53,7 @@ final class PersistentSubscriptionOperations extends Operation implements BasePe
 
     /**
      * @param int $amount
-     * @return RecordedEvent[]
+     * @return EventRecord[]
      */
     public function readFromSubscription(int $amount): array
     {

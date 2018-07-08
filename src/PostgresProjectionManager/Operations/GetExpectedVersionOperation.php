@@ -8,7 +8,7 @@ use Amp\Postgres\Pool;
 use Amp\Postgres\ResultSet;
 use Amp\Postgres\Statement;
 use Generator;
-use Prooph\EventStore\ExpectedVersion;
+use Prooph\EventStore\Data\ExpectedVersion;
 
 /** @internal */
 class GetExpectedVersionOperation

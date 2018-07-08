@@ -7,12 +7,12 @@ namespace Prooph\PdoEventStore\UserManagement\ClientOperations;
 use PDO;
 use Prooph\EventStore\Common\SystemEventTypes;
 use Prooph\EventStore\Common\SystemStreams;
+use Prooph\EventStore\Data\EventId;
+use Prooph\EventStore\Data\ExpectedVersion;
+use Prooph\EventStore\Data\StreamMetadata;
+use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\EventData;
-use Prooph\EventStore\EventId;
 use Prooph\EventStore\Exception\AccessDenied;
-use Prooph\EventStore\ExpectedVersion;
-use Prooph\EventStore\StreamMetadata;
-use Prooph\EventStore\UserCredentials;
 use Prooph\EventStore\UserManagement\UserManagement;
 use Prooph\PdoEventStore\PdoEventStoreConnection;
 

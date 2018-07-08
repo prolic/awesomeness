@@ -7,11 +7,11 @@ namespace Prooph\HttpEventStore\ClientOperations;
 use Http\Client\HttpClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
+use Prooph\EventStore\Data\UserCredentials;
+use Prooph\EventStore\Data\WriteResult;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Exception\StreamDeleted;
 use Prooph\EventStore\Exception\WrongExpectedVersion;
-use Prooph\EventStore\UserCredentials;
-use Prooph\EventStore\WriteResult;
 use Prooph\HttpEventStore\Http\RequestMethod;
 
 /** @internal */

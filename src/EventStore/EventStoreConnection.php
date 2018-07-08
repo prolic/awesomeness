@@ -4,6 +4,15 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
+use Prooph\EventStore\Data\EventReadResult;
+use Prooph\EventStore\Data\Position;
+use Prooph\EventStore\Data\StreamEventsSlice;
+use Prooph\EventStore\Data\StreamMetadata;
+use Prooph\EventStore\Data\StreamMetadataResult;
+use Prooph\EventStore\Data\SystemSettings;
+use Prooph\EventStore\Data\UserCredentials;
+use Prooph\EventStore\Data\WriteResult;
+
 interface EventStoreConnection
 {
     public function connect(): void;

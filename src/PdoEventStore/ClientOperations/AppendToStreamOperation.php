@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Prooph\PdoEventStore\ClientOperations;
 
 use PDO;
+use Prooph\EventStore\Data\ExpectedVersion;
+use Prooph\EventStore\Data\UserCredentials;
+use Prooph\EventStore\Data\WriteResult;
 use Prooph\EventStore\EventData;
 use Prooph\EventStore\Exception\WrongExpectedVersion;
-use Prooph\EventStore\ExpectedVersion;
 use Prooph\EventStore\Internal\DateTimeUtil;
-use Prooph\EventStore\UserCredentials;
-use Prooph\EventStore\WriteResult;
 
 /** @internal */
 class AppendToStreamOperation

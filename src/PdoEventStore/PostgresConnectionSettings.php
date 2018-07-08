@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Prooph\PdoEventStore;
 
+use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\IpEndPoint;
-use Prooph\EventStore\UserCredentials;
 
 class PostgresConnectionSettings implements ConnectionSettings
 {

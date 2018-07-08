@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
+use Prooph\EventStore\Data\DetailedSubscriptionInformation;
+use Prooph\EventStore\Data\PersistentSubscriptionSettings;
+use Prooph\EventStore\Data\SubscriptionInformation;
+use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Internal\PersistentSubscriptionCreateResult;
 use Prooph\EventStore\Internal\PersistentSubscriptionDeleteResult;
 use Prooph\EventStore\Internal\PersistentSubscriptionUpdateResult;

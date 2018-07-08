@@ -7,8 +7,8 @@ namespace Prooph\HttpEventStore\Stats;
 use Http\Client\HttpClient;
 use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
+use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Stats\EventStoreStats;
-use Prooph\EventStore\UserCredentials;
 use Prooph\HttpEventStore\ConnectionSettings;
 use Prooph\HttpEventStore\Stats\ClientOperations\StatsOperation;
 

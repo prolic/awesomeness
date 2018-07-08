@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace Prooph\PdoEventStore\UserManagement\ClientOperations;
 
+use Prooph\EventStore\Data\SliceReadStatus;
+use Prooph\EventStore\Data\UserCredentials;
+use Prooph\EventStore\Data\UserData;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Exception\UserNotFound;
-use Prooph\EventStore\SliceReadStatus;
-use Prooph\EventStore\UserCredentials;
-use Prooph\EventStore\UserManagement\UserDetails;
 use Prooph\EventStore\UserManagement\UserManagement;
 use Prooph\PdoEventStore\PdoEventStoreConnection;
+
+// @todo refactor to use new UserData object
 
 /** @internal */
 class GetUserOperation
@@ -19,7 +21,7 @@ class GetUserOperation
         PdoEventStoreConnection $connection,
         string $login,
         ?UserCredentials $userCredentials
-    ): UserDetails {
+    ): UserData {
         try {
             $streamEventsSlice = $connection->readStreamEventsBackward(
                 UserManagement::UserStreamPrefix . $login,
@@ -38,7 +40,7 @@ class GetUserOperation
 
         $data = \json_decode($streamEventsSlice->events()[0]->data(), true);
 
-        return new UserDetails(
+        return new UserData( // @todo
             $data['login'],
             $data['fullName'],
             $data['groups'],

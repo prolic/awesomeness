@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Prooph\EventStore;
+namespace Prooph\EventStore\Data;
 
 use Prooph\EventStore\Common\SystemMetadata;
 use Webmozart\Assert\Assert;
@@ -39,8 +39,13 @@ class StreamAcl
      */
     private $metaWriteRoles;
 
-    public function __construct(array $readRoles, array $writeRoles, array $deleteRoles, array $metaReadRoles, array $metaWriteRoles)
-    {
+    public function __construct(
+        array $readRoles,
+        array $writeRoles,
+        array $deleteRoles,
+        array $metaReadRoles,
+        array $metaWriteRoles
+    ) {
         Assert::allStringNotEmpty($readRoles);
         Assert::allStringNotEmpty($writeRoles);
         Assert::allStringNotEmpty($deleteRoles);

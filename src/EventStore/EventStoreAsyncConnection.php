@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace Prooph\EventStore;
 
 use Amp\Promise;
+use Prooph\EventStore\Data\Position;
+use Prooph\EventStore\Data\StreamMetadata;
+use Prooph\EventStore\Data\SystemSettings;
+use Prooph\EventStore\Data\UserCredentials;
 
 interface EventStoreAsyncConnection
 {
