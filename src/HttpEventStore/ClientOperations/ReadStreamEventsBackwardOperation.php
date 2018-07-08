@@ -11,12 +11,12 @@ use Prooph\EventStore\Common\SystemEventTypes;
 use Prooph\EventStore\Data\EventId;
 use Prooph\EventStore\Data\EventRecord;
 use Prooph\EventStore\Data\ReadDirection;
+use Prooph\EventStore\Data\ResolvedEvent;
 use Prooph\EventStore\Data\SliceReadStatus;
 use Prooph\EventStore\Data\StreamEventsSlice;
 use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Internal\DateTimeUtil;
-use Prooph\EventStore\Internal\Messages\ResolvedIndexedEvent;
 use Prooph\HttpEventStore\Http\RequestMethod;
 
 /** @internal */
@@ -122,7 +122,7 @@ class ReadStreamEventsBackwardOperation extends Operation
                         DateTimeUtil::create($json['updated'])
                     );
 
-                    $events[] = new ResolvedIndexedEvent($record, $link);
+                    $events[] = new ResolvedEvent($record, $link, null);
 
                     $lastEventNumber = $entry['eventNumber'];
                 }

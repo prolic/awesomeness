@@ -8,11 +8,11 @@ use PDO;
 use Prooph\EventStore\Data\EventId;
 use Prooph\EventStore\Data\EventRecord;
 use Prooph\EventStore\Data\ReadDirection;
+use Prooph\EventStore\Data\ResolvedEvent;
 use Prooph\EventStore\Data\SliceReadStatus;
 use Prooph\EventStore\Data\StreamEventsSlice;
 use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Internal\DateTimeUtil;
-use Prooph\EventStore\Internal\Messages\ResolvedIndexedEvent;
 
 /** @internal */
 class ReadStreamEventsForwardOperation
@@ -119,7 +119,7 @@ SQL;
                 );
             }
 
-            $events[] = new ResolvedIndexedEvent($eventRecord, $link);
+            $events[] = new ResolvedEvent($eventRecord, $link, null);
 
             $lastEventNumber = $data->event_number;
         }
