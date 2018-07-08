@@ -42,4 +42,6 @@ Loop::run(function () {
     $m = yield $connection->getStreamMetadataAsync('opium2-bar');
 
     \var_dump($m);
+
+    $connection->close();
 });

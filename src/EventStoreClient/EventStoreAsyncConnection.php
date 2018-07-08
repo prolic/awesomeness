@@ -56,6 +56,8 @@ final class EventStoreAsyncConnection implements
     private $readBuffer;
     /** @var TcpDispatcher */
     private $dispatcher;
+    /** @var string */
+    private $heartbeatWatcher;
 
     public function __construct(ConnectionSettings $settings)
     {
@@ -81,6 +83,7 @@ final class EventStoreAsyncConnection implements
     public function close(): void
     {
         if ($this->connection) {
+            Loop::cancel($this->heartbeatWatcher);
             $this->connection->close();
         }
     }
@@ -364,17 +367,20 @@ final class EventStoreAsyncConnection implements
 
     private function manageHeartBeats(): void
     {
-        Loop::repeat($this->settings->heartbeatInterval(), function (string $watcher): Generator {
-            yield $this->dispatcher->composeAndDispatch(
-                TcpCommand::heartbeatRequestCommand()
-            );
-            try {
-                yield Promise\timeout($this->readBuffer->waitForHeartBeat(), $this->settings->heartbeatTimeout());
-            } catch (TimeoutException $e) {
-                Loop::disable($watcher);
-                $this->close();
-                throw new HeartBeatTimedOutException();
+        $this->heartbeatWatcher = Loop::repeat(
+            $this->settings->heartbeatInterval(),
+            function (string $watcher): Generator {
+                yield $this->dispatcher->composeAndDispatch(
+                    TcpCommand::heartbeatRequestCommand()
+                );
+                try {
+                    yield Promise\timeout($this->readBuffer->waitForHeartBeat(), $this->settings->heartbeatTimeout());
+                } catch (TimeoutException $e) {
+                    Loop::disable($watcher);
+                    $this->close();
+                    throw new HeartBeatTimedOutException();
+                }
             }
-        });
+        );
     }
 }
