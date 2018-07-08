@@ -9,12 +9,12 @@ use Generator;
 use Google\Protobuf\Internal\Message;
 use Prooph\EventStore\Data\EventReadResult;
 use Prooph\EventStore\Data\EventReadStatus;
+use Prooph\EventStore\Data\ResolvedEvent;
 use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Internal\Messages\ReadEvent;
 use Prooph\EventStore\Internal\Messages\ReadEventCompleted;
 use Prooph\EventStore\Internal\Messages\ReadEventCompleted_ReadEventResult;
-use Prooph\EventStore\Internal\Messages\ResolvedIndexedEvent;
 use Prooph\EventStore\Transport\Tcp\TcpCommand;
 use Prooph\EventStore\Transport\Tcp\TcpDispatcher;
 use Prooph\EventStore\Transport\Tcp\TcpPackage;
@@ -80,7 +80,7 @@ class ReadEventOperation extends AbstractOperation
                 $link = EventMessageConverter::convertEventRecordMessageToEventRecord($link);
             }
 
-            $resolvedEvent = new ResolvedIndexedEvent($event, $link);
+            $resolvedEvent = new ResolvedEvent($event, $link, null);
 
             return new EventReadResult(
                 EventReadStatus::byValue($message->getResult()),

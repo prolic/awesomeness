@@ -12,10 +12,10 @@ use Prooph\EventStore\Data\EventId;
 use Prooph\EventStore\Data\EventReadResult;
 use Prooph\EventStore\Data\EventReadStatus;
 use Prooph\EventStore\Data\EventRecord;
+use Prooph\EventStore\Data\ResolvedEvent;
 use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Internal\DateTimeUtil;
-use Prooph\EventStore\Internal\Messages\ResolvedIndexedEvent;
 use Prooph\HttpEventStore\Http\RequestMethod;
 
 /** @internal */
@@ -105,7 +105,7 @@ class ReadEventOperation extends Operation
                     DateTimeUtil::create($json['updated'])
                 );
 
-                $event = new ResolvedIndexedEvent($record, $link);
+                $event = new ResolvedEvent($record, $link, null);
 
                 return new EventReadResult(EventReadStatus::success(), $stream, $eventNumber, $event);
             default:

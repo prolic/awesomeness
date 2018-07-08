@@ -9,9 +9,9 @@ use Prooph\EventStore\Data\EventId;
 use Prooph\EventStore\Data\EventReadResult;
 use Prooph\EventStore\Data\EventReadStatus;
 use Prooph\EventStore\Data\EventRecord;
+use Prooph\EventStore\Data\ResolvedEvent;
 use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Internal\DateTimeUtil;
-use Prooph\EventStore\Internal\Messages\ResolvedIndexedEvent;
 
 /** @internal */
 class ReadEventOperation
@@ -115,7 +115,7 @@ SQL;
             EventReadStatus::success(),
             $stream,
             $eventNumber,
-            new ResolvedIndexedEvent($eventRecord, $link)
+            new ResolvedEvent($eventRecord, $link, null)
         );
     }
 }

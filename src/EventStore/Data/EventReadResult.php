@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\Data;
 
-use Prooph\EventStore\Internal\Messages\ResolvedIndexedEvent;
-use Prooph\EventStoreClient\Internal\EventMessageConverter;
-
 class EventReadResult
 {
     /** @var EventReadStatus */
@@ -22,12 +19,12 @@ class EventReadResult
     private $event;
 
     /** @internal */
-    public function __construct(EventReadStatus $status, string $stream, int $eventNumber, ?ResolvedIndexedEvent $event)
+    public function __construct(EventReadStatus $status, string $stream, int $eventNumber, ?ResolvedEvent $event)
     {
         $this->status = $status;
         $this->stream = $stream;
         $this->eventNumber = $eventNumber;
-        $this->event = $event ? EventMessageConverter::convertResolvedIndexedEventMessageToResolvedEvent($event) : null;
+        $this->event = $event;
     }
 
     public function status(): EventReadStatus
