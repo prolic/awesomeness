@@ -40,6 +40,11 @@ use Prooph\EventStoreClient\Internal\ReadBuffer;
 use function Amp\call;
 use function Amp\Socket\connect;
 
+// @todo: maybe introduce EventStoreConnectionLogicHandler ?
+// this would also make tcp package inspection results finally useful
+// this would also make connection reconnects
+// this would also utilize max retries (would need to be added to config)
+// note: operation timeouts already in place via ReadBuffer implementation
 final class EventStoreAsyncConnection implements
     AsyncConnection,
     AsyncTransactionConnection,
