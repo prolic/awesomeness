@@ -10,8 +10,8 @@ use Http\Message\UriFactory;
 use Prooph\EventStore\Data\PersistentSubscriptionSettings;
 use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Exception\AccessDenied;
-use Prooph\EventStore\Internal\PersistentSubscriptionUpdateResult;
-use Prooph\EventStore\Internal\PersistentSubscriptionUpdateStatus;
+use Prooph\EventStore\Internal\Data\PersistentSubscriptionUpdateResult;
+use Prooph\EventStore\Internal\Data\PersistentSubscriptionUpdateStatus;
 use Prooph\HttpEventStore\Http\RequestMethod;
 
 /** @internal  */

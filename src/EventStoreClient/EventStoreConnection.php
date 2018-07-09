@@ -20,10 +20,10 @@ use Prooph\EventStore\EventStorePersistentSubscription;
 use Prooph\EventStore\EventStoreSubscriptionConnection as SubscriptionConnection;
 use Prooph\EventStore\EventStoreTransaction;
 use Prooph\EventStore\EventStoreTransactionConnection as TransactionConnection;
-use Prooph\EventStore\Internal\PersistentSubscriptionCreateResult;
-use Prooph\EventStore\Internal\PersistentSubscriptionDeleteResult;
-use Prooph\EventStore\Internal\PersistentSubscriptionUpdateResult;
-use Prooph\EventStore\Internal\ReplayParkedResult;
+use Prooph\EventStore\Internal\Data\PersistentSubscriptionCreateResult;
+use Prooph\EventStore\Internal\Data\PersistentSubscriptionDeleteResult;
+use Prooph\EventStore\Internal\Data\PersistentSubscriptionUpdateResult;
+use Prooph\EventStore\Internal\Data\ReplayParkedResult;
 
 final class EventStoreConnection implements
     Connection,

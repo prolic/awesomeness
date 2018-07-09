@@ -9,8 +9,8 @@ use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
 use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Exception\AccessDenied;
-use Prooph\EventStore\Internal\PersistentSubscriptionDeleteResult;
-use Prooph\EventStore\Internal\PersistentSubscriptionDeleteStatus;
+use Prooph\EventStore\Internal\Data\PersistentSubscriptionDeleteResult;
+use Prooph\EventStore\Internal\Data\PersistentSubscriptionDeleteStatus;
 use Prooph\HttpEventStore\Http\RequestMethod;
 
 /** @internal  */

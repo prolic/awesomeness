@@ -8,9 +8,9 @@ use Prooph\EventStore\Data\DetailedSubscriptionInformation;
 use Prooph\EventStore\Data\PersistentSubscriptionSettings;
 use Prooph\EventStore\Data\SubscriptionInformation;
 use Prooph\EventStore\Data\UserCredentials;
-use Prooph\EventStore\Internal\PersistentSubscriptionCreateResult;
-use Prooph\EventStore\Internal\PersistentSubscriptionDeleteResult;
-use Prooph\EventStore\Internal\PersistentSubscriptionUpdateResult;
+use Prooph\EventStore\Internal\Data\PersistentSubscriptionCreateResult;
+use Prooph\EventStore\Internal\Data\PersistentSubscriptionDeleteResult;
+use Prooph\EventStore\Internal\Data\PersistentSubscriptionUpdateResult;
 use Prooph\EventStore\Internal\ReplayParkedResult;
 
 /** @internal */

@@ -9,8 +9,8 @@ use Http\Message\RequestFactory;
 use Http\Message\UriFactory;
 use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Exception\AccessDenied;
-use Prooph\EventStore\Internal\ReplayParkedResult;
-use Prooph\EventStore\Internal\ReplayParkedStatus;
+use Prooph\EventStore\Internal\Data\ReplayParkedResult;
+use Prooph\EventStore\Internal\Data\ReplayParkedStatus;
 use Prooph\HttpEventStore\Http\RequestMethod;
 
 /** @internal */
