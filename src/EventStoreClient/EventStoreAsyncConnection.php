@@ -12,6 +12,7 @@ use Amp\Socket\Socket;
 use Amp\TimeoutException;
 use Generator;
 use Prooph\EventStore\Common\SystemStreams;
+use Prooph\EventStore\Data\EventData;
 use Prooph\EventStore\Data\EventReadResult;
 use Prooph\EventStore\Data\EventReadStatus;
 use Prooph\EventStore\Data\PersistentSubscriptionSettings;
@@ -32,6 +33,7 @@ use Prooph\EventStore\Transport\Tcp\TcpCommand;
 use Prooph\EventStore\Transport\Tcp\TcpDispatcher;
 use Prooph\EventStoreClient\Exception\HeartBeatTimedOutException;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
+use Prooph\EventStoreClient\Internal\ClientOperations\AppendToStreamOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\DeleteStreamOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\ReadEventOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\ReadStreamEventsBackwardOperation;
@@ -100,6 +102,10 @@ final class EventStoreAsyncConnection implements
         bool $hardDelete,
         UserCredentials $userCredentials = null
     ): Promise {
+        if (empty($stream)) {
+            throw new InvalidArgumentException('Stream cannot be empty');
+        }
+
         $operation = new DeleteStreamOperation(
             $this->dispatcher,
             $this->readBuffer,
@@ -113,13 +119,34 @@ final class EventStoreAsyncConnection implements
         return $operation();
     }
 
+    /**
+     * @param string $stream
+     * @param int $expectedVersion
+     * @param EventData[] $events
+     * @param UserCredentials|null $userCredentials
+     * @return Promise
+     */
     public function appendToStreamAsync(
         string $stream,
         int $expectedVersion,
         array $events,
         UserCredentials $userCredentials = null
     ): Promise {
-        // TODO: Implement appendToStreamAsync() method.
+        if (empty($stream)) {
+            throw new InvalidArgumentException('Stream cannot be empty');
+        }
+
+        $operation = new AppendToStreamOperation(
+            $this->dispatcher,
+            $this->readBuffer,
+            $this->settings->requireMaster(),
+            $stream,
+            $expectedVersion,
+            $events,
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
+
+        return $operation();
     }
 
     public function readEventAsync(
@@ -238,6 +265,10 @@ final class EventStoreAsyncConnection implements
 
     public function getStreamMetadataAsync(string $stream, UserCredentials $userCredentials = null): Promise
     {
+        if (empty($stream)) {
+            throw new InvalidArgumentException('Stream cannot be empty');
+        }
+
         $readEventPromise = $this->readEventAsync(
             SystemStreams::metastreamOf($stream),
             -1,
