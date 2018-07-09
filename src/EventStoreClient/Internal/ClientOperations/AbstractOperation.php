@@ -8,9 +8,9 @@ use Amp\Promise;
 use Generator;
 use Google\Protobuf\Internal\Message;
 use Prooph\EventStore\Data\UserCredentials;
-use Prooph\EventStore\Internal\Messages\NotHandled;
-use Prooph\EventStore\Internal\Messages\NotHandled_NotHandledReason;
 use Prooph\EventStore\Internal\SystemData\InspectionResult;
+use Prooph\EventStore\Messages\NotHandled;
+use Prooph\EventStore\Messages\NotHandled_NotHandledReason;
 use Prooph\EventStore\Transport\Tcp\TcpCommand;
 use Prooph\EventStore\Transport\Tcp\TcpDispatcher;
 use Prooph\EventStore\Transport\Tcp\TcpFlags;
@@ -79,18 +79,21 @@ abstract class AbstractOperation
 
             yield $this->dispatcher->dispatch($request);
 
+            /** @var TcpPackage $response */
             $response = yield $this->readBuffer->waitFor($correlationId);
 
             $this->inspectPackage($response);
 
-            return $this->transformResponse($response);
+            return $this->transformResponse($response->data());
         });
     }
 
-    protected function inspectPackage(TcpPackage $package): InspectionResult
+    protected function inspectPackage(TcpPackage $package): void
     {
         if ($package->command()->equals($this->responseCommand)) {
             $this->inspectResponse($package->data());
+            // @todo return InspectionResult for upcoming EventStoreConnectionLogicHandler
+            return;
         }
 
         switch ($package->command()->value()) {

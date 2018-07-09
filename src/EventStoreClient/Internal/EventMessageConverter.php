@@ -10,9 +10,9 @@ use Prooph\EventStore\Data\EventId;
 use Prooph\EventStore\Data\EventRecord;
 use Prooph\EventStore\Data\Position;
 use Prooph\EventStore\Data\ResolvedEvent;
-use Prooph\EventStore\Internal\Messages\EventRecord as EventRecordMessage;
-use Prooph\EventStore\Internal\Messages\ResolvedEvent as ResolvedEventMessage;
-use Prooph\EventStore\Internal\Messages\ResolvedIndexedEvent as ResolvedIndexedEventMessage;
+use Prooph\EventStore\Messages\EventRecord as EventRecordMessage;
+use Prooph\EventStore\Messages\ResolvedEvent as ResolvedEventMessage;
+use Prooph\EventStore\Messages\ResolvedIndexedEvent as ResolvedIndexedEventMessage;
 
 /** @internal */
 class EventMessageConverter

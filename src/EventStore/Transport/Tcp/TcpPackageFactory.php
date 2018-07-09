@@ -5,20 +5,20 @@ declare(strict_types=1);
 namespace Prooph\EventStore\Transport\Tcp;
 
 use Prooph\EventStore\Exception\RuntimeException;
-use Prooph\EventStore\Internal\Messages\NotHandled;
-use Prooph\EventStore\Internal\Messages\NotHandled_MasterInfo;
-use Prooph\EventStore\Internal\Messages\PersistentSubscriptionConfirmation;
-use Prooph\EventStore\Internal\Messages\PersistentSubscriptionStreamEventAppeared;
-use Prooph\EventStore\Internal\Messages\ReadAllEventsCompleted;
-use Prooph\EventStore\Internal\Messages\ReadEventCompleted;
-use Prooph\EventStore\Internal\Messages\ReadStreamEventsCompleted;
-use Prooph\EventStore\Internal\Messages\StreamEventAppeared;
-use Prooph\EventStore\Internal\Messages\SubscriptionConfirmation;
-use Prooph\EventStore\Internal\Messages\SubscriptionDropped;
-use Prooph\EventStore\Internal\Messages\TransactionCommitCompleted;
-use Prooph\EventStore\Internal\Messages\TransactionStartCompleted;
-use Prooph\EventStore\Internal\Messages\TransactionWriteCompleted;
-use Prooph\EventStore\Internal\Messages\WriteEventsCompleted;
+use Prooph\EventStore\Messages\NotHandled;
+use Prooph\EventStore\Messages\NotHandled_MasterInfo;
+use Prooph\EventStore\Messages\PersistentSubscriptionConfirmation;
+use Prooph\EventStore\Messages\PersistentSubscriptionStreamEventAppeared;
+use Prooph\EventStore\Messages\ReadAllEventsCompleted;
+use Prooph\EventStore\Messages\ReadEventCompleted;
+use Prooph\EventStore\Messages\ReadStreamEventsCompleted;
+use Prooph\EventStore\Messages\StreamEventAppeared;
+use Prooph\EventStore\Messages\SubscriptionConfirmation;
+use Prooph\EventStore\Messages\SubscriptionDropped;
+use Prooph\EventStore\Messages\TransactionCommitCompleted;
+use Prooph\EventStore\Messages\TransactionStartCompleted;
+use Prooph\EventStore\Messages\TransactionWriteCompleted;
+use Prooph\EventStore\Messages\WriteEventsCompleted;
 
 class TcpPackageFactory
 {
