@@ -32,42 +32,42 @@ class EventHandler
     public function connected(ClientConnectionEventArgs $args): void
     {
         foreach ($this->handlers['connected'] as $handler) {
-            $handler->callback()();
+            $handler->callback()($args);
         }
     }
 
     public function disconnected(ClientConnectionEventArgs $args): void
     {
         foreach ($this->handlers['disconnected'] as $handler) {
-            $handler->callback()();
+            $handler->callback()($args);
         }
     }
 
     public function reconnecting(ClientReconnectingEventArgs $args): void
     {
         foreach ($this->handlers['reconnecting'] as $handler) {
-            $handler->callback()();
+            $handler->callback()($args);
         }
     }
 
     public function closed(ClientClosedEventArgs $args): void
     {
         foreach ($this->handlers['closed'] as $handler) {
-            $handler->callback()();
+            $handler->callback()($args);
         }
     }
 
     public function errorOccurred(ClientErrorEventArgs $args): void
     {
         foreach ($this->handlers['errorOccurred'] as $handler) {
-            $handler->callback()();
+            $handler->callback()($args);
         }
     }
 
     public function authenticationFailed(ClientAuthenticationFailedEventArgs $args): void
     {
         foreach ($this->handlers['authenticationFailed'] as $handler) {
-            $handler->callback()();
+            $handler->callback()($args);
         }
     }
 
