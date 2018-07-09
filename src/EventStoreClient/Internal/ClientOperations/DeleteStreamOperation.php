@@ -50,8 +50,8 @@ class DeleteStreamOperation extends AbstractOperation
             $dispatcher,
             $readBuffer,
             $userCredentials,
-            TcpCommand::readEvent(),
-            TcpCommand::readEventCompleted()
+            TcpCommand::deleteStream(),
+            TcpCommand::deleteStreamCompleted()
         );
     }
 

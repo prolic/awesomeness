@@ -90,7 +90,7 @@ abstract class AbstractOperation
     protected function inspectPackage(TcpPackage $package): InspectionResult
     {
         if ($package->command()->equals($this->responseCommand)) {
-            return $this->inspectResponse($package->data());
+            $this->inspectResponse($package->data());
         }
 
         switch ($package->command()->value()) {
