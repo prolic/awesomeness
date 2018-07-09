@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient\Internal\ClientOperations;
 
-use Amp\Promise;
-use Generator;
 use Google\Protobuf\Internal\Message;
 use Prooph\EventStore\Data\ReadDirection;
 use Prooph\EventStore\Data\ResolvedEvent;
@@ -19,12 +17,11 @@ use Prooph\EventStore\Internal\Messages\ReadStreamEventsCompleted_ReadStreamResu
 use Prooph\EventStore\Internal\Messages\ResolvedIndexedEvent;
 use Prooph\EventStore\Transport\Tcp\TcpCommand;
 use Prooph\EventStore\Transport\Tcp\TcpDispatcher;
-use Prooph\EventStore\Transport\Tcp\TcpPackage;
 use Prooph\EventStoreClient\Exception\ServerError;
 use Prooph\EventStoreClient\Internal\EventMessageConverter;
 use Prooph\EventStoreClient\Internal\ReadBuffer;
-use function Amp\call;
 
+/** @internal */
 class ReadStreamEventsForwardOperation extends AbstractOperation
 {
     /** @var bool */
@@ -63,46 +60,6 @@ class ReadStreamEventsForwardOperation extends AbstractOperation
         );
     }
 
-    /**
-     * @return Promise<StreamEventsSlice>
-     */
-    public function __invoke(): Promise
-    {
-        return call(function (): Generator {
-            /* @var TcpPackage $package */
-            $package = yield $this->request();
-            $message = $package->data();
-            /* @var ReadStreamEventsCompleted $message */
-
-            $records = $message->getEvents();
-
-            $resolvedEvents = [];
-
-            foreach ($records as $record) {
-                /** @var ResolvedIndexedEvent $record */
-                $event = EventMessageConverter::convertEventRecordMessageToEventRecord($record->getEvent());
-                $link = null;
-
-                if ($link = $record->getLink()) {
-                    $link = EventMessageConverter::convertEventRecordMessageToEventRecord($link);
-                }
-
-                $resolvedEvents[] = new ResolvedEvent($event, $link, null);
-            }
-
-            return new StreamEventsSlice(
-                SliceReadStatus::byValue($message->getResult()),
-                $this->stream,
-                $this->start,
-                ReadDirection::forward(),
-                $resolvedEvents,
-                $message->getNextEventNumber(),
-                $message->getLastEventNumber(),
-                $message->getIsEndOfStream()
-            );
-        });
-    }
-
     protected function createRequestDto(): Message
     {
         $message = new ReadStreamEvents();
@@ -115,24 +72,53 @@ class ReadStreamEventsForwardOperation extends AbstractOperation
         return $message;
     }
 
-    protected function inspectPackage(TcpPackage $package): TcpPackage
+    protected function inspectResponse(Message $response): void
     {
-        $package = parent::inspectPackage($package);
+        /** @var ReadStreamEventsCompleted $response */
 
-        /** @var ReadStreamEventsCompleted $message */
-        $message = $package->data();
-
-        switch ($message->getResult()) {
+        switch ($response->getResult()) {
             case ReadStreamEventsCompleted_ReadStreamResult::Success:
             case ReadStreamEventsCompleted_ReadStreamResult::NoStream:
             case ReadStreamEventsCompleted_ReadStreamResult::StreamDeleted:
-                return $package;
+                return;
             case ReadStreamEventsCompleted_ReadStreamResult::Error:
-                throw new ServerError($message->getError());
+                throw new ServerError($response->getError());
             case ReadStreamEventsCompleted_ReadStreamResult::AccessDenied:
                 throw AccessDenied::toStream($this->stream);
             default:
                 throw new ServerError('Unexpected ReadStreamResult');
         }
+    }
+
+    protected function transformResponse(Message $response): object
+    {
+        /* @var ReadStreamEventsCompleted $response */
+
+        $records = $response->getEvents();
+
+        $resolvedEvents = [];
+
+        foreach ($records as $record) {
+            /** @var ResolvedIndexedEvent $record */
+            $event = EventMessageConverter::convertEventRecordMessageToEventRecord($record->getEvent());
+            $link = null;
+
+            if ($link = $record->getLink()) {
+                $link = EventMessageConverter::convertEventRecordMessageToEventRecord($link);
+            }
+
+            $resolvedEvents[] = new ResolvedEvent($event, $link, null);
+        }
+
+        return new StreamEventsSlice(
+            SliceReadStatus::byValue($response->getResult()),
+            $this->stream,
+            $this->start,
+            ReadDirection::forward(),
+            $resolvedEvents,
+            $response->getNextEventNumber(),
+            $response->getLastEventNumber(),
+            $response->getIsEndOfStream()
+        );
     }
 }

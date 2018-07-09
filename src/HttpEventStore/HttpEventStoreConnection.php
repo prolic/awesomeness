@@ -91,6 +91,7 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
 
     public function deleteStream(
         string $stream,
+        int $expectedVersion,
         bool $hardDelete,
         UserCredentials $userCredentials = null
     ): void {
@@ -98,6 +99,7 @@ class HttpEventStoreConnection implements EventStoreSubscriptionConnection
             throw new InvalidArgumentException('Stream cannot be empty');
         }
 
+        // @todo add missing usage of $expectedVersion
         (new DeleteStreamOperation())(
             $this->httpClient,
             $this->requestFactory,

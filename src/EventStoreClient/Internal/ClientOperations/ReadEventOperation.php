@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient\Internal\ClientOperations;
 
-use Amp\Promise;
-use Generator;
 use Google\Protobuf\Internal\Message;
 use Prooph\EventStore\Data\EventReadResult;
 use Prooph\EventStore\Data\EventReadStatus;
@@ -17,12 +15,11 @@ use Prooph\EventStore\Internal\Messages\ReadEventCompleted;
 use Prooph\EventStore\Internal\Messages\ReadEventCompleted_ReadEventResult;
 use Prooph\EventStore\Transport\Tcp\TcpCommand;
 use Prooph\EventStore\Transport\Tcp\TcpDispatcher;
-use Prooph\EventStore\Transport\Tcp\TcpPackage;
 use Prooph\EventStoreClient\Exception\ServerError;
 use Prooph\EventStoreClient\Internal\EventMessageConverter;
 use Prooph\EventStoreClient\Internal\ReadBuffer;
-use function Amp\call;
 
+/** @internal */
 class ReadEventOperation extends AbstractOperation
 {
     /** @var bool */
@@ -57,40 +54,6 @@ class ReadEventOperation extends AbstractOperation
         );
     }
 
-    /**
-     * @return Promise<EventReadResult>
-     */
-    public function __invoke(): Promise
-    {
-        return call(function (): Generator {
-            /* @var TcpPackage $package */
-            $package = yield $this->request();
-            $message = $package->data();
-            /* @var ReadEventCompleted $message */
-
-            $eventMessage = $message->getEvent();
-            $event = null;
-            $link = null;
-
-            if ($eventMessage->getEvent()) {
-                $event = EventMessageConverter::convertEventRecordMessageToEventRecord($eventMessage->getEvent());
-            }
-
-            if ($link = $eventMessage->getLink()) {
-                $link = EventMessageConverter::convertEventRecordMessageToEventRecord($link);
-            }
-
-            $resolvedEvent = new ResolvedEvent($event, $link, null);
-
-            return new EventReadResult(
-                EventReadStatus::byValue($message->getResult()),
-                $this->stream,
-                $this->eventNumber,
-                $resolvedEvent
-            );
-        });
-    }
-
     protected function createRequestDto(): Message
     {
         $message = new ReadEvent();
@@ -102,25 +65,48 @@ class ReadEventOperation extends AbstractOperation
         return $message;
     }
 
-    protected function inspectPackage(TcpPackage $package): TcpPackage
+    protected function inspectResponse(Message $response): void
     {
-        $package = parent::inspectPackage($package);
+        /** @var ReadEventCompleted $response */
 
-        /** @var ReadEventCompleted $message */
-        $message = $package->data();
-
-        switch ($message->getResult()) {
+        switch ($response->getResult()) {
             case ReadEventCompleted_ReadEventResult::Success:
             case ReadEventCompleted_ReadEventResult::NotFound:
             case ReadEventCompleted_ReadEventResult::NoStream:
             case ReadEventCompleted_ReadEventResult::StreamDeleted:
-                return $package;
+                return;
             case ReadEventCompleted_ReadEventResult::Error:
-                throw new ServerError($message->getError());
+                throw new ServerError($response->getError());
             case ReadEventCompleted_ReadEventResult::AccessDenied:
                 throw AccessDenied::toStream($this->stream);
             default:
                 throw new ServerError('Unexpected ReadEventResult');
         }
+    }
+
+    protected function transformResponse(Message $response): object
+    {
+        /* @var ReadEventCompleted $response */
+
+        $eventMessage = $response->getEvent();
+        $event = null;
+        $link = null;
+
+        if ($eventMessage->getEvent()) {
+            $event = EventMessageConverter::convertEventRecordMessageToEventRecord($eventMessage->getEvent());
+        }
+
+        if ($link = $eventMessage->getLink()) {
+            $link = EventMessageConverter::convertEventRecordMessageToEventRecord($link);
+        }
+
+        $resolvedEvent = new ResolvedEvent($event, $link, null);
+
+        return new EventReadResult(
+            EventReadStatus::byValue($response->getResult()),
+            $this->stream,
+            $this->eventNumber,
+            $resolvedEvent
+        );
     }
 }

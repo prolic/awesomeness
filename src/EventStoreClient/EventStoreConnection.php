@@ -52,10 +52,11 @@ final class EventStoreConnection implements
     /** @throws \Throwable */
     public function deleteStream(
         string $stream,
+        int $expectedVersion,
         bool $hardDelete,
         UserCredentials $userCredentials = null
     ): void {
-        Promise\wait($this->asyncConnection->deleteStreamAsync($stream, $hardDelete, $userCredentials));
+        Promise\wait($this->asyncConnection->deleteStreamAsync($stream, $expectedVersion, $hardDelete, $userCredentials));
     }
 
     /** @throws \Throwable */

@@ -96,6 +96,7 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
 
     public function deleteStream(
         string $stream,
+        int $expectedVersion,
         bool $hardDelete,
         UserCredentials $userCredentials = null
     ): void {
@@ -113,6 +114,7 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
             $this->userRoles($userCredentials)
         );
 
+        // @todo add missing usage of $expectedVersion
         (new DeleteStreamOperation())(
             $this->connection,
             $stream,

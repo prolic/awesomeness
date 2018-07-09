@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Prooph\EventStore;
 
 use Amp\Promise;
+use Prooph\EventStore\Data\EventData;
+use Prooph\EventStore\Data\ExpectedVersion;
 use Prooph\EventStore\Data\Position;
 use Prooph\EventStore\Data\StreamMetadata;
 use Prooph\EventStore\Data\SystemSettings;
@@ -19,6 +21,7 @@ interface EventStoreAsyncConnection
     /** @return Promise<DeleteResult> */
     public function deleteStreamAsync(
         string $stream,
+        int $expectedVersion,
         bool $hardDelete,
         UserCredentials $userCredentials = null
     ): Promise;

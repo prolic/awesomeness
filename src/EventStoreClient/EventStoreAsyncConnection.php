@@ -32,6 +32,7 @@ use Prooph\EventStore\Transport\Tcp\TcpCommand;
 use Prooph\EventStore\Transport\Tcp\TcpDispatcher;
 use Prooph\EventStoreClient\Exception\HeartBeatTimedOutException;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
+use Prooph\EventStoreClient\Internal\ClientOperations\DeleteStreamOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\ReadEventOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\ReadStreamEventsBackwardOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\ReadStreamEventsForwardOperation;
@@ -90,10 +91,21 @@ final class EventStoreAsyncConnection implements
 
     public function deleteStreamAsync(
         string $stream,
+        int $expectedVersion,
         bool $hardDelete,
         UserCredentials $userCredentials = null
     ): Promise {
-        // TODO: Implement deleteStreamAsync() method.
+        $operation = new DeleteStreamOperation(
+            $this->dispatcher,
+            $this->readBuffer,
+            $this->settings->requireMaster(),
+            $stream,
+            $expectedVersion,
+            $hardDelete,
+            $userCredentials ?? $this->settings->defaultUserCredentials()
+        );
+
+        return $operation();
     }
 
     public function appendToStreamAsync(

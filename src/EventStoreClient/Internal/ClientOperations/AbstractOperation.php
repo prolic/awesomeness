@@ -10,6 +10,7 @@ use Google\Protobuf\Internal\Message;
 use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Internal\Messages\NotHandled;
 use Prooph\EventStore\Internal\Messages\NotHandled_NotHandledReason;
+use Prooph\EventStore\Internal\SystemData\InspectionResult;
 use Prooph\EventStore\Transport\Tcp\TcpCommand;
 use Prooph\EventStore\Transport\Tcp\TcpDispatcher;
 use Prooph\EventStore\Transport\Tcp\TcpFlags;
@@ -21,6 +22,7 @@ use Prooph\EventStoreClient\Exception\UnexpectedCommandException;
 use Prooph\EventStoreClient\Internal\ReadBuffer;
 use function Amp\call;
 
+/** @internal */
 abstract class AbstractOperation
 {
     /** @var TcpDispatcher */
@@ -50,6 +52,10 @@ abstract class AbstractOperation
 
     abstract protected function createRequestDto(): Message;
 
+    abstract protected function inspectResponse(Message $response): void;
+
+    abstract protected function transformResponse(Message $response): object;
+
     protected function createNetworkPackage(string $correlationId): TcpPackage
     {
         return new TcpPackage(
@@ -62,27 +68,29 @@ abstract class AbstractOperation
     }
 
     /**
-     * @return Promise<TcpPackage>
+     * @return Promise<object>
      */
-    protected function request(): Promise
+    public function __invoke(): Promise
     {
         return call(function (): Generator {
             $correlationId = $this->dispatcher->createCorrelationId();
 
-            $requestPackage = $this->createNetworkPackage($correlationId);
+            $request = $this->createNetworkPackage($correlationId);
 
-            yield $this->dispatcher->dispatch($requestPackage);
+            yield $this->dispatcher->dispatch($request);
 
-            $responsePackage = yield $this->readBuffer->waitFor($correlationId);
+            $response = yield $this->readBuffer->waitFor($correlationId);
 
-            return $this->inspectPackage($responsePackage);
+            $this->inspectPackage($response);
+
+            return $this->transformResponse($response);
         });
     }
 
-    protected function inspectPackage(TcpPackage $package): TcpPackage
+    protected function inspectPackage(TcpPackage $package): InspectionResult
     {
         if ($package->command()->equals($this->responseCommand)) {
-            return $package;
+            return $this->inspectResponse($package->data());
         }
 
         switch ($package->command()->value()) {

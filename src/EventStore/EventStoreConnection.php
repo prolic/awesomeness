@@ -6,6 +6,7 @@ namespace Prooph\EventStore;
 
 use Prooph\EventStore\Data\EventData;
 use Prooph\EventStore\Data\EventReadResult;
+use Prooph\EventStore\Data\ExpectedVersion;
 use Prooph\EventStore\Data\Position;
 use Prooph\EventStore\Data\StreamEventsSlice;
 use Prooph\EventStore\Data\StreamMetadata;
@@ -22,6 +23,7 @@ interface EventStoreConnection
 
     public function deleteStream(
         string $stream,
+        int $expectedVersion,
         bool $hardDelete,
         UserCredentials $userCredentials = null
     ): void;
