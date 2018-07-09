@@ -17,6 +17,8 @@ use Prooph\EventStore\Data\WriteResult;
 
 interface EventStoreConnection
 {
+    public function connectionName(): string;
+
     public function connect(): void;
 
     public function close(): void;

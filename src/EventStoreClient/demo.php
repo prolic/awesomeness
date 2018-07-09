@@ -11,7 +11,7 @@ require __DIR__ . '/../../vendor/autoload.php';
 Loop::run(function () {
     $settings = ConnectionSettings::default();
 
-    $connection = new EventStoreAsyncConnection($settings);
+    $connection = new EventStoreAsyncConnection($settings, 'test');
 
     yield $connection->connectAsync();
 
@@ -34,7 +34,7 @@ Loop::run(function () {
     );
 
     \var_dump($slice);
-die;
+    die;
     $event = yield $connection->readEventAsync('opium2-bar', 2, true);
 
     \var_dump($event);

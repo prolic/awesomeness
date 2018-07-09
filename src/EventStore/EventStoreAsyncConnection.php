@@ -14,6 +14,8 @@ use Prooph\EventStore\Data\UserCredentials;
 
 interface EventStoreAsyncConnection
 {
+    public function connectionName(): string;
+
     public function connectAsync(): Promise;
 
     public function close(): void;

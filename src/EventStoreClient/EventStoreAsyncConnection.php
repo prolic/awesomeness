@@ -56,6 +56,8 @@ final class EventStoreAsyncConnection implements
     private const PositionEnd = -1;
     private const PositionLatest = 999999;
 
+    /** @var string */
+    private $connectionName;
     /** @var ConnectionSettings */
     private $settings;
     /** @var Socket */
@@ -67,9 +69,15 @@ final class EventStoreAsyncConnection implements
     /** @var string */
     private $heartbeatWatcher;
 
-    public function __construct(ConnectionSettings $settings)
+    public function __construct(ConnectionSettings $settings, string $connectionName)
     {
         $this->settings = $settings;
+        $this->connectionName = $connectionName;
+    }
+
+    public function connectionName(): string
+    {
+        return $this->connectionName;
     }
 
     public function connectAsync(): Promise
