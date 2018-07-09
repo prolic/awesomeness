@@ -23,7 +23,7 @@ use Prooph\EventStoreClient\Internal\NewEventConverter;
 use Prooph\EventStoreClient\Internal\ReadBuffer;
 
 /** @internal */
-class AppendToStreamOperationOperation extends AbstractOperation
+class AppendToStreamOperation extends AbstractOperation
 {
     /** @var bool */
     private $requireMaster;
