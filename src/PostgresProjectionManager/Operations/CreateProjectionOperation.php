@@ -135,7 +135,7 @@ SQL;
             ];
         }
 
-        $now = DateTimeUtil::format(new DateTimeImmutable('NOW', new DateTimeZone('UTC')));
+        $now = DateTimeUtil::format(DateTimeUtil::utcNow());
 
         $params = [
             // registration stream

@@ -68,7 +68,7 @@ SQL;
         /** @var Statement $statement */
         $statement = yield $this->pool->prepare($sql);
 
-        $now = DateTimeUtil::format(new DateTimeImmutable('NOW', new DateTimeZone('UTC')));
+        $now = DateTimeUtil::format(DateTimeUtil::utcNow());
 
         $params = [
             // master stream

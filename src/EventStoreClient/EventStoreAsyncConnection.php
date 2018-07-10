@@ -38,6 +38,9 @@ use Prooph\EventStoreClient\Internal\ClientOperations\DeleteStreamOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\ReadEventOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\ReadStreamEventsBackwardOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\ReadStreamEventsForwardOperation;
+use Prooph\EventStoreClient\Internal\EndPointDiscoverer;
+use Prooph\EventStoreClient\Internal\EventStoreConnectionLogicHandler;
+use Prooph\EventStoreClient\Internal\Message\StartConnectionMessage;
 use Prooph\EventStoreClient\Internal\ReadBuffer;
 use function Amp\call;
 use function Amp\Socket\connect;
@@ -68,11 +71,17 @@ final class EventStoreAsyncConnection implements
     private $dispatcher;
     /** @var string */
     private $heartbeatWatcher;
+    /** @var EndPointDiscoverer */
+    private $endPointDiscoverer;
+    /** @var EventStoreConnectionLogicHandler */
+    private $handler;
 
-    public function __construct(ConnectionSettings $settings, string $connectionName)
+    public function __construct(ConnectionSettings $settings, EndPointDiscoverer $endPointDiscoverer, string $connectionName)
     {
         $this->settings = $settings;
         $this->connectionName = $connectionName;
+        $this->endPointDiscoverer = $endPointDiscoverer;
+        $this->handler = new EventStoreConnectionLogicHandler($this, $settings);
     }
 
     public function connectionName(): string
@@ -82,6 +91,12 @@ final class EventStoreAsyncConnection implements
 
     public function connectAsync(): Promise
     {
+        $deferred = new Deferred();
+        $this->handler->enqueueMessage(new StartConnectionMessage($deferred, $this->endPointDiscoverer));
+
+        return $deferred->promise();
+
+        /*
         return call(function (): Generator {
             $context = (new ClientConnectContext())->withConnectTimeout($this->settings->operationTimeout());
             $this->connection = yield connect($this->settings->uri(), $context);
@@ -94,6 +109,7 @@ final class EventStoreAsyncConnection implements
             $this->dispatcher = new TcpDispatcher($this->connection, $this->settings->operationTimeout());
             $this->manageHeartBeats();
         });
+        */
     }
 
     public function close(): void

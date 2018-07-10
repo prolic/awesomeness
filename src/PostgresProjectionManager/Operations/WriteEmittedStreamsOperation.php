@@ -50,7 +50,7 @@ SQL;
             $params[] = '';
             $params[] = $emittedStream;
             $params[] = false;
-            $params[] = DateTimeUtil::format(new DateTimeImmutable('NOW', new DateTimeZone('UTC')));
+            $params[] = DateTimeUtil::format(DateTimeUtil::utcNow());
         }
 
         /** @var CommandResult $result */

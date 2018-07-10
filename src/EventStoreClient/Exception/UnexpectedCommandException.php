@@ -6,8 +6,12 @@ namespace Prooph\EventStoreClient\Exception;
 
 class UnexpectedCommandException extends \RuntimeException implements Exception
 {
-    public function __construct(string $message = 'Unexpected command')
+    public static function with(string $expectedCommand, string $actualCommand): UnexpectedCommandException
     {
-        parent::__construct($message);
+        return new self(\sprintf(
+            'Unexpected command \'%s\': expected \'%s\'',
+            $actualCommand,
+            $expectedCommand
+        ));
     }
 }

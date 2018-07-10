@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient\Internal\ClientOperations;
 
+use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
 use Prooph\EventStore\Data\DeleteResult;
 use Prooph\EventStore\Data\Position;
@@ -12,12 +13,14 @@ use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Exception\InvalidTransaction;
 use Prooph\EventStore\Exception\StreamDeleted;
 use Prooph\EventStore\Exception\WrongExpectedVersion;
+use Prooph\EventStore\Internal\SystemData\InspectionDecision;
+use Prooph\EventStore\Internal\SystemData\InspectionResult;
 use Prooph\EventStore\Messages\DeleteStream;
 use Prooph\EventStore\Messages\DeleteStreamCompleted;
 use Prooph\EventStore\Messages\OperationResult;
 use Prooph\EventStore\Transport\Tcp\TcpCommand;
 use Prooph\EventStore\Transport\Tcp\TcpDispatcher;
-use Prooph\EventStoreClient\Exception\ServerError;
+use Prooph\EventStoreClient\Exception\UnexpectedOperationResult;
 use Prooph\EventStoreClient\Internal\ReadBuffer;
 
 /** @internal */
@@ -33,6 +36,7 @@ class DeleteStreamOperation extends AbstractOperation
     private $hardDelete;
 
     public function __construct(
+        Deferred $deferred,
         TcpDispatcher $dispatcher,
         ReadBuffer $readBuffer,
         bool $requireMaster,
@@ -47,6 +51,7 @@ class DeleteStreamOperation extends AbstractOperation
         $this->hardDelete = $hardDelete;
 
         parent::__construct(
+            $deferred,
             $dispatcher,
             $readBuffer,
             $userCredentials,
@@ -66,24 +71,43 @@ class DeleteStreamOperation extends AbstractOperation
         return $message;
     }
 
-    protected function inspectResponse(Message $response): void
+    public function inspectResponse(Message $response): InspectionResult
     {
         /** @var DeleteStreamCompleted $response */
 
         switch ($response->getResult()) {
-            // @todo not handled: PrepareTimeout, CommitTimeout, ForwardTimeout
             case OperationResult::Success:
-                return;
+                $this->succeed($response);
+
+                return new InspectionResult(InspectionDecision::endOperation(), 'Success');
+            case OperationResult::PrepareTimeout:
+                return new InspectionResult(InspectionDecision::retry(), 'PrepareTimeout');
+            case OperationResult::CommitTimeout:
+                return new InspectionResult(InspectionDecision::retry(), 'CommitTimeout');
+            case OperationResult::ForwardTimeout:
+                return new InspectionResult(InspectionDecision::retry(), 'ForwardTimeout');
             case OperationResult::WrongExpectedVersion:
-                throw WrongExpectedVersion::withExpectedVersion($this->stream, $this->expectedVersion);
+                $exception = WrongExpectedVersion::withExpectedVersion($this->stream, $this->expectedVersion);
+                $this->fail($exception);
+
+                return new InspectionResult(InspectionDecision::endOperation(), 'WrongExpectedVersion');
             case OperationResult::StreamDeleted:
-                throw StreamDeleted::with($this->stream);
+                $exception = StreamDeleted::with($this->stream);
+                $this->fail($exception);
+
+                return new InspectionResult(InspectionDecision::endOperation(), 'StreamDeleted');
             case OperationResult::InvalidTransaction:
-                throw new InvalidTransaction();
+                $exception = new InvalidTransaction();
+                $this->fail($exception);
+
+                return new InspectionResult(InspectionDecision::endOperation(), 'InvalidTransaction');
             case OperationResult::AccessDenied:
-                throw AccessDenied::toStream($this->stream);
+                $exception = AccessDenied::toStream($this->stream);
+                $this->fail($exception);
+
+                return new InspectionResult(InspectionDecision::endOperation(), 'AccessDenied');
             default:
-                throw new ServerError('Unexpected ReadEventResult');
+                throw new UnexpectedOperationResult();
         }
     }
 

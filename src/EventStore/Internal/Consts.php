@@ -13,8 +13,8 @@ class Consts
     public const DefaultMaxReconnections = 10;
     public const DefaultRequireMaster = true;
     public const DefaultReconnectionDelay = 100; // milliseconds
-    public const DefaultOperationTimeout = 7; // seconds
-    public const DefaultOperationTimeoutCheckPeriod = 1; // seconds
+    public const DefaultOperationTimeout = 7000; // milliseconds
+    public const DefaultOperationTimeoutCheckPeriod = 1000; // milliseconds
     public const TimerPeriod = 200; // milliseconds
     public const MaxReadSize = 4096;
     public const DefaultMaxClusterDiscoverAttempts = 10;

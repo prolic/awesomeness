@@ -46,7 +46,7 @@ SQL
         $params[] = $checkpointTag->toJsonString();
         $params[] = $checkpointStream;
         $params[] = true;
-        $params[] = DateTimeUtil::format(new DateTimeImmutable('NOW', new DateTimeZone('UTC')));
+        $params[] = DateTimeUtil::format(DateTimeUtil::utcNow());
 
         /** @var CommandResult $result */
         $result = yield $this->statement->execute($params);

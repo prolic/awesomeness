@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace Prooph\EventStoreClient;
 
 use Prooph\EventStore\Data\UserCredentials;
+use Prooph\EventStore\Internal\Consts;
 use Prooph\EventStore\IpEndPoint;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 
+/**
+ * All times are milliseconds
+ */
 class ConnectionSettings
 {
     /** @var IpEndPoint */
@@ -23,6 +27,12 @@ class ConnectionSettings
     /** @var int */
     private $operationTimeout;
     /** @var int */
+    private $operationTimeoutCheckPeriod;
+    /** @var int */
+    private $maxRetries;
+    /** @var int */
+    private $maxReconnections;
+    /** @var int */
     private $heartbeatInterval;
     /** @var int */
     private $heartbeatTimeout;
@@ -33,8 +43,11 @@ class ConnectionSettings
             new IpEndPoint('localhost', 1113),
             false,
             false,
-            true,
-            1000,
+            Consts::DefaultRequireMaster,
+            Consts::DefaultOperationTimeout,
+            Consts::DefaultOperationTimeoutCheckPeriod,
+            Consts::DefaultMaxOperationRetries,
+            Consts::DefaultMaxReconnections,
             2500,
             1500,
             null
@@ -47,6 +60,9 @@ class ConnectionSettings
         bool $useSslConnection,
         bool $requireMaster,
         int $operationTimeout,
+        int $operationTimeoutCheckPeriod,
+        int $maxRetries,
+        int $maxReconnections,
         int $heartbeatInterval,
         int $heartbeatTimeout,
         UserCredentials $defaultUserCredentials = null
@@ -60,6 +76,9 @@ class ConnectionSettings
         $this->useSslConnection = $useSslConnection;
         $this->requireMaster = $requireMaster;
         $this->operationTimeout = $operationTimeout;
+        $this->operationTimeoutCheckPeriod = $operationTimeoutCheckPeriod;
+        $this->maxRetries = $maxRetries;
+        $this->maxReconnections = $maxReconnections;
         $this->heartbeatInterval = $heartbeatInterval;
         $this->heartbeatTimeout = $heartbeatTimeout;
         $this->defaultUserCredentials = $defaultUserCredentials;
@@ -93,6 +112,21 @@ class ConnectionSettings
     public function operationTimeout(): int
     {
         return $this->operationTimeout;
+    }
+
+    public function operationTimeoutCheckPeriod(): int
+    {
+        return $this->operationTimeoutCheckPeriod;
+    }
+
+    public function maxRetries(): int
+    {
+        return $this->maxRetries;
+    }
+
+    public function maxReconnections(): int
+    {
+        return $this->maxReconnections;
     }
 
     public function heartbeatInterval(): int

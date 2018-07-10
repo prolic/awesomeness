@@ -84,8 +84,7 @@ SQL;
         $sql .= \str_repeat('(?, ?, ?, ?, ?, ?, ?, ?), ', \count($events));
         $sql = \substr($sql, 0, -2);
 
-        $now = new \DateTimeImmutable('NOW', new \DateTimeZone('UTC'));
-        $now = DateTimeUtil::format($now);
+        $now = DateTimeUtil::format(DateTimeUtil::utcNow());
 
         $params = [];
 
