@@ -20,13 +20,12 @@ use Prooph\EventStore\Transport\Tcp\TcpDispatcher;
 use Prooph\EventStore\Transport\Tcp\TcpFlags;
 use Prooph\EventStore\Transport\Tcp\TcpPackage;
 use Prooph\EventStoreClient\Exception\NotAuthenticatedException;
-use Prooph\EventStoreClient\Exception\NotHandledException;
 use Prooph\EventStoreClient\Exception\ServerError;
 use Prooph\EventStoreClient\Exception\UnexpectedCommandException;
 use Prooph\EventStoreClient\Internal\ClientOperation;
 use Prooph\EventStoreClient\Internal\ReadBuffer;
-use function Amp\call;
 use Throwable;
+use function Amp\call;
 
 /** @internal */
 abstract class AbstractOperation implements ClientOperation

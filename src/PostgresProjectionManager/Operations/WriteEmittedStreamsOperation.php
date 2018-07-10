@@ -7,8 +7,6 @@ namespace Prooph\PostgresProjectionManager\Operations;
 use Amp\Mysql\CommandResult;
 use Amp\Postgres\Pool;
 use Amp\Postgres\Statement;
-use DateTimeImmutable;
-use DateTimeZone;
 use Generator;
 use Prooph\EventStore\Data\EventId;
 use Prooph\EventStore\Exception\RuntimeException;

@@ -15,8 +15,8 @@ use Prooph\EventStoreClient\ConnectionSettings;
 use Prooph\EventStoreClient\Exception\InvalidOperationException;
 use Prooph\EventStoreClient\Exception\OperationTimedOutException;
 use Prooph\EventStoreClient\Exception\RetriesLimitReachedException;
-use function Amp\call;
 use Prooph\EventStoreClient\Transport\Tcp\TcpPackageConnection;
+use function Amp\call;
 
 /** @internal */
 class OperationsManager
@@ -67,7 +67,7 @@ class OperationsManager
         $correlationId = $operation->correlationId();
         $this->activeOperations[$correlationId] = $operation;
 
-        return call(function() use ($operation, $connection, $correlationId): Generator {
+        return call(function () use ($operation, $connection, $correlationId): Generator {
             $package = $operation->operation()->createNetworkPackage($correlationId);
 
             try {
@@ -92,11 +92,10 @@ class OperationsManager
                     $operation->incRetryCount();
 
                     return $this->executeOperation($operation);
-                } else {
-                    $operation->operation()->fail(
+                }
+                $operation->operation()->fail(
                         OperationTimedOutException::with($this->connectionName, $operation->operation())
                     );
-                }
             }
         });
     }

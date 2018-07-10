@@ -8,8 +8,6 @@ use Amp\Coroutine;
 use Amp\Postgres\Pool;
 use Amp\Postgres\Statement;
 use Amp\Postgres\Transaction;
-use DateTimeImmutable;
-use DateTimeZone;
 use Generator;
 use Prooph\EventStore\Data\EventId;
 use Prooph\EventStore\Exception\ProjectionException;

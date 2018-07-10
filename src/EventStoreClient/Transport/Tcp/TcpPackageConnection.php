@@ -5,12 +5,10 @@ declare(strict_types=1);
 namespace Prooph\EventStoreClient\Transport\Tcp;
 
 use Amp\ByteStream\ClosedException;
-use Amp\ByteStream\OutputStream;
 use Amp\Promise;
 use Amp\Socket\ClientConnectContext;
 use Amp\Socket\ClientSocket;
 use Amp\Socket\ConnectException;
-use Amp\TimeoutException;
 use Generator;
 use Google\Protobuf\Internal\Message;
 use Prooph\EventStore\Data\UserCredentials;
@@ -35,10 +33,13 @@ class TcpPackageConnection
     private $ssl;
     /** @var ClientSocket */
     private $connection;
-
+    /** @var callable */
     private $tcpPackageMessageHandler;
+    /** @var callable */
     private $tcpConnectionErrorMessageHandler;
+    /** @var callable */
     private $tcpConnectionEstablishedMessageHandler;
+    /** @var callable */
     private $tcpConnectionClosedMessageHandler;
 
     public function __construct(
@@ -48,8 +49,7 @@ class TcpPackageConnection
         callable $tcpConnectionErrorMessageHandler,
         callable $tcpConnectionEstablishedMessageHandler,
         callable $tcpConnectionClosedMessageHandler
-    )
-    {
+    ) {
         $this->remoteEndPoint = $remoteEndPoint;
         $this->ssl = $ssl;
         $this->tcpPackageMessageHandler = $tcpPackageMessageHandler;
@@ -129,7 +129,6 @@ class TcpPackageConnection
     {
         $this->connection->close();
     }
-
 
     private function encode(TcpPackage $package): string
     {

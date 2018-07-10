@@ -15,8 +15,6 @@ use Amp\Success;
 use Amp\Sync\LocalMutex;
 use Amp\Sync\Lock;
 use cash\LRUCache;
-use DateTimeImmutable;
-use DateTimeZone;
 use Error;
 use Generator;
 use Prooph\EventStore\Common\SystemEventTypes;

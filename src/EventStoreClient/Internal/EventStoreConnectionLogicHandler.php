@@ -8,7 +8,6 @@ use Amp\Deferred;
 use Prooph\EventStore\Exception\ConnectionClosedException;
 use Prooph\EventStore\IpEndPoint;
 use Prooph\EventStore\NodeEndPoints;
-use Prooph\EventStore\Transport\Tcp\TcpDispatcher;
 use Prooph\EventStore\Transport\Tcp\TcpPackage;
 use Prooph\EventStoreClient\ConnectionSettings;
 use Prooph\EventStoreClient\Event\ClientAuthenticationFailedEventArgs;
@@ -209,11 +208,11 @@ class EventStoreConnectionLogicHandler
 
     private function discoverEndPoint(Deferred $deferred): void
     {
-        if (!$this->state->equals(ConnectionState::connecting())) {
+        if (! $this->state->equals(ConnectionState::connecting())) {
             return;
         }
 
-        if (!$this->connectionPhase->equals(ConnectingPhase::reconnecting())) {
+        if (! $this->connectionPhase->equals(ConnectingPhase::reconnecting())) {
             return;
         }
 
