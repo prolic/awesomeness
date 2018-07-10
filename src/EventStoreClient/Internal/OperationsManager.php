@@ -27,8 +27,6 @@ class OperationsManager
     private $settings;
     /** @var OperationItem[] */
     private $activeOperations = [];
-    /** @var TcpDispatcher */
-    private $dispatcher;
 
     public function __construct(string $connectionName, ConnectionSettings $settings)
     {
@@ -57,7 +55,8 @@ class OperationsManager
         return \count($this->activeOperations);
     }
 
-    public function executeOperation(OperationItem $operation, TcpPackageConnection $connection)
+    // @todo handle incoming responses
+    public function executeOperation(OperationItem $operation, TcpPackageConnection $connection): Promise
     {
         if (null === $this->dispatcher) {
             throw new InvalidOperationException('Failed connection');
@@ -83,6 +82,8 @@ class OperationsManager
                     $operation->operation()->fail(
                         RetriesLimitReachedException::with($operation->operation(), $this->settings->maxRetries())
                     );
+
+                    return null;
                 }
 
                 $timeout = $operation->timeout()->format('U.u');
@@ -91,11 +92,12 @@ class OperationsManager
                 if ($timeout > $check) {
                     $operation->incRetryCount();
 
-                    return $this->executeOperation($operation);
+                    return $this->executeOperation($operation, $connection);
                 }
+
                 $operation->operation()->fail(
-                        OperationTimedOutException::with($this->connectionName, $operation->operation())
-                    );
+                    OperationTimedOutException::with($this->connectionName, $operation->operation())
+                );
             }
         });
     }

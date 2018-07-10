@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Prooph\EventStoreClient\Internal;
 
 use Amp\Deferred;
+use Amp\Loop;
+use Generator;
 use Prooph\EventStore\Exception\ConnectionClosedException;
 use Prooph\EventStore\IpEndPoint;
 use Prooph\EventStore\NodeEndPoints;
@@ -173,7 +175,11 @@ class EventStoreConnectionLogicHandler
             }
         );
 
-        $this->connection->startReceiving();
+        Loop::defer(function (): Generator {
+            yield $this->connection->connectAsync();
+
+            $this->connection->startReceiving();
+        });
     }
 
     private function raiseConnectedEvent(IpEndPoint $remoteEndPoint): void
