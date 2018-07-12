@@ -89,7 +89,7 @@ class TcpPackageFactory
                 $dataObject->mergeFromString($data);
 
                 return new TcpPackage($command, $flags, $correlationId, $dataObject);
-            case TcpCommand::NotAuthenticated:
+            case TcpCommand::NotAuthenticatedException:
                 throw new RuntimeException("Not Authenticated: $data");
             case TcpCommand::TransactionStartCompleted:
                 $dataObject = new TransactionStartCompleted();

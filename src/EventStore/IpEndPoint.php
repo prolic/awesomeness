@@ -24,4 +24,9 @@ class IpEndPoint
     {
         return $this->port;
     }
+
+    public function equals(IpEndPoint $endPoint): bool
+    {
+        return $this->host === $endPoint->host && $this->port === $endPoint->port;
+    }
 }

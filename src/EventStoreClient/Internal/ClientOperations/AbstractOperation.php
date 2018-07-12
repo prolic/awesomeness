@@ -109,7 +109,7 @@ abstract class AbstractOperation implements ClientOperation
         }
 
         switch ($package->command()->value()) {
-            case TcpCommand::NotAuthenticated:
+            case TcpCommand::NotAuthenticatedException:
                 return $this->inspectNotAuthenticated($package);
             case TcpCommand::BadRequest:
                 return $this->inspectBadRequest($package);

@@ -6,23 +6,23 @@ namespace Prooph\EventStoreClient\Internal;
 
 use DateTimeImmutable;
 use Prooph\EventStore\Internal\DateTimeUtil;
-use Ramsey\Uuid\Uuid;
 
 /** @internal */
 class OperationItem
 {
-    // @todo: maybe we don't need this here
-    // private static long _nextSeqNo = -1;
-    // public readonly long SeqNo = Interlocked.Increment(ref _nextSeqNo);
-
+    private static $nextSeqNo = -1;
+    /** @var int */
+    private $segNo;
     /** @var ClientOperation */
     private $operation;
     /** @var int */
     private $maxRetries;
-    /** @var DateTimeImmutable */
+    /** @var int */
     private $timeout;
     /** @var DateTimeImmutable */
     private $created;
+    /** @var string */
+    private $connectionId;
     /** @var string */
     private $correlationId;
     /** @var int */
@@ -30,15 +30,21 @@ class OperationItem
     /** @var DateTimeImmutable */
     private $lastUpdated;
 
-    public function __construct(ClientOperation $operation, int $maxRetries, DateTimeImmutable $timeout)
+    public function __construct(ClientOperation $operation, int $maxRetries, int $timeout)
     {
+        $this->segNo = ++self::$nextSeqNo;
         $this->operation = $operation;
         $this->maxRetries = $maxRetries;
         $this->timeout = $timeout;
         $this->created = DateTimeUtil::utcNow();
-        $this->correlationId = \str_replace('-', '', Uuid::uuid4()->toString());
+        $this->correlationId = CorrelationIdGenerator::generate();
         $this->retryCount = 0;
         $this->lastUpdated = $this->created;
+    }
+
+    public function segNo(): int
+    {
+        return $this->segNo;
     }
 
     public function operation(): ClientOperation
@@ -51,7 +57,7 @@ class OperationItem
         return $this->maxRetries;
     }
 
-    public function timeout(): DateTimeImmutable
+    public function timeout(): int
     {
         return $this->timeout;
     }
@@ -59,6 +65,11 @@ class OperationItem
     public function created(): DateTimeImmutable
     {
         return $this->created;
+    }
+
+    public function connectionId(): string
+    {
+        return $this->connectionId;
     }
 
     public function correlationId(): string
@@ -79,6 +90,16 @@ class OperationItem
     public function lastUpdated(): DateTimeImmutable
     {
         return $this->lastUpdated;
+    }
+
+    public function setConnectionId(string $connectionId): void
+    {
+        $this->connectionId = $connectionId;
+    }
+
+    public function setCorrelationId(string $correlationId): void
+    {
+        $this->correlationId = $correlationId;
     }
 
     /**

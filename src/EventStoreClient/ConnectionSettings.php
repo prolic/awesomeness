@@ -20,6 +20,10 @@ class ConnectionSettings
     private $isCluster;
     /** @var bool */
     private $useSslConnection;
+    /** @var int */
+    private $maxQueueSize;
+    /** @var int */
+    private $maxConcurrentItems;
     /** @var bool */
     private $requireMaster;
     /** @var UserCredentials|null */
@@ -36,13 +40,20 @@ class ConnectionSettings
     private $heartbeatInterval;
     /** @var int */
     private $heartbeatTimeout;
+    /** @var int */
+    private $reconnectionDelay;
+    /** @var bool */
+    private $failOnNoServerResponse;
 
+    // @todo: add ConnectionSettingsBuilder class
     public static function default(): ConnectionSettings
     {
         return new self(
             new IpEndPoint('localhost', 1113),
             false,
             false,
+            Consts::DefaultMaxQueueSize,
+            Consts::DefaultMaxConcurrentItems,
             Consts::DefaultRequireMaster,
             Consts::DefaultOperationTimeout,
             Consts::DefaultOperationTimeoutCheckPeriod,
@@ -50,6 +61,8 @@ class ConnectionSettings
             Consts::DefaultMaxReconnections,
             2500,
             1500,
+            Consts::DefaultReconnectionDelay,
+            true,
             null
         );
     }
@@ -58,6 +71,8 @@ class ConnectionSettings
         IpEndPoint $endpoint,
         bool $isCluster,
         bool $useSslConnection,
+        int $maxQueueSize,
+        int $maxConcurrentItems,
         bool $requireMaster,
         int $operationTimeout,
         int $operationTimeoutCheckPeriod,
@@ -65,6 +80,8 @@ class ConnectionSettings
         int $maxReconnections,
         int $heartbeatInterval,
         int $heartbeatTimeout,
+        int $reconnectionDelay,
+        bool $failOnNoServerResponse,
         UserCredentials $defaultUserCredentials = null
     ) {
         if ($heartbeatInterval >= 5000) {
@@ -74,6 +91,8 @@ class ConnectionSettings
         $this->endPoint = $endpoint;
         $this->isCluster = $isCluster;
         $this->useSslConnection = $useSslConnection;
+        $this->maxQueueSize = $maxQueueSize;
+        $this->maxConcurrentItems = $maxConcurrentItems;
         $this->requireMaster = $requireMaster;
         $this->operationTimeout = $operationTimeout;
         $this->operationTimeoutCheckPeriod = $operationTimeoutCheckPeriod;
@@ -81,6 +100,8 @@ class ConnectionSettings
         $this->maxReconnections = $maxReconnections;
         $this->heartbeatInterval = $heartbeatInterval;
         $this->heartbeatTimeout = $heartbeatTimeout;
+        $this->reconnectionDelay = $reconnectionDelay;
+        $this->failOnNoServerResponse = $failOnNoServerResponse;
         $this->defaultUserCredentials = $defaultUserCredentials;
     }
 
@@ -102,6 +123,16 @@ class ConnectionSettings
     public function isCluster(): bool
     {
         return $this->isCluster;
+    }
+
+    public function maxQueueSize(): int
+    {
+        return $this->maxQueueSize;
+    }
+
+    public function maxConcurrentItems(): int
+    {
+        return $this->maxConcurrentItems;
     }
 
     public function requireMaster(): bool
@@ -137,6 +168,16 @@ class ConnectionSettings
     public function heartbeatTimeout(): int
     {
         return $this->heartbeatTimeout;
+    }
+
+    public function reconnectionDelay(): int
+    {
+        return $this->reconnectionDelay;
+    }
+
+    public function failOnNoServerResponse(): bool
+    {
+        return $this->failOnNoServerResponse;
     }
 
     public function uri(): string

@@ -18,6 +18,7 @@ use Prooph\EventStore\Transport\Tcp\TcpFlags;
 use Prooph\EventStore\Transport\Tcp\TcpOffset;
 use Prooph\EventStore\Transport\Tcp\TcpPackage;
 use Prooph\EventStoreClient\Internal\ByteBuffer\Buffer;
+use Prooph\EventStoreClient\Internal\ReadBuffer;
 use Ramsey\Uuid\Uuid;
 use function Amp\call;
 use function Amp\Socket\connect;
@@ -29,10 +30,14 @@ class TcpPackageConnection
 
     /** @var IpEndPoint */
     private $remoteEndPoint;
+    /** @var string */
+    private $connectionId;
     /** bool */
     private $ssl;
     /** @var ClientSocket */
     private $connection;
+    /** @var bool */
+    private $isClosed = true;
     /** @var callable */
     private $tcpPackageMessageHandler;
     /** @var callable */
@@ -44,6 +49,7 @@ class TcpPackageConnection
 
     public function __construct(
         IpEndPoint $remoteEndPoint,
+        string $connectionId,
         bool $ssl,
         callable $tcpPackageMessageHandler,
         callable $tcpConnectionErrorMessageHandler,
@@ -51,6 +57,7 @@ class TcpPackageConnection
         callable $tcpConnectionClosedMessageHandler
     ) {
         $this->remoteEndPoint = $remoteEndPoint;
+        $this->connectionId = $connectionId;
         $this->ssl = $ssl;
         $this->tcpPackageMessageHandler = $tcpPackageMessageHandler;
         $this->tcpConnectionErrorMessageHandler = $tcpConnectionErrorMessageHandler;
@@ -61,6 +68,11 @@ class TcpPackageConnection
     public function remoteEndPoint(): IpEndPoint
     {
         return $this->remoteEndPoint;
+    }
+
+    public function connectionId(): string
+    {
+        return $this->connectionId;
     }
 
     public function connectAsync(): Promise
@@ -75,17 +87,16 @@ class TcpPackageConnection
                     yield $this->connection->enableCrypto();
                 }
 
+                $this->isClosed = false;
+
                 ($this->tcpConnectionEstablishedMessageHandler)($this);
             } catch (ConnectException $e) {
+                $this->isClosed = true;
                 ($this->tcpConnectionClosedMessageHandler)($this, $e);
             } catch (\Throwable $e) {
-                ($this->tcpConnectionErrorMessageHandler)($this, $e);
+                $this->isClosed = true;
+                ($this->tcpConnectionClosedMessageHandler)($this, $e);
             }
-
-            /*
-            $this->readBuffer = new ReadBuffer($this->connection, $this->settings->operationTimeout());
-            $this->manageHeartBeats();
-            */
         });
     }
 
@@ -108,9 +119,6 @@ class TcpPackageConnection
         );
     }
 
-    /**
-     * @throws ClosedException
-     */
     public function sendAsync(TcpPackage $package): Promise
     {
         try {
@@ -122,12 +130,22 @@ class TcpPackageConnection
 
     public function startReceiving(): void
     {
-        // @todo implement (see current ReadBuffer)
+        $messageHandler = function (TcpPackage $package): void {
+            ($this->tcpPackageMessageHandler)($this, $package);
+        };
+
+        $readBuffer = new ReadBuffer($this->connection, $messageHandler);
+        $readBuffer->startReceivingMessages();
     }
 
     public function close(): void
     {
         $this->connection->close();
+    }
+
+    public function isClosed(): bool
+    {
+        return $this->isClosed;
     }
 
     private function encode(TcpPackage $package): string
