@@ -22,7 +22,7 @@ class StopWatch
         $now = DateTimeUtil::utcNow();
         $started = (int) \floor($now->format('U.u') * 1000);
 
-        return new($started);
+        return new self($started);
     }
 
     public function elapsed(): int

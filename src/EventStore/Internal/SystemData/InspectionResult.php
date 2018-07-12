@@ -7,8 +7,6 @@ namespace Prooph\EventStore\Internal\SystemData;
 use Prooph\EventStore\Exception\InvalidArgumentException;
 use Prooph\EventStore\IpEndPoint;
 
-// @todo: no usage yet, suitable for connection handler logic
-
 /** @internal */
 class InspectionResult
 {

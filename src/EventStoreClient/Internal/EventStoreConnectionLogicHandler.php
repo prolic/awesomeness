@@ -32,6 +32,7 @@ use Prooph\EventStoreClient\Internal\Message\CloseConnectionMessage;
 use Prooph\EventStoreClient\Internal\Message\EstablishTcpConnectionMessage;
 use Prooph\EventStoreClient\Internal\Message\HandleTcpPackageMessage;
 use Prooph\EventStoreClient\Internal\Message\StartConnectionMessage;
+use Prooph\EventStoreClient\Internal\Message\StartOperationMessage;
 use Prooph\EventStoreClient\Internal\Message\TcpConnectionClosedMessage;
 use Prooph\EventStoreClient\Internal\Message\TcpConnectionErrorMessage;
 use Prooph\EventStoreClient\Internal\Message\TcpConnectionEstablishedMessage;
@@ -52,7 +53,7 @@ class EventStoreConnectionLogicHandler
     /** @var ConnectionState */
     private $state;
     /** @var ConnectingPhase */
-    private $connectionPhase;
+    private $connectingPhase;
     /** @var EndPointDiscoverer */
     private $endPointDiscoverer;
     /** @var MessageHandler */
@@ -198,7 +199,7 @@ class EventStoreConnectionLogicHandler
             return;
         }
 
-        if (! $this->connectionPhase->equals(ConnectingPhase::reconnecting())) {
+        if (! $this->connectingPhase->equals(ConnectingPhase::reconnecting())) {
             return;
         }
 

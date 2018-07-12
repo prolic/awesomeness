@@ -175,18 +175,19 @@ final class EventStoreAsyncConnection implements
             ));
         }
 
-        $operation = new ReadStreamEventsForwardOperation(
-            $this->dispatcher,
-            $this->readBuffer,
+        $deferred = new Deferred();
+
+        $this->enqueueOperation(new ReadStreamEventsForwardOperation(
+            $deferred,
             $this->settings->requireMaster(),
             $stream,
             $start,
             $count,
             $resolveLinkTos,
-            $userCredentials ?? $this->settings->defaultUserCredentials()
-        );
+            $userCredentials
+        ));
 
-        return $operation();
+        return $deferred->promise();
     }
 
     public function readStreamEventsBackwardAsync(
@@ -207,18 +208,19 @@ final class EventStoreAsyncConnection implements
             ));
         }
 
-        $operation = new ReadStreamEventsBackwardOperation(
-            $this->dispatcher,
-            $this->readBuffer,
+        $deferred = new Deferred();
+
+        $this->enqueueOperation(new ReadStreamEventsBackwardOperation(
+            $deferred,
             $this->settings->requireMaster(),
             $stream,
             $start,
             $count,
             $resolveLinkTos,
-            $userCredentials ?? $this->settings->defaultUserCredentials()
-        );
+            $userCredentials
+        ));
 
-        return $operation();
+        return $deferred->promise();
     }
 
     public function readAllEventsForward(
