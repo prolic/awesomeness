@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient\Internal\ClientOperations;
 
+use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
 use Prooph\EventStore\Data\EventData;
 use Prooph\EventStore\Data\Position;
@@ -13,14 +14,14 @@ use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Exception\InvalidTransaction;
 use Prooph\EventStore\Exception\StreamDeleted;
 use Prooph\EventStore\Exception\WrongExpectedVersion;
+use Prooph\EventStore\Internal\SystemData\InspectionDecision;
+use Prooph\EventStore\Internal\SystemData\InspectionResult;
 use Prooph\EventStore\Messages\OperationResult;
 use Prooph\EventStore\Messages\WriteEvents;
 use Prooph\EventStore\Messages\WriteEventsCompleted;
 use Prooph\EventStore\Transport\Tcp\TcpCommand;
-use Prooph\EventStore\Transport\Tcp\TcpDispatcher;
-use Prooph\EventStoreClient\Exception\ServerError;
+use Prooph\EventStoreClient\Exception\UnexpectedOperationResult;
 use Prooph\EventStoreClient\Internal\NewEventConverter;
-use Prooph\EventStoreClient\Internal\ReadBuffer;
 
 /** @internal */
 class AppendToStreamOperation extends AbstractOperation
@@ -35,8 +36,7 @@ class AppendToStreamOperation extends AbstractOperation
     private $events;
 
     public function __construct(
-        TcpDispatcher $dispatcher,
-        ReadBuffer $readBuffer,
+        Deferred $deferred,
         bool $requireMaster,
         string $stream,
         int $expectedVersion,
@@ -49,8 +49,7 @@ class AppendToStreamOperation extends AbstractOperation
         $this->events = $events;
 
         parent::__construct(
-            $dispatcher,
-            $readBuffer,
+            $deferred,
             $userCredentials,
             TcpCommand::writeEvents(),
             TcpCommand::writeEventsCompleted()
@@ -72,24 +71,42 @@ class AppendToStreamOperation extends AbstractOperation
         return $message;
     }
 
-    protected function inspectResponse(Message $response): void
+    protected function inspectResponse(Message $response): InspectionResult
     {
         /** @var WriteEventsCompleted $response */
-
         switch ($response->getResult()) {
-            // @todo not handled: PrepareTimeout, CommitTimeout, ForwardTimeout
             case OperationResult::Success:
-                return;
+                $this->succeed($response);
+
+                return new InspectionResult(InspectionDecision::endOperation(), 'Success');
+            case OperationResult::PrepareTimeout:
+                return new InspectionResult(InspectionDecision::retry(), 'PrepareTimeout');
+            case OperationResult::ForwardTimeout:
+                return new InspectionResult(InspectionDecision::retry(), 'ForwardTimeout');
+            case OperationResult::CommitTimeout:
+                return new InspectionResult(InspectionDecision::retry(), 'CommitTimeout');
             case OperationResult::WrongExpectedVersion:
-                throw WrongExpectedVersion::withExpectedVersion($this->stream, $this->expectedVersion);
+                $exception = WrongExpectedVersion::withExpectedVersion($this->stream, $this->expectedVersion);
+                $this->fail($exception);
+
+                return new InspectionResult(InspectionDecision::endOperation(), 'WrongExpectedVersion');
             case OperationResult::StreamDeleted:
-                throw StreamDeleted::with($this->stream);
+                $exception = StreamDeleted::with($this->stream);
+                $this->fail($exception);
+
+                return new InspectionResult(InspectionDecision::endOperation(), 'StreamDeleted');
             case OperationResult::InvalidTransaction:
-                throw new InvalidTransaction();
+                $exception = new InvalidTransaction();
+                $this->fail($exception);
+
+                return new InspectionResult(InspectionDecision::endOperation(), 'InvalidTransaction');
             case OperationResult::AccessDenied:
-                throw AccessDenied::toStream($this->stream);
+                $exception = AccessDenied::toStream($this->stream);
+                $this->fail($exception);
+
+                return new InspectionResult(InspectionDecision::endOperation(), 'AccessDenied');
             default:
-                throw new ServerError('Unexpected ReadEventResult');
+                throw new UnexpectedOperationResult();
         }
     }
 

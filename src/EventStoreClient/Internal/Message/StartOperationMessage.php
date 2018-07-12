@@ -2,10 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Prooph\EventStoreClient\Internal;
+namespace Prooph\EventStoreClient\Internal\Message;
+
+use Prooph\EventStoreClient\Internal\ClientOperation;
+use Prooph\EventStoreClient\Internal\Message;
 
 /** @internal  */
-class StartOperationMessage
+class StartOperationMessage implements Message
 {
     /** @var ClientOperation */
     private $operation;

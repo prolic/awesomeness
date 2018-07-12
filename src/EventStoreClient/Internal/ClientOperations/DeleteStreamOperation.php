@@ -19,9 +19,7 @@ use Prooph\EventStore\Messages\DeleteStream;
 use Prooph\EventStore\Messages\DeleteStreamCompleted;
 use Prooph\EventStore\Messages\OperationResult;
 use Prooph\EventStore\Transport\Tcp\TcpCommand;
-use Prooph\EventStore\Transport\Tcp\TcpDispatcher;
 use Prooph\EventStoreClient\Exception\UnexpectedOperationResult;
-use Prooph\EventStoreClient\Internal\ReadBuffer;
 
 /** @internal */
 class DeleteStreamOperation extends AbstractOperation
@@ -37,8 +35,6 @@ class DeleteStreamOperation extends AbstractOperation
 
     public function __construct(
         Deferred $deferred,
-        TcpDispatcher $dispatcher,
-        ReadBuffer $readBuffer,
         bool $requireMaster,
         string $stream,
         int $expectedVersion,
@@ -52,8 +48,6 @@ class DeleteStreamOperation extends AbstractOperation
 
         parent::__construct(
             $deferred,
-            $dispatcher,
-            $readBuffer,
             $userCredentials,
             TcpCommand::deleteStream(),
             TcpCommand::deleteStreamCompleted()
