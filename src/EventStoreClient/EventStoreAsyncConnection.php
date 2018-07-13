@@ -26,6 +26,7 @@ use Prooph\EventStore\EventStorePersistentSubscription;
 use Prooph\EventStore\Exception\OutOfRangeException;
 use Prooph\EventStore\Exception\UnexpectedValueException;
 use Prooph\EventStore\Internal\Consts;
+use Prooph\EventStoreClient\Event\ListenerHandler;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 use Prooph\EventStoreClient\Exception\InvalidOperationException;
 use Prooph\EventStoreClient\Exception\MaxQueueSizeLimitReachedException;
@@ -473,6 +474,41 @@ final class EventStoreAsyncConnection implements
         ?UserCredentials $userCredentials
     ): Promise {
         // TODO: Implement commitTransactionAsync() method.
+    }
+
+    public function whenConnected(callable $handler): ListenerHandler
+    {
+        return $this->handler->whenConnected($handler);
+    }
+
+    public function whenDisconnected(callable $handler): ListenerHandler
+    {
+        return $this->handler->whenDisconnected($handler);
+    }
+
+    public function whenReconnecting(callable $handler): ListenerHandler
+    {
+        return $this->handler->whenReconnecting($handler);
+    }
+
+    public function whenClosed(callable $handler): ListenerHandler
+    {
+        return $this->handler->whenClosed($handler);
+    }
+
+    public function whenErrorOccurred(callable $handler): ListenerHandler
+    {
+        return $this->handler->whenErrorOccurred($handler);
+    }
+
+    public function whenAuthenticationFailed(callable $handler): ListenerHandler
+    {
+        return $this->handler->whenAuthenticationFailed($handler);
+    }
+
+    public function detach(ListenerHandler $handler): void
+    {
+        $this->handler->detach($handler);
     }
 
     private function enqueueOperation(ClientOperation $operation): void

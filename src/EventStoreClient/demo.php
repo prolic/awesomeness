@@ -21,9 +21,15 @@ Loop::run(function () {
     $endPointDiscoverer = new StaticEndPointDiscoverer($settings->endPoint(), $settings->useSslConnection());
     $connection = new EventStoreAsyncConnection($settings, $endPointDiscoverer, 'test');
 
-    yield $connection->connectAsync();
+    $connection->whenConnected(function (): void {
+        echo 'connected' . PHP_EOL;
+    });
 
-    echo 'connected' . PHP_EOL;
+    $connection->whenClosed(function (): void {
+        echo 'connection closed' . PHP_EOL;
+    });
+
+    yield $connection->connectAsync();
 
     $slice = yield $connection->readStreamEventsForwardAsync(
         'opium2-bar',
@@ -85,6 +91,4 @@ Loop::run(function () {
     \var_dump($aeb);
 
     $connection->close();
-
-    echo 'connection closed' . PHP_EOL;
 });

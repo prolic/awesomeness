@@ -23,6 +23,7 @@ use Prooph\EventStoreClient\Event\ClientClosedEventArgs;
 use Prooph\EventStoreClient\Event\ClientConnectionEventArgs;
 use Prooph\EventStoreClient\Event\ClientErrorEventArgs;
 use Prooph\EventStoreClient\Event\ClientReconnectingEventArgs;
+use Prooph\EventStoreClient\Event\ListenerHandler;
 use Prooph\EventStoreClient\EventHandler;
 use Prooph\EventStoreClient\EventStoreAsyncConnection;
 use Prooph\EventStoreClient\Exception\CannotEstablishConnectionException;
@@ -712,6 +713,41 @@ class EventStoreConnectionLogicHandler
     private function raiseAuthenticationFailed(string $reason): void
     {
         $this->eventHandler->authenticationFailed(new ClientAuthenticationFailedEventArgs($this->esConnection, $reason));
+    }
+
+    public function whenConnected(callable $handler): ListenerHandler
+    {
+        return $this->eventHandler->whenConnected($handler);
+    }
+
+    public function whenDisconnected(callable $handler): ListenerHandler
+    {
+        return $this->eventHandler->whenDisconnected($handler);
+    }
+
+    public function whenReconnecting(callable $handler): ListenerHandler
+    {
+        return $this->eventHandler->whenReconnecting($handler);
+    }
+
+    public function whenClosed(callable $handler): ListenerHandler
+    {
+        return $this->eventHandler->whenClosed($handler);
+    }
+
+    public function whenErrorOccurred(callable $handler): ListenerHandler
+    {
+        return $this->eventHandler->whenErrorOccurred($handler);
+    }
+
+    public function whenAuthenticationFailed(callable $handler): ListenerHandler
+    {
+        return $this->eventHandler->whenAuthenticationFailed($handler);
+    }
+
+    public function detach(ListenerHandler $handler): void
+    {
+        $this->eventHandler->detach($handler);
     }
 
     private function compareWasConnected(bool $value, bool $comparand): bool

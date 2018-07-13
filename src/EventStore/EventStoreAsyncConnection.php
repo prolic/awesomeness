@@ -11,6 +11,7 @@ use Prooph\EventStore\Data\Position;
 use Prooph\EventStore\Data\StreamMetadata;
 use Prooph\EventStore\Data\SystemSettings;
 use Prooph\EventStore\Data\UserCredentials;
+use Prooph\EventStoreClient\Event\ListenerHandler;
 
 interface EventStoreAsyncConnection
 {
@@ -98,5 +99,17 @@ interface EventStoreAsyncConnection
     /** @return Promise<WriteResult> */
     public function setSystemSettingsAsync(SystemSettings $settings, UserCredentials $userCredentials = null): Promise;
 
-    // @todo event handlers
+    public function whenConnected(callable $handler): ListenerHandler;
+
+    public function whenDisconnected(callable $handler): ListenerHandler;
+
+    public function whenReconnecting(callable $handler): ListenerHandler;
+
+    public function whenClosed(callable $handler): ListenerHandler;
+
+    public function whenErrorOccurred(callable $handler): ListenerHandler;
+
+    public function whenAuthenticationFailed(callable $handler): ListenerHandler;
+
+    public function detach(ListenerHandler $handler): void;
 }
