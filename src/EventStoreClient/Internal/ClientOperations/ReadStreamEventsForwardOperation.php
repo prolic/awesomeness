@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient\Internal\ClientOperations;
 
+use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
 use Prooph\EventStore\Data\ReadDirection;
 use Prooph\EventStore\Data\ResolvedEvent;
@@ -11,15 +12,15 @@ use Prooph\EventStore\Data\SliceReadStatus;
 use Prooph\EventStore\Data\StreamEventsSlice;
 use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Exception\AccessDenied;
+use Prooph\EventStore\Internal\SystemData\InspectionDecision;
+use Prooph\EventStore\Internal\SystemData\InspectionResult;
 use Prooph\EventStore\Messages\ReadStreamEvents;
 use Prooph\EventStore\Messages\ReadStreamEventsCompleted;
 use Prooph\EventStore\Messages\ReadStreamEventsCompleted_ReadStreamResult;
 use Prooph\EventStore\Messages\ResolvedIndexedEvent;
 use Prooph\EventStore\Transport\Tcp\TcpCommand;
-use Prooph\EventStore\Transport\Tcp\TcpDispatcher;
 use Prooph\EventStoreClient\Exception\ServerError;
 use Prooph\EventStoreClient\Internal\EventMessageConverter;
-use Prooph\EventStoreClient\Internal\ReadBuffer;
 
 /** @internal */
 class ReadStreamEventsForwardOperation extends AbstractOperation
@@ -36,8 +37,7 @@ class ReadStreamEventsForwardOperation extends AbstractOperation
     private $resolveLinkTos;
 
     public function __construct(
-        TcpDispatcher $dispatcher,
-        ReadBuffer $readBuffer,
+        Deferred $deferred,
         bool $requireMaster,
         string $stream,
         int $start,
@@ -52,8 +52,7 @@ class ReadStreamEventsForwardOperation extends AbstractOperation
         $this->resolveLinkTos = $resolveLinkTos;
 
         parent::__construct(
-            $dispatcher,
-            $readBuffer,
+            $deferred,
             $userCredentials,
             TcpCommand::readStreamEventsForward(),
             TcpCommand::readStreamEventsForwardCompleted()
@@ -72,19 +71,30 @@ class ReadStreamEventsForwardOperation extends AbstractOperation
         return $message;
     }
 
-    protected function inspectResponse(Message $response): void
+    protected function inspectResponse(Message $response): InspectionResult
     {
         /** @var ReadStreamEventsCompleted $response */
-
         switch ($response->getResult()) {
             case ReadStreamEventsCompleted_ReadStreamResult::Success:
-            case ReadStreamEventsCompleted_ReadStreamResult::NoStream:
+                $this->succeed($response);
+
+                return new InspectionResult(InspectionDecision::endOperation(), 'Success');
             case ReadStreamEventsCompleted_ReadStreamResult::StreamDeleted:
-                return;
+                $this->succeed($response);
+
+                return new InspectionResult(InspectionDecision::endOperation(), 'StreamDeleted');
+            case ReadStreamEventsCompleted_ReadStreamResult::NoStream:
+                $this->succeed($response);
+
+                return new InspectionResult(InspectionDecision::endOperation(), 'NoStream');
             case ReadStreamEventsCompleted_ReadStreamResult::Error:
-                throw new ServerError($response->getError());
+                $this->fail(new ServerError($response->getError()));
+
+                return new InspectionResult(InspectionDecision::endOperation(), 'Error');
             case ReadStreamEventsCompleted_ReadStreamResult::AccessDenied:
-                throw AccessDenied::toStream($this->stream);
+                $this->fail(AccessDenied::toStream($this->stream));
+
+                return new InspectionResult(InspectionDecision::endOperation(), 'AccessDenied');
             default:
                 throw new ServerError('Unexpected ReadStreamResult');
         }
@@ -93,7 +103,6 @@ class ReadStreamEventsForwardOperation extends AbstractOperation
     protected function transformResponse(Message $response): object
     {
         /* @var ReadStreamEventsCompleted $response */
-
         $records = $response->getEvents();
 
         $resolvedEvents = [];

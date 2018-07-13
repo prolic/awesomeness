@@ -4,15 +4,12 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient\Internal;
 
-use Amp\ByteStream\InputStream;
-use Amp\Deferred;
 use Amp\Loop;
-use Amp\Promise;
-use Amp\Success;
+use Amp\Socket\ClientSocket;
 use Generator;
+use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Transport\Tcp\TcpCommand;
 use Prooph\EventStore\Transport\Tcp\TcpFlags;
-use Prooph\EventStore\Transport\Tcp\TcpOffset;
 use Prooph\EventStore\Transport\Tcp\TcpPackage;
 use Prooph\EventStore\Transport\Tcp\TcpPackageFactory;
 use Prooph\EventStoreClient\Internal\ByteBuffer\Buffer;
@@ -20,29 +17,26 @@ use Prooph\EventStoreClient\Internal\ByteBuffer\Buffer;
 /** @internal */
 class ReadBuffer
 {
-    private const HeartBeatCorrelationId = 'heartbeat';
-
-    /** @var InputStream */
-    private $inputStream;
-    /** @var int */
-    private $operationTimeout;
-    /** @var TcpPackageFactory */
-    private $tcpPackageFactory;
+    /** @var ClientSocket */
+    private $socket;
     /** @var string */
     private $currentMessage;
-    /** @var TcpPackage[] */
-    private $ready = [];
-    /** @var Deferred[] */
-    private $waiting = [];
+    /** @var callable */
+    private $messageHandler;
+    /** @var TcpPackageFactory */
+    private $tcpPackageFactory;
 
-    public function __construct(InputStream $inputStream, int $operationTimeout)
+    public function __construct(ClientSocket $socket, callable $messageHandler)
     {
-        $this->inputStream = $inputStream;
-        $this->operationTimeout = $operationTimeout;
+        $this->socket = $socket;
+        $this->messageHandler = $messageHandler;
         $this->tcpPackageFactory = new TcpPackageFactory();
+    }
 
-        Loop::onReadable($inputStream->getResource(), function (string $watcher): Generator {
-            $value = yield $this->inputStream->read();
+    public function startReceivingMessages(): void
+    {
+        Loop::onReadable($this->socket->getResource(), function (string $watcher): Generator {
+            $value = yield $this->socket->read();
 
             if (null === $value) {
                 // stream got closed
@@ -57,7 +51,7 @@ class ReadBuffer
 
             $buffer = Buffer::fromString($value);
             $dataLength = \strlen($value);
-            $messageLength = $buffer->readInt32LE(0) + TcpOffset::Int32Length;
+            $messageLength = $buffer->readInt32LE(0) + 4; // 4 = size of int32LE
 
             if ($dataLength === $messageLength) {
                 $this->handleMessage($value);
@@ -75,60 +69,45 @@ class ReadBuffer
         });
     }
 
-    /**
-     * @return Promise<TcpPackage>
-     */
-    public function waitFor(string $correlationId): Promise
-    {
-        if (isset($this->ready[$correlationId])) {
-            $package = $this->ready[$correlationId];
-            unset($this->ready[$correlationId]);
-
-            return new Success($package);
-        }
-
-        $deferred = new Deferred();
-        $promise = Promise\timeout($deferred->promise(), $this->operationTimeout);
-        $this->waiting[$correlationId] = $deferred;
-
-        return $promise;
-    }
-
-    /**
-     * @return Promise<TcpPackage>
-     */
-    public function waitForHeartBeat(): Promise
-    {
-        return $this->waitFor(self::HeartBeatCorrelationId);
-    }
-
     private function handleMessage(string $message): void
     {
         $buffer = Buffer::fromString($message);
 
-        // Information about how long the message is to help decode it. (comes from the server)
-        // $messageLength = (whole stream length) - (4 bytes for saved length).
         $messageLength = $buffer->readInt32LE(0);
 
-        $command = TcpCommand::fromValue($buffer->readInt8(TcpOffset::MessageTypeOffset));
-        $flags = TcpFlags::fromValue($buffer->readInt8(TcpOffset::FlagOffset));
-        $correlationId = \bin2hex($buffer->read(TcpOffset::CorrelationIdOffset, TcpOffset::CorrelationIdLength));
-        $data = $buffer->read(TcpOffset::DataOffset, $messageLength - TcpOffset::HeaderLenth);
+        $command = TcpCommand::fromValue($buffer->readInt8(TcpPackage::DataOffset));
+        $flags = TcpFlags::fromValue($buffer->readInt8(TcpPackage::DataOffset + TcpPackage::FlagsOffset));
+        $correlationId = \bin2hex($buffer->read(TcpPackage::DataOffset + TcpPackage::CorrelationOffset, TcpPackage::AuthOffset - TcpPackage::CorrelationOffset));
+        $headerSize = TcpPackage::MandatorySize;
+        $credentials = null;
 
-        $package = $this->tcpPackageFactory->build($command, $flags, $correlationId, $data);
+        if ($flags->equals(TcpFlags::authenticated())) {
+            $loginLength = 4 + TcpPackage::AuthOffset;
 
-        if ($package->command()->equals(TcpCommand::heartbeatResponseCommand())) {
-            $correlationId = self::HeartBeatCorrelationId;
-        } else {
-            $correlationId = $package->correlationId();
+            if (TcpPackage::AuthOffset + 1 + $loginLength + 1 >= $messageLength) {
+                throw new \Exception('Login length is too big, it does not fit into TcpPackage');
+            }
+
+            $login = $buffer->read(TcpPackage::DataOffset + TcpPackage::AuthOffset + 1, $loginLength);
+
+            $passwordLength = TcpPackage::DataOffset + TcpPackage::AuthOffset + 1 + $loginLength;
+
+            if (TcpPackage::AuthOffset + 1 + $loginLength + 1 + $passwordLength > $messageLength) {
+                throw new \Exception('Password length is too big, it does not fit into TcpPackage');
+            }
+
+            $password = $buffer->read($passwordLength + 1, $passwordLength);
+
+            $headerSize += 1 + $loginLength + 1 + $passwordLength;
+
+            \var_dump($login, $password); // @todo debug this
+            $credentials = new UserCredentials($login, $password);
         }
 
-        if (isset($this->waiting[$correlationId])) {
-            $this->waiting[$correlationId]->resolve($package);
-            unset($this->waiting[$correlationId]);
-        }
+        $data = $buffer->read(TcpPackage::DataOffset + $headerSize, $messageLength - $headerSize);
 
-        $this->ready[$correlationId] = $package;
-        unset($this->ready[$correlationId]);
+        $package = $this->tcpPackageFactory->build($command, $flags, $correlationId, $data, $credentials);
+
+        ($this->messageHandler)($package);
     }
 }

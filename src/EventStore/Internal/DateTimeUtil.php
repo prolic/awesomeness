@@ -9,6 +9,11 @@ use DateTimeZone;
 
 abstract class DateTimeUtil
 {
+    public static function utcNow(): DateTimeImmutable
+    {
+        return new DateTimeImmutable('now', new DateTimeZone('UTC'));
+    }
+
     public static function create(string $dateTimeString): DateTimeImmutable
     {
         return DateTimeImmutable::createFromFormat(

@@ -7,8 +7,6 @@ namespace Prooph\PostgresProjectionManager\Operations;
 use Amp\Mysql\CommandResult;
 use Amp\Postgres\Pool;
 use Amp\Postgres\Statement;
-use DateTimeImmutable;
-use DateTimeZone;
 use Generator;
 use Prooph\EventStore\Data\EventId;
 use Prooph\EventStore\Exception\RuntimeException;
@@ -46,7 +44,7 @@ SQL
         $params[] = $checkpointTag->toJsonString();
         $params[] = $checkpointStream;
         $params[] = true;
-        $params[] = DateTimeUtil::format(new DateTimeImmutable('NOW', new DateTimeZone('UTC')));
+        $params[] = DateTimeUtil::format(DateTimeUtil::utcNow());
 
         /** @var CommandResult $result */
         $result = yield $this->statement->execute($params);

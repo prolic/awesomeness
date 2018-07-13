@@ -7,8 +7,6 @@ namespace Prooph\PostgresProjectionManager\Operations;
 use Amp\Coroutine;
 use Amp\Postgres\Pool;
 use Amp\Postgres\Statement;
-use DateTimeImmutable;
-use DateTimeZone;
 use Generator;
 use Prooph\EventStore\Data\EventId;
 use Prooph\EventStore\Internal\DateTimeUtil;
@@ -68,7 +66,7 @@ SQL;
         /** @var Statement $statement */
         $statement = yield $this->pool->prepare($sql);
 
-        $now = DateTimeUtil::format(new DateTimeImmutable('NOW', new DateTimeZone('UTC')));
+        $now = DateTimeUtil::format(DateTimeUtil::utcNow());
 
         $params = [
             // master stream

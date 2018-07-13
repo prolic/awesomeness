@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace Prooph\EventStoreClient;
 
 use Prooph\EventStore\Data\UserCredentials;
+use Prooph\EventStore\Internal\Consts;
 use Prooph\EventStore\IpEndPoint;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 
+/**
+ * All times are milliseconds
+ */
 class ConnectionSettings
 {
     /** @var IpEndPoint */
@@ -16,6 +20,10 @@ class ConnectionSettings
     private $isCluster;
     /** @var bool */
     private $useSslConnection;
+    /** @var int */
+    private $maxQueueSize;
+    /** @var int */
+    private $maxConcurrentItems;
     /** @var bool */
     private $requireMaster;
     /** @var UserCredentials|null */
@@ -23,20 +31,38 @@ class ConnectionSettings
     /** @var int */
     private $operationTimeout;
     /** @var int */
+    private $operationTimeoutCheckPeriod;
+    /** @var int */
+    private $maxRetries;
+    /** @var int */
+    private $maxReconnections;
+    /** @var int */
     private $heartbeatInterval;
     /** @var int */
     private $heartbeatTimeout;
+    /** @var int */
+    private $reconnectionDelay;
+    /** @var bool */
+    private $failOnNoServerResponse;
 
+    // @todo: add ConnectionSettingsBuilder class
     public static function default(): ConnectionSettings
     {
         return new self(
             new IpEndPoint('localhost', 1113),
             false,
             false,
-            true,
-            1000,
+            Consts::DefaultMaxQueueSize,
+            Consts::DefaultMaxConcurrentItems,
+            Consts::DefaultRequireMaster,
+            Consts::DefaultOperationTimeout,
+            Consts::DefaultOperationTimeoutCheckPeriod,
+            Consts::DefaultMaxOperationRetries,
+            Consts::DefaultMaxReconnections,
             2500,
             1500,
+            Consts::DefaultReconnectionDelay,
+            true,
             null
         );
     }
@@ -45,10 +71,17 @@ class ConnectionSettings
         IpEndPoint $endpoint,
         bool $isCluster,
         bool $useSslConnection,
+        int $maxQueueSize,
+        int $maxConcurrentItems,
         bool $requireMaster,
         int $operationTimeout,
+        int $operationTimeoutCheckPeriod,
+        int $maxRetries,
+        int $maxReconnections,
         int $heartbeatInterval,
         int $heartbeatTimeout,
+        int $reconnectionDelay,
+        bool $failOnNoServerResponse,
         UserCredentials $defaultUserCredentials = null
     ) {
         if ($heartbeatInterval >= 5000) {
@@ -58,10 +91,17 @@ class ConnectionSettings
         $this->endPoint = $endpoint;
         $this->isCluster = $isCluster;
         $this->useSslConnection = $useSslConnection;
+        $this->maxQueueSize = $maxQueueSize;
+        $this->maxConcurrentItems = $maxConcurrentItems;
         $this->requireMaster = $requireMaster;
         $this->operationTimeout = $operationTimeout;
+        $this->operationTimeoutCheckPeriod = $operationTimeoutCheckPeriod;
+        $this->maxRetries = $maxRetries;
+        $this->maxReconnections = $maxReconnections;
         $this->heartbeatInterval = $heartbeatInterval;
         $this->heartbeatTimeout = $heartbeatTimeout;
+        $this->reconnectionDelay = $reconnectionDelay;
+        $this->failOnNoServerResponse = $failOnNoServerResponse;
         $this->defaultUserCredentials = $defaultUserCredentials;
     }
 
@@ -85,6 +125,16 @@ class ConnectionSettings
         return $this->isCluster;
     }
 
+    public function maxQueueSize(): int
+    {
+        return $this->maxQueueSize;
+    }
+
+    public function maxConcurrentItems(): int
+    {
+        return $this->maxConcurrentItems;
+    }
+
     public function requireMaster(): bool
     {
         return $this->requireMaster;
@@ -95,6 +145,21 @@ class ConnectionSettings
         return $this->operationTimeout;
     }
 
+    public function operationTimeoutCheckPeriod(): int
+    {
+        return $this->operationTimeoutCheckPeriod;
+    }
+
+    public function maxRetries(): int
+    {
+        return $this->maxRetries;
+    }
+
+    public function maxReconnections(): int
+    {
+        return $this->maxReconnections;
+    }
+
     public function heartbeatInterval(): int
     {
         return $this->heartbeatInterval;
@@ -103,6 +168,16 @@ class ConnectionSettings
     public function heartbeatTimeout(): int
     {
         return $this->heartbeatTimeout;
+    }
+
+    public function reconnectionDelay(): int
+    {
+        return $this->reconnectionDelay;
+    }
+
+    public function failOnNoServerResponse(): bool
+    {
+        return $this->failOnNoServerResponse;
     }
 
     public function uri(): string

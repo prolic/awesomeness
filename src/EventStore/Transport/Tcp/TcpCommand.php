@@ -75,7 +75,7 @@ final class TcpCommand
         'NotHandled' => 0xF1,
         'Authenticate' => 0xF2,
         'Authenticated' => 0xF3,
-        'NotAuthenticated' => 0xF4,
+        'NotAuthenticatedException' => 0xF4,
         'IdentifyClient' => 0xF5,
         'ClientIdentified' => 0xF6,
     ];
@@ -148,7 +148,7 @@ final class TcpCommand
     public const NotHandled = 0xF1;
     public const Authenticate = 0xF2;
     public const Authenticated = 0xF3;
-    public const NotAuthenticated = 0xF4;
+    public const NotAuthenticatedException = 0xF4;
     public const IdentifyClient = 0xF5;
     public const ClientIdentified = 0xF6;
 
@@ -446,9 +446,9 @@ final class TcpCommand
         return new self('Authenticated');
     }
 
-    public static function notAuthenticated(): self
+    public static function notAuthenticatedException(): self
     {
-        return new self('NotAuthenticated');
+        return new self('NotAuthenticatedException');
     }
 
     public static function identifyClient(): self

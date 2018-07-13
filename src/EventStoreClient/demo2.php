@@ -8,7 +8,7 @@ require __DIR__ . '/../../vendor/autoload.php';
 
 $settings = ConnectionSettings::default();
 
-$connection = new EventStoreConnection(new EventStoreAsyncConnection($settings));
+$connection = new EventStoreConnection(new EventStoreAsyncConnection($settings, 'test'));
 
 $connection->connect();
 

@@ -5,12 +5,7 @@ declare(strict_types=1);
 namespace Prooph\EventStoreClient;
 
 use Amp\Deferred;
-use Amp\Loop;
 use Amp\Promise;
-use Amp\Socket\ClientConnectContext;
-use Amp\Socket\Socket;
-use Amp\TimeoutException;
-use Generator;
 use Prooph\EventStore\Common\SystemStreams;
 use Prooph\EventStore\Data\EventData;
 use Prooph\EventStore\Data\EventReadResult;
@@ -29,71 +24,58 @@ use Prooph\EventStore\EventStorePersistentSubscription;
 use Prooph\EventStore\Exception\OutOfRangeException;
 use Prooph\EventStore\Exception\UnexpectedValueException;
 use Prooph\EventStore\Internal\Consts;
-use Prooph\EventStore\Transport\Tcp\TcpCommand;
-use Prooph\EventStore\Transport\Tcp\TcpDispatcher;
-use Prooph\EventStoreClient\Exception\HeartBeatTimedOutException;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
+use Prooph\EventStoreClient\Exception\MaxQueueSizeLimitReachedException;
+use Prooph\EventStoreClient\Internal\ClientOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\AppendToStreamOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\DeleteStreamOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\ReadEventOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\ReadStreamEventsBackwardOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\ReadStreamEventsForwardOperation;
-use Prooph\EventStoreClient\Internal\ReadBuffer;
-use function Amp\call;
-use function Amp\Socket\connect;
+use Prooph\EventStoreClient\Internal\EndPointDiscoverer;
+use Prooph\EventStoreClient\Internal\EventStoreConnectionLogicHandler;
+use Prooph\EventStoreClient\Internal\Message\CloseConnectionMessage;
+use Prooph\EventStoreClient\Internal\Message\StartConnectionMessage;
+use Prooph\EventStoreClient\Internal\Message\StartOperationMessage;
 
-// @todo: maybe introduce EventStoreConnectionLogicHandler ?
-// this would also make tcp package inspection results finally useful
-// this would also make connection reconnects
-// this would also utilize max retries (would need to be added to config)
-// note: operation timeouts already in place via ReadBuffer implementation
 final class EventStoreAsyncConnection implements
     AsyncConnection,
     AsyncTransactionConnection,
     AsyncSubscriptionConnection
 {
-    private const PositionStart = 0;
-    private const PositionEnd = -1;
-    private const PositionLatest = 999999;
-
+    /** @var string */
+    private $connectionName;
     /** @var ConnectionSettings */
     private $settings;
-    /** @var Socket */
-    private $connection;
-    /** @var ReadBuffer */
-    private $readBuffer;
-    /** @var TcpDispatcher */
-    private $dispatcher;
-    /** @var string */
-    private $heartbeatWatcher;
+    /** @var EndPointDiscoverer */
+    private $endPointDiscoverer;
+    /** @var EventStoreConnectionLogicHandler */
+    private $handler;
 
-    public function __construct(ConnectionSettings $settings)
+    public function __construct(ConnectionSettings $settings, EndPointDiscoverer $endPointDiscoverer, string $connectionName)
     {
         $this->settings = $settings;
+        $this->connectionName = $connectionName;
+        $this->endPointDiscoverer = $endPointDiscoverer;
+        $this->handler = new EventStoreConnectionLogicHandler($this, $settings);
+    }
+
+    public function connectionName(): string
+    {
+        return $this->connectionName;
     }
 
     public function connectAsync(): Promise
     {
-        return call(function (): Generator {
-            $context = (new ClientConnectContext())->withConnectTimeout($this->settings->operationTimeout());
-            $this->connection = yield connect($this->settings->uri(), $context);
+        $deferred = new Deferred();
+        $this->handler->enqueueMessage(new StartConnectionMessage($deferred, $this->endPointDiscoverer));
 
-            if ($this->settings->useSslConnection()) {
-                yield $this->connection->enableCrypto();
-            }
-
-            $this->readBuffer = new ReadBuffer($this->connection, $this->settings->operationTimeout());
-            $this->dispatcher = new TcpDispatcher($this->connection, $this->settings->operationTimeout());
-            $this->manageHeartBeats();
-        });
+        return $deferred->promise();
     }
 
     public function close(): void
     {
-        if ($this->connection) {
-            Loop::cancel($this->heartbeatWatcher);
-            $this->connection->close();
-        }
+        $this->handler->enqueueMessage(new CloseConnectionMessage('Connection close requested by client'));
     }
 
     public function deleteStreamAsync(
@@ -106,17 +88,18 @@ final class EventStoreAsyncConnection implements
             throw new InvalidArgumentException('Stream cannot be empty');
         }
 
-        $operation = new DeleteStreamOperation(
-            $this->dispatcher,
-            $this->readBuffer,
+        $deferred = new Deferred();
+
+        $this->enqueueOperation(new DeleteStreamOperation(
+            $deferred,
             $this->settings->requireMaster(),
             $stream,
             $expectedVersion,
             $hardDelete,
-            $userCredentials ?? $this->settings->defaultUserCredentials()
-        );
+            $userCredentials
+        ));
 
-        return $operation();
+        return $deferred->promise();
     }
 
     /**
@@ -136,17 +119,18 @@ final class EventStoreAsyncConnection implements
             throw new InvalidArgumentException('Stream cannot be empty');
         }
 
-        $operation = new AppendToStreamOperation(
-            $this->dispatcher,
-            $this->readBuffer,
+        $deferred = new Deferred();
+
+        $this->enqueueOperation(new AppendToStreamOperation(
+            $deferred,
             $this->settings->requireMaster(),
             $stream,
             $expectedVersion,
             $events,
-            $userCredentials ?? $this->settings->defaultUserCredentials()
-        );
+            $userCredentials
+        ));
 
-        return $operation();
+        return $deferred->promise();
     }
 
     public function readEventAsync(
@@ -159,17 +143,18 @@ final class EventStoreAsyncConnection implements
             throw new InvalidArgumentException('Stream cannot be empty');
         }
 
-        $operation = new ReadEventOperation(
-            $this->dispatcher,
-            $this->readBuffer,
+        $deferred = new Deferred();
+
+        $this->enqueueOperation(new ReadEventOperation(
+            $deferred,
             $this->settings->requireMaster(),
             $stream,
             $eventNumber,
             $resolveLinkTos,
-            $userCredentials ?? $this->settings->defaultUserCredentials()
-        );
+            $userCredentials
+        ));
 
-        return $operation();
+        return $deferred->promise();
     }
 
     public function readStreamEventsForwardAsync(
@@ -190,18 +175,19 @@ final class EventStoreAsyncConnection implements
             ));
         }
 
-        $operation = new ReadStreamEventsForwardOperation(
-            $this->dispatcher,
-            $this->readBuffer,
+        $deferred = new Deferred();
+
+        $this->enqueueOperation(new ReadStreamEventsForwardOperation(
+            $deferred,
             $this->settings->requireMaster(),
             $stream,
             $start,
             $count,
             $resolveLinkTos,
-            $userCredentials ?? $this->settings->defaultUserCredentials()
-        );
+            $userCredentials
+        ));
 
-        return $operation();
+        return $deferred->promise();
     }
 
     public function readStreamEventsBackwardAsync(
@@ -222,18 +208,19 @@ final class EventStoreAsyncConnection implements
             ));
         }
 
-        $operation = new ReadStreamEventsBackwardOperation(
-            $this->dispatcher,
-            $this->readBuffer,
+        $deferred = new Deferred();
+
+        $this->enqueueOperation(new ReadStreamEventsBackwardOperation(
+            $deferred,
             $this->settings->requireMaster(),
             $stream,
             $start,
             $count,
             $resolveLinkTos,
-            $userCredentials ?? $this->settings->defaultUserCredentials()
-        );
+            $userCredentials
+        ));
 
-        return $operation();
+        return $deferred->promise();
     }
 
     public function readAllEventsForward(
@@ -413,22 +400,16 @@ final class EventStoreAsyncConnection implements
         // TODO: Implement commitTransactionAsync() method.
     }
 
-    private function manageHeartBeats(): void
+    private function enqueueOperation(ClientOperation $operation): void
     {
-        $this->heartbeatWatcher = Loop::repeat(
-            $this->settings->heartbeatInterval(),
-            function (string $watcher): Generator {
-                yield $this->dispatcher->composeAndDispatch(
-                    TcpCommand::heartbeatRequestCommand()
-                );
-                try {
-                    yield Promise\timeout($this->readBuffer->waitForHeartBeat(), $this->settings->heartbeatTimeout());
-                } catch (TimeoutException $e) {
-                    Loop::disable($watcher);
-                    $this->close();
-                    throw new HeartBeatTimedOutException();
-                }
-            }
-        );
+        if ($this->handler->totalOperationCount() >= $this->settings->maxQueueSize()) {
+            throw MaxQueueSizeLimitReachedException::with($this->connectionName, $this->settings->maxQueueSize());
+        }
+
+        $this->handler->enqueueMessage(new StartOperationMessage(
+            $operation,
+            $this->settings->maxRetries(),
+            $this->settings->operationTimeout()
+        ));
     }
 }

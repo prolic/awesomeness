@@ -4,20 +4,21 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient\Internal\ClientOperations;
 
+use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
 use Prooph\EventStore\Data\EventReadResult;
 use Prooph\EventStore\Data\EventReadStatus;
 use Prooph\EventStore\Data\ResolvedEvent;
 use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Exception\AccessDenied;
+use Prooph\EventStore\Internal\SystemData\InspectionDecision;
+use Prooph\EventStore\Internal\SystemData\InspectionResult;
 use Prooph\EventStore\Messages\ReadEvent;
 use Prooph\EventStore\Messages\ReadEventCompleted;
 use Prooph\EventStore\Messages\ReadEventCompleted_ReadEventResult;
 use Prooph\EventStore\Transport\Tcp\TcpCommand;
-use Prooph\EventStore\Transport\Tcp\TcpDispatcher;
 use Prooph\EventStoreClient\Exception\ServerError;
 use Prooph\EventStoreClient\Internal\EventMessageConverter;
-use Prooph\EventStoreClient\Internal\ReadBuffer;
 
 /** @internal */
 class ReadEventOperation extends AbstractOperation
@@ -32,8 +33,7 @@ class ReadEventOperation extends AbstractOperation
     private $resolveLinkTos;
 
     public function __construct(
-        TcpDispatcher $dispatcher,
-        ReadBuffer $readBuffer,
+        Deferred $deferred,
         bool $requireMaster,
         string $stream,
         int $eventNumber,
@@ -46,8 +46,7 @@ class ReadEventOperation extends AbstractOperation
         $this->resolveLinkTos = $resolveLinkTos;
 
         parent::__construct(
-            $dispatcher,
-            $readBuffer,
+            $deferred,
             $userCredentials,
             TcpCommand::readEvent(),
             TcpCommand::readEventCompleted()
@@ -65,20 +64,35 @@ class ReadEventOperation extends AbstractOperation
         return $message;
     }
 
-    protected function inspectResponse(Message $response): void
+    protected function inspectResponse(Message $response): InspectionResult
     {
         /** @var ReadEventCompleted $response */
 
         switch ($response->getResult()) {
             case ReadEventCompleted_ReadEventResult::Success:
+                $this->succeed($response);
+
+                return new InspectionResult(InspectionDecision::endOperation(), 'Success');
             case ReadEventCompleted_ReadEventResult::NotFound:
+                $this->succeed($response);
+
+                return new InspectionResult(InspectionDecision::endOperation(), 'NotFound');
             case ReadEventCompleted_ReadEventResult::NoStream:
+                $this->succeed($response);
+
+                return new InspectionResult(InspectionDecision::endOperation(), 'NoStream');
             case ReadEventCompleted_ReadEventResult::StreamDeleted:
-                return;
+                $this->succeed($response);
+
+                return new InspectionResult(InspectionDecision::endOperation(), 'StreamDeleted');
             case ReadEventCompleted_ReadEventResult::Error:
-                throw new ServerError($response->getError());
+                $this->fail(new ServerError($response->getError()));
+
+                return new InspectionResult(InspectionDecision::endOperation(), 'Error');
             case ReadEventCompleted_ReadEventResult::AccessDenied:
-                throw AccessDenied::toStream($this->stream);
+                $this->fail(AccessDenied::toStream($this->stream));
+
+                return new InspectionResult(InspectionDecision::endOperation(), 'AccessDenied');
             default:
                 throw new ServerError('Unexpected ReadEventResult');
         }
@@ -87,7 +101,6 @@ class ReadEventOperation extends AbstractOperation
     protected function transformResponse(Message $response): object
     {
         /* @var ReadEventCompleted $response */
-
         $eventMessage = $response->getEvent();
         $event = null;
         $link = null;

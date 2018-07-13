@@ -38,6 +38,11 @@ final class EventStoreConnection implements
         $this->asyncConnection = $asyncConnection;
     }
 
+    public function connectionName(): string
+    {
+        return $this->asyncConnection->connectionName();
+    }
+
     /** @throws \Throwable */
     public function connect(): void
     {

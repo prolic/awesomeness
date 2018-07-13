@@ -8,8 +8,6 @@ use Amp\Coroutine;
 use Amp\Postgres\Pool;
 use Amp\Postgres\Statement;
 use Amp\Postgres\Transaction;
-use DateTimeImmutable;
-use DateTimeZone;
 use Generator;
 use Prooph\EventStore\Data\EventId;
 use Prooph\EventStore\Exception\ProjectionException;
@@ -135,7 +133,7 @@ SQL;
             ];
         }
 
-        $now = DateTimeUtil::format(new DateTimeImmutable('NOW', new DateTimeZone('UTC')));
+        $now = DateTimeUtil::format(DateTimeUtil::utcNow());
 
         $params = [
             // registration stream

@@ -4,31 +4,30 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient\Internal\ClientOperations;
 
+use Amp\Deferred;
 use Amp\Promise;
-use Generator;
 use Google\Protobuf\Internal\Message;
 use Prooph\EventStore\Data\UserCredentials;
+use Prooph\EventStore\Internal\SystemData\InspectionDecision;
 use Prooph\EventStore\Internal\SystemData\InspectionResult;
+use Prooph\EventStore\IpEndPoint;
 use Prooph\EventStore\Messages\NotHandled;
+use Prooph\EventStore\Messages\NotHandled_MasterInfo;
 use Prooph\EventStore\Messages\NotHandled_NotHandledReason;
 use Prooph\EventStore\Transport\Tcp\TcpCommand;
-use Prooph\EventStore\Transport\Tcp\TcpDispatcher;
 use Prooph\EventStore\Transport\Tcp\TcpFlags;
 use Prooph\EventStore\Transport\Tcp\TcpPackage;
 use Prooph\EventStoreClient\Exception\NotAuthenticatedException;
-use Prooph\EventStoreClient\Exception\NotHandledException;
 use Prooph\EventStoreClient\Exception\ServerError;
 use Prooph\EventStoreClient\Exception\UnexpectedCommandException;
-use Prooph\EventStoreClient\Internal\ReadBuffer;
-use function Amp\call;
+use Prooph\EventStoreClient\Internal\ClientOperation;
+use Throwable;
 
 /** @internal */
-abstract class AbstractOperation
+abstract class AbstractOperation implements ClientOperation
 {
-    /** @var TcpDispatcher */
-    private $dispatcher;
-    /** @var ReadBuffer */
-    private $readBuffer;
+    /** @var Deferred */
+    private $deferred;
     /** @var UserCredentials|null */
     private $credentials;
     /** @var TcpCommand */
@@ -37,14 +36,12 @@ abstract class AbstractOperation
     private $responseCommand;
 
     public function __construct(
-        TcpDispatcher $dispatcher,
-        ReadBuffer $readBuffer,
+        Deferred $deferred,
         ?UserCredentials $credentials,
         TcpCommand $requestCommand,
         TcpCommand $responseCommand
     ) {
-        $this->dispatcher = $dispatcher;
-        $this->readBuffer = $readBuffer;
+        $this->deferred = $deferred;
         $this->credentials = $credentials;
         $this->requestCommand = $requestCommand;
         $this->responseCommand = $responseCommand;
@@ -52,11 +49,16 @@ abstract class AbstractOperation
 
     abstract protected function createRequestDto(): Message;
 
-    abstract protected function inspectResponse(Message $response): void;
+    abstract protected function inspectResponse(Message $response): InspectionResult;
 
     abstract protected function transformResponse(Message $response): object;
 
-    protected function createNetworkPackage(string $correlationId): TcpPackage
+    public function promise(): Promise
+    {
+        return $this->deferred->promise();
+    }
+
+    public function createNetworkPackage(string $correlationId): TcpPackage
     {
         return new TcpPackage(
             $this->requestCommand,
@@ -67,56 +69,92 @@ abstract class AbstractOperation
         );
     }
 
-    /**
-     * @return Promise<object>
-     */
-    public function __invoke(): Promise
-    {
-        return call(function (): Generator {
-            $correlationId = $this->dispatcher->createCorrelationId();
-
-            $request = $this->createNetworkPackage($correlationId);
-
-            yield $this->dispatcher->dispatch($request);
-
-            /** @var TcpPackage $response */
-            $response = yield $this->readBuffer->waitFor($correlationId);
-
-            $this->inspectPackage($response);
-
-            return $this->transformResponse($response->data());
-        });
-    }
-
-    protected function inspectPackage(TcpPackage $package): void
+    public function inspectPackage(TcpPackage $package): InspectionResult
     {
         if ($package->command()->equals($this->responseCommand)) {
-            $this->inspectResponse($package->data());
-            // @todo return InspectionResult for upcoming EventStoreConnectionLogicHandler
-            return;
+            return $this->inspectResponse($package->data());
         }
 
         switch ($package->command()->value()) {
-            case TcpCommand::NotAuthenticated:
-                throw new NotAuthenticatedException();
+            case TcpCommand::NotAuthenticatedException:
+                return $this->inspectNotAuthenticated($package);
             case TcpCommand::BadRequest:
-                throw new ServerError();
+                return $this->inspectBadRequest($package);
             case TcpCommand::NotHandled:
-                /** @var NotHandled $message */
-                $message = $package->data();
-                switch ($message->getReason()) {
-                    case NotHandled_NotHandledReason::NotReady:
-                        throw NotHandledException::notReady();
-                    case NotHandled_NotHandledReason::TooBusy:
-                        throw NotHandledException::tooBusy();
-                    case NotHandled_NotHandledReason::NotMaster:
-                        throw NotHandledException::notMaster();
-                    default:
-                        throw new NotHandledException('Not handled: unknown reason');
-                }
-                // no break
+                return $this->inspectNotHandled($package);
             default:
-                throw new UnexpectedCommandException();
+                return $this->inspectUnexpectedCommand($package, $this->responseCommand);
         }
+    }
+
+    protected function succeed(Message $response): void
+    {
+        try {
+            $result = $this->transformResponse($response);
+        } catch (Throwable $e) {
+            $this->deferred->fail($e);
+
+            return;
+        }
+
+        $this->deferred->resolve($result);
+    }
+
+    public function fail(Throwable $exception): void
+    {
+        $this->deferred->fail($exception);
+    }
+
+    private function inspectNotAuthenticated(TcpPackage $package): InspectionResult
+    {
+        $this->fail(new NotAuthenticatedException());
+
+        return new InspectionResult(InspectionDecision::endOperation(), 'Not authenticated');
+    }
+
+    private function inspectBadRequest(TcpPackage $package): InspectionResult
+    {
+        $this->fail(new ServerError());
+
+        return new InspectionResult(InspectionDecision::endOperation(), 'Bad request');
+    }
+
+    private function inspectNotHandled(TcpPackage $package): InspectionResult
+    {
+        /** @var NotHandled $message */
+        $message = $package->data();
+
+        switch ($message->getReason()) {
+            case NotHandled_NotHandledReason::NotReady:
+                return new InspectionResult(InspectionDecision::retry(), 'Not handled: not ready');
+            case NotHandled_NotHandledReason::TooBusy:
+                return new InspectionResult(InspectionDecision::retry(), 'Not handled: too busy');
+            case NotHandled_NotHandledReason::NotMaster:
+                /** @var NotHandled_MasterInfo $masterInfo */
+                $masterInfo = $message->getAdditionalInfo();
+
+                return new InspectionResult(
+                    InspectionDecision::reconnect(),
+                    'Not handled: not master',
+                    new IpEndPoint(
+                        $masterInfo->getExternalTcpAddress(),
+                        $masterInfo->getExternalTcpPort()
+                    ),
+                    new IpEndPoint(
+                        $masterInfo->getExternalSecureTcpAddress(),
+                        $masterInfo->getExternalSecureTcpPort()
+                    )
+                );
+            default:
+                return new InspectionResult(InspectionDecision::retry(), 'Not handled: unknown');
+        }
+    }
+
+    private function inspectUnexpectedCommand(TcpPackage $package, TcpCommand $expectedCommand): InspectionResult
+    {
+        $exception = UnexpectedCommandException::with($expectedCommand->name(), $package->command()->name());
+        $this->fail($exception);
+
+        return new InspectionResult(InspectionDecision::endOperation(), $exception->getMessage());
     }
 }

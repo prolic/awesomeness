@@ -15,8 +15,6 @@ use Amp\Success;
 use Amp\Sync\LocalMutex;
 use Amp\Sync\Lock;
 use cash\LRUCache;
-use DateTimeImmutable;
-use DateTimeZone;
 use Error;
 use Generator;
 use Prooph\EventStore\Common\SystemEventTypes;
@@ -265,8 +263,6 @@ SQL;
                 /** @var Statement $statement */
                 $statement = yield $this->pool->prepare($sql);
 
-                $now = new DateTimeImmutable('NOW', new DateTimeZone('UTC'));
-
                 /** @var CommandResult $result */
                 $result = yield $statement->execute([
                     $this->projectionNamesBuilder->effectiveProjectionName(),
@@ -276,7 +272,7 @@ SQL;
                     \json_encode(['id' => $this->id]),
                     '',
                     true,
-                    DateTimeUtil::format($now),
+                    DateTimeUtil::format(DateTimeUtil::utcNow()),
                 ]);
 
                 if ($result->affectedRows() !== 1) {
@@ -310,8 +306,6 @@ SQL;
             /** @var Statement $statement */
             $statement = yield $this->pool->prepare($sql);
 
-            $now = new DateTimeImmutable('NOW', new DateTimeZone('UTC'));
-
             /** @var CommandResult $result */
             $result = yield $statement->execute([
                 $this->projectionNamesBuilder->effectiveProjectionName(),
@@ -321,7 +315,7 @@ SQL;
                 \json_encode(['id' => $this->id]),
                 '',
                 true,
-                DateTimeUtil::format($now),
+                DateTimeUtil::format(DateTimeUtil::utcNow()),
             ]);
 
             if ($result->affectedRows() !== 1) {
@@ -585,9 +579,8 @@ SQL;
                 $params[] = $row;
             }
 
-            $now = new DateTimeImmutable('NOW', new DateTimeZone('UTC'));
             $params[] = ++$expectedVersions[$record['stream']];
-            $params[] = DateTimeUtil::format($now);
+            $params[] = DateTimeUtil::format(DateTimeUtil::utcNow());
         }
 
         $sql = <<<SQL
