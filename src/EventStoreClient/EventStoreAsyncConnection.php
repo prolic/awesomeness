@@ -11,6 +11,7 @@ use Prooph\EventStore\Common\SystemStreams;
 use Prooph\EventStore\Data\EventData;
 use Prooph\EventStore\Data\EventReadResult;
 use Prooph\EventStore\Data\EventReadStatus;
+use Prooph\EventStore\Data\ExpectedVersion;
 use Prooph\EventStore\Data\PersistentSubscriptionSettings;
 use Prooph\EventStore\Data\Position;
 use Prooph\EventStore\Data\StreamMetadata;
@@ -376,7 +377,12 @@ final class EventStoreAsyncConnection implements
 
     public function setSystemSettingsAsync(SystemSettings $settings, UserCredentials $userCredentials = null): Promise
     {
-        // TODO: Implement setSystemSettingsAsync() method.
+        return $this->appendToStreamAsync(
+            SystemStreams::SettingsStream,
+            ExpectedVersion::Any,
+            [new EventData(null, SystemEventTypes::Settings, true, \json_encode($settings->toArray()))],
+            $userCredentials
+        );
     }
 
     public function createPersistentSubscriptionAsync(
