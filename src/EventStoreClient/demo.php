@@ -20,7 +20,7 @@ Loop::run(function () {
 
     yield $connection->connectAsync();
 
-    echo 'connected';
+    echo 'connected' . PHP_EOL;
 
     $slice = yield $connection->readStreamEventsForwardAsync(
         'opium2-bar',
@@ -56,4 +56,6 @@ Loop::run(function () {
     \var_dump($wr);
 
     $connection->close();
+
+    echo 'connection closed' . PHP_EOL;
 });

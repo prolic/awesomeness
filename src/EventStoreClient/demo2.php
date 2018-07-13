@@ -4,15 +4,23 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient;
 
+use Prooph\EventStore\Data\EventData;
+use Prooph\EventStore\Data\EventId;
+use Prooph\EventStore\Data\ExpectedVersion;
+use Prooph\EventStoreClient\Internal\StaticEndPointDiscoverer;
+
 require __DIR__ . '/../../vendor/autoload.php';
 
 $settings = ConnectionSettings::default();
 
-$connection = new EventStoreConnection(new EventStoreAsyncConnection($settings, 'test'));
+$endPointDiscoverer = new StaticEndPointDiscoverer($settings->endPoint(), $settings->useSslConnection());
+$connection = new EventStoreAsyncConnection($settings, $endPointDiscoverer, 'test');
+
+$connection = new EventStoreConnection($connection);
 
 $connection->connect();
 
-echo 'connected';
+echo 'connected' . PHP_EOL;
 
 $slice = $connection->readStreamEventsForward(
     'opium2-bar',
@@ -22,3 +30,31 @@ $slice = $connection->readStreamEventsForward(
 );
 
 \var_dump($slice);
+
+$slice = $connection->readStreamEventsBackward(
+    'opium2-bar',
+    10,
+    2,
+    true
+);
+
+$event = $connection->readEvent('opium2-bar', 2, true);
+
+\var_dump($event);
+
+$m = $connection->getStreamMetadata('opium2-bar');
+
+\var_dump($m);
+
+$wr = $connection->appendToStream('opium2-bar', ExpectedVersion::Any, [
+    new EventData(EventId::generate(), 'test-type', false, 'jfkhksdfhsds', 'meta'),
+    new EventData(EventId::generate(), 'test-type2', false, 'kldjfls', 'meta'),
+    new EventData(EventId::generate(), 'test-type3', false, 'aaa', 'meta'),
+    new EventData(EventId::generate(), 'test-type4', false, 'bbb', 'meta'),
+]);
+
+\var_dump($wr);
+
+$connection->close();
+
+echo 'connection closed' . PHP_EOL;

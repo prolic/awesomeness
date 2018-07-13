@@ -11,7 +11,7 @@ use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Internal\Data\PersistentSubscriptionCreateResult;
 use Prooph\EventStore\Internal\Data\PersistentSubscriptionDeleteResult;
 use Prooph\EventStore\Internal\Data\PersistentSubscriptionUpdateResult;
-use Prooph\EventStore\Internal\ReplayParkedResult;
+use Prooph\EventStore\Internal\Data\ReplayParkedResult;
 
 /** @internal */
 interface EventStoreSubscriptionConnection extends EventStoreConnection
