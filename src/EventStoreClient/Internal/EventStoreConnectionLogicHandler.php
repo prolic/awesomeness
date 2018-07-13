@@ -24,7 +24,6 @@ use Prooph\EventStore\Internal\Event\ClientConnectionEventArgs;
 use Prooph\EventStore\Internal\Event\ClientErrorEventArgs;
 use Prooph\EventStore\Internal\Event\ClientReconnectingEventArgs;
 use Prooph\EventStore\Internal\Event\ListenerHandler;
-use Prooph\EventStoreClient\EventStoreAsyncNodeConnection;
 use Prooph\EventStoreClient\Exception\CannotEstablishConnectionException;
 use Prooph\EventStoreClient\Exception\EventStoreConnectionException;
 use Prooph\EventStoreClient\Exception\InvalidOperationException;

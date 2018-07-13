@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Prooph\EventStoreClient;
+namespace Prooph\EventStoreClient\Internal;
 
 use Amp\Deferred;
 use Amp\Promise;
@@ -27,10 +27,10 @@ use Prooph\EventStore\Exception\OutOfRangeException;
 use Prooph\EventStore\Exception\UnexpectedValueException;
 use Prooph\EventStore\Internal\Consts;
 use Prooph\EventStore\Internal\Event\ListenerHandler;
+use Prooph\EventStoreClient\ConnectionSettings;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 use Prooph\EventStoreClient\Exception\InvalidOperationException;
 use Prooph\EventStoreClient\Exception\MaxQueueSizeLimitReachedException;
-use Prooph\EventStoreClient\Internal\ClientOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\AppendToStreamOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\DeleteStreamOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\ReadAllEventsBackwardOperation;
@@ -38,8 +38,6 @@ use Prooph\EventStoreClient\Internal\ClientOperations\ReadAllEventsForwardOperat
 use Prooph\EventStoreClient\Internal\ClientOperations\ReadEventOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\ReadStreamEventsBackwardOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\ReadStreamEventsForwardOperation;
-use Prooph\EventStoreClient\Internal\EndPointDiscoverer;
-use Prooph\EventStoreClient\Internal\EventStoreConnectionLogicHandler;
 use Prooph\EventStoreClient\Internal\Message\CloseConnectionMessage;
 use Prooph\EventStoreClient\Internal\Message\StartConnectionMessage;
 use Prooph\EventStoreClient\Internal\Message\StartOperationMessage;

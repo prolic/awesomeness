@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\Internal\Event;
 
-use Prooph\EventStoreClient\EventStoreAsyncNodeConnection;
+use Prooph\EventStoreClient\Internal\EventStoreAsyncNodeConnection;
 use Throwable;
 
 class ClientErrorEventArgs implements EventArgs

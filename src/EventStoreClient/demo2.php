@@ -14,9 +14,9 @@ require __DIR__ . '/../../vendor/autoload.php';
 $settings = ConnectionSettings::default();
 
 $endPointDiscoverer = new StaticEndPointDiscoverer($settings->endPoint(), $settings->useSslConnection());
-$connection = new EventStoreAsyncNodeConnection($settings, $endPointDiscoverer, 'test');
+$connection = new Internal\EventStoreAsyncNodeConnection($settings, $endPointDiscoverer, 'test');
 
-$connection = new EventStoreNodeConnection($connection);
+$connection = new Internal\EventStoreNodeConnection($connection);
 
 $connection->whenConnected(function (): void {
     echo 'connected' . PHP_EOL;
