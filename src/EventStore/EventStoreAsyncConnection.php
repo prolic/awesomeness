@@ -6,12 +6,11 @@ namespace Prooph\EventStore;
 
 use Amp\Promise;
 use Prooph\EventStore\Data\EventData;
-use Prooph\EventStore\Data\ExpectedVersion;
 use Prooph\EventStore\Data\Position;
 use Prooph\EventStore\Data\StreamMetadata;
 use Prooph\EventStore\Data\SystemSettings;
 use Prooph\EventStore\Data\UserCredentials;
-use Prooph\EventStoreClient\Event\ListenerHandler;
+use Prooph\EventStore\Internal\Event\ListenerHandler;
 
 interface EventStoreAsyncConnection
 {

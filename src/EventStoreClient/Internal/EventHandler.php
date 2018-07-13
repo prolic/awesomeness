@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Prooph\EventStoreClient;
+namespace Prooph\EventStoreClient\Internal;
 
-use Prooph\EventStoreClient\Event\ClientAuthenticationFailedEventArgs;
-use Prooph\EventStoreClient\Event\ClientClosedEventArgs;
-use Prooph\EventStoreClient\Event\ClientConnectionEventArgs;
-use Prooph\EventStoreClient\Event\ClientErrorEventArgs;
-use Prooph\EventStoreClient\Event\ClientReconnectingEventArgs;
-use Prooph\EventStoreClient\Event\ListenerHandler;
+use Prooph\EventStore\Internal\Event\ClientAuthenticationFailedEventArgs;
+use Prooph\EventStore\Internal\Event\ClientClosedEventArgs;
+use Prooph\EventStore\Internal\Event\ClientConnectionEventArgs;
+use Prooph\EventStore\Internal\Event\ClientErrorEventArgs;
+use Prooph\EventStore\Internal\Event\ClientReconnectingEventArgs;
+use Prooph\EventStore\Internal\Event\ListenerHandler;
 use SplObjectStorage;
 
 class EventHandler

@@ -26,7 +26,7 @@ use Prooph\EventStore\EventStorePersistentSubscription;
 use Prooph\EventStore\Exception\OutOfRangeException;
 use Prooph\EventStore\Exception\UnexpectedValueException;
 use Prooph\EventStore\Internal\Consts;
-use Prooph\EventStoreClient\Event\ListenerHandler;
+use Prooph\EventStore\Internal\Event\ListenerHandler;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 use Prooph\EventStoreClient\Exception\InvalidOperationException;
 use Prooph\EventStoreClient\Exception\MaxQueueSizeLimitReachedException;

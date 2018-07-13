@@ -24,7 +24,7 @@ use Prooph\EventStore\Internal\Data\PersistentSubscriptionCreateResult;
 use Prooph\EventStore\Internal\Data\PersistentSubscriptionDeleteResult;
 use Prooph\EventStore\Internal\Data\PersistentSubscriptionUpdateResult;
 use Prooph\EventStore\Internal\Data\ReplayParkedResult;
-use Prooph\EventStoreClient\Event\ListenerHandler;
+use Prooph\EventStore\Internal\Event\ListenerHandler;
 
 final class EventStoreConnection implements
     Connection,
