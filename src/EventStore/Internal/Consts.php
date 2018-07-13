@@ -21,4 +21,8 @@ class Consts
     public const DefaultClusterManagerExternalHttpPort = 30778;
     public const CatchUpDefaultReadBatchSize = 500;
     public const CatchUpDefaultMaxPushQueueSize = 10000;
+
+    public const TcpPortDefault = 1113;
+    public const SecureTcpPortDefault = 0;
+    public const HttpPortDefault = 2113;
 }

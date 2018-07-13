@@ -32,8 +32,8 @@ class ConnectionSettings
     private $defaultUserCredentials;
     /** @var bool */
     private $useSslConnection;
-    /** @var string|null */
-    private $targetHost;
+    /** @var string */
+    private $targetHost = '';
     /** @var bool */
     private $validateServer;
     /** @var bool */
@@ -57,8 +57,35 @@ class ConnectionSettings
     /** @var int */
     private $clientConnectionTimeout;
 
-    public function __construct(int $maxQueueSize, int $maxConcurrentItems, int $maxRetries, int $maxReconnections, bool $requireMaster, int $reconnectionDelay, int $operationTimeout, int $operationTimeoutCheckPeriod, ?UserCredentials $defaultUserCredentials, bool $useSslConnection, ?string $targetHost, bool $validateServer, bool $failOnNoServerResponse, int $heartbeatInterval, int $heartbeatTimeout, string $clusterDns, int $maxDiscoverAttempts, int $externalGossipPort, array $gossipSeeds, int $gossipTimeout, bool $preferRandomNode, int $clientConnectionTimeout)
+    public static function default(): self
     {
+        return (new ConnectionSettingsBuilder())->build();
+    }
+
+    public function __construct(
+        int $maxQueueSize,
+        int $maxConcurrentItems,
+        int $maxRetries,
+        int $maxReconnections,
+        bool $requireMaster,
+        int $reconnectionDelay,
+        int $operationTimeout,
+        int $operationTimeoutCheckPeriod,
+        ?UserCredentials $defaultUserCredentials,
+        bool $useSslConnection,
+        string $targetHost,
+        bool $validateServer,
+        bool $failOnNoServerResponse,
+        int $heartbeatInterval,
+        int $heartbeatTimeout,
+        string $clusterDns,
+        int $maxDiscoverAttempts,
+        int $externalGossipPort,
+        array $gossipSeeds,
+        int $gossipTimeout,
+        bool $preferRandomNode,
+        int $clientConnectionTimeout
+    ) {
         if ($heartbeatInterval >= 5000) {
             throw new InvalidArgumentException('Heartbeat interval must be less then 5000ms');
         }
@@ -137,7 +164,7 @@ class ConnectionSettings
         return $this->useSslConnection;
     }
 
-    public function targetHost(): ?string
+    public function targetHost(): string
     {
         return $this->targetHost;
     }

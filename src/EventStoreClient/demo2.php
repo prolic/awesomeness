@@ -7,16 +7,13 @@ namespace Prooph\EventStoreClient;
 use Prooph\EventStore\Data\EventData;
 use Prooph\EventStore\Data\EventId;
 use Prooph\EventStore\Data\ExpectedVersion;
-use Prooph\EventStoreClient\Internal\StaticEndPointDiscoverer;
+use Prooph\EventStore\IpEndPoint;
 
 require __DIR__ . '/../../vendor/autoload.php';
 
-$settings = ConnectionSettings::default();
-
-$endPointDiscoverer = new StaticEndPointDiscoverer($settings->endPoint(), $settings->useSslConnection());
-$connection = new Internal\EventStoreAsyncNodeConnection($settings, $endPointDiscoverer, 'test');
-
-$connection = new Internal\EventStoreNodeConnection($connection);
+$connection = EventStoreNodeConnection::createFromIpEndPoint(
+    new IpEndPoint('localhost', 1113)
+);
 
 $connection->whenConnected(function (): void {
     echo 'connected' . PHP_EOL;

@@ -19,7 +19,7 @@ class ConnectionSettingsBuilder
     /** @var int */
     private $maxConcurrentItems = Consts::DefaultMaxConcurrentItems;
     /** @var int */
-    private $maxRetries = Const::DefaultMaxOperationRetries;
+    private $maxRetries = Consts::DefaultMaxOperationRetries;
     /** @var int */
     private $maxReconnections = Consts::DefaultMaxReconnections;
     /** @var bool */
@@ -39,7 +39,7 @@ class ConnectionSettingsBuilder
     /** @var bool */
     private $validateServer = false;
     /** @var bool */
-    private $failOnNoServerResponse;
+    private $failOnNoServerResponse = true;
     /** @var int */
     private $heartbeatInterval = 750;
     /** @var int */
@@ -58,7 +58,7 @@ class ConnectionSettingsBuilder
     private $gossipSeeds = [];
     /** @var bool */
     private $preferRandomNode = false;
-    
+
     public function limitOperationsQueueTo(int $limit): self
     {
         if ($limit < 0) {
@@ -69,29 +69,29 @@ class ConnectionSettingsBuilder
 
         return $this;
     }
-    
+
     public function limitConcurrentOperationsTo(int $limit): self
     {
         if ($limit < 0) {
             throw new InvalidArgumentException('limit must be positive');
         }
-        
+
         $this->maxConcurrentItems = $limit;
-        
+
         return $this;
     }
-    
+
     public function limitAttemptsForOperationTo(int $limit): self
     {
         if ($limit < 0) {
             throw new InvalidArgumentException('limit must be positive');
         }
-        
+
         $this->maxRetries = $limit - 1;
 
         return $this;
     }
-    
+
     public function limitRetriesForOperationTo(int $limit): self
     {
         if ($limit < 0) {
@@ -102,14 +102,14 @@ class ConnectionSettingsBuilder
 
         return $this;
     }
-    
+
     public function keepRetrying(): self
     {
         $this->maxRetries = -1;
 
         return $this;
     }
-    
+
     public function limitReconnectionsTo(int $limit): self
     {
         if ($limit < 0) {
@@ -120,28 +120,28 @@ class ConnectionSettingsBuilder
 
         return $this;
     }
-    
+
     public function keepReconnecting(): self
     {
         $this->maxReconnections = -1;
-        
+
         return $this;
     }
-    
+
     public function performOnMasterOnly(): self
     {
         $this->requireMaster = true;
-        
+
         return $this;
     }
-    
+
     public function performOnAnyNode(): self
     {
         $this->requireMaster = false;
-        
+
         return $this;
     }
-    
+
     public function setReconnectionDelayTo(int $reconnectionDelay): self
     {
         if ($reconnectionDelay < 0) {
@@ -149,10 +149,10 @@ class ConnectionSettingsBuilder
         }
 
         $this->reconnectionDelay = $reconnectionDelay;
-        
+
         return $this;
     }
-    
+
     public function setOperationTimeoutTo(int $operationTimeout): self
     {
         if ($operationTimeout < 0) {
@@ -160,10 +160,10 @@ class ConnectionSettingsBuilder
         }
 
         $this->operationTimeout = $operationTimeout;
-        
+
         return $this;
     }
-    
+
     public function setTimeoutCheckPeriodTo(int $timeoutCheckPeriod): self
     {
         if ($timeoutCheckPeriod < 0) {
@@ -171,37 +171,37 @@ class ConnectionSettingsBuilder
         }
 
         $this->operationTimeoutCheckPeriod = $timeoutCheckPeriod;
-        
+
         return $this;
     }
-    
+
     public function setDefaultUserCredentials(UserCredentials $userCredentials): self
     {
         $this->defaultUserCredentials = $userCredentials;
-        
+
         return $this;
     }
-    
+
     public function useSslConnection(string $targetHost, bool $validateServer): self
     {
         if (empty($targetHost)) {
             throw new InvalidArgumentException('Target host required');
         }
-        
+
         $this->useSslConnection = true;
         $this->targetHost = $targetHost;
         $this->validateServer = $validateServer;
-        
+
         return $this;
     }
-    
+
     public function failOnNoServerResponse(): self
     {
         $this->failOnNoServerResponse = true;
-        
+
         return $this;
     }
-    
+
     public function setHeartbeatInterval(int $interval): self
     {
         if ($interval < 0) {
@@ -209,10 +209,10 @@ class ConnectionSettingsBuilder
         }
 
         $this->heartbeatInterval = $interval;
-        
+
         return $this;
     }
-    
+
     public function setHeartbeatTimeout(int $timeout): self
     {
         if ($timeout < 0) {
@@ -223,7 +223,7 @@ class ConnectionSettingsBuilder
 
         return $this;
     }
-    
+
     public function withConnectionTimeoutOf(int $timeout): self
     {
         if ($timeout < 0) {
@@ -231,10 +231,10 @@ class ConnectionSettingsBuilder
         }
 
         $this->clientConnectionTimeout = $timeout;
-        
+
         return $this;
     }
-    
+
     public function setClusterDns(string $clusterDns): self
     {
         if (empty($clusterDns)) {
@@ -242,10 +242,10 @@ class ConnectionSettingsBuilder
         }
 
         $this->clusterDns = $clusterDns;
-        
+
         return $this;
     }
-    
+
     public function setMaxDiscoverAttempts(int $maxDiscoverAttempts): self
     {
         if ($maxDiscoverAttempts <= 0) {
@@ -253,10 +253,10 @@ class ConnectionSettingsBuilder
         }
 
         $this->maxDiscoverAttempts = $maxDiscoverAttempts;
-        
+
         return $this;
     }
-    
+
     public function setGossipTimeout(int $timeout): self
     {
         if ($timeout < 0) {
@@ -264,17 +264,17 @@ class ConnectionSettingsBuilder
         }
 
         $this->gossipTimeout = $timeout;
-        
+
         return $this;
     }
-    
+
     public function preferRandomNode(): self
     {
         $this->preferRandomNode = true;
-        
+
         return $this;
     }
-    
+
     public function setClusterGossipPort(int $clusterGossipPort): self
     {
         if ($clusterGossipPort < 1) {
@@ -282,28 +282,28 @@ class ConnectionSettingsBuilder
         }
 
         $this->gossipExternalHttpPort = $clusterGossipPort;
-        
+
         return $this;
     }
-    
+
     /** @param IpEndPoint[] */
     public function setGossipSeedEndPoints(array $gossipSeeds): self
     {
         if (empty($gossipSeeds)) {
             throw new InvalidArgumentException('Empty FakeDnsEntries collection');
         }
-        
+
         foreach ($gossipSeeds as $seed) {
             if (! $seed instanceof IpEndPoint) {
                 throw new InvalidArgumentException('Gossip seeds must be an array of ' . IpEndPoint::class);
             }
-            
+
             $this->gossipSeeds[] = new GossipSeed($seed);
         }
-        
+
         return $this;
     }
-    
+
     /** @param GossipSeed[] */
     public function setGossipSeeds(array $gossipSeeds): self
     {
@@ -322,11 +322,6 @@ class ConnectionSettingsBuilder
         return $this;
     }
 
-    public static function connectionSettings(): ConnectionSettings
-    {
-        return (new self())->build();
-    }
-    
     public function build(): ConnectionSettings
     {
         return new ConnectionSettings(
