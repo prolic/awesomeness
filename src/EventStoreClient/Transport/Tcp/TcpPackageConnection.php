@@ -150,7 +150,7 @@ class TcpPackageConnection
 
     private function encode(TcpPackage $package): string
     {
-        $messageLength = TcpOffset::HeaderLenth;
+        $messageLength = TcpOffset::HeaderLength;
 
         $credentials = $package->credentials();
         $doAuthorization = $credentials ? true : false;

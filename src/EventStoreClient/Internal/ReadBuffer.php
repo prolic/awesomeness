@@ -7,9 +7,10 @@ namespace Prooph\EventStoreClient\Internal;
 use Amp\Loop;
 use Amp\Socket\ClientSocket;
 use Generator;
+use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Transport\Tcp\TcpCommand;
 use Prooph\EventStore\Transport\Tcp\TcpFlags;
-use Prooph\EventStore\Transport\Tcp\TcpOffset;
+use Prooph\EventStore\Transport\Tcp\TcpPackage;
 use Prooph\EventStore\Transport\Tcp\TcpPackageFactory;
 use Prooph\EventStoreClient\Internal\ByteBuffer\Buffer;
 
@@ -50,7 +51,7 @@ class ReadBuffer
 
             $buffer = Buffer::fromString($value);
             $dataLength = \strlen($value);
-            $messageLength = $buffer->readInt32LE(0) + TcpOffset::Int32Length;
+            $messageLength = $buffer->readInt32LE(0) + 4; // 4 = size of int32LE
 
             if ($dataLength === $messageLength) {
                 $this->handleMessage($value);
@@ -72,16 +73,40 @@ class ReadBuffer
     {
         $buffer = Buffer::fromString($message);
 
-        // Information about how long the message is to help decode it. (comes from the server)
-        // $messageLength = (whole stream length) - (4 bytes for saved length).
         $messageLength = $buffer->readInt32LE(0);
 
-        $command = TcpCommand::fromValue($buffer->readInt8(TcpOffset::MessageTypeOffset));
-        $flags = TcpFlags::fromValue($buffer->readInt8(TcpOffset::FlagOffset));
-        $correlationId = \bin2hex($buffer->read(TcpOffset::CorrelationIdOffset, TcpOffset::CorrelationIdLength));
-        $data = $buffer->read(TcpOffset::DataOffset, $messageLength - TcpOffset::HeaderLenth);
+        $command = TcpCommand::fromValue($buffer->readInt8(TcpPackage::DataOffset));
+        $flags = TcpFlags::fromValue($buffer->readInt8(TcpPackage::DataOffset + TcpPackage::FlagsOffset));
+        $correlationId = \bin2hex($buffer->read(TcpPackage::DataOffset + TcpPackage::CorrelationOffset, TcpPackage::AuthOffset - TcpPackage::CorrelationOffset));
+        $headerSize = TcpPackage::MandatorySize;
+        $credentials = null;
 
-        $package = $this->tcpPackageFactory->build($command, $flags, $correlationId, $data);
+        if ($flags->equals(TcpFlags::authenticated())) {
+            $loginLength = 4 + TcpPackage::AuthOffset;
+
+            if (TcpPackage::AuthOffset + 1 + $loginLength + 1 >= $messageLength) {
+                throw new \Exception('Login length is too big, it does not fit into TcpPackage');
+            }
+
+            $login = $buffer->read(TcpPackage::DataOffset + TcpPackage::AuthOffset + 1, $loginLength);
+
+            $passwordLength = TcpPackage::DataOffset + TcpPackage::AuthOffset + 1 + $loginLength;
+
+            if (TcpPackage::AuthOffset + 1 + $loginLength + 1 + $passwordLength > $messageLength) {
+                throw new \Exception('Password length is too big, it does not fit into TcpPackage');
+            }
+
+            $password = $buffer->read($passwordLength + 1, $passwordLength);
+
+            $headerSize += 1 + $loginLength + 1 + $passwordLength;
+
+            \var_dump($login, $password); // @todo debug this
+            $credentials = new UserCredentials($login, $password);
+        }
+
+        $data = $buffer->read(TcpPackage::DataOffset + $headerSize, $messageLength - $headerSize);
+
+        $package = $this->tcpPackageFactory->build($command, $flags, $correlationId, $data, $credentials);
 
         ($this->messageHandler)($package);
     }

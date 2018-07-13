@@ -10,6 +10,7 @@ use Prooph\EventStore\Data\UserCredentials;
 class TcpPackage
 {
     public const CommandOffset = 0;
+    public const DataOffset = 4;
     public const FlagsOffset = self::CommandOffset + 1;
     public const CorrelationOffset = self::FlagsOffset + 1;
     public const AuthOffset = self::CorrelationOffset + 16;

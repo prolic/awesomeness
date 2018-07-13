@@ -62,15 +62,27 @@ class OperationsManager
         $closedConnectionException = ConnectionClosedException::withName($this->connectionName);
 
         foreach ($this->activeOperations as $operationItem) {
-            $operationItem->operation()->fail($closedConnectionException);
+            try {
+                $operationItem->operation()->fail($closedConnectionException);
+            } catch (\Error $e) {
+                // ignore, promise was already resolved
+            }
         }
 
         foreach ($this->waitingOperations as $operationItem) {
-            $operationItem->operation()->fail($closedConnectionException);
+            try {
+                $operationItem->operation()->fail($closedConnectionException);
+            } catch (\Error $e) {
+                // ignore, promise was already resolved
+            }
         }
 
         foreach ($this->retryPendingOperations as $operationItem) {
-            $operationItem->operation()->fail($closedConnectionException);
+            try {
+                $operationItem->operation()->fail($closedConnectionException);
+            } catch (\Error $e) {
+                // ignore, promise was already resolved
+            }
         }
 
         $this->activeOperations = [];

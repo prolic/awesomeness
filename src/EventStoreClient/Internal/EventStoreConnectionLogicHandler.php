@@ -268,7 +268,7 @@ class EventStoreConnectionLogicHandler
             return;
         }
 
-        if ($this->state->equals(ConnectionState::connecting())
+        if (! $this->state->equals(ConnectionState::connecting())
             || ! $this->connectingPhase->equals(ConnectingPhase::endPointDiscovery())
         ) {
             return;
@@ -328,7 +328,7 @@ class EventStoreConnectionLogicHandler
     }
 
     /** @throws \Exception */
-    public function tcpConnectionClosed(TcpPackageConnection $tcpPackageConnection): void
+    private function tcpConnectionClosed(TcpPackageConnection $tcpPackageConnection): void
     {
         if ($this->state->equals(ConnectionState::init())) {
             throw new \Exception();
@@ -352,7 +352,7 @@ class EventStoreConnectionLogicHandler
         }
     }
 
-    public function tcpConnectionEstablished(TcpPackageConnection $tcpPackageConnection): void
+    private function tcpConnectionEstablished(TcpPackageConnection $tcpPackageConnection): void
     {
         if (! $this->state->equals(ConnectionState::connecting())
             || $this->connection !== $tcpPackageConnection
@@ -610,7 +610,7 @@ class EventStoreConnectionLogicHandler
         if ($operation = $this->operations->getActiveOperation($package->correlationId())) {
             $result = $operation->operation()->inspectPackage($package);
 
-            switch ($result->inspectionDecision()) {
+            switch ($result->inspectionDecision()->value()) {
                 case InspectionDecision::DoNothing:
                     break;
                 case InspectionDecision::EndOperation:
@@ -631,7 +631,7 @@ class EventStoreConnectionLogicHandler
         } elseif ($subscription = $this->subscriptions->tryGetActiveSubscription($package->correlationId())) {
             $result = $subscription->operation()->inspectPackage($package);
 
-            switch ($result->inspectionDecision()) {
+            switch ($result->inspectionDecision()->value()) {
                 case InspectionDecision::DoNothing:
                     break;
                 case InspectionDecision::EndOperation:
