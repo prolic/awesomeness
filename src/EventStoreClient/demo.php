@@ -9,6 +9,7 @@ use Prooph\EventStore\Data\EventData;
 use Prooph\EventStore\Data\EventId;
 use Prooph\EventStore\Data\ExpectedVersion;
 use Prooph\EventStore\Data\Position;
+use Prooph\EventStore\Data\StreamMetadata;
 use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStoreClient\Internal\StaticEndPointDiscoverer;
 
@@ -47,6 +48,16 @@ Loop::run(function () {
     $m = yield $connection->getStreamMetadataAsync('opium2-bar');
 
     \var_dump($m);
+
+    $r = yield $connection->setStreamMetadataAsync('opium2-bar', ExpectedVersion::Any, new StreamMetadata(
+        null, null, null, null, null, [
+            'foo' => 'bar',
+        ]
+    ));
+
+    \var_dump($r);
+
+    $m = yield $connection->getStreamMetadataAsync('opium2-bar');
 
     $wr = yield $connection->appendToStreamAsync('opium2-bar', ExpectedVersion::Any, [
         new EventData(EventId::generate(), 'test-type', false, 'jfkhksdfhsds', 'meta'),

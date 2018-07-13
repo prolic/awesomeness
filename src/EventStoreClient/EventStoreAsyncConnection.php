@@ -6,6 +6,7 @@ namespace Prooph\EventStoreClient;
 
 use Amp\Deferred;
 use Amp\Promise;
+use Prooph\EventStore\Common\SystemEventTypes;
 use Prooph\EventStore\Common\SystemStreams;
 use Prooph\EventStore\Data\EventData;
 use Prooph\EventStore\Data\EventReadResult;
@@ -25,6 +26,7 @@ use Prooph\EventStore\Exception\OutOfRangeException;
 use Prooph\EventStore\Exception\UnexpectedValueException;
 use Prooph\EventStore\Internal\Consts;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
+use Prooph\EventStoreClient\Exception\InvalidOperationException;
 use Prooph\EventStoreClient\Exception\MaxQueueSizeLimitReachedException;
 use Prooph\EventStoreClient\Internal\ClientOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\AppendToStreamOperation;
@@ -282,10 +284,39 @@ final class EventStoreAsyncConnection implements
     public function setStreamMetadataAsync(
         string $stream,
         int $expectedMetaStreamVersion,
-        StreamMetadata $metadata,
+        ?StreamMetadata $metadata,
         UserCredentials $userCredentials = null
     ): Promise {
-        // TODO: Implement setStreamMetadataAsync() method.
+        if (empty($stream)) {
+            throw new InvalidArgumentException('Stream cannot be empty');
+        }
+
+        if (SystemStreams::isMetastream($stream)) {
+            throw new InvalidOperationException(\sprintf(
+                'Setting metadata for metastream \'%s\' is not supported',
+                $stream
+            ));
+        }
+
+        $deferred = new Deferred();
+
+        $metaEvent = new EventData(
+            null,
+            SystemEventTypes::StreamMetadata,
+            true,
+            $metadata ? \json_encode($metadata->toArray()) : null
+        );
+
+        $this->enqueueOperation(new AppendToStreamOperation(
+            $deferred,
+            $this->settings->requireMaster(),
+            SystemStreams::metastreamOf($stream),
+            $expectedMetaStreamVersion,
+            [$metaEvent],
+            $userCredentials
+        ));
+
+        return $deferred->promise();
     }
 
     public function getStreamMetadataAsync(string $stream, UserCredentials $userCredentials = null): Promise
