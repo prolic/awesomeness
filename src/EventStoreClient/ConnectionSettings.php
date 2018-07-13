@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Prooph\EventStoreClient;
 
 use Prooph\EventStore\Data\UserCredentials;
-use Prooph\EventStore\Internal\Consts;
-use Prooph\EventStore\IpEndPoint;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 
 /**
@@ -14,115 +12,79 @@ use Prooph\EventStoreClient\Exception\InvalidArgumentException;
  */
 class ConnectionSettings
 {
-    /** @var IpEndPoint */
-    private $endPoint;
-    /** @var bool */
-    private $isCluster;
-    /** @var bool */
-    private $useSslConnection;
     /** @var int */
     private $maxQueueSize;
     /** @var int */
     private $maxConcurrentItems;
-    /** @var bool */
-    private $requireMaster;
-    /** @var UserCredentials|null */
-    private $defaultUserCredentials;
-    /** @var int */
-    private $operationTimeout;
-    /** @var int */
-    private $operationTimeoutCheckPeriod;
     /** @var int */
     private $maxRetries;
     /** @var int */
     private $maxReconnections;
+    /** @var bool */
+    private $requireMaster;
+    /** @var int */
+    private $reconnectionDelay;
+    /** @var int */
+    private $operationTimeout;
+    /** @var int */
+    private $operationTimeoutCheckPeriod;
+    /** @var UserCredentials|null */
+    private $defaultUserCredentials;
+    /** @var bool */
+    private $useSslConnection;
+    /** @var string|null */
+    private $targetHost;
+    /** @var bool */
+    private $validateServer;
+    /** @var bool */
+    private $failOnNoServerResponse;
     /** @var int */
     private $heartbeatInterval;
     /** @var int */
     private $heartbeatTimeout;
+    /** @var string */
+    private $clusterDns;
     /** @var int */
-    private $reconnectionDelay;
+    private $maxDiscoverAttempts;
+    /** @var int */
+    private $externalGossipPort;
+    /** @var GossipSeed[] */
+    private $gossipSeeds;
+    /** @var int */
+    private $gossipTimeout;
     /** @var bool */
-    private $failOnNoServerResponse;
+    private $preferRandomNode;
+    /** @var int */
+    private $clientConnectionTimeout;
 
-    // @todo: add ConnectionSettingsBuilder class
-    public static function default(): ConnectionSettings
+    public function __construct(int $maxQueueSize, int $maxConcurrentItems, int $maxRetries, int $maxReconnections, bool $requireMaster, int $reconnectionDelay, int $operationTimeout, int $operationTimeoutCheckPeriod, ?UserCredentials $defaultUserCredentials, bool $useSslConnection, ?string $targetHost, bool $validateServer, bool $failOnNoServerResponse, int $heartbeatInterval, int $heartbeatTimeout, string $clusterDns, int $maxDiscoverAttempts, int $externalGossipPort, array $gossipSeeds, int $gossipTimeout, bool $preferRandomNode, int $clientConnectionTimeout)
     {
-        return new self(
-            new IpEndPoint('localhost', 1113),
-            false,
-            false,
-            Consts::DefaultMaxQueueSize,
-            Consts::DefaultMaxConcurrentItems,
-            Consts::DefaultRequireMaster,
-            Consts::DefaultOperationTimeout,
-            Consts::DefaultOperationTimeoutCheckPeriod,
-            Consts::DefaultMaxOperationRetries,
-            Consts::DefaultMaxReconnections,
-            2500,
-            1500,
-            Consts::DefaultReconnectionDelay,
-            true,
-            null
-        );
-    }
-
-    public function __construct(
-        IpEndPoint $endpoint,
-        bool $isCluster,
-        bool $useSslConnection,
-        int $maxQueueSize,
-        int $maxConcurrentItems,
-        bool $requireMaster,
-        int $operationTimeout,
-        int $operationTimeoutCheckPeriod,
-        int $maxRetries,
-        int $maxReconnections,
-        int $heartbeatInterval,
-        int $heartbeatTimeout,
-        int $reconnectionDelay,
-        bool $failOnNoServerResponse,
-        UserCredentials $defaultUserCredentials = null
-    ) {
         if ($heartbeatInterval >= 5000) {
             throw new InvalidArgumentException('Heartbeat interval must be less then 5000ms');
         }
 
-        $this->endPoint = $endpoint;
-        $this->isCluster = $isCluster;
-        $this->useSslConnection = $useSslConnection;
         $this->maxQueueSize = $maxQueueSize;
         $this->maxConcurrentItems = $maxConcurrentItems;
-        $this->requireMaster = $requireMaster;
-        $this->operationTimeout = $operationTimeout;
-        $this->operationTimeoutCheckPeriod = $operationTimeoutCheckPeriod;
         $this->maxRetries = $maxRetries;
         $this->maxReconnections = $maxReconnections;
+        $this->requireMaster = $requireMaster;
+        $this->reconnectionDelay = $reconnectionDelay;
+        $this->operationTimeout = $operationTimeout;
+        $this->operationTimeoutCheckPeriod = $operationTimeoutCheckPeriod;
+        $this->defaultUserCredentials = $defaultUserCredentials;
+        $this->useSslConnection = $useSslConnection;
+        $this->targetHost = $targetHost;
+        $this->validateServer = $validateServer;
+        $this->failOnNoServerResponse = $failOnNoServerResponse;
         $this->heartbeatInterval = $heartbeatInterval;
         $this->heartbeatTimeout = $heartbeatTimeout;
-        $this->reconnectionDelay = $reconnectionDelay;
-        $this->failOnNoServerResponse = $failOnNoServerResponse;
-        $this->defaultUserCredentials = $defaultUserCredentials;
-    }
-
-    public function defaultUserCredentials(): ?UserCredentials
-    {
-        return $this->defaultUserCredentials;
-    }
-
-    public function useSslConnection(): bool
-    {
-        return $this->useSslConnection;
-    }
-
-    public function endPoint(): IpEndPoint
-    {
-        return $this->endPoint;
-    }
-
-    public function isCluster(): bool
-    {
-        return $this->isCluster;
+        $this->clusterDns = $clusterDns;
+        $this->maxDiscoverAttempts = $maxDiscoverAttempts;
+        $this->externalGossipPort = $externalGossipPort;
+        $this->gossipSeeds = $gossipSeeds;
+        $this->gossipTimeout = $gossipTimeout;
+        $this->preferRandomNode = $preferRandomNode;
+        $this->clientConnectionTimeout = $clientConnectionTimeout;
     }
 
     public function maxQueueSize(): int
@@ -135,9 +97,24 @@ class ConnectionSettings
         return $this->maxConcurrentItems;
     }
 
+    public function maxRetries(): int
+    {
+        return $this->maxRetries;
+    }
+
+    public function maxReconnections(): int
+    {
+        return $this->maxReconnections;
+    }
+
     public function requireMaster(): bool
     {
         return $this->requireMaster;
+    }
+
+    public function reconnectionDelay(): int
+    {
+        return $this->reconnectionDelay;
     }
 
     public function operationTimeout(): int
@@ -150,14 +127,29 @@ class ConnectionSettings
         return $this->operationTimeoutCheckPeriod;
     }
 
-    public function maxRetries(): int
+    public function defaultUserCredentials(): ?UserCredentials
     {
-        return $this->maxRetries;
+        return $this->defaultUserCredentials;
     }
 
-    public function maxReconnections(): int
+    public function useSslConnection(): bool
     {
-        return $this->maxReconnections;
+        return $this->useSslConnection;
+    }
+
+    public function targetHost(): ?string
+    {
+        return $this->targetHost;
+    }
+
+    public function validateServer(): bool
+    {
+        return $this->validateServer;
+    }
+
+    public function failOnNoServerResponse(): bool
+    {
+        return $this->failOnNoServerResponse;
     }
 
     public function heartbeatInterval(): int
@@ -170,24 +162,38 @@ class ConnectionSettings
         return $this->heartbeatTimeout;
     }
 
-    public function reconnectionDelay(): int
+    public function clusterDns(): string
     {
-        return $this->reconnectionDelay;
+        return $this->clusterDns;
     }
 
-    public function failOnNoServerResponse(): bool
+    public function maxDiscoverAttempts(): int
     {
-        return $this->failOnNoServerResponse;
+        return $this->maxDiscoverAttempts;
     }
 
-    public function uri(): string
+    public function externalGossipPort(): int
     {
-        if ($this->isCluster) {
-            $format = 'discover://%s:%s';
-        } else {
-            $format = 'tcp://%s:%s';
-        }
+        return $this->externalGossipPort;
+    }
 
-        return \sprintf($format, $this->endPoint->host(), $this->endPoint->port());
+    public function gossipSeeds(): array
+    {
+        return $this->gossipSeeds;
+    }
+
+    public function gossipTimeout(): int
+    {
+        return $this->gossipTimeout;
+    }
+
+    public function preferRandomNode(): bool
+    {
+        return $this->preferRandomNode;
+    }
+
+    public function clientConnectionTimeout(): int
+    {
+        return $this->clientConnectionTimeout;
     }
 }

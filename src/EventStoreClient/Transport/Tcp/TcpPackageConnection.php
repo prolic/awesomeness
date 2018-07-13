@@ -26,7 +26,7 @@ use function Amp\Socket\connect;
 /** @internal */
 class TcpPackageConnection
 {
-    private const ClientConnectionTimeout = 1000; // milliseconds
+    private const ClientConnectionTimeout = 1000; // milliseconds // @todo read from settings
 
     /** @var IpEndPoint */
     private $remoteEndPoint;
