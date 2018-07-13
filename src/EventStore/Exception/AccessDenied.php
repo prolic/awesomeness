@@ -14,6 +14,14 @@ class AccessDenied extends RuntimeException
         ));
     }
 
+    public static function toAllStream(): AccessDenied
+    {
+        return new self(\sprintf(
+            'Access to stream \'%s\' is denied',
+            '$all'
+        ));
+    }
+
     public static function toStream(string $stream): AccessDenied
     {
         return new self(\sprintf(

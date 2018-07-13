@@ -55,6 +55,16 @@ class Position
         return new Position($commitPosition, $preparePosition);
     }
 
+    public function commitPosition(): int
+    {
+        return $this->commitPosition;
+    }
+
+    public function preparePosition(): int
+    {
+        return $this->preparePosition;
+    }
+
     public function asString(): string
     {
         return \substr('000000000000000' . \dechex($this->commitPosition), -16)

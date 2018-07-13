@@ -8,6 +8,8 @@ use Amp\Loop;
 use Prooph\EventStore\Data\EventData;
 use Prooph\EventStore\Data\EventId;
 use Prooph\EventStore\Data\ExpectedVersion;
+use Prooph\EventStore\Data\Position;
+use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStoreClient\Internal\StaticEndPointDiscoverer;
 
 require __DIR__ . '/../../vendor/autoload.php';
@@ -54,6 +56,20 @@ Loop::run(function () {
     ]);
 
     \var_dump($wr);
+
+    $ae = yield $connection->readAllEventsForward(Position::start(), 2, false, new UserCredentials(
+        'admin',
+        'changeit'
+    ));
+
+    \var_dump($ae);
+
+    $aeb = yield $connection->readAllEventsBackward(Position::end(), 2, false, new UserCredentials(
+        'admin',
+        'changeit'
+    ));
+
+    \var_dump($aeb);
 
     $connection->close();
 

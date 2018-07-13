@@ -29,6 +29,8 @@ use Prooph\EventStoreClient\Exception\MaxQueueSizeLimitReachedException;
 use Prooph\EventStoreClient\Internal\ClientOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\AppendToStreamOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\DeleteStreamOperation;
+use Prooph\EventStoreClient\Internal\ClientOperations\ReadAllEventsBackwardOperation;
+use Prooph\EventStoreClient\Internal\ClientOperations\ReadAllEventsForwardOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\ReadEventOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\ReadStreamEventsBackwardOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\ReadStreamEventsForwardOperation;
@@ -229,7 +231,25 @@ final class EventStoreAsyncConnection implements
         bool $resolveLinkTos = true,
         UserCredentials $userCredentials = null
     ): Promise {
-        // TODO: Implement readAllEventsForward() method.
+        if ($count > Consts::MaxReadSize) {
+            throw new InvalidArgumentException(\sprintf(
+                'Count should be less than %s. For larger reads you should page.',
+                Consts::MaxReadSize
+            ));
+        }
+
+        $deferred = new Deferred();
+
+        $this->enqueueOperation(new ReadAllEventsForwardOperation(
+            $deferred,
+            $this->settings->requireMaster(),
+            $position,
+            $count,
+            $resolveLinkTos,
+            $userCredentials
+        ));
+
+        return $deferred->promise();
     }
 
     public function readAllEventsBackward(
@@ -238,7 +258,25 @@ final class EventStoreAsyncConnection implements
         bool $resolveLinkTos = true,
         UserCredentials $userCredentials = null
     ): Promise {
-        // TODO: Implement readAllEventsBackward() method.
+        if ($count > Consts::MaxReadSize) {
+            throw new InvalidArgumentException(\sprintf(
+                'Count should be less than %s. For larger reads you should page.',
+                Consts::MaxReadSize
+            ));
+        }
+
+        $deferred = new Deferred();
+
+        $this->enqueueOperation(new ReadAllEventsBackwardOperation(
+            $deferred,
+            $this->settings->requireMaster(),
+            $position,
+            $count,
+            $resolveLinkTos,
+            $userCredentials
+        ));
+
+        return $deferred->promise();
     }
 
     public function setStreamMetadataAsync(
