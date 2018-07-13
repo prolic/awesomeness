@@ -55,9 +55,11 @@ Loop::run(function () {
         ]
     ));
 
-    \var_dump($r);
+    var_dump($r);
 
     $m = yield $connection->getStreamMetadataAsync('opium2-bar');
+
+    \var_dump($m);
 
     $wr = yield $connection->appendToStreamAsync('opium2-bar', ExpectedVersion::Any, [
         new EventData(EventId::generate(), 'test-type', false, 'jfkhksdfhsds', 'meta'),
