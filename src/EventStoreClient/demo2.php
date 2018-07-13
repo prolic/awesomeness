@@ -18,9 +18,15 @@ $connection = new EventStoreAsyncConnection($settings, $endPointDiscoverer, 'tes
 
 $connection = new EventStoreConnection($connection);
 
-$connection->connect();
+$connection->whenConnected(function (): void {
+    echo 'connected' . PHP_EOL;
+});
 
-echo 'connected' . PHP_EOL;
+$connection->whenClosed(function (): void {
+    echo 'connection closed' . PHP_EOL;
+});
+
+$connection->connect();
 
 $slice = $connection->readStreamEventsForward(
     'opium2-bar',
@@ -56,5 +62,3 @@ $wr = $connection->appendToStream('opium2-bar', ExpectedVersion::Any, [
 \var_dump($wr);
 
 $connection->close();
-
-echo 'connection closed' . PHP_EOL;

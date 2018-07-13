@@ -24,6 +24,7 @@ use Prooph\EventStore\Internal\Data\PersistentSubscriptionCreateResult;
 use Prooph\EventStore\Internal\Data\PersistentSubscriptionDeleteResult;
 use Prooph\EventStore\Internal\Data\PersistentSubscriptionUpdateResult;
 use Prooph\EventStore\Internal\Data\ReplayParkedResult;
+use Prooph\EventStoreClient\Event\ListenerHandler;
 
 final class EventStoreConnection implements
     Connection,
@@ -305,5 +306,40 @@ final class EventStoreConnection implements
     ): WriteResult {
         // @todo fix async transaction
         return Promise\wait($this->asyncConnection->commitTransactionAsync($transaction, $userCredentials));
+    }
+
+    public function whenConnected(callable $handler): ListenerHandler
+    {
+        return $this->asyncConnection->whenConnected($handler);
+    }
+
+    public function whenDisconnected(callable $handler): ListenerHandler
+    {
+        return $this->asyncConnection->whenDisconnected($handler);
+    }
+
+    public function whenReconnecting(callable $handler): ListenerHandler
+    {
+        return $this->asyncConnection->whenReconnecting($handler);
+    }
+
+    public function whenClosed(callable $handler): ListenerHandler
+    {
+        return $this->asyncConnection->whenClosed($handler);
+    }
+
+    public function whenErrorOccurred(callable $handler): ListenerHandler
+    {
+        return $this->asyncConnection->whenErrorOccurred($handler);
+    }
+
+    public function whenAuthenticationFailed(callable $handler): ListenerHandler
+    {
+        return $this->asyncConnection->whenAuthenticationFailed($handler);
+    }
+
+    public function detach(ListenerHandler $handler): void
+    {
+        $this->asyncConnection->detach($handler);
     }
 }

@@ -6,7 +6,6 @@ namespace Prooph\EventStore;
 
 use Prooph\EventStore\Data\EventData;
 use Prooph\EventStore\Data\EventReadResult;
-use Prooph\EventStore\Data\ExpectedVersion;
 use Prooph\EventStore\Data\Position;
 use Prooph\EventStore\Data\StreamEventsSlice;
 use Prooph\EventStore\Data\StreamMetadata;
@@ -14,6 +13,7 @@ use Prooph\EventStore\Data\StreamMetadataResult;
 use Prooph\EventStore\Data\SystemSettings;
 use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Data\WriteResult;
+use Prooph\EventStoreClient\Event\ListenerHandler;
 
 interface EventStoreConnection
 {
@@ -95,5 +95,17 @@ interface EventStoreConnection
 
     public function setSystemSettings(SystemSettings $settings, UserCredentials $userCredentials = null): WriteResult;
 
-    // @todo event handlers
+    public function whenConnected(callable $handler): ListenerHandler;
+
+    public function whenDisconnected(callable $handler): ListenerHandler;
+
+    public function whenReconnecting(callable $handler): ListenerHandler;
+
+    public function whenClosed(callable $handler): ListenerHandler;
+
+    public function whenErrorOccurred(callable $handler): ListenerHandler;
+
+    public function whenAuthenticationFailed(callable $handler): ListenerHandler;
+
+    public function detach(ListenerHandler $handler): void;
 }
