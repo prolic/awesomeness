@@ -10,7 +10,7 @@ class MaxQueueSizeLimitReachedException extends \RuntimeException implements Exc
     {
         return new self(
             \sprintf(
-                'EventStoreConnection \'%s\': reached max queue size limit: \'%s\'',
+                'EventStoreNodeConnection \'%s\': reached max queue size limit: \'%s\'',
                 $connectionName,
                 $maxQueueSize
             )

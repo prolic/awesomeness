@@ -26,15 +26,15 @@ use Prooph\EventStore\Internal\Data\PersistentSubscriptionUpdateResult;
 use Prooph\EventStore\Internal\Data\ReplayParkedResult;
 use Prooph\EventStore\Internal\Event\ListenerHandler;
 
-final class EventStoreConnection implements
+final class EventStoreNodeConnection implements
     Connection,
     TransactionConnection,
     SubscriptionConnection
 {
-    /** @var EventStoreAsyncConnection */
+    /** @var EventStoreAsyncNodeConnection */
     private $asyncConnection;
 
-    public function __construct(EventStoreAsyncConnection $asyncConnection)
+    public function __construct(EventStoreAsyncNodeConnection $asyncConnection)
     {
         $this->asyncConnection = $asyncConnection;
     }

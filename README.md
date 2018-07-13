@@ -79,8 +79,8 @@ Default login credentials are `admin` with pwd `changeit`.
 
 EventStore
 
-- [x] EventStoreConnection interface
-- [x] EventStoreAsyncConnection interface
+- [x] EventStoreNodeConnection interface
+- [x] EventStoreAsyncNodeConnection interface
 - [x] EventStoreSubscriptionConnection interface
 - [x] EventStoreAsyncSubscriptionConnection interface
 - [x] EventStoreTransactionConnection interface

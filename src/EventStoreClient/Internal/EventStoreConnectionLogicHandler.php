@@ -24,7 +24,7 @@ use Prooph\EventStore\Internal\Event\ClientConnectionEventArgs;
 use Prooph\EventStore\Internal\Event\ClientErrorEventArgs;
 use Prooph\EventStore\Internal\Event\ClientReconnectingEventArgs;
 use Prooph\EventStore\Internal\Event\ListenerHandler;
-use Prooph\EventStoreClient\EventStoreAsyncConnection;
+use Prooph\EventStoreClient\EventStoreAsyncNodeConnection;
 use Prooph\EventStoreClient\Exception\CannotEstablishConnectionException;
 use Prooph\EventStoreClient\Exception\EventStoreConnectionException;
 use Prooph\EventStoreClient\Exception\InvalidOperationException;
@@ -44,7 +44,7 @@ class EventStoreConnectionLogicHandler
 {
     private const ClientVersion = 1;
 
-    /** @var EventStoreAsyncConnection */
+    /** @var EventStoreAsyncNodeConnection */
     private $esConnection;
     /** @var TcpPackageConnection */
     private $connection;
@@ -82,7 +82,7 @@ class EventStoreConnectionLogicHandler
     /** @var int */
     private $lastTimeoutsTimeStamp = 0;
 
-    public function __construct(EventStoreAsyncConnection $connection, ConnectionSettings $settings)
+    public function __construct(EventStoreAsyncNodeConnection $connection, ConnectionSettings $settings)
     {
         $this->esConnection = $connection;
         $this->settings = $settings;
@@ -183,7 +183,7 @@ class EventStoreConnectionLogicHandler
             case ConnectionState::Connecting:
             case ConnectionState::Connected:
                 $deferred->fail(new InvalidOperationException(\sprintf(
-                    'EventStoreConnection \'%s\' is already active',
+                    'EventStoreNodeConnection \'%s\' is already active',
                     $this->esConnection->connectionName()
                 )));
                 break;
@@ -503,7 +503,7 @@ class EventStoreConnectionLogicHandler
             $this->heartbeatInfo = new HeartbeatInfo($this->heartbeatInfo->lastPackageNumber(), false, $elapsed);
         } else {
             $msg = \sprintf(
-                'EventStoreConnection \'%s\': closing TCP connection [%s:%s] due to HEARTBEAT TIMEOUT at pkgNum %s',
+                'EventStoreNodeConnection \'%s\': closing TCP connection [%s:%s] due to HEARTBEAT TIMEOUT at pkgNum %s',
                 $this->esConnection->connectionName(),
                 $this->connection->remoteEndPoint()->host(),
                 $this->connection->remoteEndPoint()->host(),
@@ -520,7 +520,7 @@ class EventStoreConnectionLogicHandler
             case ConnectionState::Init:
                 $operation->fail(new InvalidOperationException(
                     \sprintf(
-                        'EventStoreConnection \'%s\' is not active',
+                        'EventStoreNodeConnection \'%s\' is not active',
                         $this->esConnection->connectionName()
                     )
                 ));
@@ -670,7 +670,7 @@ class EventStoreConnectionLogicHandler
         }
 
         $msg = \sprintf(
-            'EventStoreConnection \'%s\': going to reconnect to [%s]. Current end point: [%s]',
+            'EventStoreNodeConnection \'%s\': going to reconnect to [%s]. Current end point: [%s]',
             $this->esConnection->connectionName(),
             $endPoint->host() . ':' . $endPoint->port(),
             $this->connection->remoteEndPoint()->host() . ':' . $this->connection->remoteEndPoint()->port()

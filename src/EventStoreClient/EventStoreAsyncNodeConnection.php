@@ -44,7 +44,7 @@ use Prooph\EventStoreClient\Internal\Message\CloseConnectionMessage;
 use Prooph\EventStoreClient\Internal\Message\StartConnectionMessage;
 use Prooph\EventStoreClient\Internal\Message\StartOperationMessage;
 
-final class EventStoreAsyncConnection implements
+final class EventStoreAsyncNodeConnection implements
     AsyncConnection,
     AsyncTransactionConnection,
     AsyncSubscriptionConnection

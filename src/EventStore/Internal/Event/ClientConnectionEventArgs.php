@@ -5,22 +5,22 @@ declare(strict_types=1);
 namespace Prooph\EventStore\Internal\Event;
 
 use Prooph\EventStore\IpEndPoint;
-use Prooph\EventStoreClient\EventStoreAsyncConnection;
+use Prooph\EventStoreClient\EventStoreAsyncNodeConnection;
 
 class ClientConnectionEventArgs implements EventArgs
 {
-    /** @var EventStoreAsyncConnection */
+    /** @var EventStoreAsyncNodeConnection */
     private $connection;
     /** @var IpEndPoint */
     private $remoteEndPoint;
 
-    public function __construct(EventStoreAsyncConnection $connection, IpEndPoint $remoteEndPoint)
+    public function __construct(EventStoreAsyncNodeConnection $connection, IpEndPoint $remoteEndPoint)
     {
         $this->connection = $connection;
         $this->remoteEndPoint = $remoteEndPoint;
     }
 
-    public function connection(): EventStoreAsyncConnection
+    public function connection(): EventStoreAsyncNodeConnection
     {
         return $this->connection;
     }

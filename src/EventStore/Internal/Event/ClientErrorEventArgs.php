@@ -4,23 +4,23 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\Internal\Event;
 
-use Prooph\EventStoreClient\EventStoreAsyncConnection;
+use Prooph\EventStoreClient\EventStoreAsyncNodeConnection;
 use Throwable;
 
 class ClientErrorEventArgs implements EventArgs
 {
-    /** @var EventStoreAsyncConnection */
+    /** @var EventStoreAsyncNodeConnection */
     private $connection;
     /** @var Throwable */
     private $exception;
 
-    public function __construct(EventStoreAsyncConnection $connection, Throwable $exception)
+    public function __construct(EventStoreAsyncNodeConnection $connection, Throwable $exception)
     {
         $this->connection = $connection;
         $this->exception = $exception;
     }
 
-    public function connection(): EventStoreAsyncConnection
+    public function connection(): EventStoreAsyncNodeConnection
     {
         return $this->connection;
     }

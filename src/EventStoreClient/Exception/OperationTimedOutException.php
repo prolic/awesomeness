@@ -21,7 +21,7 @@ class OperationTimedOutException extends \RuntimeException implements Exception
     {
         return new self(
             \sprintf(
-                'EventStoreConnection \'%s\': operation never got response from server',
+                'EventStoreNodeConnection \'%s\': operation never got response from server',
                 $connectionName
             ),
             $operation

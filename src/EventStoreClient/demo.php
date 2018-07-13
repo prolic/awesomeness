@@ -19,7 +19,7 @@ Loop::run(function () {
     $settings = ConnectionSettings::default();
 
     $endPointDiscoverer = new StaticEndPointDiscoverer($settings->endPoint(), $settings->useSslConnection());
-    $connection = new EventStoreAsyncConnection($settings, $endPointDiscoverer, 'test');
+    $connection = new EventStoreAsyncNodeConnection($settings, $endPointDiscoverer, 'test');
 
     $connection->whenConnected(function (): void {
         echo 'connected' . PHP_EOL;

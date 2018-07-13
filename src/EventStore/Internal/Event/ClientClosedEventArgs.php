@@ -4,22 +4,22 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\Internal\Event;
 
-use Prooph\EventStoreClient\EventStoreAsyncConnection;
+use Prooph\EventStoreClient\EventStoreAsyncNodeConnection;
 
 class ClientClosedEventArgs implements EventArgs
 {
-    /** @var EventStoreAsyncConnection */
+    /** @var EventStoreAsyncNodeConnection */
     private $connection;
     /** @var string */
     private $reason;
 
-    public function __construct(EventStoreAsyncConnection $connection, string $reason)
+    public function __construct(EventStoreAsyncNodeConnection $connection, string $reason)
     {
         $this->connection = $connection;
         $this->reason = $reason;
     }
 
-    public function connection(): EventStoreAsyncConnection
+    public function connection(): EventStoreAsyncNodeConnection
     {
         return $this->connection;
     }

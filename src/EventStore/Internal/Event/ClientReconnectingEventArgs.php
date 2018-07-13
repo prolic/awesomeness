@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\Internal\Event;
 
-use Prooph\EventStoreClient\EventStoreAsyncConnection;
+use Prooph\EventStoreClient\EventStoreAsyncNodeConnection;
 
 class ClientReconnectingEventArgs implements EventArgs
 {
-    /** @var EventStoreAsyncConnection */
+    /** @var EventStoreAsyncNodeConnection */
     private $connection;
 
-    public function __construct(EventStoreAsyncConnection $connection)
+    public function __construct(EventStoreAsyncNodeConnection $connection)
     {
         $this->connection = $connection;
     }
 
-    public function connection(): EventStoreAsyncConnection
+    public function connection(): EventStoreAsyncNodeConnection
     {
         return $this->connection;
     }
