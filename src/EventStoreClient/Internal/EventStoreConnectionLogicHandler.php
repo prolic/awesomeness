@@ -9,7 +9,6 @@ use Amp\Loop;
 use Generator;
 use Prooph\EventStore\Exception\ConnectionClosedException;
 use Prooph\EventStore\Internal\Consts;
-use Prooph\EventStore\Internal\DateTimeUtil;
 use Prooph\EventStore\Internal\Event\ClientAuthenticationFailedEventArgs;
 use Prooph\EventStore\Internal\Event\ClientClosedEventArgs;
 use Prooph\EventStore\Internal\Event\ClientConnectionEventArgs;
@@ -405,7 +404,7 @@ class EventStoreConnectionLogicHandler
         $dto->setVersion(self::ClientVersion);
         $dto->setConnectionName($this->esConnection->connectionName());
 
-        Loop::defer(function() use ($dto): Generator {
+        Loop::defer(function () use ($dto): Generator {
             yield $this->connection->sendAsync(new TcpPackage(
                 TcpCommand::identifyClient(),
                 TcpFlags::none(),

@@ -11,7 +11,7 @@ use Prooph\EventStore\Internal\Consts;
 use Prooph\EventStore\IpEndPoint;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 use Prooph\EventStoreClient\Internal\EventStoreAsyncNodeConnection;
-use Prooph\EventStoreClient\Internal\EventStoreNodeConnection as SyncNodeConnection;
+use Prooph\EventStoreClient\Internal\EventStoreNodeConnection;
 use Prooph\EventStoreClient\Internal\StaticEndPointDiscoverer;
 
 class EventStoreConnection
@@ -27,6 +27,7 @@ class EventStoreConnection
      */
     private const CHAR_UNRESERVED = 'a-zA-Z0-9_\-\.~\pL';
 
+    /** @throws \Exception */
     public static function createAsyncFromBuilder(
         string $connectionString = null,
         ConnectionSettingsBuilder $builder = null,
@@ -34,9 +35,10 @@ class EventStoreConnection
     ): AsyncConnection {
         $builder = $builder ?? new ConnectionSettingsBuilder();
 
-        return self::createFromSettings($connectionString, $builder->build(), $connectionName);
+        return self::createAsyncFromSettings($connectionString, $builder->build(), $connectionName);
     }
 
+    /** @throws \Exception */
     public static function createAsyncFromSettings(
         string $connectionString = null,
         ConnectionSettings $settings = null,
@@ -117,6 +119,7 @@ class EventStoreConnection
         );
     }
 
+    /** @throws \Exception */
     public static function createFromBuilder(
         string $connectionString = null,
         ConnectionSettingsBuilder $builder = null,
@@ -128,9 +131,10 @@ class EventStoreConnection
             $connectionName
         );
 
-        return new SyncNodeConnection($connection);
+        return new EventStoreNodeConnection($connection);
     }
 
+    /** @throws \Exception */
     public static function createFromSettings(
         string $connectionString = null,
         ConnectionSettings $settings = null,
@@ -142,7 +146,7 @@ class EventStoreConnection
             $connectionName
         );
 
-        return new SyncNodeConnection($connection);
+        return new EventStoreNodeConnection($connection);
     }
 
     public static function createFromIpEndPoint(
@@ -156,13 +160,15 @@ class EventStoreConnection
             $connectionName
         );
 
-        return new SyncNodeConnection($connection);
+        return new EventStoreNodeConnection($connection);
     }
 
     private static function createWithClusterDnsEndPointDiscoverer(
         ConnectionSettings $settings,
         string $connectionName = null
     ): AsyncConnection {
+        throw new \BadMethodCallException('Not implemented, missing dns resolver implementation');
+
         $clusterSettings = new ClusterSettings(
             $settings->clusterDns(),
             $settings->maxDiscoverAttempts(),
@@ -189,6 +195,8 @@ class EventStoreConnection
         ConnectionSettings $settings,
         string $connectionName = null
     ): AsyncConnection {
+        throw new \BadMethodCallException('Not implemented, missing dns resolver implementation');
+
         return new EventStoreAsyncNodeConnection(
             $settings,
             null,
