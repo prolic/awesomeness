@@ -11,7 +11,7 @@ use Prooph\EventStore\IpEndPoint;
 
 require __DIR__ . '/../../vendor/autoload.php';
 
-$connection = EventStoreNodeConnection::createFromIpEndPoint(
+$connection = EventStoreConnection::createFromIpEndPoint(
     new IpEndPoint('localhost', 1113)
 );
 

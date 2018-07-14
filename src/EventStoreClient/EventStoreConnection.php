@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Prooph\EventStoreClient;
 
 use Prooph\EventStore\Data\UserCredentials;
-use Prooph\EventStore\EventStoreAsyncConnection;
-use Prooph\EventStore\EventStoreConnection;
+use Prooph\EventStore\EventStoreAsyncConnection as AsyncConnection;
+use Prooph\EventStore\EventStoreConnection as SyncConnection;
 use Prooph\EventStore\Internal\Consts;
 use Prooph\EventStore\IpEndPoint;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
@@ -14,7 +14,7 @@ use Prooph\EventStoreClient\Internal\EventStoreAsyncNodeConnection;
 use Prooph\EventStoreClient\Internal\EventStoreNodeConnection as SyncNodeConnection;
 use Prooph\EventStoreClient\Internal\StaticEndPointDiscoverer;
 
-class EventStoreNodeConnection
+class EventStoreConnection
 {
     /**
      * Sub-delimiters used in user info, query strings and fragments.
@@ -31,7 +31,7 @@ class EventStoreNodeConnection
         string $connectionString = null,
         ConnectionSettingsBuilder $builder = null,
         string $connectionName = ''
-    ): EventStoreAsyncConnection {
+    ): AsyncConnection {
         $builder = $builder ?? new ConnectionSettingsBuilder();
 
         return self::createFromSettings($connectionString, $builder->build(), $connectionName);
@@ -41,7 +41,7 @@ class EventStoreNodeConnection
         string $connectionString = null,
         ConnectionSettings $settings = null,
         string $connectionName = ''
-    ): EventStoreAsyncConnection {
+    ): AsyncConnection {
         if (null === $connectionString && (null === $settings || empty($settings->gossipSeeds()))) {
             throw new \Exception('Did not find ConnectTo or GossipSeeds in the connection string');
         }
@@ -106,11 +106,12 @@ class EventStoreNodeConnection
         IpEndPoint $endPoint,
         ConnectionSettings $settings = null,
         string $connectionName = null
-    ): EventStoreAsyncConnection {
+    ): AsyncConnection {
         $settings = $settings ?? ConnectionSettings::default();
 
         return new EventStoreAsyncNodeConnection(
             $settings,
+            null,
             new StaticEndPointDiscoverer($endPoint, $settings->useSslConnection()),
             $connectionName
         );
@@ -120,7 +121,7 @@ class EventStoreNodeConnection
         string $connectionString = null,
         ConnectionSettingsBuilder $builder = null,
         string $connectionName = ''
-    ): EventStoreConnection {
+    ): SyncConnection {
         $connection = self::createAsyncFromBuilder(
             $connectionString,
             $builder,
@@ -134,7 +135,7 @@ class EventStoreNodeConnection
         string $connectionString = null,
         ConnectionSettings $settings = null,
         string $connectionName = ''
-    ): EventStoreConnection {
+    ): SyncConnection {
         $connection = self::createAsyncFromSettings(
             $connectionString,
             $settings,
@@ -148,7 +149,7 @@ class EventStoreNodeConnection
         IpEndPoint $endPoint,
         ConnectionSettings $settings = null,
         string $connectionName = null
-    ): EventStoreConnection {
+    ): SyncConnection {
         $connection = self::createAsyncFromIpEndPoint(
             $endPoint,
             $settings,
@@ -161,7 +162,16 @@ class EventStoreNodeConnection
     private static function createWithClusterDnsEndPointDiscoverer(
         ConnectionSettings $settings,
         string $connectionName = null
-    ): EventStoreAsyncConnection {
+    ): AsyncConnection {
+        $clusterSettings = new ClusterSettings(
+            $settings->clusterDns(),
+            $settings->maxDiscoverAttempts(),
+            $settings->externalGossipPort(),
+            $settings->gossipSeeds(),
+            $settings->gossipTimeout(),
+            $settings->preferRandomNode()
+        );
+
         $endPointDiscoverer = new ClusterDnsEndPointDiscoverer(
             $settings->clusterDns(),
             $settings->maxDiscoverAttempts(),
@@ -171,16 +181,17 @@ class EventStoreNodeConnection
             $settings->preferRandomNode()
         );
 
-        return new EventStoreAsyncNodeConnection($settings, $endPointDiscoverer, $connectionName);
+        return new EventStoreAsyncNodeConnection($settings, $clusterSettings, $endPointDiscoverer, $connectionName);
     }
 
     private static function createWithSingleEndpointDiscoverer(
         string $connectionString,
         ConnectionSettings $settings,
         string $connectionName = null
-    ): EventStoreAsyncConnection {
+    ): AsyncConnection {
         return new EventStoreAsyncNodeConnection(
             $settings,
+            null,
             new SingleEndpointDiscoverer($connectionString, $settings->useSslConnection()),
             $connectionName
         );

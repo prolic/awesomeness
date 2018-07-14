@@ -27,6 +27,7 @@ use Prooph\EventStore\Exception\OutOfRangeException;
 use Prooph\EventStore\Exception\UnexpectedValueException;
 use Prooph\EventStore\Internal\Consts;
 use Prooph\EventStore\Internal\Event\ListenerHandler;
+use Prooph\EventStoreClient\ClusterSettings;
 use Prooph\EventStoreClient\ConnectionSettings;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 use Prooph\EventStoreClient\Exception\InvalidOperationException;
@@ -51,17 +52,33 @@ final class EventStoreAsyncNodeConnection implements
     private $connectionName;
     /** @var ConnectionSettings */
     private $settings;
+    /** @var ClusterSettings|null */
+    private $clusterSettings;
     /** @var EndPointDiscoverer */
     private $endPointDiscoverer;
     /** @var EventStoreConnectionLogicHandler */
     private $handler;
 
-    public function __construct(ConnectionSettings $settings, EndPointDiscoverer $endPointDiscoverer, string $connectionName = null)
-    {
+    public function __construct(
+        ConnectionSettings $settings,
+        ?ClusterSettings $clusterSettings,
+        EndPointDiscoverer $endPointDiscoverer,
+        string $connectionName = null
+    ) {
         $this->settings = $settings;
         $this->connectionName = $connectionName ?? CorrelationIdGenerator::generate();
         $this->endPointDiscoverer = $endPointDiscoverer;
         $this->handler = new EventStoreConnectionLogicHandler($this, $settings);
+    }
+
+    public function connectionSettings(): ConnectionSettings
+    {
+        return $this->connectionSettings();
+    }
+
+    public function clusterSettings(): ?ClusterSettings
+    {
+        return $this->clusterSettings;
     }
 
     public function connectionName(): string
