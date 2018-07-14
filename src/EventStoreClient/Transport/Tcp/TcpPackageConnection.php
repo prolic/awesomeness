@@ -8,6 +8,7 @@ use Amp\ByteStream\ClosedException;
 use Amp\Promise;
 use Amp\Socket\ClientConnectContext;
 use Amp\Socket\ClientSocket;
+use Amp\Socket\ClientTlsContext;
 use Amp\Socket\ConnectException;
 use Generator;
 use Google\Protobuf\Internal\Message;
@@ -26,14 +27,18 @@ use function Amp\Socket\connect;
 /** @internal */
 class TcpPackageConnection
 {
-    private const ClientConnectionTimeout = 1000; // milliseconds // @todo read from settings
-
     /** @var IpEndPoint */
     private $remoteEndPoint;
     /** @var string */
     private $connectionId;
     /** bool */
     private $ssl;
+    /** @var string */
+    private $targetHost;
+    /** @var bool */
+    private $validateServer;
+    /** @var int */
+    private $timeout;
     /** @var ClientSocket */
     private $connection;
     /** @var bool */
@@ -51,6 +56,9 @@ class TcpPackageConnection
         IpEndPoint $remoteEndPoint,
         string $connectionId,
         bool $ssl,
+        string $targetHost,
+        bool $validateServer,
+        int $timeout,
         callable $tcpPackageMessageHandler,
         callable $tcpConnectionErrorMessageHandler,
         callable $tcpConnectionEstablishedMessageHandler,
@@ -59,6 +67,9 @@ class TcpPackageConnection
         $this->remoteEndPoint = $remoteEndPoint;
         $this->connectionId = $connectionId;
         $this->ssl = $ssl;
+        $this->targetHost = $targetHost;
+        $this->validateServer = $validateServer;
+        $this->timeout = $timeout;
         $this->tcpPackageMessageHandler = $tcpPackageMessageHandler;
         $this->tcpConnectionErrorMessageHandler = $tcpConnectionErrorMessageHandler;
         $this->tcpConnectionEstablishedMessageHandler = $tcpConnectionEstablishedMessageHandler;
@@ -79,12 +90,18 @@ class TcpPackageConnection
     {
         return call(function (): Generator {
             try {
-                $context = (new ClientConnectContext())->withConnectTimeout(self::ClientConnectionTimeout);
+                $context = (new ClientConnectContext())->withConnectTimeout($this->timeout);
                 $uri = \sprintf('tcp://%s:%s', $this->remoteEndPoint->host(), $this->remoteEndPoint->port());
                 $this->connection = yield connect($uri, $context);
 
                 if ($this->ssl) {
-                    yield $this->connection->enableCrypto();
+                    $tlsContext = (new ClientTlsContext())->withPeerName($this->targetHost);
+
+                    if ($this->validateServer) {
+                        $tlsContext = $tlsContext->withPeerVerification();
+                    }
+
+                    yield $this->connection->enableCrypto($tlsContext);
                 }
 
                 $this->isClosed = false;

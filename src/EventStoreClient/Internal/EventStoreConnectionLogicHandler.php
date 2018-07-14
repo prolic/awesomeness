@@ -230,6 +230,10 @@ class EventStoreConnectionLogicHandler
                 $deferred->resolve(null);
             }
         });
+
+        Loop::defer(function () use ($promise): Generator {
+            yield $promise;
+        });
     }
 
     /** @throws \Exception */
@@ -279,6 +283,9 @@ class EventStoreConnectionLogicHandler
             $endPoint,
             CorrelationIdGenerator::generate(),
             $this->settings->useSslConnection(),
+            $this->settings->targetHost(),
+            $this->settings->validateServer(),
+            $this->settings->clientConnectionTimeout(),
             function (TcpPackageConnection $connection, TcpPackage $package): void {
                 $this->enqueueMessage(new HandleTcpPackageMessage($connection, $package));
             },
@@ -375,13 +382,15 @@ class EventStoreConnectionLogicHandler
 
             $this->authInfo = new AuthInfo(CorrelationIdGenerator::generate(), $elapsed);
 
-            $this->connection->sendAsync(new TcpPackage(
-                TcpCommand::authenticate(),
-                TcpFlags::authenticated(),
-                $this->authInfo->correlationId(),
-                null,
-                $this->settings->defaultUserCredentials()
-            ));
+            Loop::defer(function (): Generator {
+                $this->connection->sendAsync(new TcpPackage(
+                    TcpCommand::authenticate(),
+                    TcpFlags::authenticated(),
+                    $this->authInfo->correlationId(),
+                    null,
+                    $this->settings->defaultUserCredentials()
+                ));
+            });
         } else {
             $this->goToIdentifyState();
         }
@@ -396,12 +405,14 @@ class EventStoreConnectionLogicHandler
         $dto->setVersion(self::ClientVersion);
         $dto->setConnectionName($this->esConnection->connectionName());
 
-        $this->connection->sendAsync(new TcpPackage(
-            TcpCommand::identifyClient(),
-            TcpFlags::none(),
-            $this->identityInfo->correlationId(),
-            $dto
-        ));
+        Loop::defer(function() use ($dto): Generator {
+            yield $this->connection->sendAsync(new TcpPackage(
+                TcpCommand::identifyClient(),
+                TcpFlags::none(),
+                $this->identityInfo->correlationId(),
+                $dto
+            ));
+        });
     }
 
     private function goToConnectedState(): void
@@ -413,13 +424,8 @@ class EventStoreConnectionLogicHandler
 
         $this->raiseConnectedEvent($this->connection->remoteEndPoint());
 
-        $elapsed = $this->stopWatch->elapsed();
-
-        if ($elapsed - $this->lastTimeoutsTimeStamp >= $this->settings->operationTimeoutCheckPeriod()) {
-            $this->operations->checkTimeoutsAndRetry($this->connection);
-            // _subscriptions.CheckTimeoutsAndRetry(_connection);
-            $this->lastTimeoutsTimeStamp = $elapsed;
-        }
+        $this->operations->checkTimeoutsAndRetry($this->connection);
+        $this->lastTimeoutsTimeStamp = $this->stopWatch->elapsed();
     }
 
     private function timerTick(): void
@@ -500,11 +506,13 @@ class EventStoreConnectionLogicHandler
         }
 
         if ($this->heartbeatInfo->isIntervalStage()) {
-            $this->connection->sendAsync(new TcpPackage(
-                TcpCommand::heartbeatRequestCommand(),
-                TcpFlags::none(),
-                CorrelationIdGenerator::generate()
-            ));
+            Loop::defer(function (): Generator {
+                $this->connection->sendAsync(new TcpPackage(
+                    TcpCommand::heartbeatRequestCommand(),
+                    TcpFlags::none(),
+                    CorrelationIdGenerator::generate()
+                ));
+            });
             $this->heartbeatInfo = new HeartbeatInfo($this->heartbeatInfo->lastPackageNumber(), false, $elapsed);
         } else {
             $msg = \sprintf(
@@ -568,11 +576,13 @@ class EventStoreConnectionLogicHandler
         }
 
         if ($package->command()->equals(TcpCommand::heartbeatRequestCommand())) {
-            $this->connection->sendAsync(new TcpPackage(
-                TcpCommand::heartbeatResponseCommand(),
-                TcpFlags::none(),
-                $package->correlationId()
-            ));
+            Loop::defer(function () use ($package): Generator {
+                yield $this->connection->sendAsync(new TcpPackage(
+                    TcpCommand::heartbeatResponseCommand(),
+                    TcpFlags::none(),
+                    $package->correlationId()
+                ));
+            });
 
             return;
         }
@@ -633,7 +643,10 @@ class EventStoreConnectionLogicHandler
             if ($this->state->equals(ConnectionState::connected())) {
                 $this->operations->tryScheduleWaitingOperations($connection);
             }
-        } elseif ($subscription = $this->subscriptions->tryGetActiveSubscription($package->correlationId())) {
+        }
+        // @todo
+        /*
+        elseif ($subscription = $this->subscriptions->tryGetActiveSubscription($package->correlationId())) {
             $result = $subscription->operation()->inspectPackage($package);
 
             switch ($result->inspectionDecision()->value()) {
@@ -654,6 +667,7 @@ class EventStoreConnectionLogicHandler
                     break;
             }
         }
+        */
     }
 
     private function reconnectTo(NodeEndPoints $endPoints): void

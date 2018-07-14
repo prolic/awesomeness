@@ -15,7 +15,7 @@ class AuthInfo
     public function __construct(string $correlationId, int $timestamp)
     {
         $this->correlationId = $correlationId;
-        $this->on = $on;
+        $this->timestamp = $timestamp;
     }
 
     public function correlationId(): string
