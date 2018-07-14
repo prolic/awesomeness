@@ -33,7 +33,7 @@ use Prooph\EventStore\Internal\Consts;
 use Prooph\EventStore\Internal\Data\PersistentSubscriptionCreateResult;
 use Prooph\EventStore\Internal\Data\PersistentSubscriptionDeleteResult;
 use Prooph\EventStore\Internal\Data\PersistentSubscriptionUpdateResult;
-use Prooph\EventStore\Internal\ReplayParkedResult;
+use Prooph\EventStore\Internal\Data\ReplayParkedResult;
 use Prooph\HttpEventStore\ClientOperations\AppendToStreamOperation;
 use Prooph\HttpEventStore\ClientOperations\CreatePersistentSubscriptionOperation;
 use Prooph\HttpEventStore\ClientOperations\DeletePersistentSubscriptionOperation;

@@ -53,13 +53,6 @@ interface EventStoreAsyncSubscriptionConnection extends EventStoreAsyncConnectio
         UserCredentials $userCredentials = null
     ): EventStorePersistentSubscription;
 
-    /** @return Promise<ReplayParkedResult> */
-    public function replayParkedAsync(
-        string $stream,
-        string $groupName,
-        UserCredentials $userCredentials = null
-    ): Promise;
-
     /** @return Promise<GetInformationForSubscriptions> */
     public function getInformationForAllSubscriptionsAsync(
         UserCredentials $userCredentials = null

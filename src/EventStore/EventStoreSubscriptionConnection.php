@@ -11,7 +11,6 @@ use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Internal\Data\PersistentSubscriptionCreateResult;
 use Prooph\EventStore\Internal\Data\PersistentSubscriptionDeleteResult;
 use Prooph\EventStore\Internal\Data\PersistentSubscriptionUpdateResult;
-use Prooph\EventStore\Internal\Data\ReplayParkedResult;
 
 /** @internal */
 interface EventStoreSubscriptionConnection extends EventStoreConnection
@@ -55,12 +54,6 @@ interface EventStoreSubscriptionConnection extends EventStoreConnection
         bool $autoAck = true,
         UserCredentials $userCredentials = null
     ): EventStorePersistentSubscription;
-
-    public function replayParked(
-        string $stream,
-        string $groupName,
-        UserCredentials $userCredentials = null
-    ): ReplayParkedResult;
 
     /**
      * @return SubscriptionInformation[]

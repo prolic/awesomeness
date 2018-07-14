@@ -23,7 +23,6 @@ use Prooph\EventStore\EventStoreTransactionConnection as TransactionConnection;
 use Prooph\EventStore\Internal\Data\PersistentSubscriptionCreateResult;
 use Prooph\EventStore\Internal\Data\PersistentSubscriptionDeleteResult;
 use Prooph\EventStore\Internal\Data\PersistentSubscriptionUpdateResult;
-use Prooph\EventStore\Internal\Data\ReplayParkedResult;
 use Prooph\EventStore\Internal\Event\ListenerHandler;
 
 final class EventStoreNodeConnection implements
@@ -239,15 +238,6 @@ final class EventStoreNodeConnection implements
             $autoAck,
             $userCredentials
         );
-    }
-
-    /** @throws \Throwable */
-    public function replayParked(
-        string $stream,
-        string $groupName,
-        UserCredentials $userCredentials = null
-    ): ReplayParkedResult {
-        return Promise\wait($this->asyncConnection->replayParkedAsync($stream, $groupName, $userCredentials));
     }
 
     /** @throws \Throwable */

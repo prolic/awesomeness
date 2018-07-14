@@ -457,14 +457,6 @@ final class EventStoreAsyncNodeConnection implements
         // TODO: Implement connectToPersistentSubscription() method.
     }
 
-    public function replayParkedAsync(
-        string $stream,
-        string $groupName,
-        UserCredentials $userCredentials = null
-    ): Promise {
-        // TODO: Implement replayParkedAsync() method.
-    }
-
     public function getInformationForAllSubscriptionsAsync(
         UserCredentials $userCredentials = null
     ): Promise {
