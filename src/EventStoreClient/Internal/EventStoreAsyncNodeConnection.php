@@ -33,6 +33,7 @@ use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 use Prooph\EventStoreClient\Exception\InvalidOperationException;
 use Prooph\EventStoreClient\Exception\MaxQueueSizeLimitReachedException;
 use Prooph\EventStoreClient\Internal\ClientOperations\AppendToStreamOperation;
+use Prooph\EventStoreClient\Internal\ClientOperations\CreatePersistentSubscriptionOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\DeletePersistentSubscriptionOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\DeleteStreamOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\ReadAllEventsBackwardOperation;
@@ -409,7 +410,25 @@ final class EventStoreAsyncNodeConnection implements
         PersistentSubscriptionSettings $settings,
         UserCredentials $userCredentials = null
     ): Promise {
-        // TODO: Implement createPersistentSubscriptionAsync() method.
+        if (empty($stream)) {
+            throw new InvalidArgumentException('Stream cannot be empty');
+        }
+
+        if (empty($groupName)) {
+            throw new InvalidArgumentException('Group cannot be empty');
+        }
+
+        $deferred = new Deferred();
+
+        $this->enqueueOperation(new CreatePersistentSubscriptionOperation(
+            $deferred,
+            $stream,
+            $groupName,
+            $settings,
+            $userCredentials
+        ));
+
+        return $deferred->promise();
     }
 
     public function updatePersistentSubscriptionAsync(

@@ -10,8 +10,8 @@ use Http\Message\UriFactory;
 use Prooph\EventStore\Data\PersistentSubscriptionSettings;
 use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Exception\AccessDenied;
-use Prooph\EventStore\Internal\PersistentSubscriptionCreateResult;
-use Prooph\EventStore\Internal\PersistentSubscriptionCreateStatus;
+use Prooph\EventStore\Internal\Data\PersistentSubscriptionCreateResult;
+use Prooph\EventStore\Internal\Data\PersistentSubscriptionCreateStatus;
 use Prooph\HttpEventStore\Http\RequestMethod;
 
 /** @internal  */
@@ -48,8 +48,6 @@ class CreatePersistentSubscriptionOperation extends Operation
             case 201:
             case 409:
                 return new PersistentSubscriptionCreateResult(
-                    $json['correlationId'],
-                    $json['reason'],
                     PersistentSubscriptionCreateStatus::byName($json['result'])
                 );
             default:
