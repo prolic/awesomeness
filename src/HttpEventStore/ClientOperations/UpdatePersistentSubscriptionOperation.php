@@ -45,16 +45,12 @@ class UpdatePersistentSubscriptionOperation extends Operation
         switch ($response->getStatusCode()) {
             case 200:
                 return new PersistentSubscriptionUpdateResult(
-                    $json['correlationId'],
-                    '',
                     PersistentSubscriptionUpdateStatus::success()
                 );
             case 401:
                 throw AccessDenied::toSubscription($stream, $groupName);
             case 404:
                 return new PersistentSubscriptionUpdateResult(
-                    $json['correlationId'],
-                    $json['reason'],
                     PersistentSubscriptionUpdateStatus::notFound()
                 );
             default:

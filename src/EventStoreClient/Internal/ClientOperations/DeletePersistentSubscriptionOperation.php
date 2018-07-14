@@ -25,16 +25,16 @@ class DeletePersistentSubscriptionOperation extends AbstractOperation
     /** @var string */
     private $stream;
     /** @var string */
-    private $group;
+    private $groupName;
 
     public function __construct(
         Deferred $deferred,
         string $stream,
-        string $group,
+        string $groupName,
         ?UserCredentials $userCredentials
     ) {
         $this->stream = $stream;
-        $this->group = $group;
+        $this->groupName = $groupName;
 
         parent::__construct(
             $deferred,
@@ -48,7 +48,7 @@ class DeletePersistentSubscriptionOperation extends AbstractOperation
     {
         $message = new DeletePersistentSubscription();
         $message->setEventStreamId($this->stream);
-        $message->setSubscriptionGroupName($this->group);
+        $message->setSubscriptionGroupName($this->groupName);
 
         return $message;
     }
@@ -64,7 +64,7 @@ class DeletePersistentSubscriptionOperation extends AbstractOperation
             case DeletePersistentSubscriptionCompleted_DeletePersistentSubscriptionResult::Fail:
                 $this->fail(new InvalidOperationException(\sprintf(
                     'Subscription group \'%s\' on stream \'%s\' failed \'%s\'',
-                    $this->group,
+                    $this->groupName,
                     $this->stream,
                     $response->getReason()
                 )));
@@ -77,7 +77,7 @@ class DeletePersistentSubscriptionOperation extends AbstractOperation
             case DeletePersistentSubscriptionCompleted_DeletePersistentSubscriptionResult::DoesNotExist:
                 $this->fail(new InvalidOperationException(\sprintf(
                     'Subscription group \'%s\' on stream \'%s\' does not exist',
-                    $this->group,
+                    $this->groupName,
                     $this->stream
                 )));
 

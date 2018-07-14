@@ -40,6 +40,7 @@ use Prooph\EventStoreClient\Internal\ClientOperations\ReadAllEventsForwardOperat
 use Prooph\EventStoreClient\Internal\ClientOperations\ReadEventOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\ReadStreamEventsBackwardOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\ReadStreamEventsForwardOperation;
+use Prooph\EventStoreClient\Internal\ClientOperations\UpdatePersistentSubscriptionOperation;
 use Prooph\EventStoreClient\Internal\Message\CloseConnectionMessage;
 use Prooph\EventStoreClient\Internal\Message\StartConnectionMessage;
 use Prooph\EventStoreClient\Internal\Message\StartOperationMessage;
@@ -417,7 +418,25 @@ final class EventStoreAsyncNodeConnection implements
         PersistentSubscriptionSettings $settings,
         UserCredentials $userCredentials = null
     ): Promise {
-        // TODO: Implement updatePersistentSubscriptionAsync() method.
+        if (empty($stream)) {
+            throw new InvalidArgumentException('Stream cannot be empty');
+        }
+
+        if (empty($groupName)) {
+            throw new InvalidArgumentException('Group cannot be empty');
+        }
+
+        $deferred = new Deferred();
+
+        $this->enqueueOperation(new UpdatePersistentSubscriptionOperation(
+            $deferred,
+            $stream,
+            $groupName,
+            $settings,
+            $userCredentials
+        ));
+
+        return $deferred->promise();
     }
 
     public function deletePersistentSubscriptionAsync(
@@ -429,7 +448,7 @@ final class EventStoreAsyncNodeConnection implements
             throw new InvalidArgumentException('Stream cannot be empty');
         }
 
-        if (empty($group)) {
+        if (empty($groupName)) {
             throw new InvalidArgumentException('Group cannot be empty');
         }
 
@@ -438,7 +457,7 @@ final class EventStoreAsyncNodeConnection implements
         $this->enqueueOperation(new DeletePersistentSubscriptionOperation(
             $deferred,
             $stream,
-            $group,
+            $groupName,
             $userCredentials
         ));
 
