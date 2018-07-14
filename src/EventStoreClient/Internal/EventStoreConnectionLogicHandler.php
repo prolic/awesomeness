@@ -296,7 +296,9 @@ class EventStoreConnectionLogicHandler
         Loop::defer(function (): Generator {
             yield $this->connection->connectAsync();
 
-            $this->connection->startReceiving();
+            if (! $this->connection->isClosed()) {
+                $this->connection->startReceiving();
+            }
         });
     }
 
@@ -344,7 +346,11 @@ class EventStoreConnectionLogicHandler
 
         //_subscriptions.PurgeSubscribedAndDroppedSubscriptions(_connection.ConnectionId); // @todo
 
-        $this->reconnInfo = new ReconnectionInfo($this->reconnInfo->reconnectionAttempt(), $this->stopWatch->elapsed());
+        if (null === $this->reconnInfo) {
+            $this->reconnInfo = new ReconnectionInfo(0, $this->stopWatch->elapsed());
+        } else {
+            $this->reconnInfo = new ReconnectionInfo($this->reconnInfo->reconnectionAttempt(), $this->stopWatch->elapsed());
+        }
 
         if ($this->compareWasConnected(false, true)) {
             $this->raiseDisconnected($tcpPackageConnection->remoteEndPoint());
@@ -427,7 +433,7 @@ class EventStoreConnectionLogicHandler
                 if ($this->connectingPhase->equals(ConnectingPhase::reconnecting())
                     && $elapsed - $this->reconnInfo->timestamp() >= $this->settings->reconnectionDelay()
                 ) {
-                    $this->reconnInfo = new ReconnectionInfo($this->reconnInfo->reconnectionAttempt() + 1, DateTimeUtil::utcNow());
+                    $this->reconnInfo = new ReconnectionInfo($this->reconnInfo->reconnectionAttempt() + 1, $this->stopWatch->elapsed());
 
                     if ($this->settings->maxReconnections() >= 0 && $this->reconnInfo->reconnectionAttempt() > $this->settings->maxReconnections()) {
                         $this->closeConnection('Reconnection limit reached');

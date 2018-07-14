@@ -140,7 +140,9 @@ class TcpPackageConnection
 
     public function close(): void
     {
-        $this->connection->close();
+        if ($this->connection) {
+            $this->connection->close();
+        }
     }
 
     public function isClosed(): bool
