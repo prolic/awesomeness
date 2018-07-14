@@ -50,6 +50,8 @@ use Prooph\HttpEventStore\ClientOperations\UpdatePersistentSubscriptionOperation
 
 class HttpEventStoreConnection implements EventStoreSubscriptionConnection
 {
+    // @todo add http interface? see replay parked, get information for subscriptions, no events handlers, etc.
+
     /** @var HttpClient */
     private $httpClient;
     /** @var RequestFactory */

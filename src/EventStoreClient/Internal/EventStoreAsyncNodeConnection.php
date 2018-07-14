@@ -457,27 +457,6 @@ final class EventStoreAsyncNodeConnection implements
         // TODO: Implement connectToPersistentSubscription() method.
     }
 
-    public function getInformationForAllSubscriptionsAsync(
-        UserCredentials $userCredentials = null
-    ): Promise {
-        // TODO: Implement getInformationForAllSubscriptionsAsync() method.
-    }
-
-    public function getInformationForSubscriptionsWithStreamAsync(
-        string $stream,
-        UserCredentials $userCredentials = null
-    ): Promise {
-        // TODO: Implement getInformationForSubscriptionsWithStreamAsync() method.
-    }
-
-    public function getInformationForSubscriptionAsync(
-        string $stream,
-        string $groupName,
-        UserCredentials $userCredentials = null
-    ): Promise {
-        // TODO: Implement getInformationForSubscriptionAsync() method.
-    }
-
     public function startTransactionAsync(
         string $stream,
         int $expectedVersion,

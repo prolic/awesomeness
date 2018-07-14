@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Prooph\EventStoreClient\Internal;
 
 use Amp\Promise;
-use Prooph\EventStore\Data\DetailedSubscriptionInformation;
 use Prooph\EventStore\Data\EventReadResult;
 use Prooph\EventStore\Data\PersistentSubscriptionSettings;
 use Prooph\EventStore\Data\Position;
@@ -238,30 +237,6 @@ final class EventStoreNodeConnection implements
             $autoAck,
             $userCredentials
         );
-    }
-
-    /** @throws \Throwable */
-    public function getInformationForAllSubscriptions(
-        UserCredentials $userCredentials = null
-    ): array {
-        return Promise\wait($this->asyncConnection->getInformationForAllSubscriptionsAsync($userCredentials));
-    }
-
-    /** @throws \Throwable */
-    public function getInformationForSubscriptionsWithStream(
-        string $stream,
-        UserCredentials $userCredentials = null
-    ): array {
-        return Promise\wait($this->asyncConnection->getInformationForSubscriptionsWithStreamAsync($stream, $userCredentials));
-    }
-
-    /** @throws \Throwable */
-    public function getInformationForSubscription(
-        string $stream,
-        string $groupName,
-        UserCredentials $userCredentials = null
-    ): DetailedSubscriptionInformation {
-        return Promise\wait($this->asyncConnection->getInformationForSubscriptionAsync($stream, $groupName, $userCredentials));
     }
 
     public function startTransaction(

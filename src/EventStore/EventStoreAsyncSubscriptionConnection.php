@@ -52,22 +52,4 @@ interface EventStoreAsyncSubscriptionConnection extends EventStoreAsyncConnectio
         bool $autoAck = true,
         UserCredentials $userCredentials = null
     ): EventStorePersistentSubscription;
-
-    /** @return Promise<GetInformationForSubscriptions> */
-    public function getInformationForAllSubscriptionsAsync(
-        UserCredentials $userCredentials = null
-    ): Promise;
-
-    /** @return Promise<GetInformationForSubscriptions> */
-    public function getInformationForSubscriptionsWithStreamAsync(
-        string $stream,
-        UserCredentials $userCredentials = null
-    ): Promise;
-
-    /** @return Promise<GetInformationForSubscription> */
-    public function getInformationForSubscriptionAsync(
-        string $stream,
-        string $groupName,
-        UserCredentials $userCredentials = null
-    ): Promise;
 }
