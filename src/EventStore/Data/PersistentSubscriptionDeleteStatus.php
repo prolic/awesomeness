@@ -9,13 +9,11 @@ class PersistentSubscriptionDeleteStatus
 {
     public const OPTIONS = [
         'Success' => 0,
-        'DoesNotExist' => 1,
-        'Failure' => 2,
+        'Failure' => 1,
     ];
 
     public const Success = 0;
-    public const DoesNotExist = 1;
-    public const Failure = 2;
+    public const Failure = 1;
 
     private $name;
     private $value;
@@ -29,11 +27,6 @@ class PersistentSubscriptionDeleteStatus
     public static function success(): self
     {
         return new self('Success');
-    }
-
-    public static function doesNotExist(): self
-    {
-        return new self('DoesNotExist');
     }
 
     public static function failure(): self

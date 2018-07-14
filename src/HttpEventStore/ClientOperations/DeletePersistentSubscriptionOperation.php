@@ -39,8 +39,6 @@ class DeletePersistentSubscriptionOperation extends Operation
             case 200:
             case 404:
                 return new PersistentSubscriptionDeleteResult(
-                    $json['correlationId'],
-                    $json['reason'],
                     PersistentSubscriptionDeleteStatus::byName($json['result'])
                 );
             default:

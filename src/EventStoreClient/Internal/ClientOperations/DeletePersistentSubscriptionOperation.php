@@ -1,0 +1,101 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Prooph\EventStoreClient\Internal\ClientOperations;
+
+use Amp\Deferred;
+use Google\Protobuf\Internal\Message;
+use Prooph\EventStore\Data\UserCredentials;
+use Prooph\EventStore\Exception\AccessDenied;
+use Prooph\EventStore\Internal\Data\PersistentSubscriptionDeleteResult;
+use Prooph\EventStore\Internal\Data\PersistentSubscriptionDeleteStatus;
+use Prooph\EventStore\Internal\SystemData\InspectionDecision;
+use Prooph\EventStore\Internal\SystemData\InspectionResult;
+use Prooph\EventStore\Messages\DeletePersistentSubscription;
+use Prooph\EventStore\Messages\DeletePersistentSubscriptionCompleted;
+use Prooph\EventStore\Messages\DeletePersistentSubscriptionCompleted_DeletePersistentSubscriptionResult;
+use Prooph\EventStore\Transport\Tcp\TcpCommand;
+use Prooph\EventStoreClient\Exception\InvalidOperationException;
+use Prooph\EventStoreClient\Exception\UnexpectedOperationResult;
+
+/** @internal */
+class DeletePersistentSubscriptionOperation extends AbstractOperation
+{
+    /** @var string */
+    private $stream;
+    /** @var string */
+    private $group;
+
+    public function __construct(
+        Deferred $deferred,
+        string $stream,
+        string $group,
+        ?UserCredentials $userCredentials
+    ) {
+        $this->stream = $stream;
+        $this->group = $group;
+
+        parent::__construct(
+            $deferred,
+            $userCredentials,
+            TcpCommand::deletePersistentSubscription(),
+            TcpCommand::deletePersistentSubscriptionCompleted()
+        );
+    }
+
+    protected function createRequestDto(): Message
+    {
+        $message = new DeletePersistentSubscription();
+        $message->setEventStreamId($this->stream);
+        $message->setSubscriptionGroupName($this->group);
+
+        return $message;
+    }
+
+    protected function inspectResponse(Message $response): InspectionResult
+    {
+        /** @var DeletePersistentSubscriptionCompleted $response */
+        switch ($response->getResult()) {
+            case DeletePersistentSubscriptionCompleted_DeletePersistentSubscriptionResult::Success:
+                $this->succeed($response);
+
+                return new InspectionResult(InspectionDecision::endOperation(), 'Success');
+            case DeletePersistentSubscriptionCompleted_DeletePersistentSubscriptionResult::Fail:
+                $this->fail(new InvalidOperationException(\sprintf(
+                    'Subscription group \'%s\' on stream \'%s\' failed \'%s\'',
+                    $this->group,
+                    $this->stream,
+                    $response->getReason()
+                )));
+
+                return new InspectionResult(InspectionDecision::endOperation(), 'Fail');
+            case DeletePersistentSubscriptionCompleted_DeletePersistentSubscriptionResult::AccessDenied:
+                $this->fail(AccessDenied::toStream($this->stream));
+
+                return new InspectionResult(InspectionDecision::endOperation(), 'AccessDenied');
+            case DeletePersistentSubscriptionCompleted_DeletePersistentSubscriptionResult::DoesNotExist:
+                $this->fail(new InvalidOperationException(\sprintf(
+                    'Subscription group \'%s\' on stream \'%s\' does not exist',
+                    $this->group,
+                    $this->stream
+                )));
+
+                return new InspectionResult(InspectionDecision::endOperation(), 'DoesNotExist');
+            default:
+                throw new UnexpectedOperationResult();
+        }
+    }
+
+    protected function transformResponse(Message $response): object
+    {
+        /** @var DeletePersistentSubscriptionCompleted $response */
+        if (0 === $response->getResult()) {
+            $status = PersistentSubscriptionDeleteStatus::success();
+        } else {
+            $status = PersistentSubscriptionDeleteStatus::failure();
+        }
+
+        return new PersistentSubscriptionDeleteResult($status);
+    }
+}
