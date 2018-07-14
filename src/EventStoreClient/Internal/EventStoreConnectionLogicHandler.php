@@ -383,7 +383,7 @@ class EventStoreConnectionLogicHandler
             $this->authInfo = new AuthInfo(CorrelationIdGenerator::generate(), $elapsed);
 
             Loop::defer(function (): Generator {
-                $this->connection->sendAsync(new TcpPackage(
+                yield $this->connection->sendAsync(new TcpPackage(
                     TcpCommand::authenticate(),
                     TcpFlags::authenticated(),
                     $this->authInfo->correlationId(),
@@ -507,7 +507,7 @@ class EventStoreConnectionLogicHandler
 
         if ($this->heartbeatInfo->isIntervalStage()) {
             Loop::defer(function (): Generator {
-                $this->connection->sendAsync(new TcpPackage(
+                yield $this->connection->sendAsync(new TcpPackage(
                     TcpCommand::heartbeatRequestCommand(),
                     TcpFlags::none(),
                     CorrelationIdGenerator::generate()
