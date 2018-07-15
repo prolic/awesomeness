@@ -31,6 +31,11 @@ class EventStoreAsyncTransaction
         $this->connection = $connection;
     }
 
+    public function transactionId(): int
+    {
+        return $this->transactionId;
+    }
+
     /** @return Promise<WriteResult> */
     public function commit(): Promise
     {

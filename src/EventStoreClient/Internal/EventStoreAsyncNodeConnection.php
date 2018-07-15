@@ -42,6 +42,7 @@ use Prooph\EventStoreClient\Internal\ClientOperations\ReadEventOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\ReadStreamEventsBackwardOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\ReadStreamEventsForwardOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\StartAsyncTransactionOperation;
+use Prooph\EventStoreClient\Internal\ClientOperations\TransactionalWriteOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\UpdatePersistentSubscriptionOperation;
 use Prooph\EventStoreClient\Internal\Message\CloseConnectionMessage;
 use Prooph\EventStoreClient\Internal\Message\StartConnectionMessage;
@@ -142,6 +143,10 @@ final class EventStoreAsyncNodeConnection implements
     ): Promise {
         if (empty($stream)) {
             throw new InvalidArgumentException('Stream cannot be empty');
+        }
+
+        if (empty($events)) {
+            throw new InvalidArgumentException('No events given');
         }
 
         $deferred = new Deferred();
@@ -535,7 +540,21 @@ final class EventStoreAsyncNodeConnection implements
         array $events,
         ?UserCredentials $userCredentials
     ): Promise {
-        // TODO: Implement transactionalWriteAsync() method.
+        if (empty($events)) {
+            throw new InvalidArgumentException('No events given');
+        }
+
+        $deferred = new Deferred();
+
+        $this->enqueueOperation(new TransactionalWriteOperation(
+            $deferred,
+            $this->settings->requireMaster(),
+            $transaction->transactionId(),
+            $events,
+            $userCredentials
+        ));
+
+        return $deferred->promise();
     }
 
     public function commitTransactionAsync(

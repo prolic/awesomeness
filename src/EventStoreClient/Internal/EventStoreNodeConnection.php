@@ -27,6 +27,7 @@ use Prooph\EventStore\Internal\Event\ListenerHandler;
 use Prooph\EventStoreClient\ClusterSettings;
 use Prooph\EventStoreClient\ConnectionSettings;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
+use Prooph\EventStoreClient\Internal\ClientOperations\TransactionalWriteOperation;
 use Prooph\PdoEventStore\ClientOperations\StartTransactionOperation;
 
 final class EventStoreNodeConnection implements
@@ -297,8 +298,24 @@ final class EventStoreNodeConnection implements
         array $events,
         UserCredentials $userCredentials = null
     ): void {
-        // @todo fix async transaction
-        Promise\wait($this->asyncConnection->transactionalWriteAsync($transaction, $events, $userCredentials));
+        if (empty($events)) {
+            throw new InvalidArgumentException('No events given');
+        }
+
+        $deferred = new Deferred();
+
+        $reflectionMethod = new \ReflectionMethod(\get_class($this->asyncConnection), 'enqueueOperation');
+        $reflectionMethod->setAccessible(true);
+
+        $reflectionMethod->invoke($this->asyncConnection, new TransactionalWriteOperation(
+            $deferred,
+            $this->asyncConnection->connectionSettings()->requireMaster(),
+            $transaction->transactionId(),
+            $events,
+            $userCredentials
+        ));
+
+        return Promise\wait($deferred->promise());
     }
 
     public function commitTransaction(
