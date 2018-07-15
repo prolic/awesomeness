@@ -519,6 +519,17 @@ final class EventStoreAsyncNodeConnection implements
         return $deferred->promise();
     }
 
+    public function continueTransaction(
+        int $transactionId,
+        UserCredentials $userCredentials = null
+    ): EventStoreAsyncTransaction {
+        if ($transactionId < 0) {
+            throw new InvalidArgumentException('Invalid transaction id');
+        }
+
+        return new EventStoreAsyncTransaction($transactionId, $userCredentials, $this);
+    }
+
     public function transactionalWriteAsync(
         EventStoreAsyncTransaction $transaction,
         array $events,

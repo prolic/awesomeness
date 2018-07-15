@@ -17,6 +17,11 @@ interface EventStoreAsyncTransactionConnection
         UserCredentials $userCredentials = null
     ): Promise;
 
+    public function continueTransaction(
+        int $transactionId,
+        UserCredentials $userCredentials = null
+    ): EventStoreAsyncTransaction;
+
     public function transactionalWriteAsync(
         EventStoreAsyncTransaction $transaction,
         array $events,

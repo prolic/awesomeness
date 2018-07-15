@@ -285,7 +285,11 @@ final class EventStoreNodeConnection implements
         int $transactionId,
         UserCredentials $userCredentials = null
     ): EventStoreTransaction {
-        return Promise\wait($this->asyncConnection->commitTransactionAsync($transactionId, $userCredentials));
+        if ($transactionId < 0) {
+            throw new InvalidArgumentException('Invalid transaction id');
+        }
+
+        return new EventStoreTransaction($transactionId, $userCredentials, $this);
     }
 
     public function transactionalWrite(
