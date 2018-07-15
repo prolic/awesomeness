@@ -26,6 +26,7 @@ use Prooph\EventStoreClient\ConnectionSettings;
 use Prooph\EventStoreClient\Exception\CannotEstablishConnectionException;
 use Prooph\EventStoreClient\Exception\EventStoreConnectionException;
 use Prooph\EventStoreClient\Exception\InvalidOperationException;
+use Prooph\EventStoreClient\Internal\ClientOperations\ClientOperation;
 use Prooph\EventStoreClient\Internal\Message\CloseConnectionMessage;
 use Prooph\EventStoreClient\Internal\Message\EstablishTcpConnectionMessage;
 use Prooph\EventStoreClient\Internal\Message\HandleTcpPackageMessage;

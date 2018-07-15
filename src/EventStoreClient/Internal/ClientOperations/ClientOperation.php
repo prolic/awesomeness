@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Prooph\EventStoreClient\Internal;
+namespace Prooph\EventStoreClient\Internal\ClientOperations;
 
 use Amp\Promise;
 use Prooph\EventStore\Internal\SystemData\InspectionResult;

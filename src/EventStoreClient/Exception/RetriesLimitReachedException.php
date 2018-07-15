@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient\Exception;
 
-use Prooph\EventStoreClient\Internal\ClientOperation;
+use Prooph\EventStoreClient\Internal\ClientOperations\ClientOperation;
 
 class RetriesLimitReachedException extends \RuntimeException implements Exception
 {

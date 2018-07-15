@@ -20,7 +20,6 @@ use Prooph\EventStore\Transport\Tcp\TcpPackage;
 use Prooph\EventStoreClient\Exception\NotAuthenticatedException;
 use Prooph\EventStoreClient\Exception\ServerError;
 use Prooph\EventStoreClient\Exception\UnexpectedCommandException;
-use Prooph\EventStoreClient\Internal\ClientOperation;
 use Throwable;
 
 /** @internal */
