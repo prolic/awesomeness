@@ -31,6 +31,7 @@ use Prooph\EventStoreClient\Internal\ClientOperations\CommitTransactionOperation
 use Prooph\EventStoreClient\Internal\ClientOperations\TransactionalWriteOperation;
 use Prooph\PdoEventStore\ClientOperations\StartTransactionOperation;
 
+/** @internal */
 final class EventStoreNodeConnection implements
     Connection,
     TransactionConnection,
