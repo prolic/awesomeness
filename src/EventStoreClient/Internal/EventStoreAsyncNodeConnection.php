@@ -33,6 +33,7 @@ use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 use Prooph\EventStoreClient\Exception\InvalidOperationException;
 use Prooph\EventStoreClient\Exception\MaxQueueSizeLimitReachedException;
 use Prooph\EventStoreClient\Internal\ClientOperations\AppendToStreamOperation;
+use Prooph\EventStoreClient\Internal\ClientOperations\CommitTransactionOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\CreatePersistentSubscriptionOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\DeletePersistentSubscriptionOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\DeleteStreamOperation;
@@ -561,7 +562,16 @@ final class EventStoreAsyncNodeConnection implements
         EventStoreAsyncTransaction $transaction,
         ?UserCredentials $userCredentials
     ): Promise {
-        // TODO: Implement commitTransactionAsync() method.
+        $deferred = new Deferred();
+
+        $this->enqueueOperation(new CommitTransactionOperation(
+            $deferred,
+            $this->settings->requireMaster(),
+            $transaction->transactionId(),
+            $userCredentials
+        ));
+
+        return $deferred->promise();
     }
 
     public function whenConnected(callable $handler): ListenerHandler
