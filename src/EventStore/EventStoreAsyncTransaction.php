@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Prooph\EventStore;
 
 use Amp\Promise;
+use Prooph\EventStore\Data\EventData;
+use Prooph\EventStore\Data\UserCredentials;
 
 class EventStoreAsyncTransaction
 {
@@ -45,9 +47,10 @@ class EventStoreAsyncTransaction
 
     /**
      * @param EventData[] $events
-     * @return void
+     *
+     * @return Promise<void>
      */
-    public function writeAsync(array $events): void
+    public function writeAsync(array $events): Promise
     {
         if ($this->isRolledBack) {
             throw new \RuntimeException('Cannot commit a rolledback transaction');
@@ -57,7 +60,7 @@ class EventStoreAsyncTransaction
             throw new \RuntimeException('Transaction is already committed');
         }
 
-        $this->connection->transactionalWriteAsync($this, $events, $this->userCredentials);
+        return $this->connection->transactionalWriteAsync($this, $events, $this->userCredentials);
     }
 
     public function rollback(): void

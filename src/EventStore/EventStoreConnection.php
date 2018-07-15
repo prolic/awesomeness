@@ -14,10 +14,16 @@ use Prooph\EventStore\Data\SystemSettings;
 use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Data\WriteResult;
 use Prooph\EventStore\Internal\Event\ListenerHandler;
+use Prooph\EventStoreClient\ClusterSettings;
+use Prooph\EventStoreClient\ConnectionSettings;
 
 interface EventStoreConnection
 {
     public function connectionName(): string;
+
+    public function connectionSettings(): ConnectionSettings;
+
+    public function clusterSettings(): ?ClusterSettings;
 
     public function connect(): void;
 

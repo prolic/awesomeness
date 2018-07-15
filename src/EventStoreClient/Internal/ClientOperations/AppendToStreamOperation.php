@@ -110,7 +110,7 @@ class AppendToStreamOperation extends AbstractOperation
         }
     }
 
-    protected function transformResponse(Message $response): object
+    protected function transformResponse(Message $response)
     {
         /** @var WriteEventsCompleted $response */
         return new WriteResult(

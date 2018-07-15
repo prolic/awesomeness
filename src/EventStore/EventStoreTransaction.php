@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
+use Prooph\EventStore\Data\EventData;
+use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Data\WriteResult;
 
 class EventStoreTransaction

@@ -10,11 +10,12 @@ use Prooph\EventStore\Data\UserCredentials;
 /** @internal */
 interface EventStoreAsyncTransactionConnection
 {
+    /** @return Promise<EventStoreAsyncTransaction> */
     public function startTransactionAsync(
         string $stream,
         int $expectedVersion,
         UserCredentials $userCredentials = null
-    ): EventStoreAsyncTransaction;
+    ): Promise;
 
     public function transactionalWriteAsync(
         EventStoreAsyncTransaction $transaction,

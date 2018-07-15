@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
-use Prooph\EventStore\Data\DetailedSubscriptionInformation;
 use Prooph\EventStore\Data\PersistentSubscriptionSettings;
-use Prooph\EventStore\Data\SubscriptionInformation;
 use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Internal\Data\PersistentSubscriptionCreateResult;
 use Prooph\EventStore\Internal\Data\PersistentSubscriptionDeleteResult;
@@ -54,25 +52,4 @@ interface EventStoreSubscriptionConnection extends EventStoreConnection
         bool $autoAck = true,
         UserCredentials $userCredentials = null
     ): EventStorePersistentSubscription;
-
-    /**
-     * @return SubscriptionInformation[]
-     */
-    public function getInformationForAllSubscriptions(
-        UserCredentials $userCredentials = null
-    ): array;
-
-    /**
-     * @return SubscriptionInformation[]
-     */
-    public function getInformationForSubscriptionsWithStream(
-        string $stream,
-        UserCredentials $userCredentials = null
-    ): array;
-
-    public function getInformationForSubscription(
-        string $stream,
-        string $groupName,
-        UserCredentials $userCredentials = null
-    ): DetailedSubscriptionInformation;
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient\Internal;
 
+use Amp\Deferred;
 use Amp\Promise;
 use Prooph\EventStore\Data\EventReadResult;
 use Prooph\EventStore\Data\PersistentSubscriptionSettings;
@@ -23,6 +24,10 @@ use Prooph\EventStore\Internal\Data\PersistentSubscriptionCreateResult;
 use Prooph\EventStore\Internal\Data\PersistentSubscriptionDeleteResult;
 use Prooph\EventStore\Internal\Data\PersistentSubscriptionUpdateResult;
 use Prooph\EventStore\Internal\Event\ListenerHandler;
+use Prooph\EventStoreClient\ClusterSettings;
+use Prooph\EventStoreClient\ConnectionSettings;
+use Prooph\EventStoreClient\Exception\InvalidArgumentException;
+use Prooph\PdoEventStore\ClientOperations\StartTransactionOperation;
 
 final class EventStoreNodeConnection implements
     Connection,
@@ -40,6 +45,16 @@ final class EventStoreNodeConnection implements
     public function connectionName(): string
     {
         return $this->asyncConnection->connectionName();
+    }
+
+    public function connectionSettings(): ConnectionSettings
+    {
+        return $this->asyncConnection->connectionSettings();
+    }
+
+    public function clusterSettings(): ?ClusterSettings
+    {
+        return $this->asyncConnection->clusterSettings();
     }
 
     /** @throws \Throwable */
@@ -244,8 +259,25 @@ final class EventStoreNodeConnection implements
         int $expectedVersion,
         UserCredentials $userCredentials = null
     ): EventStoreTransaction {
-        // @todo fix async transaction
-        return Promise\wait($this->asyncConnection->startTransactionAsync($stream, $expectedVersion, $userCredentials));
+        if (empty($stream)) {
+            throw new InvalidArgumentException('Stream cannot be empty');
+        }
+
+        $deferred = new Deferred();
+
+        $reflectionMethod = new \ReflectionMethod(\get_class($this->asyncConnection), 'enqueueOperation');
+        $reflectionMethod->setAccessible(true);
+
+        $reflectionMethod->invoke($this->asyncConnection, new StartTransactionOperation(
+            $deferred,
+            $this->asyncConnection->connectionSettings()->requireMaster(),
+            $stream,
+            $expectedVersion,
+            $this,
+            $userCredentials
+        ));
+
+        return Promise\wait($deferred->promise());
     }
 
     /** @throws \Throwable */

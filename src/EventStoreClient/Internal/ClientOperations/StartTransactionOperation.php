@@ -6,23 +6,23 @@ namespace Prooph\EventStoreClient\Internal\ClientOperations;
 
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
-use Prooph\EventStore\Data\DeleteResult;
-use Prooph\EventStore\Data\Position;
 use Prooph\EventStore\Data\UserCredentials;
+use Prooph\EventStore\EventStoreTransaction;
+use Prooph\EventStore\EventStoreTransactionConnection;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Exception\InvalidTransaction;
 use Prooph\EventStore\Exception\StreamDeleted;
 use Prooph\EventStore\Exception\WrongExpectedVersion;
 use Prooph\EventStore\Internal\SystemData\InspectionDecision;
 use Prooph\EventStore\Internal\SystemData\InspectionResult;
-use Prooph\EventStore\Messages\DeleteStream;
-use Prooph\EventStore\Messages\DeleteStreamCompleted;
 use Prooph\EventStore\Messages\OperationResult;
+use Prooph\EventStore\Messages\TransactionStart;
+use Prooph\EventStore\Messages\TransactionStartCompleted;
 use Prooph\EventStore\Transport\Tcp\TcpCommand;
 use Prooph\EventStoreClient\Exception\UnexpectedOperationResult;
 
 /** @internal */
-class DeleteStreamOperation extends AbstractOperation
+class StartTransactionOperation extends AbstractOperation
 {
     /** @var bool */
     private $requireMaster;
@@ -30,45 +30,41 @@ class DeleteStreamOperation extends AbstractOperation
     private $stream;
     /** @var int */
     private $expectedVersion;
-    /** @var bool */
-    private $hardDelete;
+    /** @var EventStoreTransactionConnection */
+    private $parentConnection;
 
     public function __construct(
         Deferred $deferred,
         bool $requireMaster,
         string $stream,
         int $expectedVersion,
-        bool $hardDelete,
+        EventStoreTransactionConnection $parentConnection,
         ?UserCredentials $userCredentials
     ) {
         $this->requireMaster = $requireMaster;
         $this->stream = $stream;
         $this->expectedVersion = $expectedVersion;
-        $this->hardDelete = $hardDelete;
+        $this->parentConnection = $parentConnection;
 
         parent::__construct(
             $deferred,
             $userCredentials,
-            TcpCommand::deleteStream(),
-            TcpCommand::deleteStreamCompleted()
+            TcpCommand::transactionStart(),
+            TcpCommand::transactionStartCompleted()
         );
     }
 
     protected function createRequestDto(): Message
     {
-        $message = new DeleteStream();
+        $message = new TransactionStart();
+        $message->setRequireMaster($this->requireMaster);
         $message->setEventStreamId($this->stream);
         $message->setExpectedVersion($this->expectedVersion);
-        $message->setHardDelete($this->hardDelete);
-        $message->setRequireMaster($this->requireMaster);
-
-        return $message;
     }
 
-    public function inspectResponse(Message $response): InspectionResult
+    protected function inspectResponse(Message $response): InspectionResult
     {
-        /** @var DeleteStreamCompleted $response */
-
+        /** @var TransactionStartCompleted $response */
         switch ($response->getResult()) {
             case OperationResult::Success:
                 $this->succeed($response);
@@ -81,23 +77,24 @@ class DeleteStreamOperation extends AbstractOperation
             case OperationResult::ForwardTimeout:
                 return new InspectionResult(InspectionDecision::retry(), 'ForwardTimeout');
             case OperationResult::WrongExpectedVersion:
-                $exception = WrongExpectedVersion::withExpectedVersion($this->stream, $this->expectedVersion);
+                $exception = new WrongExpectedVersion(\sprintf(
+                    'Start transaction failed due to WrongExpectedVersion. Stream: \'%s\', Expected version: \'%s\'',
+                    $this->stream,
+                    $this->expectedVersion
+                ));
                 $this->fail($exception);
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'WrongExpectedVersion');
             case OperationResult::StreamDeleted:
-                $exception = StreamDeleted::with($this->stream);
-                $this->fail($exception);
+                $this->fail(StreamDeleted::with($this->stream));
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'StreamDeleted');
             case OperationResult::InvalidTransaction:
-                $exception = new InvalidTransaction();
-                $this->fail($exception);
+                $this->fail(new InvalidTransaction());
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'InvalidTransaction');
             case OperationResult::AccessDenied:
-                $exception = AccessDenied::toStream($this->stream);
-                $this->fail($exception);
+                $this->fail(AccessDenied::toStream($this->stream));
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'AccessDenied');
             default:
@@ -107,10 +104,11 @@ class DeleteStreamOperation extends AbstractOperation
 
     protected function transformResponse(Message $response)
     {
-        /** @var DeleteStreamCompleted $response */
-        return new DeleteResult(new Position(
-            $response->getCommitPosition() ?? -1,
-            $response->getCommitPosition() ?? -1)
+        /** @var TransactionStartCompleted $response */
+        return new EventStoreTransaction(
+            $response->getTransactionId(),
+            $this->credentials,
+            $this->parentConnection
         );
     }
 }

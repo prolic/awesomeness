@@ -41,6 +41,7 @@ use Prooph\EventStoreClient\Internal\ClientOperations\ReadAllEventsForwardOperat
 use Prooph\EventStoreClient\Internal\ClientOperations\ReadEventOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\ReadStreamEventsBackwardOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\ReadStreamEventsForwardOperation;
+use Prooph\EventStoreClient\Internal\ClientOperations\StartAsyncTransactionOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\UpdatePersistentSubscriptionOperation;
 use Prooph\EventStoreClient\Internal\Message\CloseConnectionMessage;
 use Prooph\EventStoreClient\Internal\Message\StartConnectionMessage;
@@ -499,8 +500,23 @@ final class EventStoreAsyncNodeConnection implements
         string $stream,
         int $expectedVersion,
         UserCredentials $userCredentials = null
-    ): EventStoreAsyncTransaction {
-        // TODO: Implement startTransactionAsync() method.
+    ): Promise {
+        if (empty($stream)) {
+            throw new InvalidArgumentException('Stream cannot be empty');
+        }
+
+        $deferred = new Deferred();
+
+        $this->enqueueOperation(new StartAsyncTransactionOperation(
+            $deferred,
+            $this->settings->requireMaster(),
+            $stream,
+            $expectedVersion,
+            $this,
+            $userCredentials
+        ));
+
+        return $deferred->promise();
     }
 
     public function transactionalWriteAsync(

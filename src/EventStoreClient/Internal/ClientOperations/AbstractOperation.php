@@ -29,7 +29,7 @@ abstract class AbstractOperation implements ClientOperation
     /** @var Deferred */
     private $deferred;
     /** @var UserCredentials|null */
-    private $credentials;
+    protected $credentials;
     /** @var TcpCommand */
     private $requestCommand;
     /** @var TcpCommand */
@@ -51,7 +51,7 @@ abstract class AbstractOperation implements ClientOperation
 
     abstract protected function inspectResponse(Message $response): InspectionResult;
 
-    abstract protected function transformResponse(Message $response): object;
+    abstract protected function transformResponse(Message $response);
 
     public function promise(): Promise
     {

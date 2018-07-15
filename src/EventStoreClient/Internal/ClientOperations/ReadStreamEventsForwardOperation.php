@@ -100,7 +100,7 @@ class ReadStreamEventsForwardOperation extends AbstractOperation
         }
     }
 
-    protected function transformResponse(Message $response): object
+    protected function transformResponse(Message $response)
     {
         /* @var ReadStreamEventsCompleted $response */
         $records = $response->getEvents();
