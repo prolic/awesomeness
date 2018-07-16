@@ -71,7 +71,7 @@ interface EventStoreAsyncConnection
     ): Promise;
 
     /** @return Promise<AllEventsSlice> */
-    public function readAllEventsForward(
+    public function readAllEventsForwardAsync(
         Position $position,
         int $count,
         bool $resolveLinkTos = true,
@@ -79,7 +79,7 @@ interface EventStoreAsyncConnection
     ): Promise;
 
     /** @return Promise<AllEventsSlice> */
-    public function readAllEventsBackward(
+    public function readAllEventsBackwardAsync(
         Position $position,
         int $count,
         bool $resolveLinkTos = true,

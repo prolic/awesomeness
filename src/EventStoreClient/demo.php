@@ -77,14 +77,14 @@ Loop::run(function () {
 
     \var_dump($wr);
 
-    $ae = yield $connection->readAllEventsForward(Position::start(), 2, false, new UserCredentials(
+    $ae = yield $connection->readAllEventsForwardAsync(Position::start(), 2, false, new UserCredentials(
         'admin',
         'changeit'
     ));
 
     \var_dump($ae);
 
-    $aeb = yield $connection->readAllEventsBackward(Position::end(), 2, false, new UserCredentials(
+    $aeb = yield $connection->readAllEventsBackwardAsync(Position::end(), 2, false, new UserCredentials(
         'admin',
         'changeit'
     ));

@@ -80,4 +80,26 @@ class Position
     {
         return $this->commitPosition === $other->commitPosition && $this->preparePosition === $other->preparePosition;
     }
+
+    public function greater(Position $other): bool
+    {
+        return $this->commitPosition > $other->commitPosition
+            || ($this->commitPosition === $other->commitPosition && $this->preparePosition > $other->preparePosition);
+    }
+
+    public function smaller(Position $other): bool
+    {
+        return $this->commitPosition < $other->commitPosition
+            || ($this->commitPosition === $other->commitPosition && $this->preparePosition < $other->preparePosition);
+    }
+
+    public function greaterOrEquals(Position $other): bool
+    {
+        return $this->greater($other) || $this->equals($other);
+    }
+
+    public function smallerOrEquals(Position $other): bool
+    {
+        return $this->smaller($other) || $this->equals($other);
+    }
 }

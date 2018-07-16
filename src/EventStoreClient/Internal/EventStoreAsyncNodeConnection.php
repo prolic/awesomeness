@@ -254,7 +254,7 @@ final class EventStoreAsyncNodeConnection implements AsyncConnection, AsyncTrans
         return $deferred->promise();
     }
 
-    public function readAllEventsForward(
+    public function readAllEventsForwardAsync(
         Position $position,
         int $count,
         bool $resolveLinkTos = true,
@@ -281,7 +281,7 @@ final class EventStoreAsyncNodeConnection implements AsyncConnection, AsyncTrans
         return $deferred->promise();
     }
 
-    public function readAllEventsBackward(
+    public function readAllEventsBackwardAsync(
         Position $position,
         int $count,
         bool $resolveLinkTos = true,

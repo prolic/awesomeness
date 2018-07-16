@@ -79,7 +79,6 @@ abstract class EventStoreCatchUpSubscription
     private $connectListener;
 
     /**
-     * EventStoreCatchUpSubscription constructor.
      * @param EventStoreAsyncConnection $connection
      * @param string $streamId
      * @param null|UserCredentials $userCredentials

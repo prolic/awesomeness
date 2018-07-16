@@ -150,7 +150,7 @@ final class EventStoreNodeConnection implements
         bool $resolveLinkTos = true,
         UserCredentials $userCredentials = null
     ): StreamEventsSlice {
-        return Promise\wait($this->asyncConnection->readAllEventsForward(
+        return Promise\wait($this->asyncConnection->readAllEventsForwardAsync(
             $position,
             $count,
             $resolveLinkTos,
@@ -165,7 +165,7 @@ final class EventStoreNodeConnection implements
         bool $resolveLinkTos = true,
         UserCredentials $userCredentials = null
     ): StreamEventsSlice {
-        return Promise\wait($this->asyncConnection->readAllEventsBackward(
+        return Promise\wait($this->asyncConnection->readAllEventsBackwardAsync(
             $position,
             $count,
             $resolveLinkTos,

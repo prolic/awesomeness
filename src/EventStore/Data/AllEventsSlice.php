@@ -17,7 +17,14 @@ class AllEventsSlice
     /** @var bool */
     private $isEndOfStream;
 
-    /** @internal */
+    /**
+     * @internal
+     *
+     * @param ReadDirection $readDirection
+     * @param Position $fromPosition
+     * @param Position $nextPosition
+     * @param ResolvedEvent[] $events
+     */
     public function __construct(
         ReadDirection $readDirection,
         Position $fromPosition,
@@ -46,6 +53,7 @@ class AllEventsSlice
         return $this->nextPosition;
     }
 
+    /** @return ResolvedEvent[] */
     public function events(): array
     {
         return $this->events;
