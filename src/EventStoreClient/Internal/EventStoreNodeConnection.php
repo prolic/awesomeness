@@ -315,7 +315,7 @@ final class EventStoreNodeConnection implements
             $userCredentials
         ));
 
-        return Promise\wait($deferred->promise());
+        Promise\wait($deferred->promise());
     }
 
     public function commitTransaction(
