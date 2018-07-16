@@ -42,32 +42,32 @@ class SubscriptionItem
         $this->lastUpdated = $this->createdTime;
     }
 
-    public function getOperation(): SubscriptionOperation
+    public function operation(): SubscriptionOperation
     {
         return $this->operation;
     }
 
-    public function getMaxRetries(): int
+    public function maxRetries(): int
     {
         return $this->maxRetries;
     }
 
-    public function getTimeout(): int
+    public function timeout(): int
     {
         return $this->timeout;
     }
 
-    public function getCreatedTime(): DateTimeImmutable
+    public function createdTime(): DateTimeImmutable
     {
         return $this->createdTime;
     }
 
-    public function getConnectionId(): string
+    public function connectionId(): string
     {
         return $this->connectionId;
     }
 
-    public function getCorrelationId(): string
+    public function correlationId(): string
     {
         return $this->correlationId;
     }
@@ -77,12 +77,12 @@ class SubscriptionItem
         return $this->isSubscribed;
     }
 
-    public function getRetryCount(): int
+    public function retryCount(): int
     {
         return $this->retryCount;
     }
 
-    public function getLastUpdated(): DateTimeImmutable
+    public function lastUpdated(): DateTimeImmutable
     {
         return $this->lastUpdated;
     }
@@ -102,9 +102,9 @@ class SubscriptionItem
         $this->isSubscribed = $isSubscribed;
     }
 
-    public function setRetryCount(int $retryCount): void
+    public function incRetryCount(): void
     {
-        $this->retryCount = $retryCount;
+        ++$this->retryCount;
     }
 
     public function setLastUpdated(DateTimeImmutable $lastUpdated): void

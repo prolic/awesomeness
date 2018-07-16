@@ -96,31 +96,38 @@ class OperationsManager
 
     public function checkTimeoutsAndRetry(TcpPackageConnection $connection): void
     {
-        $retryOperations = [];
-        $removeOperations = [];
+        $retryOperations = new SplQueue();
+        $removeOperations = new SplQueue();
 
         foreach ($this->activeOperations as $operation) {
             if ($operation->connectionId() !== $connection->connectionId()) {
-                $retryOperations[] = $operation;
+                $retryOperations->enqueue($operation);
             } elseif ($operation->timeout() > 0
                 && DateTimeUtil::utcNow()->format('U.u') - $operation->lastUpdated()->format('U.u') > $this->settings->operationTimeout()
             ) {
+                $err = \sprintf(
+                    'EventStoreNodeConnection \'%s\': subscription never got confirmation from server',
+                    $connection->connectionId()
+                );
+
+                // _settings.Log.Error(err);
+
                 if ($this->settings->failOnNoServerResponse()) {
-                    $operation->operation()->fail(
-                        OperationTimedOutException::with($this->connectionName, $operation->operation())
-                    );
-                    $removeOperations[] = $operation;
+                    $operation->operation()->fail(new OperationTimedOutException($err));
+                    $removeOperations->enqueue($operation);
                 } else {
-                    $retryOperations[] = $operation;
+                    $retryOperations->enqueue($operation);
                 }
             }
         }
 
-        foreach ($retryOperations as $operation) {
+        while (! $retryOperations->isEmpty()) {
+            $operation = $removeOperations->dequeue();
             $this->scheduleOperationRetry($operation);
         }
 
-        foreach ($removeOperations as $operation) {
+        while (! $removeOperations->isEmpty()) {
+            $operation = $removeOperations->dequeue();
             $this->removeOperation($operation);
         }
 
@@ -145,7 +152,7 @@ class OperationsManager
 
         if ($operation->maxRetries() >= 0 && $operation->retryCount() >= $operation->maxRetries()) {
             $operation->operation()->fail(
-                RetriesLimitReachedException::with($operation->operation(), $operation->retryCount())
+                RetriesLimitReachedException::with($operation->retryCount())
             );
 
             return;
@@ -157,10 +164,12 @@ class OperationsManager
     public function removeOperation(OperationItem $operation): bool
     {
         if (! isset($this->activeOperations[$operation->correlationId()])) {
+            //LogDebug("RemoveOperation FAILED for {0}", operation);
             return false;
         }
 
         unset($this->activeOperations[$operation->correlationId()]);
+        //LogDebug("RemoveOperation SUCCEEDED for {0}", operation);
 
         return true;
     }
@@ -204,5 +213,16 @@ class OperationsManager
     {
         $this->waitingOperations->enqueue($operation);
         $this->tryScheduleWaitingOperations($connection);
+    }
+
+    private function logDebug(string $message): void
+    {
+        if ($this->settings->verboseLogging()) {
+            $this->settings->logger()->debug(\sprintf(
+                'EventStoreNodeConnection \'%s\': %s',
+                $this->connectionName,
+                $message
+            ));
+        }
     }
 }
