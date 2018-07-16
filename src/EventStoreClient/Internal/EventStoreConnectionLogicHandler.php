@@ -27,6 +27,8 @@ use Prooph\EventStoreClient\Exception\CannotEstablishConnectionException;
 use Prooph\EventStoreClient\Exception\EventStoreConnectionException;
 use Prooph\EventStoreClient\Exception\InvalidOperationException;
 use Prooph\EventStoreClient\Internal\ClientOperations\ClientOperation;
+use Prooph\EventStoreClient\Internal\ClientOperations\ConnectToPersistentSubscriptionOperation;
+use Prooph\EventStoreClient\Internal\ClientOperations\VolatileSubscriptionOperation;
 use Prooph\EventStoreClient\Internal\Message\CloseConnectionMessage;
 use Prooph\EventStoreClient\Internal\Message\EstablishTcpConnectionMessage;
 use Prooph\EventStoreClient\Internal\Message\HandleTcpPackageMessage;
@@ -59,6 +61,8 @@ class EventStoreConnectionLogicHandler
     private $handler;
     /** @var OperationsManager */
     private $operations;
+    /** @var SubscriptionsManager */
+    private $subscriptions;
     /** @var EventHandler */
     private $eventHandler;
     /** @var StopWatch */
@@ -89,6 +93,7 @@ class EventStoreConnectionLogicHandler
         $this->connectingPhase = ConnectingPhase::invalid();
         $this->handler = new MessageHandler();
         $this->operations = new OperationsManager($connection->connectionName(), $settings);
+        $this->subscriptions = new SubscriptionsManager($connection->connectionName(), $settings);
         $this->eventHandler = new EventHandler();
         $this->stopWatch = StopWatch::startNew();
 
@@ -248,7 +253,7 @@ class EventStoreConnectionLogicHandler
 
         Loop::cancel($this->timerTickWatcherId);
         $this->operations->cleanUp();
-        //_subscriptions.CleanUp(); // @todo
+        $this->subscriptions->cleanUp();
         $this->closeTcpConnection($reason);
 
         if (null !== $exception) {
@@ -351,7 +356,7 @@ class EventStoreConnectionLogicHandler
         $this->state = ConnectionState::connecting();
         $this->connectingPhase = ConnectingPhase::reconnecting();
 
-        //_subscriptions.PurgeSubscribedAndDroppedSubscriptions(_connection.ConnectionId); // @todo
+        $this->subscriptions->purgeSubscribedAndDroppedSubscriptions($this->connection->connectionId());
 
         if (null === $this->reconnInfo) {
             $this->reconnInfo = new ReconnectionInfo(0, $this->stopWatch->elapsed());
@@ -424,8 +429,12 @@ class EventStoreConnectionLogicHandler
 
         $this->raiseConnectedEvent($this->connection->remoteEndPoint());
 
+        // @todo this leeds to a delay after first connection
+        //if ($this->stopWatch->elapsed() - $this->lastTimeoutsTimeStamp >= $this->settings->operationTimeoutCheckPeriod()) {
         $this->operations->checkTimeoutsAndRetry($this->connection);
+        $this->subscriptions->checkTimeoutsAndRetry($this->connection);
         $this->lastTimeoutsTimeStamp = $this->stopWatch->elapsed();
+        //}
     }
 
     private function timerTick(): void
@@ -471,7 +480,7 @@ class EventStoreConnectionLogicHandler
                 if ($elapsed - $this->lastTimeoutsTimeStamp >= $this->settings->operationTimeoutCheckPeriod()) {
                     $this->reconnInfo = new ReconnectionInfo(0, $elapsed);
                     $this->operations->checkTimeoutsAndRetry($this->connection);
-                    // _subscriptions.CheckTimeoutsAndRetry(_connection); // @todo
+                    $this->subscriptions->checkTimeoutsAndRetry($this->connection);
                     $this->lastTimeoutsTimeStamp = $elapsed;
                 }
 
@@ -552,12 +561,85 @@ class EventStoreConnectionLogicHandler
 
     private function startSubscription(StartSubscriptionMessage $message): void
     {
-        // @todo
+        switch ($this->state->value()) {
+            case ConnectionState::Init:
+                $message->deferred()->fail(new InvalidOperationException(\sprintf(
+                    'EventStoreNodeConnection \'%s\' is not active',
+                    $this->esConnection->connectionName()
+                )));
+                break;
+            case ConnectionState::Connecting:
+            case ConnectionState::Connected:
+                // @todo add logger to VSO
+                $operation = new VolatileSubscriptionOperation(
+                    $message->deferred(),
+                    $message->streamId(),
+                    $message->resolveTo(),
+                    $message->userCredentials(),
+                    $message->eventAppeared(),
+                    $message->subscriptionDropped(),
+                    function (): TcpPackageConnection {
+                        return $this->connection;
+                    }
+                );
+
+                //LogDebug("StartSubscription {4} {0}, {1}, {2}, {3}.", operation.GetType().Name, operation, msg.MaxRetries, msg.Timeout, _state == ConnectionState.Connected ? "fire" : "enqueue");
+
+                $subscription = new SubscriptionItem($operation, $message->maxRetries(), $message->timeout());
+
+                if ($this->state->equals(ConnectionState::connecting())) {
+                    $this->subscriptions->enqueueSubscription($subscription);
+                } else {
+                    $this->subscriptions->startSubscription($subscription, $this->connection);
+                }
+
+                break;
+            case ConnectionState::Closed:
+                $message->deferred()->fail(ConnectionClosedException::withName($this->esConnection->connectionName()));
+                break;
+        }
     }
 
     private function startPersistentSubscription(StartPersistentSubscriptionMessage $message): void
     {
-        // @todo
+        switch ($this->state->value()) {
+            case ConnectionState::Init:
+                $message->deferred()->fail(new InvalidOperationException(\sprintf(
+                    'EventStoreNodeConnection \'%s\' is not active',
+                    $this->esConnection->connectionName()
+                )));
+                break;
+            case ConnectionState::Connecting:
+            case ConnectionState::Connected:
+                // @todo add logger to CTPSO
+                $operation = new ConnectToPersistentSubscriptionOperation(
+                    $message->deferred(),
+                    $message->subscriptionId(),
+                    $message->bufferSize(),
+                    $message->streamId(),
+                    $message->userCredentials(),
+                    $message->eventAppeared(),
+                    $message->subscriptionDropped(),
+                    function (): TcpPackageConnection {
+                        return $this->connection;
+                    }
+                );
+
+                //LogDebug("StartSubscription {4} {0}, {1}, {2}, {3}.", operation.GetType().Name, operation, msg.MaxRetries, msg.Timeout, _state == ConnectionState.Connected ? "fire" : "enqueue");
+
+                $subscription = new SubscriptionItem($operation, $message->maxRetries(), $message->timeout());
+
+                if ($this->state->equals(ConnectionState::connecting())) {
+                    $this->subscriptions->enqueueSubscription($subscription);
+                } else {
+                    $this->subscriptions->startSubscription($subscription, $this->connection);
+                }
+
+                break;
+            case ConnectionState::Closed:
+                $message->deferred()->fail(ConnectionClosedException::withName($this->esConnection->connectionName()));
+                break;
+        }
     }
 
     private function handleTcpPackage(TcpPackageConnection $connection, TcpPackage $package): void
@@ -643,31 +725,27 @@ class EventStoreConnectionLogicHandler
             if ($this->state->equals(ConnectionState::connected())) {
                 $this->operations->tryScheduleWaitingOperations($connection);
             }
-        }
-        // @todo
-        /*
-        elseif ($subscription = $this->subscriptions->tryGetActiveSubscription($package->correlationId())) {
+        } elseif ($subscription = $this->subscriptions->getActiveSubscription($package->correlationId())) {
             $result = $subscription->operation()->inspectPackage($package);
 
             switch ($result->inspectionDecision()->value()) {
                 case InspectionDecision::DoNothing:
                     break;
                 case InspectionDecision::EndOperation:
-                    //$this->subscriptions->removeSubscription($subscription); // @todo
+                    $this->subscriptions->removeSubscription($subscription);
                     break;
                 case InspectionDecision::Retry:
-                    //$this->subscriptions->scheduleSubscriptionRetry($subscription); // @todo
+                    $this->subscriptions->scheduleSubscriptionRetry($subscription);
                     break;
                 case InspectionDecision::Reconnect:
                     $this->reconnectTo(new NodeEndPoints($result->tcpEndPoint(), $result->secureTcpEndPoint()));
-                    //$this->subscriptions->scheduleSubscriptionRetry($subscription); // @todo
+                    $this->subscriptions->scheduleSubscriptionRetry($subscription);
                     break;
                 case InspectionDecision::Subscribed:
-                    $subscription->isSubscribed = true; // @todo
+                    $subscription->setIsSubscribed(true);
                     break;
             }
         }
-        */
     }
 
     private function reconnectTo(NodeEndPoints $endPoints): void

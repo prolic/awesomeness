@@ -45,9 +45,9 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
     protected $resolveLinkTos;
     /** @var UserCredentials|null */
     protected $userCredentials;
-    /** @var callable(T, TE, Task) */
+    /** @var callable(EventStoreSubscription $subscription, object $resolvedEvent, Promise $promise) */
     protected $eventAppeared;
-    /** @var callable(T, SubscriptionDropReason $reason, Throwable $exception) */
+    /** @var callable(EventStoreSubscription $subscription, SubscriptionDropReason $reason, Throwable $exception) */
     private $subscriptionDropped;
     /** @var bool */
     //private $verboseLogging;
@@ -59,7 +59,7 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
     private $actionQueue;
     /** @var bool */
     private $actionExecuting;
-    /** @var T */
+    /** @var EventStoreSubscription */
     private $subscription;
     /** @var bool */
     private $unsubscribed;

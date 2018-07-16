@@ -46,7 +46,6 @@ class ConnectToPersistentSubscriptionOperation extends AbstractSubscriptionOpera
         string $groupName,
         int $bufferSize,
         string $streamId,
-        bool $resolveLinkTos,
         ?UserCredentials $userCredentials,
         callable $eventAppeared,
         ?callable $subscriptionDropped,
@@ -55,7 +54,7 @@ class ConnectToPersistentSubscriptionOperation extends AbstractSubscriptionOpera
         parent::__construct(
             $deferred,
             $streamId,
-            $resolveLinkTos,
+            false,
             $userCredentials,
             $eventAppeared,
             $subscriptionDropped,
