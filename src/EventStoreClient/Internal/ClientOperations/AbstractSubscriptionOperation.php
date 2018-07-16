@@ -28,6 +28,7 @@ use Prooph\EventStore\Transport\Tcp\TcpPackage;
 use Prooph\EventStoreClient\Exception\NotAuthenticatedException;
 use Prooph\EventStoreClient\Exception\ServerError;
 use Prooph\EventStoreClient\Exception\UnexpectedCommandException;
+use Prooph\EventStoreClient\Internal\EventStoreSubscription;
 use Prooph\EventStoreClient\Transport\Tcp\TcpPackageConnection;
 use SplQueue;
 use Throwable;
@@ -42,7 +43,7 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
     protected $streamId;
     /** @var bool */
     protected $resolveLinkTos;
-    /** @var UserCredentials */
+    /** @var UserCredentials|null */
     protected $userCredentials;
     /** @var callable(T, TE, Task) */
     protected $eventAppeared;
@@ -70,7 +71,7 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
         Deferred $deferred,
         string $streamId,
         bool $resolveLinkTos,
-        UserCredentials $userCredentials,
+        ?UserCredentials $userCredentials,
         callable $eventAppeared,
         ?callable $subscriptionDropped,
         //bool $verboseLogging,
@@ -128,15 +129,12 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
         );
     }
 
-    abstract protected function checkInspectPackage(TcpPackage $package, InspectionResult &$result): bool;
+    abstract protected function preInspectPackage(TcpPackage $package): ?InspectionResult;
 
     public function inspectPackage(TcpPackage $package): InspectionResult
     {
         try {
-            /** @var InspectionResult $result */
-            $result = null;
-
-            if ($this->checkInspectPackage($package, $result)) {
+            if ($result = $this->preInspectPackage($package)) {
                 return $result;
             }
 
@@ -310,7 +308,7 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
         $this->deferred->resolve($this->subscription);
     }
 
-    abstract protected function createSubscriptionObject(int $lastCommitPosition, ?int $lastEventNumber): object;
+    abstract protected function createSubscriptionObject(int $lastCommitPosition, ?int $lastEventNumber): EventStoreSubscription;
 
     protected function eventAppeared(object $e): void
     {
