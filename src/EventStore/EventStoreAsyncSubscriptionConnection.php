@@ -108,7 +108,7 @@ interface EventStoreAsyncSubscriptionConnection extends EventStoreAsyncConnectio
      * @param int $bufferSize
      * @param bool $autoAck
      * @param UserCredentials|null $userCredentials
-     * @return AbstractEventStorePersistentSubscription
+     * @return EventStorePersistentSubscription
      */
     public function connectToPersistentSubscription(
         string $stream,
@@ -118,7 +118,7 @@ interface EventStoreAsyncSubscriptionConnection extends EventStoreAsyncConnectio
         int $bufferSize = 10,
         bool $autoAck = true,
         UserCredentials $userCredentials = null
-    ): AbstractEventStorePersistentSubscription;
+    ): EventStorePersistentSubscription;
 
     /**
      * @param string $stream

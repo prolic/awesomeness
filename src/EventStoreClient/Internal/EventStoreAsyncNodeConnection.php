@@ -33,6 +33,7 @@ use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 use Prooph\EventStoreClient\Exception\InvalidOperationException;
 use Prooph\EventStoreClient\Exception\MaxQueueSizeLimitReachedException;
 use Prooph\EventStoreClient\Internal\ClientOperations\AppendToStreamOperation;
+use Prooph\EventStoreClient\Internal\ClientOperations\ClientOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\CommitTransactionOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\CreatePersistentSubscriptionOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\DeletePersistentSubscriptionOperation;
