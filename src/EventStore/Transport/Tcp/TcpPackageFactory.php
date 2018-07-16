@@ -31,6 +31,8 @@ class TcpPackageFactory
         ?string $data,
         ?UserCredentials $credentials
     ): TcpPackage {
+        $dto = null;
+
         switch ($command->value()) {
             case TcpCommand::Pong:
                 break;
@@ -78,7 +80,7 @@ class TcpPackageFactory
                 $dto->mergeFromString($data);
                 break;
             case TcpCommand::BadRequest:
-                throw new RuntimeException("Bad Request: $data");
+                break;
             case TcpCommand::WriteEventsCompleted:
                 $dto = new WriteEventsCompleted();
                 $dto->mergeFromString($data);
@@ -88,7 +90,7 @@ class TcpPackageFactory
                 $dto->mergeFromString($data);
                 break;
             case TcpCommand::NotAuthenticatedException:
-                throw new RuntimeException("Not Authenticated: $data");
+                break;
             case TcpCommand::TransactionStartCompleted:
                 $dto = new TransactionStartCompleted();
                 $dto->mergeFromString($data);

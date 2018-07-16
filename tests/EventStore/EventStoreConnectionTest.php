@@ -8,10 +8,10 @@ use PHPUnit\Exception;
 use PHPUnit\Framework\TestCase;
 use Prooph\EventStore\Data\EventData;
 use Prooph\EventStore\Data\EventId;
+use Prooph\EventStore\Data\ExpectedVersion;
 use Prooph\EventStore\EventStoreConnection;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Exception\InvalidArgumentException;
-use Prooph\EventStore\Data\ExpectedVersion;
 use Prooph\PdoEventStore\PdoEventStoreConnection;
 
 abstract class EventStoreConnectionTest extends TestCase
