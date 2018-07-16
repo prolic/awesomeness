@@ -13,6 +13,7 @@ use Prooph\EventStoreClient\ConnectionSettings;
 use Prooph\EventStoreClient\Exception\OperationTimedOutException;
 use Prooph\EventStoreClient\Exception\RetriesLimitReachedException;
 use Prooph\EventStoreClient\Transport\Tcp\TcpPackageConnection;
+use SplQueue;
 use function Amp\call;
 
 /** @internal */
@@ -26,8 +27,8 @@ class OperationsManager
     private $settings;
     /** @var OperationItem[] */
     private $activeOperations = [];
-    /** @var OperationItem[] */
-    private $waitingOperations = [];
+    /** @var SplQueue<OperationItem> */
+    private $waitingOperations;
     /** @var OperationItem[] */
     private $retryPendingOperations = [];
     /** @var int */
@@ -45,6 +46,8 @@ class OperationsManager
 
             return ($a->segNo() < $b->segNo()) ? -1 : 1;
         };
+
+        $this->waitingOperations = new SplQueue();
     }
 
     public function totalOperationCount(): int
@@ -69,7 +72,8 @@ class OperationsManager
             }
         }
 
-        foreach ($this->waitingOperations as $operationItem) {
+        while (! $this->waitingOperations->isEmpty()) {
+            $operationItem = $this->waitingOperations->dequeue();
             try {
                 $operationItem->operation()->fail($closedConnectionException);
             } catch (\Error $e) {
@@ -86,7 +90,6 @@ class OperationsManager
         }
 
         $this->activeOperations = [];
-        $this->waitingOperations = [];
         $this->retryPendingOperations = [];
         $this->totalOperationCount = 0;
     }
@@ -164,10 +167,10 @@ class OperationsManager
 
     public function tryScheduleWaitingOperations(TcpPackageConnection $connection): void
     {
-        while (\count($this->waitingOperations) > 0
+        while (! $this->waitingOperations->isEmpty()
             && \count($this->activeOperations) < $this->settings->maxConcurrentItems()
         ) {
-            $this->executeOperation(\array_shift($this->waitingOperations), $connection);
+            $this->executeOperation($this->waitingOperations->dequeue(), $connection);
         }
 
         $this->totalOperationCount = \count($this->activeOperations) + \count($this->waitingOperations);
@@ -194,12 +197,12 @@ class OperationsManager
 
     public function enqueueOperation(OperationItem $operationItem): void
     {
-        $this->waitingOperations[] = $operationItem;
+        $this->waitingOperations->enqueue($operationItem);
     }
 
     public function scheduleOperation(OperationItem $operation, TcpPackageConnection $connection): void
     {
-        $this->waitingOperations[] = $operation;
+        $this->waitingOperations->enqueue($operation);
         $this->tryScheduleWaitingOperations($connection);
     }
 }
