@@ -76,7 +76,7 @@ abstract class EventStoreCatchUpSubscription
     private $stopped;
 
     /** @var ListenerHandler */
-    private $reconnectListener;
+    private $connectListener;
 
     /**
      * EventStoreCatchUpSubscription constructor.
@@ -115,7 +115,7 @@ abstract class EventStoreCatchUpSubscription
         $this->maxPushQueueSize = $settings->maxLiveQueueSize();
         //$this->verboseLogging = $settings->verboseLogging(); // @todo
         $this->subscriptionName = $settings->subscriptionName() ?? '';
-        $this->reconnectListener = function (): void {
+        $this->connectListener = function (): void {
         };
     }
 
@@ -167,7 +167,7 @@ abstract class EventStoreCatchUpSubscription
         //if (Verbose) Log.Debug("Catch-up Subscription {0} to {1}: requesting stop...", SubscriptionName, IsSubscribedToAll ? "<all>" : StreamId);
         //if (Verbose) Log.Debug("Catch-up Subscription {0} to {1}: unhooking from connection.Connected.", SubscriptionName, IsSubscribedToAll ? "<all>" : StreamId);
 
-        $this->connection->detach($this->reconnectListener);
+        $this->connection->detach($this->connectListener);
         $this->shouldStop = true;
         $this->enqueueSubscriptionDropNotification(SubscriptionDropReason::userInitiated(), null);
     }
@@ -177,7 +177,7 @@ abstract class EventStoreCatchUpSubscription
         //if (Verbose) Log.Debug("Catch-up Subscription {0} to {1}: recovering after reconnection.", SubscriptionName, IsSubscribedToAll ? "<all>" : StreamId);
         //if (Verbose) Log.Debug("Catch-up Subscription {0} to {1}: unhooking from connection.Connected.", SubscriptionName, IsSubscribedToAll ? "<all>" : StreamId);
 
-        $this->connection->detach($this->reconnectListener);
+        $this->connection->detach($this->connectListener);
         Loop::defer(function (): Generator {
             yield $this->runSubscriptionAsync();
         });
@@ -220,15 +220,23 @@ abstract class EventStoreCatchUpSubscription
                 $subscription = empty($this->streamId) ?
                     yield $this->connection->subscribeToAllAsync(
                         $this->resolveLinkTos,
-                        $this->enqueuePushedEvent,
-                        $this->serverSubscriptionDropped,
+                        function (EventStoreSubscription $subscription, ResolvedEvent $e): Promise {
+                            return $this->enqueuePushedEvent($subscription, $e);
+                        },
+                        function (EventStoreSubscription $subscription, SubscriptionDropReason $reason, \Throwable $exception): void {
+                            $this->serverSubscriptionDropped($subscription, $reason, $exception);
+                        },
                         $this->userCredentials
                     )
                     : yield $this->connection->subscribeToStreamAsync(
                         $this->streamId,
                         $this->resolveLinkTos,
-                        $this->enqueuePushedEvent, // @todo callback
-                        $this->serverSubscriptionDropped, // @todo callback
+                        function (EventStoreSubscription $subscription, ResolvedEvent $e): Promise {
+                            return $this->enqueuePushedEvent($subscription, $e);
+                        },
+                        function (EventStoreSubscription $subscription, SubscriptionDropReason $reason, \Throwable $exception): void {
+                            $this->serverSubscriptionDropped($subscription, $reason, $exception);
+                        },
                         $this->userCredentials
                     );
 
@@ -273,7 +281,7 @@ abstract class EventStoreCatchUpSubscription
         ($this->liveProcessingStarted)($this);
 
         //if (Verbose) Log . Debug("Catch-up Subscription {0} to {1}: hooking to connection.Connected", SubscriptionName, IsSubscribedToAll ? "<all>" : StreamId);
-        $this->connection->onConnected(function (ClientConnectionEventArgs $args): void {
+        $this->connectListener = $this->connection->onConnected(function (ClientConnectionEventArgs $args): void {
             $this->onReconnect($args);
         });
 

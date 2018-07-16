@@ -17,7 +17,6 @@ use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Data\WriteResult;
 use Prooph\EventStore\EventStoreConnection as Connection;
 use Prooph\EventStore\EventStorePersistentSubscription;
-use Prooph\EventStore\EventStoreSubscriptionConnection as SubscriptionConnection;
 use Prooph\EventStore\EventStoreTransaction;
 use Prooph\EventStore\EventStoreTransactionConnection as TransactionConnection;
 use Prooph\EventStore\Internal\Data\PersistentSubscriptionCreateResult;
@@ -34,8 +33,7 @@ use Prooph\PdoEventStore\ClientOperations\StartTransactionOperation;
 /** @internal */
 final class EventStoreNodeConnection implements
     Connection,
-    TransactionConnection,
-    SubscriptionConnection
+    TransactionConnection
 {
     /** @var EventStoreAsyncNodeConnection */
     private $asyncConnection;
@@ -339,32 +337,32 @@ final class EventStoreNodeConnection implements
         return Promise\wait($deferred->promise());
     }
 
-    public function whenConnected(callable $handler): ListenerHandler
+    public function onConnected(callable $handler): ListenerHandler
     {
         return $this->asyncConnection->onConnected($handler);
     }
 
-    public function whenDisconnected(callable $handler): ListenerHandler
+    public function onDisconnected(callable $handler): ListenerHandler
     {
         return $this->asyncConnection->onDisconnected($handler);
     }
 
-    public function whenReconnecting(callable $handler): ListenerHandler
+    public function onReconnecting(callable $handler): ListenerHandler
     {
         return $this->asyncConnection->onReconnecting($handler);
     }
 
-    public function whenClosed(callable $handler): ListenerHandler
+    public function onClosed(callable $handler): ListenerHandler
     {
         return $this->asyncConnection->onClosed($handler);
     }
 
-    public function whenErrorOccurred(callable $handler): ListenerHandler
+    public function onErrorOccurred(callable $handler): ListenerHandler
     {
         return $this->asyncConnection->onErrorOccurred($handler);
     }
 
-    public function whenAuthenticationFailed(callable $handler): ListenerHandler
+    public function onAuthenticationFailed(callable $handler): ListenerHandler
     {
         return $this->asyncConnection->onAuthenticationFailed($handler);
     }

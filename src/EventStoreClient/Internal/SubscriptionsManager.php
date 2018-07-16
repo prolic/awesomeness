@@ -25,7 +25,7 @@ class SubscriptionsManager
     /** @var SplQueue */
     private $waitingSubscriptions;
     /** @var SubscriptionItem[] */
-    private $retryPendingSubscriptions;
+    private $retryPendingSubscriptions = [];
 
     public function __construct(string $connectionName, ConnectionSettings $settings)
     {
@@ -34,7 +34,7 @@ class SubscriptionsManager
         $this->waitingSubscriptions = new SplQueue();
     }
 
-    public function getActiveSubscription(string $correlationId, $subscription): ?SubscriptionItem
+    public function getActiveSubscription(string $correlationId): ?SubscriptionItem
     {
         return $this->activeSubscriptions[$correlationId] ?? null;
     }

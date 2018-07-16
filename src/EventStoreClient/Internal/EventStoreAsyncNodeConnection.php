@@ -8,6 +8,7 @@ use Amp\Deferred;
 use Amp\Promise;
 use Prooph\EventStore\Common\SystemEventTypes;
 use Prooph\EventStore\Common\SystemStreams;
+use Prooph\EventStore\Data\CatchUpSubscriptionSettings;
 use Prooph\EventStore\Data\EventData;
 use Prooph\EventStore\Data\EventReadResult;
 use Prooph\EventStore\Data\EventReadStatus;
@@ -18,11 +19,12 @@ use Prooph\EventStore\Data\StreamMetadata;
 use Prooph\EventStore\Data\StreamMetadataResult;
 use Prooph\EventStore\Data\SystemSettings;
 use Prooph\EventStore\Data\UserCredentials;
+use Prooph\EventStore\EventStoreAllCatchUpSubscription;
 use Prooph\EventStore\EventStoreAsyncConnection as AsyncConnection;
-use Prooph\EventStore\EventStoreAsyncSubscriptionConnection as AsyncSubscriptionConnection;
 use Prooph\EventStore\EventStoreAsyncTransaction;
 use Prooph\EventStore\EventStoreAsyncTransactionConnection as AsyncTransactionConnection;
 use Prooph\EventStore\EventStorePersistentSubscription;
+use Prooph\EventStore\EventStoreStreamCatchUpSubscription;
 use Prooph\EventStore\Exception\OutOfRangeException;
 use Prooph\EventStore\Exception\UnexpectedValueException;
 use Prooph\EventStore\Internal\Consts;
@@ -50,10 +52,7 @@ use Prooph\EventStoreClient\Internal\Message\CloseConnectionMessage;
 use Prooph\EventStoreClient\Internal\Message\StartConnectionMessage;
 use Prooph\EventStoreClient\Internal\Message\StartOperationMessage;
 
-final class EventStoreAsyncNodeConnection implements
-    AsyncConnection,
-    AsyncTransactionConnection,
-    AsyncSubscriptionConnection
+final class EventStoreAsyncNodeConnection implements AsyncConnection, AsyncTransactionConnection
 {
     /** @var string */
     private $connectionName;
@@ -491,6 +490,53 @@ final class EventStoreAsyncNodeConnection implements
         return $deferred->promise();
     }
 
+    /** {@inheritdoc} */
+    public function subscribeToStreamAsync(
+        string $stream,
+        bool $resolveLinkTos,
+        callable $eventAppeared,
+        callable $subscriptionDropped = null,
+        UserCredentials $userCredentials = null
+    ): Promise {
+        // TODO: Implement subscribeToStreamAsync() method.
+    }
+
+    /** {@inheritdoc} */
+    public function subscribeToStreamFrom(
+        string $stream,
+        ?int $lastCheckpoint,
+        CatchUpSubscriptionSettings $settings,
+        callable $eventAppeared,
+        callable $liveProcessingStarted = null,
+        callable $subscriptionDropped = null,
+        UserCredentials $userCredentials = null
+    ): EventStoreStreamCatchUpSubscription {
+        // TODO: Implement subscribeToStreamFrom() method.
+    }
+
+    /** {@inheritdoc} */
+    public function subscribeToAllAsync(
+        bool $resolveLinkTos,
+        callable $eventAppeared,
+        callable $subscriptionDropped = null,
+        UserCredentials $userCredentials = null
+    ): Promise {
+        // TODO: Implement subscribeToAllAsync() method.
+    }
+
+    /** {@inheritdoc} */
+    public function subscribeToAllFrom(
+        ?Position $lastCheckpoint,
+        CatchUpSubscriptionSettings $settings,
+        callable $eventAppeared,
+        callable $liveProcessingStarted = null,
+        callable $subscriptionDropped = null,
+        UserCredentials $userCredentials = null
+    ): EventStoreAllCatchUpSubscription {
+        // TODO: Implement subscribeToAllFrom() method.
+    }
+
+    /** {@inheritdoc} */
     public function connectToPersistentSubscription(
         string $stream,
         string $groupName,
@@ -501,6 +547,19 @@ final class EventStoreAsyncNodeConnection implements
         UserCredentials $userCredentials = null
     ): EventStorePersistentSubscription {
         // TODO: Implement connectToPersistentSubscription() method.
+    }
+
+    /** {@inheritdoc} */
+    public function connectToPersistentSubscriptionAsync(
+        string $stream,
+        string $groupName,
+        callable $eventAppeared,
+        ?callable $subscriptionDropped,
+        int $bufferSize = 10,
+        bool $autoAck = true,
+        UserCredentials $userCredentials = null
+    ): Promise {
+        // TODO: Implement connectToPersistentSubscriptionAsync() method.
     }
 
     public function startTransactionAsync(
