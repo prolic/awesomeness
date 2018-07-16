@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore;
 
+use Amp\Loop;
 use Prooph\EventStore\Data\EventId;
 use Prooph\EventStore\Data\PersistentSubscriptionNakEventAction;
 use Prooph\EventStore\Data\SubscriptionDropReason;
@@ -18,9 +19,9 @@ class EventStorePersistentSubscription
     private $subscriptionId;
     /** @var string */
     private $streamId;
-    /** @var callable(EventStorePersistentSubscription $subscription, RecordedEvent $event) */
+    /** @var callable(EventStorePersistentSubscription $subscription, RecordedEvent $event): Promise */
     private $eventAppeared;
-    /** @var callable(EventStorePersistentSubscription $subscription, SubscriptionDropReason $reason, Throwable $error) */
+    /** @var null|callable(EventStorePersistentSubscription $subscription, SubscriptionDropReason $reason, Throwable $error): void */
     private $subscriptionDropped;
     /** @var bool */
     private $autoAck;
@@ -29,12 +30,22 @@ class EventStorePersistentSubscription
     /** @var bool */
     private $shouldStop;
 
+    /**
+     * EventStorePersistentSubscription constructor.
+     * @param PersistentSubscriptionOperations $operations
+     * @param string $subscriptionId
+     * @param string $streamId
+     * @param callable(EventStorePersistentSubscription $subscription, RecordedEvent $event): Promise $eventAppeared
+     * @param null|callable(EventStorePersistentSubscription $subscription, SubscriptionDropReason $reason, Throwable $error): void $subscriptionDropped
+     * @param int $bufferSize
+     * @param bool $autoAck
+     */
     public function __construct(
         PersistentSubscriptionOperations $operations,
         string $subscriptionId,
         string $streamId,
         callable $eventAppeared,
-        callable $subscriptionDropped = null,
+        ?callable $subscriptionDropped,
         int $bufferSize,
         bool $autoAck
     ) {
@@ -42,65 +53,64 @@ class EventStorePersistentSubscription
         $this->subscriptionId = $subscriptionId;
         $this->streamId = $streamId;
         $this->eventAppeared = $eventAppeared;
-        $this->subscriptionDropped = $subscriptionDropped;
+        $this->subscriptionDropped = $subscriptionDropped ?? function (): void {
+        };
         $this->bufferSize = $bufferSize;
         $this->autoAck = $autoAck;
     }
 
     public function startSubscription(): void
     {
-        $this->shouldStop = false;
-        $eventAppeared = $this->eventAppeared;
+        Loop::defer(function (): \Generator {
+            $this->shouldStop = false;
+            $eventAppeared = $this->eventAppeared;
 
-        if ($this->subscriptionDropped) {
             $subscriptionDropped = $this->subscriptionDropped;
-        }
 
-        while (! $this->shouldStop) {
-            $events = $this->operations->readFromSubscription($this->bufferSize);
+            while (! $this->shouldStop) {
+                $events = $this->operations->readFromSubscription($this->bufferSize);
 
-            if (empty($events)) {
-                \usleep(100000);
-                continue;
-            }
+                if (empty($events)) {
+                    \usleep(100000);
+                    continue;
+                }
 
-            if ($this->autoAck) {
-                $toAck = [];
-                $toNack = [];
-            }
+                if ($this->autoAck) {
+                    $toAck = [];
+                    $toNack = [];
+                }
 
-            $error = false;
+                $error = false;
 
-            foreach ($events as $event) {
-                try {
-                    $eventAppeared($this, $event);
+                foreach ($events as $event) {
+                    try {
+                        yield $eventAppeared($this, $event);
 
-                    if ($this->autoAck) {
-                        $toAck[] = $event->eventId();
-                    }
-                } catch (Throwable $ex) {
-                    if (isset($subscriptionDropped)) {
+                        if ($this->autoAck) {
+                            $toAck[] = $event->eventId();
+                        }
+                    } catch (Throwable $ex) {
                         $subscriptionDropped($this, SubscriptionDropReason::eventHandlerException(), $ex);
-                    }
 
-                    if ($this->autoAck) {
-                        $toNack[] = $event->eventId();
-                    }
+                        if ($this->autoAck) {
+                            $toNack[] = $event->eventId();
+                        }
 
-                    $error = true;
-                    break;
+                        $error = true;
+                        break;
+                    }
+                }
+
+                if ($this->autoAck && ! empty($toAck)) {
+                    $this->operations->acknowledge($toAck);
+                }
+
+                if ($error && $this->autoAck) {
+                    $this->operations->fail($toNack, PersistentSubscriptionNakEventAction::retry());
+                    $this->shouldStop = true;
                 }
             }
-
-            if ($this->autoAck && ! empty($toAck)) {
-                $this->operations->acknowledge($toAck);
-            }
-
-            if ($error && $this->autoAck) {
-                $this->operations->fail($toNack, PersistentSubscriptionNakEventAction::retry());
-                $this->shouldStop = true;
-            }
-        }
+        });
     }
 
     public function acknowledge(EventId $eventId): void

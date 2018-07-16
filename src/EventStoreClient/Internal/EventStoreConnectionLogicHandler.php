@@ -811,32 +811,32 @@ class EventStoreConnectionLogicHandler
         $this->eventHandler->authenticationFailed(new ClientAuthenticationFailedEventArgs($this->esConnection, $reason));
     }
 
-    public function whenConnected(callable $handler): ListenerHandler
+    public function onConnected(callable $handler): ListenerHandler
     {
         return $this->eventHandler->whenConnected($handler);
     }
 
-    public function whenDisconnected(callable $handler): ListenerHandler
+    public function onDisconnected(callable $handler): ListenerHandler
     {
         return $this->eventHandler->whenDisconnected($handler);
     }
 
-    public function whenReconnecting(callable $handler): ListenerHandler
+    public function onReconnecting(callable $handler): ListenerHandler
     {
         return $this->eventHandler->whenReconnecting($handler);
     }
 
-    public function whenClosed(callable $handler): ListenerHandler
+    public function onClosed(callable $handler): ListenerHandler
     {
         return $this->eventHandler->whenClosed($handler);
     }
 
-    public function whenErrorOccurred(callable $handler): ListenerHandler
+    public function onErrorOccurred(callable $handler): ListenerHandler
     {
         return $this->eventHandler->whenErrorOccurred($handler);
     }
 
-    public function whenAuthenticationFailed(callable $handler): ListenerHandler
+    public function onAuthenticationFailed(callable $handler): ListenerHandler
     {
         return $this->eventHandler->whenAuthenticationFailed($handler);
     }
@@ -846,7 +846,7 @@ class EventStoreConnectionLogicHandler
         $this->eventHandler->detach($handler);
     }
 
-    private function compareWasConnected(bool $value, bool $comparand): bool
+    private function compareWasConnected(bool $value, bool $comparand): bool // @todo remove this method
     {
         $original = $this->wasConnected;
 

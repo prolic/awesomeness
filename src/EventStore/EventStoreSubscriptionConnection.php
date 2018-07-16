@@ -36,8 +36,8 @@ interface EventStoreSubscriptionConnection extends EventStoreConnection
     /**
      * @param string $stream
      * @param string $groupName
-     * @param callable(EventStorePersistentSubscription $subscription, RecordedEvent $event, int $retryCount, Task $task) $eventAppeared
-     * @param callable(EventStorePersistentSubscription $subscription, SubscriptionDropReason $reason, \Throwable $exception)|null $subscriptionDropped
+     * @param callable(EventStorePersistentSubscription $subscription, RecordedEvent $event, int $retryCount): Promise $eventAppeared
+     * @param null|callable(EventStorePersistentSubscription $subscription, SubscriptionDropReason $reason, \Throwable $exception): void $subscriptionDropped
      * @param int $bufferSize
      * @param bool $autoAck
      * @param UserCredentials|null $userCredentials

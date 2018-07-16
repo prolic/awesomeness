@@ -575,34 +575,34 @@ final class EventStoreAsyncNodeConnection implements
         return $deferred->promise();
     }
 
-    public function whenConnected(callable $handler): ListenerHandler
+    public function onConnected(callable $handler): ListenerHandler
     {
-        return $this->handler->whenConnected($handler);
+        return $this->handler->onConnected($handler);
     }
 
-    public function whenDisconnected(callable $handler): ListenerHandler
+    public function onDisconnected(callable $handler): ListenerHandler
     {
-        return $this->handler->whenDisconnected($handler);
+        return $this->handler->onDisconnected($handler);
     }
 
-    public function whenReconnecting(callable $handler): ListenerHandler
+    public function onReconnecting(callable $handler): ListenerHandler
     {
-        return $this->handler->whenReconnecting($handler);
+        return $this->handler->onReconnecting($handler);
     }
 
-    public function whenClosed(callable $handler): ListenerHandler
+    public function onClosed(callable $handler): ListenerHandler
     {
-        return $this->handler->whenClosed($handler);
+        return $this->handler->onClosed($handler);
     }
 
-    public function whenErrorOccurred(callable $handler): ListenerHandler
+    public function onErrorOccurred(callable $handler): ListenerHandler
     {
-        return $this->handler->whenErrorOccurred($handler);
+        return $this->handler->onErrorOccurred($handler);
     }
 
-    public function whenAuthenticationFailed(callable $handler): ListenerHandler
+    public function onAuthenticationFailed(callable $handler): ListenerHandler
     {
-        return $this->handler->whenAuthenticationFailed($handler);
+        return $this->handler->onAuthenticationFailed($handler);
     }
 
     public function detach(ListenerHandler $handler): void

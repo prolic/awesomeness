@@ -36,7 +36,7 @@ class StartPersistentSubscriptionMessage
         int $bufferSize,
         UserCredentials $userCredentials,
         callable $eventAppeared,
-        callable $subscriptionDropped,
+        ?callable $subscriptionDropped,
         int $maxRetries,
         int $timeout
     ) {
@@ -46,7 +46,8 @@ class StartPersistentSubscriptionMessage
         $this->bufferSize = $bufferSize;
         $this->userCredentials = $userCredentials;
         $this->eventAppeared = $eventAppeared;
-        $this->subscriptionDropped = $subscriptionDropped;
+        $this->subscriptionDropped = $subscriptionDropped ?? function (): void {
+        };
         $this->maxRetries = $maxRetries;
         $this->timeout = $timeout;
     }

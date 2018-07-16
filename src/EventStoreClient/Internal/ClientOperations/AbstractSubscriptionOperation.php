@@ -45,9 +45,9 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
     protected $resolveLinkTos;
     /** @var UserCredentials|null */
     protected $userCredentials;
-    /** @var callable(EventStoreSubscription $subscription, object $resolvedEvent, Promise $promise) */
+    /** @var callable(EventStoreSubscription $subscription, object $resolvedEvent): Promise */
     protected $eventAppeared;
-    /** @var callable(EventStoreSubscription $subscription, SubscriptionDropReason $reason, Throwable $exception) */
+    /** @var null|callable(EventStoreSubscription $subscription, SubscriptionDropReason $reason, Throwable $exception): void */
     private $subscriptionDropped;
     /** @var bool */
     //private $verboseLogging;
@@ -66,6 +66,15 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
     /** @var string */
     protected $correlationId;
 
+    /**
+     * @param Deferred $deferred
+     * @param string $streamId
+     * @param bool $resolveLinkTos
+     * @param null|UserCredentials $userCredentials
+     * @param callable(EventStoreSubscription $subscription, object $resolvedEvent): Promise $eventAppeared
+     * @param null|callable(EventStoreSubscription $subscription, SubscriptionDropReason $reason, Throwable $exception): void $subscriptionDropped
+     * @param callable $getConnection
+     */
     public function __construct(
         //ILogger log,
         Deferred $deferred,

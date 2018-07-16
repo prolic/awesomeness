@@ -98,17 +98,17 @@ interface EventStoreAsyncConnection
     /** @return Promise<WriteResult> */
     public function setSystemSettingsAsync(SystemSettings $settings, UserCredentials $userCredentials = null): Promise;
 
-    public function whenConnected(callable $handler): ListenerHandler;
+    public function onConnected(callable $handler): ListenerHandler;
 
-    public function whenDisconnected(callable $handler): ListenerHandler;
+    public function onDisconnected(callable $handler): ListenerHandler;
 
-    public function whenReconnecting(callable $handler): ListenerHandler;
+    public function onReconnecting(callable $handler): ListenerHandler;
 
-    public function whenClosed(callable $handler): ListenerHandler;
+    public function onClosed(callable $handler): ListenerHandler;
 
-    public function whenErrorOccurred(callable $handler): ListenerHandler;
+    public function onErrorOccurred(callable $handler): ListenerHandler;
 
-    public function whenAuthenticationFailed(callable $handler): ListenerHandler;
+    public function onAuthenticationFailed(callable $handler): ListenerHandler;
 
     public function detach(ListenerHandler $handler): void;
 }

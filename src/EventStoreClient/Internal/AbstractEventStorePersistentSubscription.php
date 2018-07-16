@@ -32,9 +32,9 @@ abstract class AbstractEventStorePersistentSubscription
     private $subscriptionId;
     /** @var string */
     private $streamId;
-    /** @var callable(self $subscription, ResolvedEvent $event, ?int $retryCount, Promise $promise) */
+    /** @var callable(self $subscription, ResolvedEvent $event, ?int $retryCount): Promise */
     private $eventAppeared;
-    /** @var callable(self $subscription, SubscriptionDropReason $reason, Throwable $exception) */
+    /** @var null|callable(self $subscription, SubscriptionDropReason $reason, Throwable $exception):void */
     private $subscriptionDropped;
     /** @var UserCredentials */
     private $userCredentials;
@@ -67,8 +67,8 @@ abstract class AbstractEventStorePersistentSubscription
      *
      * @param string $subscriptionId
      * @param string $streamId
-     * @param callable(self $subscription, ResolvedEvent $event, ?int $retryCount, Promise $promise) $eventAppeared
-     * @param callable(self $subscription, SubscriptionDropReason $reason, Throwable $exception) $subscriptionDropped
+     * @param callable(self $subscription, ResolvedEvent $event, ?int $retryCount): Promise $eventAppeared
+     * @param null|callable(self $subscription, SubscriptionDropReason $reason, Throwable $exception): void $subscriptionDropped
      * @param UserCredentials $userCredentials
      * @param ConnectionSettings $settings
      * @param int $bufferSize
@@ -78,7 +78,7 @@ abstract class AbstractEventStorePersistentSubscription
         string $subscriptionId,
         string $streamId,
         callable $eventAppeared,
-        callable $subscriptionDropped,
+        ?callable $subscriptionDropped,
         UserCredentials $userCredentials,
         //ILogger log,
         //bool verboseLogging,
@@ -93,7 +93,8 @@ abstract class AbstractEventStorePersistentSubscription
         $this->subscription = $subscriptionId;
         $this->streamId = $streamId;
         $this->eventAppeared = $eventAppeared;
-        $this->subscriptionDropped = $subscriptionDropped;
+        $this->subscriptionDropped = $subscriptionDropped ?? function (): void {
+        };
         $this->userCredentials = $userCredentials;
         //$this->log = $log;
         //$this->verbose = $verboseLogging;
@@ -152,8 +153,8 @@ abstract class AbstractEventStorePersistentSubscription
      * @param string $streamId
      * @param int $bufferSize
      * @param UserCredentials $userCredentials
-     * @param callable(EventStoreSubscription $subscription, PersistentSubscriptionResolvedEvent $resolvedEvent, Promise $promise) $onEventAppeared,
-     * @param callable(EventStoreSubscription $subscription, SubscriptionDropReason $reason, Throwable $exception) $onSubscriptionDropped
+     * @param callable(EventStoreSubscription $subscription, PersistentSubscriptionResolvedEvent $resolvedEvent): Promise $onEventAppeared,
+     * @param null|callable(EventStoreSubscription $subscription, SubscriptionDropReason $reason, Throwable $exception): void $onSubscriptionDropped
      * @param ConnectionSettings $settings
      * @return Promise
      */
@@ -163,7 +164,7 @@ abstract class AbstractEventStorePersistentSubscription
         int $bufferSize,
         UserCredentials $userCredentials,
         callable $onEventAppeared,
-        callable $onSubscriptionDropped,
+        ?callable $onSubscriptionDropped,
         ConnectionSettings $settings
     ): Promise;
 
@@ -365,9 +366,7 @@ abstract class AbstractEventStorePersistentSubscription
                 $this->subscription->unsubscribe();
             }
 
-            if (null !== $this->subscriptionDropped) {
-                ($this->subscriptionDropped)($this, $reason, $error);
-            }
+            ($this->subscriptionDropped)($this, $reason, $error);
 
             $this->stopped = true;
         }

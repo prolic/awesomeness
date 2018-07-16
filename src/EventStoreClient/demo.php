@@ -20,11 +20,11 @@ Loop::run(function () {
         new IpEndPoint('localhost', 1113)
     );
 
-    $connection->whenConnected(function (): void {
+    $connection->onConnected(function (): void {
         echo 'connected' . PHP_EOL;
     });
 
-    $connection->whenClosed(function (): void {
+    $connection->onClosed(function (): void {
         echo 'connection closed' . PHP_EOL;
     });
 

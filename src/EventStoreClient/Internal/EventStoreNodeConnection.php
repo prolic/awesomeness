@@ -341,32 +341,32 @@ final class EventStoreNodeConnection implements
 
     public function whenConnected(callable $handler): ListenerHandler
     {
-        return $this->asyncConnection->whenConnected($handler);
+        return $this->asyncConnection->onConnected($handler);
     }
 
     public function whenDisconnected(callable $handler): ListenerHandler
     {
-        return $this->asyncConnection->whenDisconnected($handler);
+        return $this->asyncConnection->onDisconnected($handler);
     }
 
     public function whenReconnecting(callable $handler): ListenerHandler
     {
-        return $this->asyncConnection->whenReconnecting($handler);
+        return $this->asyncConnection->onReconnecting($handler);
     }
 
     public function whenClosed(callable $handler): ListenerHandler
     {
-        return $this->asyncConnection->whenClosed($handler);
+        return $this->asyncConnection->onClosed($handler);
     }
 
     public function whenErrorOccurred(callable $handler): ListenerHandler
     {
-        return $this->asyncConnection->whenErrorOccurred($handler);
+        return $this->asyncConnection->onErrorOccurred($handler);
     }
 
     public function whenAuthenticationFailed(callable $handler): ListenerHandler
     {
-        return $this->asyncConnection->whenAuthenticationFailed($handler);
+        return $this->asyncConnection->onAuthenticationFailed($handler);
     }
 
     public function detach(ListenerHandler $handler): void
