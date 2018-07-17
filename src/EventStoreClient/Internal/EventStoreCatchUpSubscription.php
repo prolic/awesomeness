@@ -101,6 +101,7 @@ abstract class EventStoreCatchUpSubscription
             self::$dropSubscriptionEvent = new ResolvedEvent(null, null, null);
         }
 
+        $this->connection = $connection;
         $this->isSubscribedToAll = empty($streamId);
         $this->streamId = $streamId;
         $this->userCredentials = $userCredentials;

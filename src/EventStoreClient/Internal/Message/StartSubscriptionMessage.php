@@ -17,7 +17,7 @@ class StartSubscriptionMessage implements Message
     private $streamId;
     /** @var bool */
     private $resolveTo;
-    /** @var UserCredentials */
+    /** @var UserCredentials|null */
     private $userCredentials;
     /** @var callable */
     private $eventAppeared;
@@ -74,7 +74,7 @@ class StartSubscriptionMessage implements Message
         return $this->resolveTo;
     }
 
-    public function userCredentials(): UserCredentials
+    public function userCredentials(): ?UserCredentials
     {
         return $this->userCredentials;
     }

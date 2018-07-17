@@ -40,6 +40,7 @@ class SubscriptionItem
         $this->correlationId = CorrelationIdGenerator::generate();
         $this->retryCount = 0;
         $this->lastUpdated = $this->createdTime;
+        $this->isSubscribed = false;
     }
 
     public function operation(): SubscriptionOperation
