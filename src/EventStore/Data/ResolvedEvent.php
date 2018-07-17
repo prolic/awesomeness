@@ -68,7 +68,7 @@ class ResolvedEvent
         return $this->isResolved;
     }
 
-    public function originalPosition(): Position
+    public function originalPosition(): ?Position
     {
         return $this->originalPosition;
     }

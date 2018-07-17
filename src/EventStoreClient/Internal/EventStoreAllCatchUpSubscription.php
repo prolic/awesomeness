@@ -152,7 +152,7 @@ class EventStoreAllCatchUpSubscription extends EventStoreCatchUpSubscription
 
             if ($e->originalPosition()->greater($this->lastProcessedPosition)) {
                 try {
-                    yield $this->eventAppeared($this, $e);
+                    yield ($this->eventAppeared)($this, $e);
                 } catch (\Throwable $ex) {
                     $this->dropSubscription(SubscriptionDropReason::eventHandlerException(), $ex);
 

@@ -10,6 +10,7 @@ use Amp\Success;
 use Prooph\EventStore\Data\CatchUpSubscriptionSettings;
 use Prooph\EventStore\Data\ResolvedEvent;
 use Prooph\EventStore\Data\SubscriptionDropReason;
+use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\IpEndPoint;
 use Prooph\EventStoreClient\Internal\EventStoreCatchUpSubscription;
 use Prooph\EventStoreClient\Internal\StopWatch;
@@ -34,8 +35,7 @@ Loop::run(function () {
     $stopWatch = StopWatch::startNew();
     $i = 0;
 
-    $connection->subscribeToStreamFrom(
-        'opium2-bar',
+    $connection->subscribeToAllFrom(
         null,
         CatchUpSubscriptionSettings::default(),
         function (EventStoreCatchUpSubscription $subscription, ResolvedEvent $event) use ($stopWatch, &$i): Promise {
@@ -51,6 +51,7 @@ Loop::run(function () {
         function (EventStoreCatchUpSubscription $subscription, SubscriptionDropReason $reason, \Throwable $exception): void {
             echo 'dropped with reason: ' . $reason->name() . PHP_EOL;
             echo 'ex: ' . $exception->getMessage() . PHP_EOL;
-        }
+        },
+        new UserCredentials('admin', 'changeit')
     );
 });

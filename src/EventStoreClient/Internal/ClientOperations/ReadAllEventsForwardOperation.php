@@ -104,7 +104,7 @@ class ReadAllEventsForwardOperation extends AbstractOperation
                 $link = EventMessageConverter::convertEventRecordMessageToEventRecord($link);
             }
 
-            $resolvedEvents[] = new ResolvedEvent($event, $link, null);
+            $resolvedEvents[] = new ResolvedEvent($event, $link, new Position($response->getCommitPosition(), $response->getPreparePosition()));
         }
 
         return new AllEventsSlice(
