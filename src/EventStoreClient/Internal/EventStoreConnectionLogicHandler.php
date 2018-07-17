@@ -34,6 +34,8 @@ use Prooph\EventStoreClient\Internal\Message\EstablishTcpConnectionMessage;
 use Prooph\EventStoreClient\Internal\Message\HandleTcpPackageMessage;
 use Prooph\EventStoreClient\Internal\Message\StartConnectionMessage;
 use Prooph\EventStoreClient\Internal\Message\StartOperationMessage;
+use Prooph\EventStoreClient\Internal\Message\StartPersistentSubscriptionMessage;
+use Prooph\EventStoreClient\Internal\Message\StartSubscriptionMessage;
 use Prooph\EventStoreClient\Internal\Message\TcpConnectionClosedMessage;
 use Prooph\EventStoreClient\Internal\Message\TcpConnectionErrorMessage;
 use Prooph\EventStoreClient\Internal\Message\TcpConnectionEstablishedMessage;

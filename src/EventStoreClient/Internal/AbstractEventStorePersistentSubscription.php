@@ -127,7 +127,6 @@ abstract class AbstractEventStorePersistentSubscription
             $this->onSubscriptionDropped($subscription, $reason, $exception);
         };
 
-        //_stopped.Reset();
         $promise = $this->startSubscription(
             $this->subscriptionId,
             $this->streamId,

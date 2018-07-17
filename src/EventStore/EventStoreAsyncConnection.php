@@ -13,6 +13,9 @@ use Prooph\EventStore\Data\StreamMetadata;
 use Prooph\EventStore\Data\SystemSettings;
 use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Internal\Event\ListenerHandler;
+use Prooph\EventStoreClient\Internal\EventStoreAllCatchUpSubscription;
+use Prooph\EventStoreClient\Internal\EventStorePersistentSubscription;
+use Prooph\EventStoreClient\Internal\EventStoreStreamCatchUpSubscription;
 
 interface EventStoreAsyncConnection
 {

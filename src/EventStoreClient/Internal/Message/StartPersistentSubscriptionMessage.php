@@ -2,13 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Prooph\EventStoreClient\Internal;
+namespace Prooph\EventStoreClient\Internal\Message;
 
 use Amp\Deferred;
 use Prooph\EventStore\Data\UserCredentials;
+use Prooph\EventStoreClient\Internal\Message;
 
 /** @internal  */
-class StartPersistentSubscriptionMessage
+class StartPersistentSubscriptionMessage implements Message
 {
     /** @var Deferred */
     private $deferred;

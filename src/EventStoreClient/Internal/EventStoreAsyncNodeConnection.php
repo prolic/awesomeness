@@ -19,12 +19,9 @@ use Prooph\EventStore\Data\StreamMetadata;
 use Prooph\EventStore\Data\StreamMetadataResult;
 use Prooph\EventStore\Data\SystemSettings;
 use Prooph\EventStore\Data\UserCredentials;
-use Prooph\EventStore\EventStoreAllCatchUpSubscription;
 use Prooph\EventStore\EventStoreAsyncConnection as AsyncConnection;
 use Prooph\EventStore\EventStoreAsyncTransaction;
 use Prooph\EventStore\EventStoreAsyncTransactionConnection as AsyncTransactionConnection;
-use Prooph\EventStore\EventStorePersistentSubscription;
-use Prooph\EventStore\EventStoreStreamCatchUpSubscription;
 use Prooph\EventStore\Exception\OutOfRangeException;
 use Prooph\EventStore\Exception\UnexpectedValueException;
 use Prooph\EventStore\Internal\Consts;
@@ -51,6 +48,7 @@ use Prooph\EventStoreClient\Internal\ClientOperations\UpdatePersistentSubscripti
 use Prooph\EventStoreClient\Internal\Message\CloseConnectionMessage;
 use Prooph\EventStoreClient\Internal\Message\StartConnectionMessage;
 use Prooph\EventStoreClient\Internal\Message\StartOperationMessage;
+use Prooph\EventStoreClient\Internal\Message\StartSubscriptionMessage;
 
 final class EventStoreAsyncNodeConnection implements AsyncConnection, AsyncTransactionConnection
 {
@@ -498,7 +496,24 @@ final class EventStoreAsyncNodeConnection implements AsyncConnection, AsyncTrans
         callable $subscriptionDropped = null,
         UserCredentials $userCredentials = null
     ): Promise {
-        // TODO: Implement subscribeToStreamAsync() method.
+        if (empty($stream)) {
+            throw new InvalidArgumentException('Stream cannot be empty');
+        }
+
+        $deferred = new Deferred();
+
+        $this->handler->enqueueMessage(new StartSubscriptionMessage(
+            $deferred,
+            $stream,
+            $resolveLinkTos,
+            $userCredentials,
+            $eventAppeared,
+            $subscriptionDropped,
+            $this->settings->maxRetries(),
+            $this->settings->operationTimeout()
+        ));
+
+        return $deferred->promise();
     }
 
     /** {@inheritdoc} */
@@ -511,7 +526,25 @@ final class EventStoreAsyncNodeConnection implements AsyncConnection, AsyncTrans
         callable $subscriptionDropped = null,
         UserCredentials $userCredentials = null
     ): EventStoreStreamCatchUpSubscription {
-        // TODO: Implement subscribeToStreamFrom() method.
+        if (empty($stream)) {
+            throw new InvalidArgumentException('Stream cannot be empty');
+        }
+
+        $catchUpSubscription = new EventStoreStreamCatchUpSubscription(
+            $this,
+            //Settings.Log,
+            $stream,
+            $lastCheckpoint,
+            $userCredentials,
+            $eventAppeared,
+            $liveProcessingStarted,
+            $subscriptionDropped,
+            $settings
+        );
+
+        $catchUpSubscription->startAsync();
+
+        return $catchUpSubscription;
     }
 
     /** {@inheritdoc} */
@@ -521,7 +554,20 @@ final class EventStoreAsyncNodeConnection implements AsyncConnection, AsyncTrans
         callable $subscriptionDropped = null,
         UserCredentials $userCredentials = null
     ): Promise {
-        // TODO: Implement subscribeToAllAsync() method.
+        $deferred = new Deferred();
+
+        $this->handler->enqueueMessage(new StartSubscriptionMessage(
+            $deferred,
+            '',
+            $resolveLinkTos,
+            $userCredentials,
+            $eventAppeared,
+            $subscriptionDropped,
+            $this->settings->maxRetries(),
+            $this->settings->operationTimeout()
+        ));
+
+        return $deferred->promise();
     }
 
     /** {@inheritdoc} */
@@ -533,7 +579,20 @@ final class EventStoreAsyncNodeConnection implements AsyncConnection, AsyncTrans
         callable $subscriptionDropped = null,
         UserCredentials $userCredentials = null
     ): EventStoreAllCatchUpSubscription {
-        // TODO: Implement subscribeToAllFrom() method.
+        $catchUpSubscription = new EventStoreAllCatchUpSubscription(
+            $this,
+            //Settings.Log,
+            $lastCheckpoint,
+            $userCredentials,
+            $eventAppeared,
+            $liveProcessingStarted,
+            $subscriptionDropped,
+            $settings
+        );
+
+        $catchUpSubscription->startAsync();
+
+        return $catchUpSubscription;
     }
 
     /** {@inheritdoc} */
@@ -546,7 +605,31 @@ final class EventStoreAsyncNodeConnection implements AsyncConnection, AsyncTrans
         bool $autoAck = true,
         UserCredentials $userCredentials = null
     ): EventStorePersistentSubscription {
-        // TODO: Implement connectToPersistentSubscription() method.
+        if (empty($stream)) {
+            throw new InvalidArgumentException('Stream cannot be empty');
+        }
+
+        if (empty($groupName)) {
+            throw new InvalidArgumentException('Group cannot be empty');
+        }
+
+        $subscription = new EventStorePersistentSubscription(
+            $groupName,
+            $stream,
+            $eventAppeared,
+            $subscriptionDropped,
+            $userCredentials,
+            //Settings.Log,
+            //Settings.VerboseLogging,
+            $this->settings,
+            $this->handler,
+            $bufferSize,
+            $autoAck
+        );
+
+        $subscription->start();
+
+        return $subscription;
     }
 
     /** {@inheritdoc} */
@@ -559,7 +642,29 @@ final class EventStoreAsyncNodeConnection implements AsyncConnection, AsyncTrans
         bool $autoAck = true,
         UserCredentials $userCredentials = null
     ): Promise {
-        // TODO: Implement connectToPersistentSubscriptionAsync() method.
+        if (empty($stream)) {
+            throw new InvalidArgumentException('Stream cannot be empty');
+        }
+
+        if (empty($groupName)) {
+            throw new InvalidArgumentException('Group cannot be empty');
+        }
+
+        $subscription = new EventStorePersistentSubscription(
+            $groupName,
+            $stream,
+            $eventAppeared,
+            $subscriptionDropped,
+            $userCredentials,
+            //Settings.Log,
+            //Settings.VerboseLogging,
+            $this->settings,
+            $this->handler,
+            $bufferSize,
+            $autoAck
+        );
+
+        return $subscription->start();
     }
 
     public function startTransactionAsync(

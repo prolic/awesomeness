@@ -2,13 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Prooph\EventStoreClient\Internal;
+namespace Prooph\EventStoreClient\Internal\Message;
 
 use Amp\Deferred;
 use Prooph\EventStore\Data\UserCredentials;
+use Prooph\EventStoreClient\Internal\Message;
 
 /** @internal  */
-class StartSubscriptionMessage
+class StartSubscriptionMessage implements Message
 {
     /** @var Deferred */
     private $deferred;
@@ -27,11 +28,21 @@ class StartSubscriptionMessage
     /** @var int */
     private $timeout;
 
+    /**
+     * @param Deferred $deferred
+     * @param string $streamId
+     * @param bool $resolveTo
+     * @param UserCredentials|null $userCredentials
+     * @param callable(EventStoreSubscription $subscription, ResolvedEvent $event): Promise $eventAppeared
+     * @param null|callable(EventStoreSubscription $subscription, SubscriptionDropReason $reason, Exception $exception): void $subscriptionDropped
+     * @param int $maxRetries
+     * @param int $timeout
+     */
     public function __construct(
         Deferred $deferred,
         string $streamId,
         bool $resolveTo,
-        UserCredentials $userCredentials,
+        ?UserCredentials $userCredentials,
         callable $eventAppeared,
         ?callable $subscriptionDropped,
         int $maxRetries,

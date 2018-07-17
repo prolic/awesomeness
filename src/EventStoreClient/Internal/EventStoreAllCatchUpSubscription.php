@@ -26,7 +26,6 @@ class EventStoreAllCatchUpSubscription extends EventStoreCatchUpSubscription
      * @internal
      *
      * @param EventStoreAsyncConnection $connection
-     * @param string $streamId
      * @param Position|null $fromPositionExclusive
      * @param null|UserCredentials $userCredentials
      * @param callable(EventStoreCatchUpSubscription $subscription, ResolvedEvent $event): Promise $eventAppeared
@@ -37,7 +36,6 @@ class EventStoreAllCatchUpSubscription extends EventStoreCatchUpSubscription
     public function __construct(
         EventStoreAsyncConnection $connection,
         // logger
-        string $streamId,
         ?Position $fromPositionExclusive, // if null from the very beginning
         ?UserCredentials $userCredentials,
         callable $eventAppeared,
@@ -47,7 +45,7 @@ class EventStoreAllCatchUpSubscription extends EventStoreCatchUpSubscription
     ) {
         parent::__construct(
             $connection,
-            $streamId,
+            '',
             $userCredentials,
             $eventAppeared,
             $liveProcessingStarted,
