@@ -15,7 +15,7 @@ interface SubscriptionOperation
 {
     public function dropSubscription(
         SubscriptionDropReason $reason,
-        Throwable $exception,
+        Throwable $exception = null,
         TcpPackageConnection $connection = null
     ): void;
 

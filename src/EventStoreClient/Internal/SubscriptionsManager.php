@@ -186,7 +186,7 @@ class SubscriptionsManager
     {
         if ($subscription->isSubscribed()) {
             //LogDebug("StartSubscription REMOVING due to already subscribed {0}.", subscription);
-            $this->removeSubscription($this);
+            $this->removeSubscription($subscription);
 
             return;
         }

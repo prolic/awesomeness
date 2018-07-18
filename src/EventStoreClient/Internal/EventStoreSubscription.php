@@ -7,7 +7,7 @@ namespace Prooph\EventStoreClient\Internal;
 abstract class EventStoreSubscription
 {
     /** @var bool */
-    private $isSubscribedToAll; //{ get { return StreamId == string.Empty; } }
+    private $isSubscribedToAll;
     /** @var string */
     private $streamId;
     /** @var int */

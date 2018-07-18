@@ -32,6 +32,7 @@ use Prooph\EventStoreClient\Internal\EventStoreSubscription;
 use Prooph\EventStoreClient\Transport\Tcp\TcpPackageConnection;
 use SplQueue;
 use Throwable;
+use function Amp\call;
 
 /** @internal  */
 abstract class AbstractSubscriptionOperation implements SubscriptionOperation
@@ -58,11 +59,11 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
     /** @var SplQueue */
     private $actionQueue;
     /** @var bool */
-    private $actionExecuting;
+    private $actionExecuting = false;
     /** @var EventStoreSubscription */
     private $subscription;
     /** @var bool */
-    private $unsubscribed;
+    private $unsubscribed = false;
     /** @var string */
     protected $correlationId;
 
@@ -108,7 +109,7 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
 
     public function subscribe(string $correlationId, TcpPackageConnection $connection): bool
     {
-        if (null !== $this->subscription || ! $this->unsubscribed) {
+        if (null !== $this->subscription || $this->unsubscribed) {
             return false;
         }
 
@@ -147,7 +148,7 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
                 return $result;
             }
 
-            switch ($package->command()) {
+            switch ($package->command()->value()) {
                 case TcpCommand::SubscriptionDropped:
                     /** @var SubscriptionDropped $message */
                     $message = $package->data();
@@ -257,7 +258,7 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
 
     public function dropSubscription(
         SubscriptionDropReason $reason,
-        Throwable $exception,
+        Throwable $exception = null,
         TcpPackageConnection $connection = null
     ): void {
         if (! $this->unsubscribed) {
@@ -271,7 +272,11 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
             if (! $reason->equals(SubscriptionDropReason::userInitiated())) {
                 $exception = $exception ?? new \Exception('Subscription dropped for ' . $reason);
 
-                $this->deferred->fail($exception);
+                try {
+                    $this->deferred->fail($exception);
+                } catch (\Error $e) {
+                    // ignore already failed promises
+                }
             }
 
             if ($reason->equals(SubscriptionDropReason::userInitiated())
@@ -325,7 +330,7 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
             return;
         }
 
-        if (null !== $this->subscription) {
+        if (null === $this->subscription) {
             throw new \Exception('Subscription not confirmed, but event appeared!');
         }
 
@@ -335,8 +340,8 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
                     e.OriginalStreamId, e.OriginalEventNumber, e.OriginalEvent.EventType, e.OriginalPosition);
         */
 
-        $this->executeActionAsync(function () use ($e): void {
-            ($this->eventAppeared)($this->subscription, $e);
+        $this->executeActionAsync(function () use ($e): Promise {
+            return ($this->eventAppeared)($this->subscription, $e);
         });
     }
 
@@ -358,21 +363,21 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
     }
 
     /** @return Promise<void> */
-    private function executeActions(): void
+    private function executeActions(): Promise
     {
-        // @todo: check whether to return promise and action are async as well.
+        return call(function (): Generator {
+            while (! $this->actionQueue->isEmpty() && $this->actionExecuting) {
+                /** @var callable $action */
+                $action = $this->actionQueue->dequeue();
 
-        while (! $this->actionQueue->isEmpty() && $this->actionExecuting) {
-            /** @var callable $action */
-            $action = $this->actionQueue->dequeue();
+                try {
+                    yield $action();
+                } catch (Throwable $exception) {
+                    //_log.Error(exc, "Exception during executing user callback: {0}.", exc.Message);
+                }
 
-            try {
-                $action();
-            } catch (Throwable $exception) {
-                //_log.Error(exc, "Exception during executing user callback: {0}.", exc.Message);
+                $this->actionExecuting = false;
             }
-
-            $this->actionExecuting = false;
-        }
+        });
     }
 }
