@@ -409,6 +409,7 @@ final class EventStoreAsyncNodeConnection implements AsyncConnection, AsyncTrans
         );
     }
 
+    /** @inheritdoc */
     public function createPersistentSubscriptionAsync(
         string $stream,
         string $groupName,

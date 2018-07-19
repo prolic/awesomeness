@@ -103,7 +103,7 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
     protected function enqueueSend(TcpPackage $package): void
     {
         Loop::defer(function () use ($package): Generator {
-            yield ($this->getConnection)->sendAsync($package);
+            yield ($this->getConnection)()->sendAsync($package);
         });
     }
 
@@ -371,7 +371,7 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
                 $action = $this->actionQueue->dequeue();
 
                 try {
-                    yield $action();
+                     yield $action();
                 } catch (Throwable $exception) {
                     //_log.Error(exc, "Exception during executing user callback: {0}.", exc.Message);
                 }

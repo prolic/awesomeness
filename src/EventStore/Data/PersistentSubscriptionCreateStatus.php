@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Prooph\EventStore\Internal\Data;
+namespace Prooph\EventStore\Data;
 
 /** @internal */
 class PersistentSubscriptionCreateStatus

@@ -10,8 +10,8 @@ use Prooph\EventStore\Common\SystemConsumerStrategies;
 use Prooph\EventStore\Data\PersistentSubscriptionSettings;
 use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Exception\AccessDenied;
-use Prooph\EventStore\Internal\Data\PersistentSubscriptionCreateResult;
-use Prooph\EventStore\Internal\Data\PersistentSubscriptionCreateStatus;
+use Prooph\EventStore\Data\PersistentSubscriptionCreateResult;
+use Prooph\EventStore\Data\PersistentSubscriptionCreateStatus;
 use Prooph\EventStore\Internal\SystemData\InspectionDecision;
 use Prooph\EventStore\Internal\SystemData\InspectionResult;
 use Prooph\EventStore\Messages\CreatePersistentSubscription;
@@ -109,7 +109,6 @@ class CreatePersistentSubscriptionOperation extends AbstractOperation
 
     protected function transformResponse(Message $response)
     {
-        /** @var CreatePersistentSubscriptionCompleted $response */
         return new PersistentSubscriptionCreateResult(
             PersistentSubscriptionCreateStatus::success()
         );

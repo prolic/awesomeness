@@ -7,6 +7,8 @@ namespace Prooph\EventStore\Transport\Tcp;
 use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Exception\RuntimeException;
 use Prooph\EventStore\Messages\ClientIdentified;
+use Prooph\EventStore\Messages\CreatePersistentSubscriptionCompleted;
+use Prooph\EventStore\Messages\DeletePersistentSubscriptionCompleted;
 use Prooph\EventStore\Messages\NotHandled;
 use Prooph\EventStore\Messages\NotHandled_MasterInfo;
 use Prooph\EventStore\Messages\PersistentSubscriptionConfirmation;
@@ -73,6 +75,14 @@ class TcpPackageFactory
                 break;
             case TcpCommand::PersistentSubscriptionConfirmation:
                 $dto = new PersistentSubscriptionConfirmation();
+                $dto->mergeFromString($data);
+                break;
+            case TcpCommand::CreatePersistentSubscriptionCompleted:
+                $dto = new CreatePersistentSubscriptionCompleted();
+                $dto->mergeFromString($data);
+                break;
+            case TcpCommand::DeletePersistentSubscriptionCompleted:
+                $dto = new DeletePersistentSubscriptionCompleted();
                 $dto->mergeFromString($data);
                 break;
             case TcpCommand::PersistentSubscriptionStreamEventAppeared:

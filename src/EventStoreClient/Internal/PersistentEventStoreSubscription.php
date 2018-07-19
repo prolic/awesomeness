@@ -20,9 +20,9 @@ class PersistentEventStoreSubscription extends EventStoreSubscription
         ?int $lastEventNumber
     ) {
         parent::__construct(
-            $this->streamId(),
-            $this->lastCommitPosition(),
-            $this->lastEventNumber()
+            $streamId,
+            $lastCommitPosition,
+            $lastEventNumber
         );
 
         $this->subscriptionOperation = $subscriptionOperation;

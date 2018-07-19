@@ -17,6 +17,7 @@ use Prooph\EventStore\Data\SubscriptionDropReason;
 use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStoreClient\ConnectionSettings;
 use Prooph\EventStoreClient\Exception\TimeoutException;
+use SplQueue;
 use Throwable;
 use function Amp\call;
 
@@ -47,10 +48,10 @@ abstract class AbstractEventStorePersistentSubscription
 
     /** @var PersistentEventStoreSubscription */
     private $subscription;
-    /** @var array */
-    private $queue = [];
+    /** @var SplQueue */
+    private $queue;
     /** @var int */
-    private $isProcessing;
+    private $isProcessing = false;
     /** @var DropData */
     private $dropData;
 
@@ -90,7 +91,7 @@ abstract class AbstractEventStorePersistentSubscription
             self::$dropSubscriptionEvent = new ResolvedEvent(null, null, null);
         }
 
-        $this->subscription = $subscriptionId;
+        $this->subscriptionId = $subscriptionId;
         $this->streamId = $streamId;
         $this->eventAppeared = $eventAppeared;
         $this->subscriptionDropped = $subscriptionDropped ?? function (): void {
@@ -101,6 +102,7 @@ abstract class AbstractEventStorePersistentSubscription
         $this->settings = $settings;
         $this->bufferSize = $bufferSize;
         $this->autoAck = $autoAck;
+        $this->queue = new SplQueue();
     }
 
     /**
@@ -298,7 +300,9 @@ abstract class AbstractEventStorePersistentSubscription
     {
         $this->queue[] = $resolvedEvent;
 
-        if ($this->isProcessing) {
+        if (! $this->isProcessing) {
+            $this->isProcessing = true;
+
             Loop::defer(function (): Generator {
                 yield $this->processQueue();
             });
@@ -313,8 +317,9 @@ abstract class AbstractEventStorePersistentSubscription
                 if (null === $this->subscription) {
                     yield new Delayed(1000);
                 } else {
-                    /** @var PersistentSubscriptionResolvedEvent $e */
-                    while ($e = \array_shift($this->queue)) {
+                    while (! $this->queue->isEmpty()) {
+                        /** @var PersistentSubscriptionResolvedEvent $e */
+                        $e = $this->queue->dequeue();
                         if ($e->event() === self::$dropSubscriptionEvent) {
                             // drop subscription artificial ResolvedEvent
                             $this->dropSubscription($this->dropData->reason(), $this->dropData->error());
@@ -348,7 +353,9 @@ abstract class AbstractEventStorePersistentSubscription
                         }
                     }
                 }
-            } while (\count($this->queue) > 0 && $this->isProcessing);
+            } while (! $this->queue->isEmpty() && $this->isProcessing);
+
+            $this->isProcessing = false;
         });
     }
 

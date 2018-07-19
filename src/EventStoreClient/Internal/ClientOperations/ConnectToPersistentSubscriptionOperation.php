@@ -95,7 +95,7 @@ class ConnectToPersistentSubscriptionOperation extends AbstractSubscriptionOpera
         if ($package->command()->equals(TcpCommand::persistentSubscriptionStreamEventAppeared())) {
             /** @var PersistentSubscriptionStreamEventAppeared $dto */
             $dto = $package->data();
-            $event = EventMessageConverter::convertResolvedEventMessageToResolvedEvent($dto->getEvent());
+            $event = EventMessageConverter::convertResolvedIndexedEventMessageToResolvedEvent($dto->getEvent());
             $this->eventAppeared(new PersistentSubscriptionResolvedEvent($event, $dto->getRetryCount()));
 
             return new InspectionResult(InspectionDecision::doNothing(), 'StreamEventAppeared');
@@ -156,7 +156,7 @@ class ConnectToPersistentSubscriptionOperation extends AbstractSubscriptionOpera
 
         $ids = \array_map(
             function (EventId $eventId): string {
-                $eventId->toBinary();
+                return $eventId->toBinary();
             },
             $eventIds
         );

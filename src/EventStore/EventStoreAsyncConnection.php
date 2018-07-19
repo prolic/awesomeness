@@ -103,7 +103,7 @@ interface EventStoreAsyncConnection
     /** @return Promise<WriteResult> */
     public function setSystemSettingsAsync(SystemSettings $settings, UserCredentials $userCredentials = null): Promise;
 
-    /** @return Promise<CreatePersistentSubscription> */
+    /** @return Promise<PersistentSubscriptionCreateResult> */
     public function createPersistentSubscriptionAsync(
         string $stream,
         string $groupName,
