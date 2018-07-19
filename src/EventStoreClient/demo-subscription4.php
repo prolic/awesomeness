@@ -7,7 +7,6 @@ namespace Prooph\EventStoreClient;
 use Amp\Loop;
 use Amp\Promise;
 use Amp\Success;
-use Prooph\EventStore\Data\ResolvedEvent;
 use Prooph\EventStore\Data\SubscriptionDropReason;
 use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\IpEndPoint;

@@ -7,18 +7,14 @@ namespace Prooph\EventStoreClient;
 use Amp\Loop;
 use Amp\Promise;
 use Amp\Success;
-use Prooph\EventStore\Data\PersistentSubscriptionResolvedEvent;
 use Prooph\EventStore\Data\PersistentSubscriptionSettings;
 use Prooph\EventStore\Data\ResolvedEvent;
-use Prooph\EventStore\Data\SubscriptionDropReason;
 use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\IpEndPoint;
 use Prooph\EventStore\Messages\CreatePersistentSubscription;
 use Prooph\EventStoreClient\Exception\InvalidOperationException;
-use Prooph\EventStoreClient\Internal\EventStoreCatchUpSubscription;
 use Prooph\EventStoreClient\Internal\EventStorePersistentSubscription;
 use Prooph\EventStoreClient\Internal\StopWatch;
-use Prooph\EventStoreClient\Internal\VolatileEventStoreSubscription;
 
 require __DIR__ . '/../../vendor/autoload.php';
 
@@ -43,7 +39,7 @@ Loop::run(function () {
             'test-persistent-subscription',
             new UserCredentials('admin', 'changeit')
         );
-        var_dump($result);
+        \var_dump($result);
     } catch (InvalidOperationException $exception) {
         echo 'no such subscription exists (yet)' . PHP_EOL;
     }
@@ -56,7 +52,7 @@ Loop::run(function () {
         new UserCredentials('admin', 'changeit')
     );
 
-    var_dump($result);
+    \var_dump($result);
 
     $stopWatch = StopWatch::startNew();
     $i = 0;

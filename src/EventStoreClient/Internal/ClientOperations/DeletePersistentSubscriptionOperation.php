@@ -6,10 +6,10 @@ namespace Prooph\EventStoreClient\Internal\ClientOperations;
 
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
-use Prooph\EventStore\Data\UserCredentials;
-use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Data\PersistentSubscriptionDeleteResult;
 use Prooph\EventStore\Data\PersistentSubscriptionDeleteStatus;
+use Prooph\EventStore\Data\UserCredentials;
+use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Internal\SystemData\InspectionDecision;
 use Prooph\EventStore\Internal\SystemData\InspectionResult;
 use Prooph\EventStore\Messages\DeletePersistentSubscription;

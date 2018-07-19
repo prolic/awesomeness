@@ -371,7 +371,7 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
                 $action = $this->actionQueue->dequeue();
 
                 try {
-                     yield $action();
+                    yield $action();
                 } catch (Throwable $exception) {
                     //_log.Error(exc, "Exception during executing user callback: {0}.", exc.Message);
                 }
