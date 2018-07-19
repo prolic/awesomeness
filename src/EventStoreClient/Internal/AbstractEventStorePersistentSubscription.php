@@ -334,7 +334,7 @@ abstract class AbstractEventStorePersistentSubscription
                         }
 
                         try {
-                            yield ($this->eventAppeared)($this, $e, $e->retryCount());
+                            yield ($this->eventAppeared)($this, $e->event(), $e->retryCount());
 
                             if ($this->autoAck) {
                                 $this->subscription->notifyEventsProcessed([$e->originalEvent()->eventId()]);

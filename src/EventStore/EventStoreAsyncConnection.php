@@ -194,7 +194,7 @@ interface EventStoreAsyncConnection
     /**
      * @param string $stream
      * @param string $groupName
-     * @param callable(EventStorePersistentSubscription $subscription, RecordedEvent $event, int $retryCount): Promise $eventAppeared
+     * @param callable(EventStorePersistentSubscription $subscription, ResolvedEvent $event, int $retry): Promise $eventAppeared
      * @param null|callable(EventStorePersistentSubscription $subscription, SubscriptionDropReason $reason, \Throwable $exception): void $subscriptionDropped
      * @param int $bufferSize
      * @param bool $autoAck
@@ -214,7 +214,7 @@ interface EventStoreAsyncConnection
     /**
      * @param string $stream
      * @param string $groupName
-     * @param callable(EventStorePersistentSubscription $subscription, RecordedEvent $event, int $retryCount): Promise $eventAppeared
+     * @param callable(EventStorePersistentSubscription $subscription, ResolvedEvent $event, int $retry): Promise $eventAppeared
      * @param null|callable(EventStorePersistentSubscription $subscription, SubscriptionDropReason $reason, \Throwable $exception): void $subscriptionDropped
      * @param int $bufferSize
      * @param bool $autoAck

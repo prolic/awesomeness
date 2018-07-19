@@ -32,19 +32,4 @@ class PersistentSubscriptionResolvedEvent
     {
         return $this->event->originalEvent();
     }
-
-    public function originalPosition(): Position
-    {
-        return $this->event->originalPosition();
-    }
-
-    public function originalStreamName(): string
-    {
-        return $this->event->originalStreamName();
-    }
-
-    public function originalEventNumber(): int
-    {
-        return $this->event->originalEventNumber();
-    }
 }
