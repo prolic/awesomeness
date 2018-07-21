@@ -26,8 +26,8 @@ use Prooph\EventStoreClient\EventStoreSyncTransaction;
 use Prooph\EventStoreClient\EventStoreSyncTransactionConnection as TransactionConnection;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 use Prooph\EventStoreClient\Internal\ClientOperations\CommitTransactionOperation;
+use Prooph\EventStoreClient\Internal\ClientOperations\StartTransactionOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\TransactionalWriteOperation;
-use Prooph\PdoEventStore\ClientOperations\StartTransactionOperation;
 
 /** @internal */
 final class EventStoreSyncNodeConnection implements
