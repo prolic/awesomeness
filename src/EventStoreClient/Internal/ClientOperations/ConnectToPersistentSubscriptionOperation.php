@@ -6,8 +6,6 @@ namespace Prooph\EventStoreClient\Internal\ClientOperations;
 
 use Amp\Deferred;
 use Prooph\EventStore\Exception\AccessDenied;
-use Prooph\EventStore\Internal\SystemData\InspectionDecision;
-use Prooph\EventStore\Internal\SystemData\InspectionResult;
 use Prooph\EventStore\Messages\ConnectToPersistentSubscription;
 use Prooph\EventStore\Messages\PersistentSubscriptionAckEvents;
 use Prooph\EventStore\Messages\PersistentSubscriptionConfirmation;
@@ -26,6 +24,8 @@ use Prooph\EventStoreClient\Internal\ConnectToPersistentSubscriptions;
 use Prooph\EventStoreClient\Internal\EventMessageConverter;
 use Prooph\EventStoreClient\Internal\EventStoreSubscription;
 use Prooph\EventStoreClient\Internal\PersistentEventStoreSubscription;
+use Prooph\EventStoreClient\Internal\SystemData\InspectionDecision;
+use Prooph\EventStoreClient\Internal\SystemData\InspectionResult;
 use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
 use Prooph\EventStoreClient\Transport\Tcp\TcpFlags;
 use Prooph\EventStoreClient\Transport\Tcp\TcpPackage;

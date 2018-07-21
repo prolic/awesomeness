@@ -8,7 +8,6 @@ use Amp\ByteStream\ClosedException;
 use Amp\Promise;
 use Generator;
 use Prooph\EventStore\Exception\ConnectionClosedException;
-use Prooph\EventStore\Internal\DateTimeUtil;
 use Prooph\EventStoreClient\ConnectionSettings;
 use Prooph\EventStoreClient\Exception\OperationTimedOutException;
 use Prooph\EventStoreClient\Exception\RetriesLimitReachedException;

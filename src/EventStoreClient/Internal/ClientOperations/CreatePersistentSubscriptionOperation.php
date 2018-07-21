@@ -7,8 +7,6 @@ namespace Prooph\EventStoreClient\Internal\ClientOperations;
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
 use Prooph\EventStore\Exception\AccessDenied;
-use Prooph\EventStore\Internal\SystemData\InspectionDecision;
-use Prooph\EventStore\Internal\SystemData\InspectionResult;
 use Prooph\EventStore\Messages\CreatePersistentSubscription;
 use Prooph\EventStore\Messages\CreatePersistentSubscriptionCompleted;
 use Prooph\EventStore\Messages\CreatePersistentSubscriptionCompleted_CreatePersistentSubscriptionResult;
@@ -19,6 +17,8 @@ use Prooph\EventStoreClient\Data\PersistentSubscriptionSettings;
 use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStoreClient\Exception\InvalidOperationException;
 use Prooph\EventStoreClient\Exception\UnexpectedOperationResult;
+use Prooph\EventStoreClient\Internal\SystemData\InspectionDecision;
+use Prooph\EventStoreClient\Internal\SystemData\InspectionResult;
 use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
 
 /** @internal */

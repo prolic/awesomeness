@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient\Internal;
 
-use Prooph\EventStore\Internal\DateTimeUtil;
-
 /** @internal */
 class StopWatch
 {

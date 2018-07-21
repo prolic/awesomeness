@@ -8,8 +8,6 @@ use Amp\Deferred;
 use Amp\Promise;
 use Prooph\EventStore\Exception\OutOfRangeException;
 use Prooph\EventStore\Exception\UnexpectedValueException;
-use Prooph\EventStore\Internal\Consts;
-use Prooph\EventStore\Internal\Event\ListenerHandler;
 use Prooph\EventStoreClient\ClusterSettings;
 use Prooph\EventStoreClient\Common\SystemEventTypes;
 use Prooph\EventStoreClient\Common\SystemStreams;
@@ -45,6 +43,7 @@ use Prooph\EventStoreClient\Internal\ClientOperations\ReadStreamEventsForwardOpe
 use Prooph\EventStoreClient\Internal\ClientOperations\StartAsyncTransactionOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\TransactionalWriteOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\UpdatePersistentSubscriptionOperation;
+use Prooph\EventStoreClient\Internal\Event\ListenerHandler;
 use Prooph\EventStoreClient\Internal\Message\CloseConnectionMessage;
 use Prooph\EventStoreClient\Internal\Message\StartConnectionMessage;
 use Prooph\EventStoreClient\Internal\Message\StartOperationMessage;

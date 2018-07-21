@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Prooph\EventStoreClient;
 
 use Amp\Promise;
-use Prooph\EventStore\Internal\Event\ListenerHandler;
 use Prooph\EventStoreClient\Data\CatchUpSubscriptionSettings;
 use Prooph\EventStoreClient\Data\EventData;
 use Prooph\EventStoreClient\Data\PersistentSubscriptionSettings;
@@ -13,6 +12,7 @@ use Prooph\EventStoreClient\Data\Position;
 use Prooph\EventStoreClient\Data\StreamMetadata;
 use Prooph\EventStoreClient\Data\SystemSettings;
 use Prooph\EventStoreClient\Data\UserCredentials;
+use Prooph\EventStoreClient\Internal\Event\ListenerHandler;
 use Prooph\EventStoreClient\Internal\EventStoreAllCatchUpSubscription;
 use Prooph\EventStoreClient\Internal\EventStorePersistentSubscription;
 use Prooph\EventStoreClient\Internal\EventStoreStreamCatchUpSubscription;

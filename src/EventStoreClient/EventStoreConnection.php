@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient;
 
-use Prooph\EventStore\Internal\Consts;
 use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStoreClient\EventStoreAsyncConnection as AsyncConnection;
 use Prooph\EventStoreClient\EventStoreSyncConnection as SyncConnection;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 use Prooph\EventStoreClient\Internal\ClusterDnsEndPointDiscoverer;
+use Prooph\EventStoreClient\Internal\Consts;
 use Prooph\EventStoreClient\Internal\EventStoreAsyncNodeConnection;
 use Prooph\EventStoreClient\Internal\EventStoreSyncNodeConnection;
 use Prooph\EventStoreClient\Internal\SingleEndpointDiscoverer;

@@ -6,7 +6,6 @@ namespace Prooph\EventStoreClient\Internal;
 
 use Amp\Deferred;
 use Amp\Promise;
-use Prooph\EventStore\Internal\Event\ListenerHandler;
 use Prooph\EventStoreClient\ClusterSettings;
 use Prooph\EventStoreClient\ConnectionSettings;
 use Prooph\EventStoreClient\Data\EventReadResult;
@@ -28,6 +27,7 @@ use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 use Prooph\EventStoreClient\Internal\ClientOperations\CommitTransactionOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\StartTransactionOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\TransactionalWriteOperation;
+use Prooph\EventStoreClient\Internal\Event\ListenerHandler;
 
 /** @internal */
 final class EventStoreSyncNodeConnection implements

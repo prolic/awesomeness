@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient;
 
-use Prooph\EventStore\Internal\Event\ListenerHandler;
 use Prooph\EventStoreClient\Data\EventData;
 use Prooph\EventStoreClient\Data\EventReadResult;
 use Prooph\EventStoreClient\Data\Position;
@@ -14,6 +13,7 @@ use Prooph\EventStoreClient\Data\StreamMetadataResult;
 use Prooph\EventStoreClient\Data\SystemSettings;
 use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStoreClient\Data\WriteResult;
+use Prooph\EventStoreClient\Internal\Event\ListenerHandler;
 
 interface EventStoreSyncConnection
 {
