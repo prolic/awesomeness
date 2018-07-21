@@ -7,6 +7,7 @@ namespace Prooph\EventStoreClient;
 use Amp\Loop;
 use Amp\Promise;
 use Amp\Success;
+use Prooph\EventStore\Data\ResolvedEvent;
 use Prooph\EventStore\Data\SubscriptionDropReason;
 use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\IpEndPoint;
@@ -36,7 +37,7 @@ Loop::run(function () {
     // @todo: there may be a bug somewhere, couldn't locate it yet. The server does not confirm the subscription yet !!
     $subscription = yield $connection->subscribeToAllAsync(
         true,
-        function (VolatileEventStoreSubscription $subscription, $event) use ($stopWatch, &$i): Promise {
+        function (VolatileEventStoreSubscription $subscription, ResolvedEvent $event) use ($stopWatch, &$i): Promise {
             echo 'incoming event: ' . $event->originalEventNumber() . '@' . $event->originalStreamName() . PHP_EOL;
             echo 'data: ' . $event->originalEvent()->data() . PHP_EOL;
             echo 'no: ' . ++$i . ', elapsed: ' . $stopWatch->elapsed() . PHP_EOL;
@@ -51,5 +52,5 @@ Loop::run(function () {
     );
 
     /** @var VolatileEventStoreSubscription $subscription */
-    echo 'last event number: ' . $subscription->lastEventNumber() . PHP_EOL;
+    echo 'last event number: ' . $subscription->lastCommitPosition() . PHP_EOL;
 });

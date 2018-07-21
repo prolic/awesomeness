@@ -9,8 +9,6 @@ use SplFixedArray;
 /** @internal */
 final class Buffer extends AbstractBuffer
 {
-    private const DefaultFormat = 'x';
-
     /** @var SplFixedArray */
     private $buffer;
     /** @var LengthMap */
@@ -32,7 +30,7 @@ final class Buffer extends AbstractBuffer
     public static function withSize(int $size): Buffer
     {
         $self = new self();
-        $self->initializeStructs($size, \pack(self::DefaultFormat . $size));
+        $self->initializeStructs($size, \pack('x' . $size));
 
         return $self;
     }

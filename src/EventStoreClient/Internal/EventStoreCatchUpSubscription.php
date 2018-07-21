@@ -27,7 +27,7 @@ abstract class EventStoreCatchUpSubscription
     private static $dropSubscriptionEvent;
 
     /** @var bool */
-    private $isSubscribedToAll; // => StreamId == string.Empty;
+    private $isSubscribedToAll;
     /** @var string */
     private $streamId;
     /** @var string */

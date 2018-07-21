@@ -46,7 +46,7 @@ Loop::run(function () {
             return new Success();
         },
         function (EventStoreCatchUpSubscription $subscription): void {
-            echo 'liveProcessingStarted on ' . $subscription->streamId() . PHP_EOL;
+            echo 'liveProcessingStarted on $all' . PHP_EOL;
         },
         function (EventStoreCatchUpSubscription $subscription, SubscriptionDropReason $reason, \Throwable $exception): void {
             echo 'dropped with reason: ' . $reason->name() . PHP_EOL;
