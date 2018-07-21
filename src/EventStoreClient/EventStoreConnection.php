@@ -10,6 +10,7 @@ use Prooph\EventStore\EventStoreConnection as SyncConnection;
 use Prooph\EventStore\Internal\Consts;
 use Prooph\EventStore\IpEndPoint;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
+use Prooph\EventStoreClient\Internal\ClusterDnsEndPointDiscoverer;
 use Prooph\EventStoreClient\Internal\EventStoreAsyncNodeConnection;
 use Prooph\EventStoreClient\Internal\EventStoreNodeConnection;
 use Prooph\EventStoreClient\Internal\SingleEndpointDiscoverer;
@@ -45,12 +46,12 @@ class EventStoreConnection
         ConnectionSettings $settings = null,
         string $connectionName = ''
     ): AsyncConnection {
-        if (null === $connectionString && (null === $settings || empty($settings->gossipSeeds()))) {
-            throw new \Exception('Did not find ConnectTo or GossipSeeds in the connection string');
+        if (null === $connectionString && (null === $settings || (empty($settings->gossipSeeds()) && empty($settings->clusterDns())))) {
+            throw new \Exception('Did not find ConnectTo, ClusterDNS or GossipSeeds in the connection string');
         }
 
-        if (null !== $connectionString && (null === $settings || ! empty($settings->gossipSeeds()))) {
-            throw new \Exception('Setting ConnectTo as well as GossipSeeds on the connection string is currently not supported');
+        if (null !== $connectionString && (null === $settings || (empty($settings->gossipSeeds()) && empty($settings->clusterDns())))) {
+            throw new \Exception('Setting ConnectTo as well as GossipSeeds and/or ClusterDNS on the connection string is currently not supported');
         }
 
         if (null !== $connectionString) {
@@ -98,11 +99,11 @@ class EventStoreConnection
             throw new \Exception('Unknown scheme for connection');
         }
 
-        if (! empty($settings->gossipSeeds())) {
+        if (! empty($settings->gossipSeeds()) || ! empty($settings->clusterDns())) {
             return self::createWithClusterDnsEndPointDiscoverer($settings, $connectionName);
         }
 
-        throw new \Exception('Must specify uri or gossip seeds');
+        throw new \Exception('Must specify uri, ClusterDNS or gossip seeds');
     }
 
     public static function createAsyncFromIpEndPoint(
@@ -168,8 +169,6 @@ class EventStoreConnection
         ConnectionSettings $settings,
         string $connectionName = null
     ): AsyncConnection {
-        throw new \BadMethodCallException('Not implemented, missing dns resolver implementation');
-
         $clusterSettings = new ClusterSettings(
             $settings->clusterDns(),
             $settings->maxDiscoverAttempts(),

@@ -10,7 +10,6 @@ use Prooph\EventStore\Messages\ClientIdentified;
 use Prooph\EventStore\Messages\CreatePersistentSubscriptionCompleted;
 use Prooph\EventStore\Messages\DeletePersistentSubscriptionCompleted;
 use Prooph\EventStore\Messages\NotHandled;
-use Prooph\EventStore\Messages\NotHandled_MasterInfo;
 use Prooph\EventStore\Messages\PersistentSubscriptionConfirmation;
 use Prooph\EventStore\Messages\PersistentSubscriptionStreamEventAppeared;
 use Prooph\EventStore\Messages\ReadAllEventsCompleted;
@@ -66,12 +65,6 @@ class TcpPackageFactory
             case TcpCommand::NotHandled:
                 $dto = new NotHandled();
                 $dto->mergeFromString($data);
-
-                if (2 === $dto->getReason()) {
-                    $dto = new NotHandled_MasterInfo();
-                    $dto->mergeFromString($data);
-                }
-
                 break;
             case TcpCommand::PersistentSubscriptionConfirmation:
                 $dto = new PersistentSubscriptionConfirmation();

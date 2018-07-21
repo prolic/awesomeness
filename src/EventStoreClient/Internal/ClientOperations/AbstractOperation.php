@@ -129,8 +129,8 @@ abstract class AbstractOperation implements ClientOperation
             case NotHandled_NotHandledReason::TooBusy:
                 return new InspectionResult(InspectionDecision::retry(), 'Not handled: too busy');
             case NotHandled_NotHandledReason::NotMaster:
-                /** @var NotHandled_MasterInfo $masterInfo */
-                $masterInfo = $message->getAdditionalInfo();
+                $masterInfo = new NotHandled_MasterInfo();
+                $masterInfo->mergeFromString($message->getAdditionalInfo());
 
                 return new InspectionResult(
                     InspectionDecision::reconnect(),
