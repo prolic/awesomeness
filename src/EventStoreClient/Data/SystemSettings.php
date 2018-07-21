@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient\Data;
 
-use Prooph\EventStore\Common\SystemMetadata;
-use Prooph\EventStore\Common\SystemRoles;
+use Prooph\EventStoreClient\Common\SystemMetadata;
+use Prooph\EventStoreClient\Common\SystemRoles;
 
 class SystemSettings
 {

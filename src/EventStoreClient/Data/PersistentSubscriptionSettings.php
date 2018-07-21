@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient\Data;
 
-use Prooph\EventStore\NamedConsumerStrategy;
+use Prooph\EventStoreClient\NamedConsumerStrategy;
 
 class PersistentSubscriptionSettings
 {

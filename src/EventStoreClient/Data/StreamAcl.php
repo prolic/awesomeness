@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient\Data;
 
-use Prooph\EventStore\Common\SystemMetadata;
+use Prooph\EventStoreClient\Common\SystemMetadata;
 use Webmozart\Assert\Assert;
 
 class StreamAcl

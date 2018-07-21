@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient\Internal\SystemData;
 
-use Prooph\EventStore\Exception\InvalidArgumentException;
-use Prooph\EventStore\IpEndPoint;
+use Prooph\EventStoreClient\Exception\InvalidArgumentException;
+use Prooph\EventStoreClient\IpEndPoint;
 
 /** @internal */
 class InspectionResult
