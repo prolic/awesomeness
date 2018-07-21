@@ -6,12 +6,13 @@ namespace Prooph\EventStoreClient\Internal\ClientOperations;
 
 use Amp\Deferred;
 use Prooph\EventStore\Exception\AccessDenied;
-use Prooph\EventStore\Messages\ConnectToPersistentSubscription;
-use Prooph\EventStore\Messages\PersistentSubscriptionAckEvents;
-use Prooph\EventStore\Messages\PersistentSubscriptionConfirmation;
-use Prooph\EventStore\Messages\PersistentSubscriptionNakEvents;
-use Prooph\EventStore\Messages\PersistentSubscriptionStreamEventAppeared;
-use Prooph\EventStore\Messages\SubscriptionDropped;
+use Prooph\EventStoreClient\Messages\ClientMessages\ConnectToPersistentSubscription;
+use Prooph\EventStoreClient\Messages\ClientMessages\PersistentSubscriptionAckEvents;
+use Prooph\EventStoreClient\Messages\ClientMessages\PersistentSubscriptionConfirmation;
+use Prooph\EventStoreClient\Messages\ClientMessages\PersistentSubscriptionNakEvents;
+use Prooph\EventStoreClient\Messages\ClientMessages\PersistentSubscriptionStreamEventAppeared;
+use Prooph\EventStoreClient\Messages\ClientMessages\SubscriptionDropped;
+use Prooph\EventStoreClient\Messages\ClientMessages\SubscriptionDropped\SubscriptionDropReason as SubscriptionDropReasonMessage;
 use Prooph\EventStoreClient\Data\EventId;
 use Prooph\EventStoreClient\Data\PersistentSubscriptionNakEventAction;
 use Prooph\EventStoreClient\Data\PersistentSubscriptionResolvedEvent;
@@ -29,7 +30,6 @@ use Prooph\EventStoreClient\Internal\SystemData\InspectionResult;
 use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
 use Prooph\EventStoreClient\Transport\Tcp\TcpFlags;
 use Prooph\EventStoreClient\Transport\Tcp\TcpPackage;
-use Rxnet\EventStore\Data\SubscriptionDropped_SubscriptionDropReason;
 
 /** @internal */
 class ConnectToPersistentSubscriptionOperation extends AbstractSubscriptionOperation implements ConnectToPersistentSubscriptions
@@ -107,25 +107,25 @@ class ConnectToPersistentSubscriptionOperation extends AbstractSubscriptionOpera
             $message = new SubscriptionDropped();
             $message->mergeFromString($package->data());
 
-            if ($message->getReason() === SubscriptionDropped_SubscriptionDropReason::AccessDenied) {
+            if ($message->getReason() === SubscriptionDropReasonMessage::AccessDenied) {
                 $this->dropSubscription(SubscriptionDropReason::accessDenied(), new AccessDenied('You do not have access to the stream'));
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'SubscriptionDropped');
             }
 
-            if ($message->getReason() === SubscriptionDropped_SubscriptionDropReason::NotFound) {
+            if ($message->getReason() === SubscriptionDropReasonMessage::NotFound) {
                 $this->dropSubscription(SubscriptionDropReason::notFound(), new InvalidArgumentException('Subscription not found'));
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'SubscriptionDropped');
             }
 
-            if ($message->getReason() === SubscriptionDropped_SubscriptionDropReason::PersistentSubscriptionDeleted) {
+            if ($message->getReason() === SubscriptionDropReasonMessage::PersistentSubscriptionDeleted) {
                 $this->dropSubscription(SubscriptionDropReason::persistentSubscriptionDeleted(), new PersistentSubscriptionDeletedException());
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'SubscriptionDropped');
             }
 
-            if ($message->getReason() === SubscriptionDropped_SubscriptionDropReason::SubscriberMaxCountReached) {
+            if ($message->getReason() === SubscriptionDropReasonMessage::SubscriberMaxCountReached) {
                 $this->dropSubscription(SubscriptionDropReason::maxSubscribersReached(), new MaximumSubscribersReachedException());
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'SubscriptionDropped');

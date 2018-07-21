@@ -7,10 +7,10 @@ namespace Prooph\EventStoreClient\Internal\ClientOperations;
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
 use Prooph\EventStore\Exception\AccessDenied;
-use Prooph\EventStore\Messages\ReadAllEvents;
-use Prooph\EventStore\Messages\ReadAllEventsCompleted;
-use Prooph\EventStore\Messages\ReadAllEventsCompleted_ReadAllResult;
-use Prooph\EventStore\Messages\ResolvedIndexedEvent;
+use Prooph\EventStoreClient\Messages\ClientMessages\ReadAllEvents;
+use Prooph\EventStoreClient\Messages\ClientMessages\ReadAllEventsCompleted;
+use Prooph\EventStoreClient\Messages\ClientMessages\ReadAllEventsCompleted\ReadAllResult;
+use Prooph\EventStoreClient\Messages\ClientMessages\ResolvedIndexedEvent;
 use Prooph\EventStoreClient\Data\AllEventsSlice;
 use Prooph\EventStoreClient\Data\Position;
 use Prooph\EventStoreClient\Data\ReadDirection;
@@ -72,15 +72,16 @@ class ReadAllEventsBackwardOperation extends AbstractOperation
     {
         /** @var ReadAllEventsCompleted $response */
         switch ($response->getResult()) {
-            case ReadAllEventsCompleted_ReadAllResult::Success:
+            case ReadAllResult::Success:
                 $this->succeed($response);
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'Success');
-            case ReadAllEventsCompleted_ReadAllResult::Error:
+            case ReadAllResult::Error:
                 $this->fail(new ServerError($response->getError()));
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'Error');
-            case ReadAllEventsCompleted_ReadAllResult::AccessDenied:
+            case
+            ReadAllResult::AccessDenied:
                 $this->fail(AccessDenied::toAllStream());
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'AccessDenied');

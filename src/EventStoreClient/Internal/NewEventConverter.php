@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient\Internal;
 
-use Prooph\EventStore\Messages\NewEvent;
+use Prooph\EventStoreClient\Messages\ClientMessages\NewEvent;
 use Prooph\EventStoreClient\Data\EventData;
 
 /** @internal */

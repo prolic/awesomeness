@@ -7,9 +7,9 @@ namespace Prooph\EventStoreClient\Internal\ClientOperations;
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
 use Prooph\EventStore\Exception\AccessDenied;
-use Prooph\EventStore\Messages\CreatePersistentSubscription;
-use Prooph\EventStore\Messages\CreatePersistentSubscriptionCompleted;
-use Prooph\EventStore\Messages\CreatePersistentSubscriptionCompleted_CreatePersistentSubscriptionResult;
+use Prooph\EventStoreClient\Messages\ClientMessages\CreatePersistentSubscription;
+use Prooph\EventStoreClient\Messages\ClientMessages\CreatePersistentSubscriptionCompleted;
+use Prooph\EventStoreClient\Messages\ClientMessages\CreatePersistentSubscriptionCompleted\CreatePersistentSubscriptionResult;
 use Prooph\EventStoreClient\Common\SystemConsumerStrategies;
 use Prooph\EventStoreClient\Data\PersistentSubscriptionCreateResult;
 use Prooph\EventStoreClient\Data\PersistentSubscriptionCreateStatus;
@@ -78,11 +78,11 @@ class CreatePersistentSubscriptionOperation extends AbstractOperation
     {
         /** @var CreatePersistentSubscriptionCompleted $response */
         switch ($response->getResult()) {
-            case CreatePersistentSubscriptionCompleted_CreatePersistentSubscriptionResult::Success:
+            case CreatePersistentSubscriptionResult::Success:
                 $this->succeed($response);
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'Success');
-            case CreatePersistentSubscriptionCompleted_CreatePersistentSubscriptionResult::Fail:
+            case CreatePersistentSubscriptionResult::Fail:
                 $this->fail(new InvalidOperationException(\sprintf(
                     'Subscription group \'%s\' on stream \'%s\' failed \'%s\'',
                     $this->groupName,
@@ -91,11 +91,11 @@ class CreatePersistentSubscriptionOperation extends AbstractOperation
                 )));
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'Fail');
-            case CreatePersistentSubscriptionCompleted_CreatePersistentSubscriptionResult::AccessDenied:
+            case CreatePersistentSubscriptionResult::AccessDenied:
                 $this->fail(AccessDenied::toStream($this->stream));
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'AccessDenied');
-            case CreatePersistentSubscriptionCompleted_CreatePersistentSubscriptionResult::AlreadyExists:
+            case CreatePersistentSubscriptionResult::AlreadyExists:
                 $this->fail(new InvalidOperationException(\sprintf(
                     'Subscription group \'%s\' on stream \'%s\' already exists',
                     $this->groupName,

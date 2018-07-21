@@ -7,9 +7,9 @@ namespace Prooph\EventStoreClient\Internal\ClientOperations;
 use Amp\Deferred;
 use Amp\Promise;
 use Google\Protobuf\Internal\Message;
-use Prooph\EventStore\Messages\NotHandled;
-use Prooph\EventStore\Messages\NotHandled_MasterInfo;
-use Prooph\EventStore\Messages\NotHandled_NotHandledReason;
+use Prooph\EventStoreClient\Messages\ClientMessages\NotHandled;
+use Prooph\EventStoreClient\Messages\ClientMessages\NotHandled\MasterInfo;
+use Prooph\EventStoreClient\Messages\ClientMessages\NotHandled\NotHandledReason;
 use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStoreClient\Exception\NotAuthenticatedException;
 use Prooph\EventStoreClient\Exception\ServerError;
@@ -132,12 +132,12 @@ abstract class AbstractOperation implements ClientOperation
         $message = $package->data();
 
         switch ($message->getReason()) {
-            case NotHandled_NotHandledReason::NotReady:
+            case NotHandledReason::NotReady:
                 return new InspectionResult(InspectionDecision::retry(), 'Not handled: not ready');
-            case NotHandled_NotHandledReason::TooBusy:
+            case NotHandledReason::TooBusy:
                 return new InspectionResult(InspectionDecision::retry(), 'Not handled: too busy');
-            case NotHandled_NotHandledReason::NotMaster:
-                $masterInfo = new NotHandled_MasterInfo();
+            case NotHandledReason::NotMaster:
+                $masterInfo = new MasterInfo();
                 $masterInfo->mergeFromString($message->getAdditionalInfo());
 
                 return new InspectionResult(

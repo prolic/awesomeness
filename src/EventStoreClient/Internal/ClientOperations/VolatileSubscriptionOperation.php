@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient\Internal\ClientOperations;
 
-use Prooph\EventStore\Messages\StreamEventAppeared;
-use Prooph\EventStore\Messages\SubscribeToStream;
-use Prooph\EventStore\Messages\SubscriptionConfirmation;
+use Prooph\EventStoreClient\Messages\ClientMessages\StreamEventAppeared;
+use Prooph\EventStoreClient\Messages\ClientMessages\SubscribeToStream;
+use Prooph\EventStoreClient\Messages\ClientMessages\SubscriptionConfirmation;
 use Prooph\EventStoreClient\Internal\EventMessageConverter;
 use Prooph\EventStoreClient\Internal\EventStoreSubscription;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionDecision;

@@ -9,9 +9,9 @@ use Google\Protobuf\Internal\Message;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Internal\Data\PersistentSubscriptionUpdateResult;
 use Prooph\EventStore\Internal\Data\PersistentSubscriptionUpdateStatus;
-use Prooph\EventStore\Messages\UpdatePersistentSubscription;
-use Prooph\EventStore\Messages\UpdatePersistentSubscriptionCompleted;
-use Prooph\EventStore\Messages\UpdatePersistentSubscriptionCompleted_UpdatePersistentSubscriptionResult;
+use Prooph\EventStoreClient\Messages\ClientMessages\UpdatePersistentSubscription;
+use Prooph\EventStoreClient\Messages\ClientMessages\UpdatePersistentSubscriptionCompleted;
+use Prooph\EventStoreClient\Messages\ClientMessages\UpdatePersistentSubscriptionCompleted\UpdatePersistentSubscriptionResult;
 use Prooph\EventStoreClient\Common\SystemConsumerStrategies;
 use Prooph\EventStoreClient\Data\PersistentSubscriptionSettings;
 use Prooph\EventStoreClient\Data\UserCredentials;
@@ -78,11 +78,11 @@ class UpdatePersistentSubscriptionOperation extends AbstractOperation
     {
         /** @var UpdatePersistentSubscriptionCompleted $response */
         switch ($response->getResult()) {
-            case UpdatePersistentSubscriptionCompleted_UpdatePersistentSubscriptionResult::Success:
+            case UpdatePersistentSubscriptionResult::Success:
                 $this->succeed($response);
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'Success');
-            case UpdatePersistentSubscriptionCompleted_UpdatePersistentSubscriptionResult::Fail:
+            case UpdatePersistentSubscriptionResult::Fail:
                 $this->fail(new InvalidOperationException(\sprintf(
                     'Subscription group \'%s\' on stream \'%s\' failed \'%s\'',
                     $this->groupName,
@@ -91,11 +91,11 @@ class UpdatePersistentSubscriptionOperation extends AbstractOperation
                 )));
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'Fail');
-            case UpdatePersistentSubscriptionCompleted_UpdatePersistentSubscriptionResult::AccessDenied:
+            case UpdatePersistentSubscriptionResult::AccessDenied:
                 $this->fail(AccessDenied::toStream($this->stream));
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'AccessDenied');
-            case UpdatePersistentSubscriptionCompleted_UpdatePersistentSubscriptionResult::DoesNotExist:
+            case UpdatePersistentSubscriptionResult::DoesNotExist:
                 $this->fail(new InvalidOperationException(\sprintf(
                     'Subscription group \'%s\' on stream \'%s\' does not exist',
                     $this->groupName,

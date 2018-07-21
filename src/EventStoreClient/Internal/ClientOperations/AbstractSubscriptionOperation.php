@@ -11,12 +11,12 @@ use Amp\Success;
 use Generator;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Exception\ConnectionClosedException;
-use Prooph\EventStore\Messages\NotHandled;
-use Prooph\EventStore\Messages\NotHandled_MasterInfo;
-use Prooph\EventStore\Messages\NotHandled_NotHandledReason;
-use Prooph\EventStore\Messages\SubscriptionDropped;
-use Prooph\EventStore\Messages\SubscriptionDropped_SubscriptionDropReason;
-use Prooph\EventStore\Messages\UnsubscribeFromStream;
+use Prooph\EventStoreClient\Messages\ClientMessages\NotHandled;
+use Prooph\EventStoreClient\Messages\ClientMessages\NotHandled\MasterInfo;
+use Prooph\EventStoreClient\Messages\ClientMessages\NotHandled\NotHandledReason;
+use Prooph\EventStoreClient\Messages\ClientMessages\SubscriptionDropped;
+use Prooph\EventStoreClient\Messages\ClientMessages\SubscriptionDropped\SubscriptionDropReason as SubscriptionDropReasonMessage;
+use Prooph\EventStoreClient\Messages\ClientMessages\UnsubscribeFromStream;
 use Prooph\EventStoreClient\Data\SubscriptionDropReason;
 use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStoreClient\Exception\NotAuthenticatedException;
@@ -154,16 +154,16 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
                     $message->mergeFromString($package->data());
 
                     switch ($message->getReason()) {
-                        case SubscriptionDropped_SubscriptionDropReason::Unsubscribed:
+                        case SubscriptionDropReasonMessage::Unsubscribed:
                             $this->dropSubscription(SubscriptionDropReason::userInitiated(), null);
                             break;
-                        case SubscriptionDropped_SubscriptionDropReason::AccessDenied:
+                        case SubscriptionDropReasonMessage::AccessDenied:
                             $this->dropSubscription(SubscriptionDropReason::accessDenied(), new AccessDenied(\sprintf(
                                 'Subscription to \'%s\' failed due to access denied',
                                 $this->streamId
                             )));
                             break;
-                        case SubscriptionDropped_SubscriptionDropReason::NotFound:
+                        case SubscriptionDropReasonMessage::NotFound:
                             $this->dropSubscription(SubscriptionDropReason::notFound(), new \Exception(\sprintf(
                                 'Subscription to \'%s\' failed due to not found',
                                 $this->streamId
@@ -195,12 +195,12 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
                     $message->mergeFromString($package->data());
 
                     switch ($message->getReason()) {
-                        case NotHandled_NotHandledReason::NotReady:
+                        case NotHandledReason::NotReady:
                             return new InspectionResult(InspectionDecision::retry(), 'NotHandledException - NotReady');
-                        case NotHandled_NotHandledReason::TooBusy:
+                        case NotHandledReason::TooBusy:
                             return new InspectionResult(InspectionDecision::retry(), 'NotHandledException - TooBusy');
-                        case NotHandled_NotHandledReason::NotMaster:
-                            $masterInfo = new NotHandled_MasterInfo();
+                        case NotHandledReason::NotMaster:
+                            $masterInfo = new MasterInfo();
                             $masterInfo->mergeFromString($message->getAdditionalInfo());
 
                             return new InspectionResult(

@@ -7,10 +7,10 @@ namespace Prooph\EventStoreClient\Internal\ClientOperations;
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
 use Prooph\EventStore\Exception\AccessDenied;
-use Prooph\EventStore\Messages\ReadStreamEvents;
-use Prooph\EventStore\Messages\ReadStreamEventsCompleted;
-use Prooph\EventStore\Messages\ReadStreamEventsCompleted_ReadStreamResult;
-use Prooph\EventStore\Messages\ResolvedIndexedEvent;
+use Prooph\EventStoreClient\Messages\ClientMessages\ReadStreamEvents;
+use Prooph\EventStoreClient\Messages\ClientMessages\ReadStreamEventsCompleted;
+use Prooph\EventStoreClient\Messages\ClientMessages\ReadStreamEventsCompleted\ReadStreamResult;
+use Prooph\EventStoreClient\Messages\ClientMessages\ResolvedIndexedEvent;
 use Prooph\EventStoreClient\Data\ReadDirection;
 use Prooph\EventStoreClient\Data\ResolvedEvent;
 use Prooph\EventStoreClient\Data\SliceReadStatus;
@@ -76,23 +76,23 @@ class ReadStreamEventsBackwardOperation extends AbstractOperation
     {
         /** @var ReadStreamEventsCompleted $response */
         switch ($response->getResult()) {
-            case ReadStreamEventsCompleted_ReadStreamResult::Success:
+            case ReadStreamResult::Success:
                 $this->succeed($response);
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'Success');
-            case ReadStreamEventsCompleted_ReadStreamResult::StreamDeleted:
+            case ReadStreamResult::StreamDeleted:
                 $this->succeed($response);
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'StreamDeleted');
-            case ReadStreamEventsCompleted_ReadStreamResult::NoStream:
+            case ReadStreamResult::NoStream:
                 $this->succeed($response);
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'NoStream');
-            case ReadStreamEventsCompleted_ReadStreamResult::Error:
+            case ReadStreamResult::Error:
                 $this->fail(new ServerError($response->getError()));
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'Error');
-            case ReadStreamEventsCompleted_ReadStreamResult::AccessDenied:
+            case ReadStreamResult::AccessDenied:
                 $this->fail(AccessDenied::toStream($this->stream));
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'AccessDenied');

@@ -47,7 +47,7 @@
   },
   "autoload": {
     "psr-4": {
-      "GPBMetadata\\": "src/EventStore/GPBMetadata/",
+      "GPBMetadata\\": "src/EventStoreClient/GPBMetadata/",
       "Prooph\\EventStore\\": "src/EventStore/",
       "Prooph\\EventStoreClient\\": "src/EventStoreClient/",
       "Prooph\\HttpEventStore\\": "src/HttpEventStore/",

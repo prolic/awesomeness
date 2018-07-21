@@ -7,9 +7,9 @@ namespace Prooph\EventStoreClient\Internal\ClientOperations;
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
 use Prooph\EventStore\Exception\AccessDenied;
-use Prooph\EventStore\Messages\DeletePersistentSubscription;
-use Prooph\EventStore\Messages\DeletePersistentSubscriptionCompleted;
-use Prooph\EventStore\Messages\DeletePersistentSubscriptionCompleted_DeletePersistentSubscriptionResult;
+use Prooph\EventStoreClient\Messages\ClientMessages\DeletePersistentSubscription;
+use Prooph\EventStoreClient\Messages\ClientMessages\DeletePersistentSubscriptionCompleted;
+use Prooph\EventStoreClient\Messages\ClientMessages\DeletePersistentSubscriptionCompleted\DeletePersistentSubscriptionResult;
 use Prooph\EventStoreClient\Data\PersistentSubscriptionDeleteResult;
 use Prooph\EventStoreClient\Data\PersistentSubscriptionDeleteStatus;
 use Prooph\EventStoreClient\Data\UserCredentials;
@@ -58,11 +58,11 @@ class DeletePersistentSubscriptionOperation extends AbstractOperation
     {
         /** @var DeletePersistentSubscriptionCompleted $response */
         switch ($response->getResult()) {
-            case DeletePersistentSubscriptionCompleted_DeletePersistentSubscriptionResult::Success:
+            case DeletePersistentSubscriptionResult::Success:
                 $this->succeed($response);
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'Success');
-            case DeletePersistentSubscriptionCompleted_DeletePersistentSubscriptionResult::Fail:
+            case DeletePersistentSubscriptionResult::Fail:
                 $this->fail(new InvalidOperationException(\sprintf(
                     'Subscription group \'%s\' on stream \'%s\' failed \'%s\'',
                     $this->groupName,
@@ -71,11 +71,11 @@ class DeletePersistentSubscriptionOperation extends AbstractOperation
                 )));
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'Fail');
-            case DeletePersistentSubscriptionCompleted_DeletePersistentSubscriptionResult::AccessDenied:
+            case DeletePersistentSubscriptionResult::AccessDenied:
                 $this->fail(AccessDenied::toStream($this->stream));
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'AccessDenied');
-            case DeletePersistentSubscriptionCompleted_DeletePersistentSubscriptionResult::DoesNotExist:
+            case DeletePersistentSubscriptionResult::DoesNotExist:
                 $this->fail(new InvalidOperationException(\sprintf(
                     'Subscription group \'%s\' on stream \'%s\' does not exist',
                     $this->groupName,

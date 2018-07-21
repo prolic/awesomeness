@@ -7,7 +7,7 @@ namespace Prooph\EventStoreClient;
 use Amp\Loop;
 use Amp\Promise;
 use Amp\Success;
-use Prooph\EventStore\Messages\CreatePersistentSubscription;
+use Prooph\EventStoreClient\Messages\ClientMessages\CreatePersistentSubscription;
 use Prooph\EventStoreClient\Data\PersistentSubscriptionSettings;
 use Prooph\EventStoreClient\Data\ResolvedEvent;
 use Prooph\EventStoreClient\Data\UserCredentials;

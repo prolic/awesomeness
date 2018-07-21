@@ -7,9 +7,9 @@ namespace Prooph\EventStoreClient\Internal\ClientOperations;
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
 use Prooph\EventStore\Exception\AccessDenied;
-use Prooph\EventStore\Messages\ReadEvent;
-use Prooph\EventStore\Messages\ReadEventCompleted;
-use Prooph\EventStore\Messages\ReadEventCompleted_ReadEventResult;
+use Prooph\EventStoreClient\Messages\ClientMessages\ReadEvent;
+use Prooph\EventStoreClient\Messages\ClientMessages\ReadEventCompleted;
+use Prooph\EventStoreClient\Messages\ClientMessages\ReadEventCompleted\ReadEventResult;
 use Prooph\EventStoreClient\Data\EventReadResult;
 use Prooph\EventStoreClient\Data\EventReadStatus;
 use Prooph\EventStoreClient\Data\ResolvedEvent;
@@ -70,27 +70,27 @@ class ReadEventOperation extends AbstractOperation
         /** @var ReadEventCompleted $response */
 
         switch ($response->getResult()) {
-            case ReadEventCompleted_ReadEventResult::Success:
+            case ReadEventResult::Success:
                 $this->succeed($response);
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'Success');
-            case ReadEventCompleted_ReadEventResult::NotFound:
+            case ReadEventResult::NotFound:
                 $this->succeed($response);
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'NotFound');
-            case ReadEventCompleted_ReadEventResult::NoStream:
+            case ReadEventResult::NoStream:
                 $this->succeed($response);
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'NoStream');
-            case ReadEventCompleted_ReadEventResult::StreamDeleted:
+            case ReadEventResult::StreamDeleted:
                 $this->succeed($response);
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'StreamDeleted');
-            case ReadEventCompleted_ReadEventResult::Error:
+            case ReadEventResult::Error:
                 $this->fail(new ServerError($response->getError()));
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'Error');
-            case ReadEventCompleted_ReadEventResult::AccessDenied:
+            case ReadEventResult::AccessDenied:
                 $this->fail(AccessDenied::toStream($this->stream));
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'AccessDenied');

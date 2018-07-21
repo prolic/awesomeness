@@ -6,9 +6,9 @@ namespace Prooph\EventStoreClient\Internal;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use Prooph\EventStore\Messages\EventRecord as EventRecordMessage;
-use Prooph\EventStore\Messages\ResolvedEvent as ResolvedEventMessage;
-use Prooph\EventStore\Messages\ResolvedIndexedEvent as ResolvedIndexedEventMessage;
+use Prooph\EventStoreClient\Messages\ClientMessages\EventRecord as EventRecordMessage;
+use Prooph\EventStoreClient\Messages\ClientMessages\ResolvedEvent as ResolvedEventMessage;
+use Prooph\EventStoreClient\Messages\ClientMessages\ResolvedIndexedEvent as ResolvedIndexedEventMessage;
 use Prooph\EventStoreClient\Data\EventId;
 use Prooph\EventStoreClient\Data\EventRecord;
 use Prooph\EventStoreClient\Data\Position;

@@ -8,7 +8,7 @@ use Amp\Deferred;
 use Amp\Loop;
 use Generator;
 use Prooph\EventStore\Exception\ConnectionClosedException;
-use Prooph\EventStore\Messages\IdentifyClient;
+use Prooph\EventStoreClient\Messages\ClientMessages\IdentifyClient;
 use Prooph\EventStoreClient\ConnectionSettings;
 use Prooph\EventStoreClient\Exception\CannotEstablishConnectionException;
 use Prooph\EventStoreClient\Exception\EventStoreConnectionException;
