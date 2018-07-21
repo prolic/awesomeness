@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient;
 
-use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStore\Internal\Consts;
-use Prooph\EventStoreClient\IpEndPoint;
+use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 
 /**

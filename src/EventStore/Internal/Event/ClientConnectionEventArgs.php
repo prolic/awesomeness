@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\Internal\Event;
 
-use Prooph\EventStoreClient\IpEndPoint;
 use Prooph\EventStoreClient\Internal\EventStoreAsyncNodeConnection;
+use Prooph\EventStoreClient\IpEndPoint;
 
 class ClientConnectionEventArgs implements EventArgs
 {

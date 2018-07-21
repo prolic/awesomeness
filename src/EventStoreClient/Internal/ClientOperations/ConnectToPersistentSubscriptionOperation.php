@@ -5,11 +5,6 @@ declare(strict_types=1);
 namespace Prooph\EventStoreClient\Internal\ClientOperations;
 
 use Amp\Deferred;
-use Prooph\EventStoreClient\Data\EventId;
-use Prooph\EventStoreClient\Data\PersistentSubscriptionNakEventAction;
-use Prooph\EventStoreClient\Data\PersistentSubscriptionResolvedEvent;
-use Prooph\EventStoreClient\Data\SubscriptionDropReason;
-use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Internal\SystemData\InspectionDecision;
 use Prooph\EventStore\Internal\SystemData\InspectionResult;
@@ -19,9 +14,11 @@ use Prooph\EventStore\Messages\PersistentSubscriptionConfirmation;
 use Prooph\EventStore\Messages\PersistentSubscriptionNakEvents;
 use Prooph\EventStore\Messages\PersistentSubscriptionStreamEventAppeared;
 use Prooph\EventStore\Messages\SubscriptionDropped;
-use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
-use Prooph\EventStoreClient\Transport\Tcp\TcpFlags;
-use Prooph\EventStoreClient\Transport\Tcp\TcpPackage;
+use Prooph\EventStoreClient\Data\EventId;
+use Prooph\EventStoreClient\Data\PersistentSubscriptionNakEventAction;
+use Prooph\EventStoreClient\Data\PersistentSubscriptionResolvedEvent;
+use Prooph\EventStoreClient\Data\SubscriptionDropReason;
+use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 use Prooph\EventStoreClient\Exception\MaximumSubscribersReachedException;
 use Prooph\EventStoreClient\Exception\PersistentSubscriptionDeletedException;
@@ -29,6 +26,9 @@ use Prooph\EventStoreClient\Internal\ConnectToPersistentSubscriptions;
 use Prooph\EventStoreClient\Internal\EventMessageConverter;
 use Prooph\EventStoreClient\Internal\EventStoreSubscription;
 use Prooph\EventStoreClient\Internal\PersistentEventStoreSubscription;
+use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
+use Prooph\EventStoreClient\Transport\Tcp\TcpFlags;
+use Prooph\EventStoreClient\Transport\Tcp\TcpPackage;
 use Rxnet\EventStore\Data\SubscriptionDropped_SubscriptionDropReason;
 
 /** @internal */

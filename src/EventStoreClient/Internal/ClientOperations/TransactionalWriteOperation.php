@@ -6,17 +6,17 @@ namespace Prooph\EventStoreClient\Internal\ClientOperations;
 
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
-use Prooph\EventStoreClient\Data\EventData;
-use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Internal\SystemData\InspectionDecision;
 use Prooph\EventStore\Internal\SystemData\InspectionResult;
 use Prooph\EventStore\Messages\OperationResult;
 use Prooph\EventStore\Messages\TransactionWrite;
 use Prooph\EventStore\Messages\TransactionWriteCompleted;
-use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
+use Prooph\EventStoreClient\Data\EventData;
+use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStoreClient\Exception\UnexpectedOperationResult;
 use Prooph\EventStoreClient\Internal\NewEventConverter;
+use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
 
 /** @internal */
 class TransactionalWriteOperation extends AbstractOperation

@@ -12,14 +12,14 @@ use Amp\Delayed;
 use Amp\Promise;
 use Amp\Success;
 use Generator;
-use Prooph\EventStoreClient\IpEndPoint;
-use Prooph\EventStoreClient\NodeEndPoints;
 use Prooph\EventStoreClient\Exception\ClusterException;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 use Prooph\EventStoreClient\GossipSeed;
+use Prooph\EventStoreClient\IpEndPoint;
 use Prooph\EventStoreClient\Messages\ClusterMessages\ClusterInfoDto;
 use Prooph\EventStoreClient\Messages\ClusterMessages\MemberInfoDto;
 use Prooph\EventStoreClient\Messages\ClusterMessages\VNodeState;
+use Prooph\EventStoreClient\NodeEndPoints;
 use Psr\Log\LoggerInterface as Logger;
 use function Amp\call;
 

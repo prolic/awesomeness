@@ -10,7 +10,6 @@ use Amp\Success;
 use Prooph\EventStoreClient\Data\ResolvedEvent;
 use Prooph\EventStoreClient\Data\SubscriptionDropReason;
 use Prooph\EventStoreClient\Data\UserCredentials;
-use Prooph\EventStoreClient\IpEndPoint;
 use Prooph\EventStoreClient\Internal\StopWatch;
 use Prooph\EventStoreClient\Internal\VolatileEventStoreSubscription;
 

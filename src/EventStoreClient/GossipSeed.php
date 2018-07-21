@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient;
 
-use Prooph\EventStoreClient\IpEndPoint;
-
 /**
  * Represents a source of cluster gossip
  */

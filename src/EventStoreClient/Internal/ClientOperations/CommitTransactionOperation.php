@@ -6,9 +6,6 @@ namespace Prooph\EventStoreClient\Internal\ClientOperations;
 
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
-use Prooph\EventStoreClient\Data\Position;
-use Prooph\EventStoreClient\Data\UserCredentials;
-use Prooph\EventStoreClient\Data\WriteResult;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Exception\InvalidTransaction;
 use Prooph\EventStore\Exception\StreamDeleted;
@@ -18,8 +15,11 @@ use Prooph\EventStore\Internal\SystemData\InspectionResult;
 use Prooph\EventStore\Messages\OperationResult;
 use Prooph\EventStore\Messages\TransactionCommit;
 use Prooph\EventStore\Messages\TransactionCommitCompleted;
-use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
+use Prooph\EventStoreClient\Data\Position;
+use Prooph\EventStoreClient\Data\UserCredentials;
+use Prooph\EventStoreClient\Data\WriteResult;
 use Prooph\EventStoreClient\Exception\UnexpectedOperationResult;
+use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
 
 /** @internal */
 class CommitTransactionOperation extends AbstractOperation

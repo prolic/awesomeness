@@ -7,19 +7,19 @@ namespace Prooph\EventStoreClient\Internal\ClientOperations;
 use Amp\Deferred;
 use Amp\Promise;
 use Google\Protobuf\Internal\Message;
-use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStore\Internal\SystemData\InspectionDecision;
 use Prooph\EventStore\Internal\SystemData\InspectionResult;
-use Prooph\EventStoreClient\IpEndPoint;
 use Prooph\EventStore\Messages\NotHandled;
 use Prooph\EventStore\Messages\NotHandled_MasterInfo;
 use Prooph\EventStore\Messages\NotHandled_NotHandledReason;
-use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
-use Prooph\EventStoreClient\Transport\Tcp\TcpFlags;
-use Prooph\EventStoreClient\Transport\Tcp\TcpPackage;
+use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStoreClient\Exception\NotAuthenticatedException;
 use Prooph\EventStoreClient\Exception\ServerError;
 use Prooph\EventStoreClient\Exception\UnexpectedCommandException;
+use Prooph\EventStoreClient\IpEndPoint;
+use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
+use Prooph\EventStoreClient\Transport\Tcp\TcpFlags;
+use Prooph\EventStoreClient\Transport\Tcp\TcpPackage;
 use Throwable;
 
 /** @internal */
@@ -76,7 +76,7 @@ abstract class AbstractOperation implements ClientOperation
     {
         if ($package->command()->equals($this->responseCommand)) {
             /** @var Message $responseMessage */
-            $responseMessage = new $this->responseClassName;
+            $responseMessage = new $this->responseClassName();
             $responseMessage->mergeFromString($package->data());
 
             return $this->inspectResponse($responseMessage);

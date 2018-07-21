@@ -6,18 +6,18 @@ namespace Prooph\EventStoreClient\Internal\ClientOperations;
 
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
-use Prooph\EventStoreClient\Data\PersistentSubscriptionDeleteResult;
-use Prooph\EventStoreClient\Data\PersistentSubscriptionDeleteStatus;
-use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Internal\SystemData\InspectionDecision;
 use Prooph\EventStore\Internal\SystemData\InspectionResult;
 use Prooph\EventStore\Messages\DeletePersistentSubscription;
 use Prooph\EventStore\Messages\DeletePersistentSubscriptionCompleted;
 use Prooph\EventStore\Messages\DeletePersistentSubscriptionCompleted_DeletePersistentSubscriptionResult;
-use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
+use Prooph\EventStoreClient\Data\PersistentSubscriptionDeleteResult;
+use Prooph\EventStoreClient\Data\PersistentSubscriptionDeleteStatus;
+use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStoreClient\Exception\InvalidOperationException;
 use Prooph\EventStoreClient\Exception\UnexpectedOperationResult;
+use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
 
 /** @internal */
 class DeletePersistentSubscriptionOperation extends AbstractOperation

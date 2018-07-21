@@ -6,9 +6,6 @@ namespace Prooph\EventStoreClient\Internal\ClientOperations;
 
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
-use Prooph\EventStoreClient\Common\SystemConsumerStrategies;
-use Prooph\EventStoreClient\Data\PersistentSubscriptionSettings;
-use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Internal\Data\PersistentSubscriptionUpdateResult;
 use Prooph\EventStore\Internal\Data\PersistentSubscriptionUpdateStatus;
@@ -17,9 +14,12 @@ use Prooph\EventStore\Internal\SystemData\InspectionResult;
 use Prooph\EventStore\Messages\UpdatePersistentSubscription;
 use Prooph\EventStore\Messages\UpdatePersistentSubscriptionCompleted;
 use Prooph\EventStore\Messages\UpdatePersistentSubscriptionCompleted_UpdatePersistentSubscriptionResult;
-use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
+use Prooph\EventStoreClient\Common\SystemConsumerStrategies;
+use Prooph\EventStoreClient\Data\PersistentSubscriptionSettings;
+use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStoreClient\Exception\InvalidOperationException;
 use Prooph\EventStoreClient\Exception\UnexpectedOperationResult;
+use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
 
 /** @internal */
 class UpdatePersistentSubscriptionOperation extends AbstractOperation
