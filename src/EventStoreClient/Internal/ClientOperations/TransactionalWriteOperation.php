@@ -6,8 +6,8 @@ namespace Prooph\EventStoreClient\Internal\ClientOperations;
 
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
-use Prooph\EventStore\Data\EventData;
-use Prooph\EventStore\Data\UserCredentials;
+use Prooph\EventStoreClient\Data\EventData;
+use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Internal\SystemData\InspectionDecision;
 use Prooph\EventStore\Internal\SystemData\InspectionResult;

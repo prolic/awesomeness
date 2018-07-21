@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Prooph\EventStoreClient\Internal\ClientOperations;
 
 use Amp\Deferred;
-use Prooph\EventStore\Data\EventId;
-use Prooph\EventStore\Data\PersistentSubscriptionNakEventAction;
-use Prooph\EventStore\Data\PersistentSubscriptionResolvedEvent;
-use Prooph\EventStore\Data\SubscriptionDropReason;
-use Prooph\EventStore\Data\UserCredentials;
+use Prooph\EventStoreClient\Data\EventId;
+use Prooph\EventStoreClient\Data\PersistentSubscriptionNakEventAction;
+use Prooph\EventStoreClient\Data\PersistentSubscriptionResolvedEvent;
+use Prooph\EventStoreClient\Data\SubscriptionDropReason;
+use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Internal\SystemData\InspectionDecision;
 use Prooph\EventStore\Internal\SystemData\InspectionResult;

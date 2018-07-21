@@ -6,7 +6,7 @@ namespace Prooph\EventStoreClient\Internal\ClientOperations;
 
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
-use Prooph\EventStore\Data\UserCredentials;
+use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStoreClient\EventStoreAsyncTransaction;
 use Prooph\EventStoreClient\EventStoreAsyncTransactionConnection;
 use Prooph\EventStore\Exception\AccessDenied;

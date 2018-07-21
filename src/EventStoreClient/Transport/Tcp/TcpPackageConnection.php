@@ -12,7 +12,7 @@ use Amp\Socket\ClientTlsContext;
 use Amp\Socket\ConnectException;
 use Generator;
 use Google\Protobuf\Internal\Message;
-use Prooph\EventStore\Data\UserCredentials;
+use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStoreClient\IpEndPoint;
 use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
 use Prooph\EventStoreClient\Transport\Tcp\TcpFlags;

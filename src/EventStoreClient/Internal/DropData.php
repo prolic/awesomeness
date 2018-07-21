@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient\Internal;
 
-use Prooph\EventStore\Data\SubscriptionDropReason;
+use Prooph\EventStoreClient\Data\SubscriptionDropReason;
 
 /** @internal */
 class DropData

@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient;
 
-use Prooph\EventStore\Data\EventData;
-use Prooph\EventStore\Data\EventReadResult;
-use Prooph\EventStore\Data\Position;
-use Prooph\EventStore\Data\StreamEventsSlice;
-use Prooph\EventStore\Data\StreamMetadata;
-use Prooph\EventStore\Data\StreamMetadataResult;
-use Prooph\EventStore\Data\SystemSettings;
-use Prooph\EventStore\Data\UserCredentials;
-use Prooph\EventStore\Data\WriteResult;
+use Prooph\EventStoreClient\Data\EventData;
+use Prooph\EventStoreClient\Data\EventReadResult;
+use Prooph\EventStoreClient\Data\Position;
+use Prooph\EventStoreClient\Data\StreamEventsSlice;
+use Prooph\EventStoreClient\Data\StreamMetadata;
+use Prooph\EventStoreClient\Data\StreamMetadataResult;
+use Prooph\EventStoreClient\Data\SystemSettings;
+use Prooph\EventStoreClient\Data\UserCredentials;
+use Prooph\EventStoreClient\Data\WriteResult;
 use Prooph\EventStore\Internal\Event\ListenerHandler;
 use Prooph\EventStoreClient\ClusterSettings;
 use Prooph\EventStoreClient\ConnectionSettings;

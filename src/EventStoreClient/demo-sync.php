@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient;
 
-use Prooph\EventStore\Data\EventData;
-use Prooph\EventStore\Data\EventId;
-use Prooph\EventStore\Data\ExpectedVersion;
+use Prooph\EventStoreClient\Data\EventData;
+use Prooph\EventStoreClient\Data\EventId;
+use Prooph\EventStoreClient\Data\ExpectedVersion;
 use Prooph\EventStoreClient\IpEndPoint;
 
 require __DIR__ . '/../../vendor/autoload.php';

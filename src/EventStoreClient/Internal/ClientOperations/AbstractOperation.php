@@ -7,7 +7,7 @@ namespace Prooph\EventStoreClient\Internal\ClientOperations;
 use Amp\Deferred;
 use Amp\Promise;
 use Google\Protobuf\Internal\Message;
-use Prooph\EventStore\Data\UserCredentials;
+use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStore\Internal\SystemData\InspectionDecision;
 use Prooph\EventStore\Internal\SystemData\InspectionResult;
 use Prooph\EventStoreClient\IpEndPoint;

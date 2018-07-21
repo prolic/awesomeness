@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient\Transport\Tcp;
 
-use Prooph\EventStore\Data\UserCredentials;
+use Prooph\EventStoreClient\Data\UserCredentials;
 
 class TcpPackage
 {

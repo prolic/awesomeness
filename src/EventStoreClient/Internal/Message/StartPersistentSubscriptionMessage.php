@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Prooph\EventStoreClient\Internal\Message;
 
 use Amp\Deferred;
-use Prooph\EventStore\Data\UserCredentials;
+use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStoreClient\Internal\Message;
 
 /** @internal  */

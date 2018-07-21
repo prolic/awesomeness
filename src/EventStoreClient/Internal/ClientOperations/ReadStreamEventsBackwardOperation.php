@@ -6,11 +6,11 @@ namespace Prooph\EventStoreClient\Internal\ClientOperations;
 
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
-use Prooph\EventStore\Data\ReadDirection;
-use Prooph\EventStore\Data\ResolvedEvent;
-use Prooph\EventStore\Data\SliceReadStatus;
-use Prooph\EventStore\Data\StreamEventsSlice;
-use Prooph\EventStore\Data\UserCredentials;
+use Prooph\EventStoreClient\Data\ReadDirection;
+use Prooph\EventStoreClient\Data\ResolvedEvent;
+use Prooph\EventStoreClient\Data\SliceReadStatus;
+use Prooph\EventStoreClient\Data\StreamEventsSlice;
+use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Internal\SystemData\InspectionDecision;
 use Prooph\EventStore\Internal\SystemData\InspectionResult;
