@@ -18,7 +18,7 @@ use Prooph\EventStore\Messages\ReadAllEvents;
 use Prooph\EventStore\Messages\ReadAllEventsCompleted;
 use Prooph\EventStore\Messages\ReadAllEventsCompleted_ReadAllResult;
 use Prooph\EventStore\Messages\ResolvedIndexedEvent;
-use Prooph\EventStore\Transport\Tcp\TcpCommand;
+use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
 use Prooph\EventStoreClient\Exception\ServerError;
 use Prooph\EventStoreClient\Internal\EventMessageConverter;
 

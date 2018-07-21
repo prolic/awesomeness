@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace ProophTest\PdoEventStore;
 
-use Prooph\EventStore\EventStoreConnection;
+use Prooph\EventStore\EventStoreSyncConnection;
 use ProophTest\EventStore\EventStoreConnectionTest;
 
 class PdoEventStoreConnectionTest extends EventStoreConnectionTest
 {
-    protected function getEventStoreConnection(): EventStoreConnection
+    protected function getEventStoreConnection(): EventStoreSyncConnection
     {
-        return new \Prooph\PdoEventStore\PdoEventStoreConnection(
+        return new \Prooph\PdoEventStore\PdoEventStoreSyncSyncConnection(
             new \Prooph\PdoEventStore\PostgresConnectionSettings(
                 new \Prooph\EventStore\IpEndPoint(\getenv('PG_HOST'), (int) \getenv('PG_PORT')),
                 \getenv('PG_DBNAME'),

@@ -12,7 +12,7 @@ use Prooph\EventStore\Data\CatchUpSubscriptionSettings;
 use Prooph\EventStore\Data\ResolvedEvent;
 use Prooph\EventStore\Data\SubscriptionDropReason;
 use Prooph\EventStore\Data\UserCredentials;
-use Prooph\EventStore\EventStoreAsyncConnection;
+use Prooph\EventStoreClient\EventStoreAsyncConnection;
 use Prooph\EventStore\Internal\Event\ClientConnectionEventArgs;
 use Prooph\EventStore\Internal\Event\ListenerHandler;
 use Prooph\EventStoreClient\Exception\TimeoutException;

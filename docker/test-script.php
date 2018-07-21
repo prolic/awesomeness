@@ -3,7 +3,7 @@
 declare(strict_types=1);
 require 'vendor/autoload.php';
 
-$connection = new \Prooph\HttpEventStore\HttpEventStoreConnection(
+$connection = new \Prooph\HttpEventStore\HttpEventStoreSyncConnection(
     new \Http\Client\Socket\Client(new \Http\Message\MessageFactory\DiactorosMessageFactory()),
     new \Http\Message\MessageFactory\DiactorosMessageFactory(),
     new \Http\Message\UriFactory\DiactorosUriFactory(),

@@ -8,13 +8,13 @@ use PDO;
 use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\UserManagement\UserManagement;
-use Prooph\PdoEventStore\PdoEventStoreConnection;
+use Prooph\PdoEventStore\PdoEventStoreSyncSyncConnection;
 
 /** @internal */
 class DeleteUserOperation
 {
     public function __invoke(
-        PdoEventStoreConnection $eventStoreConnection,
+        PdoEventStoreSyncSyncConnection $eventStoreConnection,
         PDO $connection,
         string $login,
         ?UserCredentials $userCredentials

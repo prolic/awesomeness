@@ -16,7 +16,7 @@ use Prooph\EventStore\Internal\SystemData\InspectionResult;
 use Prooph\EventStore\Messages\ReadEvent;
 use Prooph\EventStore\Messages\ReadEventCompleted;
 use Prooph\EventStore\Messages\ReadEventCompleted_ReadEventResult;
-use Prooph\EventStore\Transport\Tcp\TcpCommand;
+use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
 use Prooph\EventStoreClient\Exception\ServerError;
 use Prooph\EventStoreClient\Internal\EventMessageConverter;
 

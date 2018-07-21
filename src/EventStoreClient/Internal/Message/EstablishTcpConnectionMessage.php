@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient\Internal\Message;
 
-use Prooph\EventStore\NodeEndPoints;
+use Prooph\EventStoreClient\NodeEndPoints;
 use Prooph\EventStoreClient\Internal\Message;
 
 /** @internal */

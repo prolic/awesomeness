@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Prooph\EventStore;
+namespace Prooph\EventStoreClient;
 
 use Prooph\EventStore\Data\EventData;
 use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Data\WriteResult;
 
-class EventStoreTransaction
+class EventStoreSyncTransaction
 {
     /** @var int */
     private $transactionId;
     /** @var UserCredentials|null */
     private $userCredentials;
-    /** @var EventStoreTransactionConnection */
+    /** @var EventStoreSyncTransactionConnection */
     private $connection;
     /** @var bool */
     private $isRolledBack;
@@ -24,7 +24,7 @@ class EventStoreTransaction
     public function __construct(
         int $transactionId,
         ?UserCredentials $userCredentials,
-        EventStoreTransactionConnection $connection
+        EventStoreSyncTransactionConnection $connection
     ) {
         $this->transactionId = $transactionId;
         $this->userCredentials = $userCredentials;

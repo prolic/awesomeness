@@ -15,13 +15,12 @@ use Prooph\EventStore\Data\StreamMetadataResult;
 use Prooph\EventStore\Data\SystemSettings;
 use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Data\WriteResult;
-use Prooph\EventStore\EventStoreConnection as Connection;
-use Prooph\EventStore\EventStorePersistentSubscription;
-use Prooph\EventStore\EventStoreTransaction;
-use Prooph\EventStore\EventStoreTransactionConnection as TransactionConnection;
-use Prooph\EventStore\Internal\Data\PersistentSubscriptionCreateResult;
-use Prooph\EventStore\Internal\Data\PersistentSubscriptionDeleteResult;
-use Prooph\EventStore\Internal\Data\PersistentSubscriptionUpdateResult;
+use Prooph\EventStoreClient\EventStoreSyncConnection as Connection;
+use Prooph\EventStoreClient\EventStoreSyncTransaction;
+use Prooph\EventStore\EventStoreSyncTransactionConnection as TransactionConnection;
+use Prooph\EventStore\Data\PersistentSubscriptionCreateResult;
+use Prooph\EventStore\Data\PersistentSubscriptionDeleteResult;
+use Prooph\EventStore\Data\PersistentSubscriptionUpdateResult;
 use Prooph\EventStore\Internal\Event\ListenerHandler;
 use Prooph\EventStoreClient\ClusterSettings;
 use Prooph\EventStoreClient\ConnectionSettings;
@@ -31,7 +30,7 @@ use Prooph\EventStoreClient\Internal\ClientOperations\TransactionalWriteOperatio
 use Prooph\PdoEventStore\ClientOperations\StartTransactionOperation;
 
 /** @internal */
-final class EventStoreNodeConnection implements
+final class EventStoreSyncNodeConnection implements
     Connection,
     TransactionConnection
 {
@@ -259,7 +258,7 @@ final class EventStoreNodeConnection implements
         string $stream,
         int $expectedVersion,
         UserCredentials $userCredentials = null
-    ): EventStoreTransaction {
+    ): EventStoreSyncTransaction {
         if (empty($stream)) {
             throw new InvalidArgumentException('Stream cannot be empty');
         }
@@ -285,16 +284,16 @@ final class EventStoreNodeConnection implements
     public function continueTransaction(
         int $transactionId,
         UserCredentials $userCredentials = null
-    ): EventStoreTransaction {
+    ): EventStoreSyncTransaction {
         if ($transactionId < 0) {
             throw new InvalidArgumentException('Invalid transaction id');
         }
 
-        return new EventStoreTransaction($transactionId, $userCredentials, $this);
+        return new EventStoreSyncTransaction($transactionId, $userCredentials, $this);
     }
 
     public function transactionalWrite(
-        EventStoreTransaction $transaction,
+        EventStoreSyncTransaction $transaction,
         array $events,
         UserCredentials $userCredentials = null
     ): void {
@@ -319,7 +318,7 @@ final class EventStoreNodeConnection implements
     }
 
     public function commitTransaction(
-        EventStoreTransaction $transaction,
+        EventStoreSyncTransaction $transaction,
         UserCredentials $userCredentials = null
     ): WriteResult {
         $deferred = new Deferred();

@@ -10,7 +10,7 @@ use Amp\Success;
 use Prooph\EventStore\Data\CatchUpSubscriptionSettings;
 use Prooph\EventStore\Data\ResolvedEvent;
 use Prooph\EventStore\Data\SubscriptionDropReason;
-use Prooph\EventStore\IpEndPoint;
+use Prooph\EventStoreClient\IpEndPoint;
 use Prooph\EventStoreClient\Internal\EventStoreCatchUpSubscription;
 use Prooph\EventStoreClient\Internal\StopWatch;
 

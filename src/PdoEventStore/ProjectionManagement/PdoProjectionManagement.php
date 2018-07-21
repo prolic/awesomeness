@@ -15,22 +15,22 @@ use Prooph\EventStore\ProjectionManagement\ProjectionManagement;
 use Prooph\EventStore\Projections\ProjectionEventTypes;
 use Prooph\EventStore\Projections\ProjectionNamesBuilder;
 use Prooph\EventStore\Projections\StandardProjections;
-use Prooph\PdoEventStore\PdoEventStoreConnection;
+use Prooph\PdoEventStore\PdoEventStoreSyncSyncConnection;
 use ReflectionMethod;
 
 final class PdoProjectionManagement implements ProjectionManagement
 {
-    /** @var PdoEventStoreConnection */
+    /** @var PdoEventStoreSyncSyncConnection */
     private $pdoEventStoreConnection;
     /** @var ReflectionMethod */
     private $userRolesMethod;
 
-    /** @var PdoEventStoreConnection */
+    /** @var PdoEventStoreSyncSyncConnection */
     private $eventStoreConnection;
     /** @var PDO */
     private $connection;
 
-    public function __construct(PdoEventStoreConnection $eventStoreConnection, PDO $connection)
+    public function __construct(PdoEventStoreSyncSyncConnection $eventStoreConnection, PDO $connection)
     {
         $this->eventStoreConnection = $eventStoreConnection;
         $this->connection = $connection;

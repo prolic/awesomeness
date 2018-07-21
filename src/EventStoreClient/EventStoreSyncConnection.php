@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Prooph\EventStore;
+namespace Prooph\EventStoreClient;
 
 use Prooph\EventStore\Data\EventData;
 use Prooph\EventStore\Data\EventReadResult;
@@ -17,7 +17,7 @@ use Prooph\EventStore\Internal\Event\ListenerHandler;
 use Prooph\EventStoreClient\ClusterSettings;
 use Prooph\EventStoreClient\ConnectionSettings;
 
-interface EventStoreConnection
+interface EventStoreSyncConnection
 {
     public function connectionName(): string;
 

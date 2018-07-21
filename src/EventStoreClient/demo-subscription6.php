@@ -10,7 +10,7 @@ use Amp\Success;
 use Prooph\EventStore\Data\PersistentSubscriptionSettings;
 use Prooph\EventStore\Data\ResolvedEvent;
 use Prooph\EventStore\Data\UserCredentials;
-use Prooph\EventStore\IpEndPoint;
+use Prooph\EventStoreClient\IpEndPoint;
 use Prooph\EventStore\Messages\CreatePersistentSubscription;
 use Prooph\EventStoreClient\Exception\InvalidOperationException;
 use Prooph\EventStoreClient\Internal\EventStorePersistentSubscription;

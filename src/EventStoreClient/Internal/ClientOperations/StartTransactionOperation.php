@@ -7,8 +7,8 @@ namespace Prooph\EventStoreClient\Internal\ClientOperations;
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
 use Prooph\EventStore\Data\UserCredentials;
-use Prooph\EventStore\EventStoreTransaction;
-use Prooph\EventStore\EventStoreTransactionConnection;
+use Prooph\EventStoreClient\EventStoreSyncTransaction;
+use Prooph\EventStoreClient\EventStoreSyncTransactionConnection;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Exception\InvalidTransaction;
 use Prooph\EventStore\Exception\StreamDeleted;
@@ -18,7 +18,7 @@ use Prooph\EventStore\Internal\SystemData\InspectionResult;
 use Prooph\EventStore\Messages\OperationResult;
 use Prooph\EventStore\Messages\TransactionStart;
 use Prooph\EventStore\Messages\TransactionStartCompleted;
-use Prooph\EventStore\Transport\Tcp\TcpCommand;
+use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
 use Prooph\EventStoreClient\Exception\UnexpectedOperationResult;
 
 /** @internal */
@@ -30,7 +30,7 @@ class StartTransactionOperation extends AbstractOperation
     private $stream;
     /** @var int */
     private $expectedVersion;
-    /** @var EventStoreTransactionConnection */
+    /** @var EventStoreSyncTransactionConnection */
     private $parentConnection;
 
     public function __construct(
@@ -38,7 +38,7 @@ class StartTransactionOperation extends AbstractOperation
         bool $requireMaster,
         string $stream,
         int $expectedVersion,
-        EventStoreTransactionConnection $parentConnection,
+        EventStoreSyncTransactionConnection $parentConnection,
         ?UserCredentials $userCredentials
     ) {
         $this->requireMaster = $requireMaster;
@@ -106,7 +106,7 @@ class StartTransactionOperation extends AbstractOperation
     protected function transformResponse(Message $response)
     {
         /** @var TransactionStartCompleted $response */
-        return new EventStoreTransaction(
+        return new EventStoreSyncTransaction(
             $response->getTransactionId(),
             $this->credentials,
             $this->parentConnection

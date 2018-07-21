@@ -7,7 +7,7 @@ namespace Prooph\EventStoreClient;
 use Prooph\EventStore\Data\EventData;
 use Prooph\EventStore\Data\EventId;
 use Prooph\EventStore\Data\ExpectedVersion;
-use Prooph\EventStore\IpEndPoint;
+use Prooph\EventStoreClient\IpEndPoint;
 
 require __DIR__ . '/../../vendor/autoload.php';
 

@@ -21,7 +21,7 @@ use Prooph\EventSourcing\Aggregate\AggregateRepository;
 use Prooph\EventSourcing\Aggregate\AggregateRootTranslator;
 use Prooph\EventSourcing\Aggregate\AggregateType;
 use Prooph\EventSourcing\Aggregate\Exception;
-use Prooph\EventStore\EventStoreConnection;
+use Prooph\EventStore\EventStoreSyncConnection;
 use Psr\Container\ContainerInterface;
 
 final class AggregateRepositoryFactory implements ProvidesDefaultOptions, RequiresConfigId, RequiresMandatoryOptions
@@ -79,7 +79,7 @@ final class AggregateRepositoryFactory implements ProvidesDefaultOptions, Requir
             throw new Exception\RuntimeException(\sprintf('Repository class %s must be a sub class of %s', $repositoryClass, AggregateRepository::class));
         }
 
-        $eventStore = $container->get(EventStoreConnection::class);
+        $eventStore = $container->get(EventStoreSyncConnection::class);
 
         $aggregateType = new AggregateType($config['aggregate_type']);
 

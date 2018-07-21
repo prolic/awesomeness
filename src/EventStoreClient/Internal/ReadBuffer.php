@@ -8,9 +8,9 @@ use Amp\Loop;
 use Amp\Socket\ClientSocket;
 use Generator;
 use Prooph\EventStore\Data\UserCredentials;
-use Prooph\EventStore\Transport\Tcp\TcpCommand;
-use Prooph\EventStore\Transport\Tcp\TcpFlags;
-use Prooph\EventStore\Transport\Tcp\TcpPackage;
+use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
+use Prooph\EventStoreClient\Transport\Tcp\TcpFlags;
+use Prooph\EventStoreClient\Transport\Tcp\TcpPackage;
 use Prooph\EventStoreClient\Internal\ByteBuffer\Buffer;
 
 /** @internal */

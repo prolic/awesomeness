@@ -8,7 +8,7 @@ use PDO;
 use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Data\UserData;
 use Prooph\EventStore\UserManagement\UserManagement;
-use Prooph\PdoEventStore\PdoEventStoreConnection;
+use Prooph\PdoEventStore\PdoEventStoreSyncSyncConnection;
 use Prooph\PdoEventStore\UserManagement\ClientOperations\ChangePasswordOperation;
 use Prooph\PdoEventStore\UserManagement\ClientOperations\CreateUserOperation;
 use Prooph\PdoEventStore\UserManagement\ClientOperations\DeleteUserOperation;
@@ -24,12 +24,12 @@ use Webmozart\Assert\Assert;
 
 final class PdoUserManagement implements UserManagement
 {
-    /** @var PdoEventStoreConnection */
+    /** @var PdoEventStoreSyncSyncConnection */
     private $eventStoreConnection;
     /** @var PDO */
     private $connection;
 
-    public function __construct(PdoEventStoreConnection $eventStoreConnection, PDO $connection)
+    public function __construct(PdoEventStoreSyncSyncConnection $eventStoreConnection, PDO $connection)
     {
         $this->eventStoreConnection = $eventStoreConnection;
         $this->connection = $connection;

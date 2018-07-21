@@ -15,7 +15,7 @@ use Prooph\EventStore\Internal\SystemData\InspectionResult;
 use Prooph\EventStore\Messages\DeletePersistentSubscription;
 use Prooph\EventStore\Messages\DeletePersistentSubscriptionCompleted;
 use Prooph\EventStore\Messages\DeletePersistentSubscriptionCompleted_DeletePersistentSubscriptionResult;
-use Prooph\EventStore\Transport\Tcp\TcpCommand;
+use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
 use Prooph\EventStoreClient\Exception\InvalidOperationException;
 use Prooph\EventStoreClient\Exception\UnexpectedOperationResult;
 

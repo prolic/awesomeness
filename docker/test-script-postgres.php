@@ -3,7 +3,7 @@
 declare(strict_types=1);
 require 'vendor/autoload.php';
 
-$connection = new \Prooph\PdoEventStore\PdoEventStoreConnection(
+$connection = new \Prooph\PdoEventStore\PdoEventStoreSyncSyncConnection(
     new \Prooph\PdoEventStore\PostgresConnectionSettings(
         new \Prooph\EventStore\IpEndPoint('postgres', 5432),
         'postgres',

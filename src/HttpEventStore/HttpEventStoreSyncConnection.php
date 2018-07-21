@@ -24,7 +24,7 @@ use Prooph\EventStore\Data\SubscriptionInformation;
 use Prooph\EventStore\Data\SystemSettings;
 use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Data\WriteResult;
-use Prooph\EventStore\EventStoreConnection;
+use Prooph\EventStore\EventStoreSyncConnection;
 use Prooph\EventStore\EventStorePersistentSubscription;
 use Prooph\EventStore\Exception\InvalidArgumentException;
 use Prooph\EventStore\Exception\OutOfRangeException;
@@ -48,7 +48,7 @@ use Prooph\HttpEventStore\ClientOperations\ReadStreamEventsForwardOperation;
 use Prooph\HttpEventStore\ClientOperations\ReplayParkedOperation;
 use Prooph\HttpEventStore\ClientOperations\UpdatePersistentSubscriptionOperation;
 
-class HttpEventStoreConnection implements EventStoreConnection
+class HttpEventStoreSyncConnection implements EventStoreSyncConnection
 {
     // @todo add http interface? see replay parked, get information for subscriptions, no events handlers, etc.
 

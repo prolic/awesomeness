@@ -11,7 +11,7 @@ use Prooph\EventStore\Data\ExpectedVersion;
 use Prooph\EventStore\Data\Position;
 use Prooph\EventStore\Data\StreamMetadata;
 use Prooph\EventStore\Data\UserCredentials;
-use Prooph\EventStore\IpEndPoint;
+use Prooph\EventStoreClient\IpEndPoint;
 
 require __DIR__ . '/../../vendor/autoload.php';
 

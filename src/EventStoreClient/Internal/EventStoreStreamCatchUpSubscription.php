@@ -13,7 +13,7 @@ use Prooph\EventStore\Data\SliceReadStatus;
 use Prooph\EventStore\Data\StreamEventsSlice;
 use Prooph\EventStore\Data\SubscriptionDropReason;
 use Prooph\EventStore\Data\UserCredentials;
-use Prooph\EventStore\EventStoreAsyncConnection;
+use Prooph\EventStoreClient\EventStoreAsyncConnection;
 use Prooph\EventStore\Exception\StreamDeleted;
 use function Amp\call;
 

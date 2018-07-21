@@ -10,7 +10,7 @@ use Prooph\EventStore\Data\UserData;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Exception\RuntimeException;
 use Prooph\EventStore\UserManagement\UserManagement;
-use Prooph\PdoEventStore\PdoEventStoreConnection;
+use Prooph\PdoEventStore\PdoEventStoreSyncSyncConnection;
 
 // @todo refactor to use new UserData object
 
@@ -21,7 +21,7 @@ class GetAllUsersOperation
      * @return UserData[]
      */
     public function __invoke(
-        PdoEventStoreConnection $eventStoreConnection,
+        PdoEventStoreSyncSyncConnection $eventStoreConnection,
         PDO $connection,
         ?UserCredentials $userCredentials
     ): array {

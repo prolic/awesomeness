@@ -12,7 +12,7 @@ use Prooph\EventStore\Data\Position;
 use Prooph\EventStore\Data\ResolvedEvent;
 use Prooph\EventStore\Data\SubscriptionDropReason;
 use Prooph\EventStore\Data\UserCredentials;
-use Prooph\EventStore\EventStoreAsyncConnection;
+use Prooph\EventStoreClient\EventStoreAsyncConnection;
 use function Amp\call;
 
 class EventStoreAllCatchUpSubscription extends EventStoreCatchUpSubscription

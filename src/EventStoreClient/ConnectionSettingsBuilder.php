@@ -6,7 +6,7 @@ namespace Prooph\EventStoreClient;
 
 use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Internal\Consts;
-use Prooph\EventStore\IpEndPoint;
+use Prooph\EventStoreClient\IpEndPoint;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 
 /**

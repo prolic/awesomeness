@@ -9,10 +9,10 @@ use PHPUnit\Framework\TestCase;
 use Prooph\EventStore\Data\EventData;
 use Prooph\EventStore\Data\EventId;
 use Prooph\EventStore\Data\ExpectedVersion;
-use Prooph\EventStore\EventStoreConnection;
+use Prooph\EventStore\EventStoreSyncConnection;
 use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Exception\InvalidArgumentException;
-use Prooph\PdoEventStore\PdoEventStoreConnection;
+use Prooph\PdoEventStore\PdoEventStoreSyncSyncConnection;
 
 abstract class EventStoreConnectionTest extends TestCase
 {
@@ -58,7 +58,7 @@ abstract class EventStoreConnectionTest extends TestCase
     public function it_deletes_stream(): void
     {
         $connection = $this->getEventStoreConnection();
-        if (! $connection instanceof PdoEventStoreConnection) {
+        if (! $connection instanceof PdoEventStoreSyncSyncConnection) {
             $this->markTestSkipped(\sprintf('The "%s" implementation is not tested yet.', \get_class($connection)));
         }
 
@@ -76,7 +76,7 @@ abstract class EventStoreConnectionTest extends TestCase
     public function it_hard_deletes_stream(): void
     {
         $connection = $this->getEventStoreConnection();
-        if (! $connection instanceof PdoEventStoreConnection) {
+        if (! $connection instanceof PdoEventStoreSyncSyncConnection) {
             $this->markTestSkipped(\sprintf('The "%s" implementation is not tested yet.', \get_class($connection)));
         }
 
@@ -267,7 +267,7 @@ abstract class EventStoreConnectionTest extends TestCase
         $this->expectException(AccessDenied::class);
     }
 
-    abstract protected function getEventStoreConnection(): EventStoreConnection;
+    abstract protected function getEventStoreConnection(): EventStoreSyncConnection;
 
     abstract protected function cleanEventStore(): void;
 

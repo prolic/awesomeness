@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace Prooph\EventStoreClient;
 
 use Prooph\EventStore\Data\UserCredentials;
-use Prooph\EventStore\EventStoreAsyncConnection as AsyncConnection;
-use Prooph\EventStore\EventStoreConnection as SyncConnection;
+use Prooph\EventStoreClient\EventStoreAsyncConnection as AsyncConnection;
+use Prooph\EventStoreClient\EventStoreSyncConnection as SyncConnection;
 use Prooph\EventStore\Internal\Consts;
-use Prooph\EventStore\IpEndPoint;
+use Prooph\EventStoreClient\IpEndPoint;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 use Prooph\EventStoreClient\Internal\ClusterDnsEndPointDiscoverer;
 use Prooph\EventStoreClient\Internal\EventStoreAsyncNodeConnection;
-use Prooph\EventStoreClient\Internal\EventStoreNodeConnection;
+use Prooph\EventStoreClient\Internal\EventStoreSyncNodeSyncConnection;
 use Prooph\EventStoreClient\Internal\SingleEndpointDiscoverer;
 use Prooph\EventStoreClient\Internal\StaticEndPointDiscoverer;
 
@@ -133,7 +133,7 @@ class EventStoreConnection
             $connectionName
         );
 
-        return new EventStoreNodeConnection($connection);
+        return new EventStoreSyncNodeSyncConnection($connection);
     }
 
     /** @throws \Exception */
@@ -148,7 +148,7 @@ class EventStoreConnection
             $connectionName
         );
 
-        return new EventStoreNodeConnection($connection);
+        return new EventStoreSyncNodeSyncConnection($connection);
     }
 
     public static function createFromIpEndPoint(
@@ -162,7 +162,7 @@ class EventStoreConnection
             $connectionName
         );
 
-        return new EventStoreNodeConnection($connection);
+        return new EventStoreSyncNodeSyncConnection($connection);
     }
 
     private static function createWithClusterDnsEndPointDiscoverer(

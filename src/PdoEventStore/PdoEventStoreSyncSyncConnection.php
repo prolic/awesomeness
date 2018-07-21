@@ -22,9 +22,9 @@ use Prooph\EventStore\Data\StreamMetadataResult;
 use Prooph\EventStore\Data\SystemSettings;
 use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Data\WriteResult;
-use Prooph\EventStore\EventStoreConnection;
-use Prooph\EventStore\EventStoreTransaction;
-use Prooph\EventStore\EventStoreTransactionConnection;
+use Prooph\EventStore\EventStoreSyncConnection;
+use Prooph\EventStore\EventStoreSyncTransaction;
+use Prooph\EventStore\EventStoreSyncTransactionConnection;
 use Prooph\EventStore\Exception\ConnectionException;
 use Prooph\EventStore\Exception\InvalidArgumentException;
 use Prooph\EventStore\Exception\OutOfRangeException;
@@ -48,7 +48,7 @@ use Prooph\PdoEventStore\Internal\LockData;
 use Prooph\PdoEventStore\Internal\StreamOperation;
 use Prooph\PdoEventStore\Internal\TransactionData;
 
-final class PdoEventStoreConnection implements EventStoreConnection, EventStoreTransactionConnection
+final class PdoEventStoreSyncSyncConnection implements EventStoreSyncConnection, EventStoreSyncTransactionConnection
 {
     private const MaxAllowedEventsToAppend = 5000;
 
@@ -489,7 +489,7 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
         string $stream,
         int $expectedVersion,
         UserCredentials $userCredentials = null
-    ): EventStoreTransaction {
+    ): EventStoreSyncTransaction {
         if (empty($stream)) {
             throw new InvalidArgumentException('Stream cannot be empty');
         }
@@ -529,7 +529,7 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
 
         $this->locks[$stream] = $lockData;
 
-        return new EventStoreTransaction(
+        return new EventStoreSyncTransaction(
             $lockData->transactionId(),
             $userCredentials,
             $this
@@ -539,7 +539,7 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
     public function continueTransaction(
         int $transactionId,
         UserCredentials $userCredentials = null
-    ): EventStoreTransaction {
+    ): EventStoreSyncTransaction {
         $this->checkConnection($userCredentials);
 
         $found = false;
@@ -570,11 +570,11 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
             $lock->lockCounter() + 1
         );
 
-        return new EventStoreTransaction($transactionId, $userCredentials, $this);
+        return new EventStoreSyncTransaction($transactionId, $userCredentials, $this);
     }
 
     public function transactionalWrite(
-        EventStoreTransaction $transaction,
+        EventStoreSyncTransaction $transaction,
         array $events,
         UserCredentials $userCredentials = null
     ): void {
@@ -622,7 +622,7 @@ final class PdoEventStoreConnection implements EventStoreConnection, EventStoreT
     }
 
     public function commitTransaction(
-        EventStoreTransaction $transaction,
+        EventStoreSyncTransaction $transaction,
         UserCredentials $userCredentials = null
     ): WriteResult {
         if (null === $this->connection) {

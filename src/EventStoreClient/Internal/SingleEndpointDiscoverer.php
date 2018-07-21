@@ -9,8 +9,8 @@ use Amp\Promise;
 use Amp\Success;
 use Amp\Uri\InvalidUriException;
 use Amp\Uri\Uri;
-use Prooph\EventStore\IpEndPoint;
-use Prooph\EventStore\NodeEndPoints;
+use Prooph\EventStoreClient\IpEndPoint;
+use Prooph\EventStoreClient\NodeEndPoints;
 
 /** @internal */
 final class SingleEndpointDiscoverer implements EndPointDiscoverer

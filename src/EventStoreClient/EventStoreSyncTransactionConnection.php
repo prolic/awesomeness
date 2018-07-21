@@ -2,33 +2,33 @@
 
 declare(strict_types=1);
 
-namespace Prooph\EventStore;
+namespace Prooph\EventStoreClient;
 
 use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Data\WriteResult;
 
 /** @internal */
-interface EventStoreTransactionConnection
+interface EventStoreSyncTransactionConnection
 {
     public function startTransaction(
         string $stream,
         int $expectedVersion,
         UserCredentials $userCredentials = null
-    ): EventStoreTransaction;
+    ): EventStoreSyncTransaction;
 
     public function continueTransaction(
         int $transactionId,
         UserCredentials $userCredentials = null
-    ): EventStoreTransaction;
+    ): EventStoreSyncTransaction;
 
     public function transactionalWrite(
-        EventStoreTransaction $transaction,
+        EventStoreSyncTransaction $transaction,
         array $events,
         UserCredentials $userCredentials = null
     ): void;
 
     public function commitTransaction(
-        EventStoreTransaction $transaction,
+        EventStoreSyncTransaction $transaction,
         UserCredentials $userCredentials = null
     ): WriteResult;
 }
