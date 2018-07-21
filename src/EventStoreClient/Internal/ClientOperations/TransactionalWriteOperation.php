@@ -7,15 +7,15 @@ namespace Prooph\EventStoreClient\Internal\ClientOperations;
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
 use Prooph\EventStore\Exception\AccessDenied;
-use Prooph\EventStoreClient\Messages\ClientMessages\OperationResult;
-use Prooph\EventStoreClient\Messages\ClientMessages\TransactionWrite;
-use Prooph\EventStoreClient\Messages\ClientMessages\TransactionWriteCompleted;
 use Prooph\EventStoreClient\Data\EventData;
 use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStoreClient\Exception\UnexpectedOperationResult;
 use Prooph\EventStoreClient\Internal\NewEventConverter;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionDecision;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionResult;
+use Prooph\EventStoreClient\Messages\ClientMessages\OperationResult;
+use Prooph\EventStoreClient\Messages\ClientMessages\TransactionWrite;
+use Prooph\EventStoreClient\Messages\ClientMessages\TransactionWriteCompleted;
 use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
 
 /** @internal */

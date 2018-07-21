@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient\Internal;
 
-use Prooph\EventStoreClient\Messages\ClientMessages\NewEvent;
 use Prooph\EventStoreClient\Data\EventData;
+use Prooph\EventStoreClient\Messages\ClientMessages\NewEvent;
 
 /** @internal */
 class NewEventConverter

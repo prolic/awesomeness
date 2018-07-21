@@ -7,9 +7,6 @@ namespace Prooph\EventStoreClient\Internal\ClientOperations;
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
 use Prooph\EventStore\Exception\AccessDenied;
-use Prooph\EventStoreClient\Messages\ClientMessages\ReadEvent;
-use Prooph\EventStoreClient\Messages\ClientMessages\ReadEventCompleted;
-use Prooph\EventStoreClient\Messages\ClientMessages\ReadEventCompleted\ReadEventResult;
 use Prooph\EventStoreClient\Data\EventReadResult;
 use Prooph\EventStoreClient\Data\EventReadStatus;
 use Prooph\EventStoreClient\Data\ResolvedEvent;
@@ -18,6 +15,9 @@ use Prooph\EventStoreClient\Exception\ServerError;
 use Prooph\EventStoreClient\Internal\EventMessageConverter;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionDecision;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionResult;
+use Prooph\EventStoreClient\Messages\ClientMessages\ReadEvent;
+use Prooph\EventStoreClient\Messages\ClientMessages\ReadEventCompleted;
+use Prooph\EventStoreClient\Messages\ClientMessages\ReadEventCompleted\ReadEventResult;
 use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
 
 /** @internal */

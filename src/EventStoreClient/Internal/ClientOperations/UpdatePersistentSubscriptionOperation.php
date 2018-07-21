@@ -7,18 +7,18 @@ namespace Prooph\EventStoreClient\Internal\ClientOperations;
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
 use Prooph\EventStore\Exception\AccessDenied;
-use Prooph\EventStoreClient\Data\PersistentSubscriptionUpdateResult;
-use Prooph\EventStoreClient\Data\PersistentSubscriptionUpdateStatus;
-use Prooph\EventStoreClient\Messages\ClientMessages\UpdatePersistentSubscription;
-use Prooph\EventStoreClient\Messages\ClientMessages\UpdatePersistentSubscriptionCompleted;
-use Prooph\EventStoreClient\Messages\ClientMessages\UpdatePersistentSubscriptionCompleted\UpdatePersistentSubscriptionResult;
 use Prooph\EventStoreClient\Common\SystemConsumerStrategies;
 use Prooph\EventStoreClient\Data\PersistentSubscriptionSettings;
+use Prooph\EventStoreClient\Data\PersistentSubscriptionUpdateResult;
+use Prooph\EventStoreClient\Data\PersistentSubscriptionUpdateStatus;
 use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStoreClient\Exception\InvalidOperationException;
 use Prooph\EventStoreClient\Exception\UnexpectedOperationResult;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionDecision;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionResult;
+use Prooph\EventStoreClient\Messages\ClientMessages\UpdatePersistentSubscription;
+use Prooph\EventStoreClient\Messages\ClientMessages\UpdatePersistentSubscriptionCompleted;
+use Prooph\EventStoreClient\Messages\ClientMessages\UpdatePersistentSubscriptionCompleted\UpdatePersistentSubscriptionResult;
 use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
 
 /** @internal */

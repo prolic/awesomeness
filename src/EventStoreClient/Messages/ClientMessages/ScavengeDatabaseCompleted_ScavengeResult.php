@@ -11,7 +11,7 @@ if (false) {
      * This class is deprecated. Use Prooph\EventStoreClient\Messages\ClientMessages\ScavengeDatabaseCompleted\ScavengeResult instead.
      * @deprecated
      */
-    class ScavengeDatabaseCompletedScavengeResult
+    class ScavengeDatabaseCompleted_ScavengeResult
     {
     }
 }

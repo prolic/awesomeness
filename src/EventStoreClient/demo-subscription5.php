@@ -7,13 +7,13 @@ namespace Prooph\EventStoreClient;
 use Amp\Loop;
 use Amp\Promise;
 use Amp\Success;
-use Prooph\EventStoreClient\Messages\ClientMessages\CreatePersistentSubscription;
 use Prooph\EventStoreClient\Data\PersistentSubscriptionSettings;
 use Prooph\EventStoreClient\Data\ResolvedEvent;
 use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStoreClient\Exception\InvalidOperationException;
 use Prooph\EventStoreClient\Internal\EventStorePersistentSubscription;
 use Prooph\EventStoreClient\Internal\StopWatch;
+use Prooph\EventStoreClient\Messages\ClientMessages\CreatePersistentSubscription;
 
 require __DIR__ . '/../../vendor/autoload.php';
 

@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient\Internal\ClientOperations;
 
-use Prooph\EventStoreClient\Messages\ClientMessages\StreamEventAppeared;
-use Prooph\EventStoreClient\Messages\ClientMessages\SubscribeToStream;
-use Prooph\EventStoreClient\Messages\ClientMessages\SubscriptionConfirmation;
 use Prooph\EventStoreClient\Internal\EventMessageConverter;
 use Prooph\EventStoreClient\Internal\EventStoreSubscription;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionDecision;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionResult;
 use Prooph\EventStoreClient\Internal\VolatileEventStoreSubscription;
+use Prooph\EventStoreClient\Messages\ClientMessages\StreamEventAppeared;
+use Prooph\EventStoreClient\Messages\ClientMessages\SubscribeToStream;
+use Prooph\EventStoreClient\Messages\ClientMessages\SubscriptionConfirmation;
 use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
 use Prooph\EventStoreClient\Transport\Tcp\TcpFlags;
 use Prooph\EventStoreClient\Transport\Tcp\TcpPackage;

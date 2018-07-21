@@ -10,15 +10,15 @@ use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStore\Exception\InvalidTransaction;
 use Prooph\EventStore\Exception\StreamDeleted;
 use Prooph\EventStore\Exception\WrongExpectedVersion;
-use Prooph\EventStoreClient\Messages\ClientMessages\OperationResult;
-use Prooph\EventStoreClient\Messages\ClientMessages\TransactionCommit;
-use Prooph\EventStoreClient\Messages\ClientMessages\TransactionCommitCompleted;
 use Prooph\EventStoreClient\Data\Position;
 use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStoreClient\Data\WriteResult;
 use Prooph\EventStoreClient\Exception\UnexpectedOperationResult;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionDecision;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionResult;
+use Prooph\EventStoreClient\Messages\ClientMessages\OperationResult;
+use Prooph\EventStoreClient\Messages\ClientMessages\TransactionCommit;
+use Prooph\EventStoreClient\Messages\ClientMessages\TransactionCommitCompleted;
 use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
 
 /** @internal */
