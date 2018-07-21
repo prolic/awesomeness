@@ -51,7 +51,8 @@ class ReadAllEventsForwardOperation extends AbstractOperation
             $deferred,
             $userCredentials,
             TcpCommand::readAllEventsForward(),
-            TcpCommand::readAllEventsForwardCompleted()
+            TcpCommand::readAllEventsForwardCompleted(),
+            ReadAllEventsCompleted::class
         );
     }
 

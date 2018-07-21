@@ -55,7 +55,8 @@ class ReadStreamEventsForwardOperation extends AbstractOperation
             $deferred,
             $userCredentials,
             TcpCommand::readStreamEventsForward(),
-            TcpCommand::readStreamEventsForwardCompleted()
+            TcpCommand::readStreamEventsForwardCompleted(),
+            ReadStreamEventsCompleted::class
         );
     }
 

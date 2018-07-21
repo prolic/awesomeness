@@ -43,7 +43,8 @@ class TransactionalWriteOperation extends AbstractOperation
             $deferred,
             $userCredentials,
             TcpCommand::transactionWrite(),
-            TcpCommand::transactionWriteCompleted()
+            TcpCommand::transactionWriteCompleted(),
+            TransactionWriteCompleted::class
         );
     }
 

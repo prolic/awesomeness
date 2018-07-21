@@ -42,7 +42,8 @@ class CommitTransactionOperation extends AbstractOperation
             $deferred,
             $userCredentials,
             TcpCommand::transactionCommit(),
-            TcpCommand::transactionCommitCompleted()
+            TcpCommand::transactionCommitCompleted(),
+            TransactionCommitCompleted::class
         );
     }
 

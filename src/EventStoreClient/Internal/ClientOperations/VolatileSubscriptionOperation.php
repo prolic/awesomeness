@@ -21,15 +21,15 @@ class VolatileSubscriptionOperation extends AbstractSubscriptionOperation
 {
     protected function createSubscriptionPackage(): TcpPackage
     {
-        $dto = new SubscribeToStream();
-        $dto->setEventStreamId($this->streamId);
-        $dto->setResolveLinkTos($this->resolveLinkTos);
+        $message = new SubscribeToStream();
+        $message->setEventStreamId($this->streamId);
+        $message->setResolveLinkTos($this->resolveLinkTos);
 
         return new TcpPackage(
             TcpCommand::subscribeToStream(),
             $this->userCredentials ? TcpFlags::authenticated() : TcpFlags::none(),
             $this->correlationId,
-            $dto,
+            $message->serializeToString(),
             $this->userCredentials
         );
     }
@@ -37,17 +37,18 @@ class VolatileSubscriptionOperation extends AbstractSubscriptionOperation
     protected function preInspectPackage(TcpPackage $package): ?InspectionResult
     {
         if ($package->command()->equals(TcpCommand::subscriptionConfirmation())) {
-            /** @var SubscriptionConfirmation $dto */
-            $dto = $package->data();
-            $this->confirmSubscription($dto->getLastCommitPosition(), $dto->getLastEventNumber());
+            $message = new SubscriptionConfirmation();
+            $message->mergeFromString($package->data());
+
+            $this->confirmSubscription($message->getLastCommitPosition(), $message->getLastEventNumber());
 
             return new InspectionResult(InspectionDecision::subscribed(), 'SubscriptionConfirmation');
         }
 
         if ($package->command()->equals(TcpCommand::streamEventAppeared())) {
-            /** @var StreamEventAppeared $dto */
-            $dto = $package->data();
-            $event = EventMessageConverter::convertResolvedEventMessageToResolvedEvent($dto->getEvent());
+            $message = new StreamEventAppeared();
+            $message->mergeFromString($package->data());
+            $event = EventMessageConverter::convertResolvedEventMessageToResolvedEvent($message->getEvent());
             $this->eventAppeared($event);
 
             return new InspectionResult(InspectionDecision::doNothing(), 'StreamEventAppeared');

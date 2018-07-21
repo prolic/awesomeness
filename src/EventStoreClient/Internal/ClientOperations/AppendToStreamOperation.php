@@ -52,7 +52,8 @@ class AppendToStreamOperation extends AbstractOperation
             $deferred,
             $userCredentials,
             TcpCommand::writeEvents(),
-            TcpCommand::writeEventsCompleted()
+            TcpCommand::writeEventsCompleted(),
+            WriteEventsCompleted::class
         );
     }
 

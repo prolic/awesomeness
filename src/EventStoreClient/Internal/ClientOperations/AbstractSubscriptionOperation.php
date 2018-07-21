@@ -135,7 +135,7 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
             TcpCommand::unsubscribeFromStream(),
             TcpFlags::none(),
             $this->correlationId,
-            new UnsubscribeFromStream()
+            (new UnsubscribeFromStream())->serializeToString()
         );
     }
 
@@ -150,8 +150,8 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
 
             switch ($package->command()->value()) {
                 case TcpCommand::SubscriptionDropped:
-                    /** @var SubscriptionDropped $message */
-                    $message = $package->data();
+                    $message = new SubscriptionDropped();
+                    $message->mergeFromString($package->data());
 
                     switch ($message->getReason()) {
                         case SubscriptionDropped_SubscriptionDropReason::Unsubscribed:
@@ -191,8 +191,8 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
                         throw new \Exception('NotHandledException command appeared while we were already subscribed');
                     }
 
-                    /** @var NotHandled $message */
-                    $message = $package->data();
+                    $message = new NotHandled();
+                    $message->mergeFromString($package->data());
 
                     switch ($message->getReason()) {
                         case NotHandled_NotHandledReason::NotReady:
@@ -200,8 +200,9 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
                         case NotHandled_NotHandledReason::TooBusy:
                             return new InspectionResult(InspectionDecision::retry(), 'NotHandledException - TooBusy');
                         case NotHandled_NotHandledReason::NotMaster:
-                            $masterInfo = $message->getAdditionalInfo();
-                            /** @var NotHandled_MasterInfo $masterInfo */
+                            $masterInfo = new NotHandled_MasterInfo();
+                            $masterInfo->mergeFromString($message->getAdditionalInfo());
+
                             return new InspectionResult(
                                 InspectionDecision::reconnect(),
                                 'NotHandledException - NotMaster',

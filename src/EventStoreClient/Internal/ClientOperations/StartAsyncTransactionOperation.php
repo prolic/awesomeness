@@ -50,7 +50,8 @@ class StartAsyncTransactionOperation extends AbstractOperation
             $deferred,
             $userCredentials,
             TcpCommand::transactionStart(),
-            TcpCommand::transactionStartCompleted()
+            TcpCommand::transactionStartCompleted(),
+            TransactionStartCompleted::class
         );
     }
 

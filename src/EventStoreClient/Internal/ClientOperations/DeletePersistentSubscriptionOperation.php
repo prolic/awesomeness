@@ -40,7 +40,8 @@ class DeletePersistentSubscriptionOperation extends AbstractOperation
             $deferred,
             $userCredentials,
             TcpCommand::deletePersistentSubscription(),
-            TcpCommand::deletePersistentSubscriptionCompleted()
+            TcpCommand::deletePersistentSubscriptionCompleted(),
+            DeletePersistentSubscriptionCompleted::class
         );
     }
 

@@ -119,7 +119,7 @@ class TcpPackageConnection
 
     public function compose(
         TcpCommand $command,
-        Message $data = null,
+        string $data = null,
         string $correlationId = null,
         UserCredentials $credentials = null
     ): TcpPackage {
@@ -182,7 +182,6 @@ class TcpPackageConnection
         $dataToSend = $package->data();
 
         if ($dataToSend) {
-            $dataToSend = $dataToSend->serializeToString();
             $messageLength += \strlen($dataToSend);
         }
 

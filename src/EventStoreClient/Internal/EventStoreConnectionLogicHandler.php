@@ -394,7 +394,7 @@ class EventStoreConnectionLogicHandler
                     TcpCommand::authenticate(),
                     TcpFlags::authenticated(),
                     $this->authInfo->correlationId(),
-                    null,
+                    '',
                     $this->settings->defaultUserCredentials()
                 ));
             });
@@ -408,16 +408,16 @@ class EventStoreConnectionLogicHandler
         $this->connectingPhase = ConnectingPhase::identification();
         $this->identityInfo = new IdentifyInfo(CorrelationIdGenerator::generate(), $this->stopWatch->elapsed());
 
-        $dto = new IdentifyClient();
-        $dto->setVersion(self::ClientVersion);
-        $dto->setConnectionName($this->esConnection->connectionName());
+        $message = new IdentifyClient();
+        $message->setVersion(self::ClientVersion);
+        $message->setConnectionName($this->esConnection->connectionName());
 
-        Loop::defer(function () use ($dto): Generator {
+        Loop::defer(function () use ($message): Generator {
             yield $this->connection->sendAsync(new TcpPackage(
                 TcpCommand::identifyClient(),
                 TcpFlags::none(),
                 $this->identityInfo->correlationId(),
-                $dto
+                $message->serializeToString()
             ));
         });
     }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Prooph\EventStore\Transport\Tcp;
 
-use Google\Protobuf\Internal\Message;
 use Prooph\EventStore\Data\UserCredentials;
 
 class TcpPackage
@@ -23,7 +22,7 @@ class TcpPackage
     private $flags;
     /** @var string */
     private $correlationId;
-    /** @var Message|null */
+    /** @var string */
     private $data;
     /** @var UserCredentials|null */
     private $credentials;
@@ -32,7 +31,7 @@ class TcpPackage
         TcpCommand $command,
         TcpFlags $flags,
         string $correlationId,
-        Message $data = null,
+        string $data = '',
         UserCredentials $credentials = null
     ) {
         $this->command = $command;
@@ -57,7 +56,7 @@ class TcpPackage
         return $this->correlationId;
     }
 
-    public function data(): ?Message
+    public function data(): string
     {
         return $this->data;
     }

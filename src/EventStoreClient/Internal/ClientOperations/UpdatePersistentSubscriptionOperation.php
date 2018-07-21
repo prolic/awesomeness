@@ -46,7 +46,8 @@ class UpdatePersistentSubscriptionOperation extends AbstractOperation
             $deferred,
             $userCredentials,
             TcpCommand::updatePersistentSubscription(),
-            TcpCommand::updatePersistentSubscriptionCompleted()
+            TcpCommand::updatePersistentSubscriptionCompleted(),
+            UpdatePersistentSubscriptionCompleted::class
         );
     }
 

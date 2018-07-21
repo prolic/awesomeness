@@ -50,7 +50,8 @@ class DeleteStreamOperation extends AbstractOperation
             $deferred,
             $userCredentials,
             TcpCommand::deleteStream(),
-            TcpCommand::deleteStreamCompleted()
+            TcpCommand::deleteStreamCompleted(),
+            DeleteStreamCompleted::class
         );
     }
 

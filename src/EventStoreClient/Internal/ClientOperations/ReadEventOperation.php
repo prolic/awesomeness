@@ -49,7 +49,8 @@ class ReadEventOperation extends AbstractOperation
             $deferred,
             $userCredentials,
             TcpCommand::readEvent(),
-            TcpCommand::readEventCompleted()
+            TcpCommand::readEventCompleted(),
+            ReadEventCompleted::class
         );
     }
 

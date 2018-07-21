@@ -11,7 +11,6 @@ use Prooph\EventStore\Data\UserCredentials;
 use Prooph\EventStore\Transport\Tcp\TcpCommand;
 use Prooph\EventStore\Transport\Tcp\TcpFlags;
 use Prooph\EventStore\Transport\Tcp\TcpPackage;
-use Prooph\EventStore\Transport\Tcp\TcpPackageFactory;
 use Prooph\EventStoreClient\Internal\ByteBuffer\Buffer;
 
 /** @internal */
@@ -23,14 +22,11 @@ class ReadBuffer
     private $currentMessage;
     /** @var callable */
     private $messageHandler;
-    /** @var TcpPackageFactory */
-    private $tcpPackageFactory;
 
     public function __construct(ClientSocket $socket, callable $messageHandler)
     {
         $this->socket = $socket;
         $this->messageHandler = $messageHandler;
-        $this->tcpPackageFactory = new TcpPackageFactory();
     }
 
     public function startReceivingMessages(): void
@@ -106,8 +102,6 @@ class ReadBuffer
 
         $data = $buffer->read(TcpPackage::DataOffset + $headerSize, $messageLength - $headerSize);
 
-        $package = $this->tcpPackageFactory->build($command, $flags, $correlationId, $data, $credentials);
-
-        ($this->messageHandler)($package);
+        ($this->messageHandler)(new TcpPackage($command, $flags, $correlationId, $data, $credentials));
     }
 }

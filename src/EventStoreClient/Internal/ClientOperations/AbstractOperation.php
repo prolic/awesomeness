@@ -33,17 +33,21 @@ abstract class AbstractOperation implements ClientOperation
     private $requestCommand;
     /** @var TcpCommand */
     private $responseCommand;
+    /** @var string */
+    private $responseClassName;
 
     public function __construct(
         Deferred $deferred,
         ?UserCredentials $credentials,
         TcpCommand $requestCommand,
-        TcpCommand $responseCommand
+        TcpCommand $responseCommand,
+        string $responseClassName
     ) {
         $this->deferred = $deferred;
         $this->credentials = $credentials;
         $this->requestCommand = $requestCommand;
         $this->responseCommand = $responseCommand;
+        $this->responseClassName = $responseClassName;
     }
 
     abstract protected function createRequestDto(): Message;
@@ -63,7 +67,7 @@ abstract class AbstractOperation implements ClientOperation
             $this->requestCommand,
             $this->credentials ? TcpFlags::authenticated() : TcpFlags::none(),
             $correlationId,
-            $this->createRequestDto(),
+            $this->createRequestDto()->serializeToString(),
             $this->credentials ?? null
         );
     }
@@ -71,7 +75,11 @@ abstract class AbstractOperation implements ClientOperation
     public function inspectPackage(TcpPackage $package): InspectionResult
     {
         if ($package->command()->equals($this->responseCommand)) {
-            return $this->inspectResponse($package->data());
+            /** @var Message $responseMessage */
+            $responseMessage = new $this->responseClassName;
+            $responseMessage->mergeFromString($package->data());
+
+            return $this->inspectResponse($responseMessage);
         }
 
         switch ($package->command()->value()) {

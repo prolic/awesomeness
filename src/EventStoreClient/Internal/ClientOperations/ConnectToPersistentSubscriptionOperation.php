@@ -67,16 +67,16 @@ class ConnectToPersistentSubscriptionOperation extends AbstractSubscriptionOpera
 
     protected function createSubscriptionPackage(): TcpPackage
     {
-        $dto = new ConnectToPersistentSubscription();
-        $dto->setEventStreamId($this->streamId);
-        $dto->setSubscriptionId($this->groupName);
-        $dto->setAllowedInFlightMessages($this->bufferSize);
+        $message = new ConnectToPersistentSubscription();
+        $message->setEventStreamId($this->streamId);
+        $message->setSubscriptionId($this->groupName);
+        $message->setAllowedInFlightMessages($this->bufferSize);
 
         return new TcpPackage(
             TcpCommand::connectToPersistentSubscription(),
             $this->userCredentials ? TcpFlags::authenticated() : TcpFlags::none(),
             $this->correlationId,
-            $dto,
+            $message->serializeToString(),
             $this->userCredentials
         );
     }
@@ -84,52 +84,54 @@ class ConnectToPersistentSubscriptionOperation extends AbstractSubscriptionOpera
     protected function preInspectPackage(TcpPackage $package): ?InspectionResult
     {
         if ($package->command()->equals(TcpCommand::persistentSubscriptionConfirmation())) {
-            /** @var PersistentSubscriptionConfirmation $dto */
-            $dto = $package->data();
-            $this->confirmSubscription($dto->getLastCommitPosition(), $dto->getLastEventNumber());
-            $this->subscriptionId = $dto->getSubscriptionId();
+            $message = new PersistentSubscriptionConfirmation();
+            $message->mergeFromString($package->data());
+
+            $this->confirmSubscription($message->getLastCommitPosition(), $message->getLastEventNumber());
+            $this->subscriptionId = $message->getSubscriptionId();
 
             return new InspectionResult(InspectionDecision::subscribed(), 'SubscriptionConfirmation');
         }
 
         if ($package->command()->equals(TcpCommand::persistentSubscriptionStreamEventAppeared())) {
-            /** @var PersistentSubscriptionStreamEventAppeared $dto */
-            $dto = $package->data();
-            $event = EventMessageConverter::convertResolvedIndexedEventMessageToResolvedEvent($dto->getEvent());
+            $message = new PersistentSubscriptionStreamEventAppeared();
+            $message->mergeFromString($package->data());
+
+            $event = EventMessageConverter::convertResolvedIndexedEventMessageToResolvedEvent($message->getEvent());
             $this->eventAppeared(new PersistentSubscriptionResolvedEvent($event, $dto->getRetryCount()));
 
             return new InspectionResult(InspectionDecision::doNothing(), 'StreamEventAppeared');
         }
 
         if ($package->command()->equals(TcpCommand::subscriptionDropped())) {
-            /** @var SubscriptionDropped $dto */
-            $dto = $package->data();
+            $message = new SubscriptionDropped();
+            $message->mergeFromString($package->data());
 
-            if ($dto->getReason() === SubscriptionDropped_SubscriptionDropReason::AccessDenied) {
+            if ($message->getReason() === SubscriptionDropped_SubscriptionDropReason::AccessDenied) {
                 $this->dropSubscription(SubscriptionDropReason::accessDenied(), new AccessDenied('You do not have access to the stream'));
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'SubscriptionDropped');
             }
 
-            if ($dto->getReason() === SubscriptionDropped_SubscriptionDropReason::NotFound) {
+            if ($message->getReason() === SubscriptionDropped_SubscriptionDropReason::NotFound) {
                 $this->dropSubscription(SubscriptionDropReason::notFound(), new InvalidArgumentException('Subscription not found'));
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'SubscriptionDropped');
             }
 
-            if ($dto->getReason() === SubscriptionDropped_SubscriptionDropReason::PersistentSubscriptionDeleted) {
+            if ($message->getReason() === SubscriptionDropped_SubscriptionDropReason::PersistentSubscriptionDeleted) {
                 $this->dropSubscription(SubscriptionDropReason::persistentSubscriptionDeleted(), new PersistentSubscriptionDeletedException());
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'SubscriptionDropped');
             }
 
-            if ($dto->getReason() === SubscriptionDropped_SubscriptionDropReason::SubscriberMaxCountReached) {
+            if ($message->getReason() === SubscriptionDropped_SubscriptionDropReason::SubscriberMaxCountReached) {
                 $this->dropSubscription(SubscriptionDropReason::maxSubscribersReached(), new MaximumSubscribersReachedException());
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'SubscriptionDropped');
             }
 
-            $this->dropSubscription(SubscriptionDropReason::byValue($dto->getReason()), null, ($this->getConnection)());
+            $this->dropSubscription(SubscriptionDropReason::byValue($message->getReason()), null, ($this->getConnection)());
 
             return new InspectionResult(InspectionDecision::endOperation(), 'SubscriptionDropped');
         }
@@ -161,15 +163,15 @@ class ConnectToPersistentSubscriptionOperation extends AbstractSubscriptionOpera
             $eventIds
         );
 
-        $dto = new PersistentSubscriptionAckEvents();
-        $dto->setSubscriptionId($this->subscriptionId);
-        $dto->setProcessedEventIds($ids);
+        $message = new PersistentSubscriptionAckEvents();
+        $message->setSubscriptionId($this->subscriptionId);
+        $message->setProcessedEventIds($ids);
 
         $package = new TcpPackage(
             TcpCommand::persistentSubscriptionAckEvents(),
             $this->userCredentials ? TcpFlags::authenticated() : TcpFlags::none(),
             $this->correlationId,
-            $dto,
+            $message->serializeToString(),
             $this->userCredentials
         );
 
@@ -192,17 +194,17 @@ class ConnectToPersistentSubscriptionOperation extends AbstractSubscriptionOpera
             $eventIds
         );
 
-        $dto = new PersistentSubscriptionNakEvents();
-        $dto->setSubscriptionId($this->subscriptionId);
-        $dto->setProcessedEventIds($ids);
-        $dto->setMessage($reason);
-        $dto->setAction($action->value());
+        $message = new PersistentSubscriptionNakEvents();
+        $message->setSubscriptionId($this->subscriptionId);
+        $message->setProcessedEventIds($ids);
+        $message->setMessage($reason);
+        $message->setAction($action->value());
 
         $package = new TcpPackage(
             TcpCommand::persistentSubscriptionNakEvents(),
             $this->userCredentials ? TcpFlags::authenticated() : TcpFlags::none(),
             $this->correlationId,
-            $dto,
+            $message->serializeToString(),
             $this->userCredentials
         );
 

@@ -46,7 +46,8 @@ class CreatePersistentSubscriptionOperation extends AbstractOperation
             $deferred,
             $userCredentials,
             TcpCommand::createPersistentSubscription(),
-            TcpCommand::createPersistentSubscriptionCompleted()
+            TcpCommand::createPersistentSubscriptionCompleted(),
+            CreatePersistentSubscriptionCompleted::class
         );
     }
 
