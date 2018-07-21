@@ -12,6 +12,7 @@ use Prooph\EventStore\IpEndPoint;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 use Prooph\EventStoreClient\Internal\EventStoreAsyncNodeConnection;
 use Prooph\EventStoreClient\Internal\EventStoreNodeConnection;
+use Prooph\EventStoreClient\Internal\SingleEndpointDiscoverer;
 use Prooph\EventStoreClient\Internal\StaticEndPointDiscoverer;
 
 class EventStoreConnection
@@ -195,8 +196,6 @@ class EventStoreConnection
         ConnectionSettings $settings,
         string $connectionName = null
     ): AsyncConnection {
-        throw new \BadMethodCallException('Not implemented, missing dns resolver implementation');
-
         return new EventStoreAsyncNodeConnection(
             $settings,
             null,
