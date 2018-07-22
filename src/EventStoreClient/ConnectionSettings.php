@@ -6,15 +6,15 @@ namespace Prooph\EventStoreClient;
 
 use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
-use Psr\Log\LoggerInterface as Logger;
+use Psr\Log\LoggerInterface as Log;
 
 /**
  * All times are milliseconds
  */
 class ConnectionSettings
 {
-    /** @var Logger */
-    private $logger;
+    /** @var Log */
+    private $log;
     /** @var bool */
     private $verboseLogging;
     /** @var int */
@@ -68,7 +68,7 @@ class ConnectionSettings
     }
 
     public function __construct(
-        Logger $logger,
+        Log $logger,
         bool $verboseLoggin,
         int $maxQueueSize,
         int $maxConcurrentItems,
@@ -97,7 +97,7 @@ class ConnectionSettings
             throw new InvalidArgumentException('Heartbeat interval must be less then 5000ms');
         }
 
-        $this->logger = $logger;
+        $this->log = $logger;
         $this->verboseLogging = $verboseLoggin;
         $this->maxQueueSize = $maxQueueSize;
         $this->maxConcurrentItems = $maxConcurrentItems;
@@ -123,9 +123,9 @@ class ConnectionSettings
         $this->clientConnectionTimeout = $clientConnectionTimeout;
     }
 
-    public function logger(): Logger
+    public function log(): Log
     {
-        return $this->logger;
+        return $this->log;
     }
 
     public function verboseLogging(): bool

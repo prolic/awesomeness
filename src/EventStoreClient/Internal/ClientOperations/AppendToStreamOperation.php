@@ -22,6 +22,7 @@ use Prooph\EventStoreClient\Messages\ClientMessages\OperationResult;
 use Prooph\EventStoreClient\Messages\ClientMessages\WriteEvents;
 use Prooph\EventStoreClient\Messages\ClientMessages\WriteEventsCompleted;
 use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
+use Psr\Log\LoggerInterface as Logger;
 
 /** @internal */
 class AppendToStreamOperation extends AbstractOperation
@@ -36,6 +37,7 @@ class AppendToStreamOperation extends AbstractOperation
     private $events;
 
     public function __construct(
+        Logger $logger,
         Deferred $deferred,
         bool $requireMaster,
         string $stream,
@@ -49,6 +51,7 @@ class AppendToStreamOperation extends AbstractOperation
         $this->events = $events;
 
         parent::__construct(
+            $logger,
             $deferred,
             $userCredentials,
             TcpCommand::writeEvents(),

@@ -217,7 +217,7 @@ class OperationsManager
     private function logDebug(string $message): void
     {
         if ($this->settings->verboseLogging()) {
-            $this->settings->logger()->debug(\sprintf(
+            $this->settings->log()->debug(\sprintf(
                 'EventStoreNodeConnection \'%s\': %s',
                 $this->connectionName,
                 $message

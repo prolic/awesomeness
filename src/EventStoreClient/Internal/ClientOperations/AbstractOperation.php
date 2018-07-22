@@ -20,11 +20,14 @@ use Prooph\EventStoreClient\Messages\ClientMessages\NotHandled\NotHandledReason;
 use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
 use Prooph\EventStoreClient\Transport\Tcp\TcpFlags;
 use Prooph\EventStoreClient\Transport\Tcp\TcpPackage;
+use Psr\Log\LoggerInterface as Logger;
 use Throwable;
 
 /** @internal */
 abstract class AbstractOperation implements ClientOperation
 {
+    /** @var Logger */
+    private $log;
     /** @var Deferred */
     private $deferred;
     /** @var UserCredentials|null */
@@ -37,12 +40,14 @@ abstract class AbstractOperation implements ClientOperation
     private $responseClassName;
 
     public function __construct(
+        Logger $logger,
         Deferred $deferred,
         ?UserCredentials $credentials,
         TcpCommand $requestCommand,
         TcpCommand $responseCommand,
         string $responseClassName
     ) {
+        $this->log = $logger;
         $this->deferred = $deferred;
         $this->credentials = $credentials;
         $this->requestCommand = $requestCommand;
@@ -153,12 +158,26 @@ abstract class AbstractOperation implements ClientOperation
                     )
                 );
             default:
+                $this->log->error('Unknown NotHandledReason: ' . $message->getReason());
+
                 return new InspectionResult(InspectionDecision::retry(), 'Not handled: unknown');
         }
     }
 
     private function inspectUnexpectedCommand(TcpPackage $package, TcpCommand $expectedCommand): InspectionResult
     {
+        $this->log->error('Unexpected TcpCommand received');
+        $this->log->error(\sprintf(
+            'Expected: %s, Actual: %s, Flags: %s, CorrelationId: %s',
+            $expectedCommand->name(),
+            $package->command()->name(),
+            $package->flags(),
+            $package->correlationId()
+        ));
+        $this->log->error('Operation (%s)', \get_class($this));
+        $this->log->error('TcpPackage Data Dump:');
+        $this->log->error($package->data());
+
         $exception = UnexpectedCommandException::with($expectedCommand->name(), $package->command()->name());
         $this->fail($exception);
 

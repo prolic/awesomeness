@@ -25,13 +25,21 @@ class CatchUpSubscriptionSettings
     private $readBatchSize;
 
     /** @var bool */
+    private $verboseLogging;
+
+    /** @var bool */
     private $resolveLinkTos;
 
     /** @var string */
     private $subscriptionName;
 
-    public function __construct(int $maxLiveQueueSize, int $readBatchSize, bool $resolveLinkTos, string $subscriptionName)
-    {
+    public function __construct(
+        int $maxLiveQueueSize,
+        int $readBatchSize,
+        bool $verboseLogging,
+        bool $resolveLinkTos,
+        string $subscriptionName
+    ) {
         if ($readBatchSize < 1) {
             throw new InvalidArgumentException('Read batch size must be positive');
         }
@@ -49,6 +57,7 @@ class CatchUpSubscriptionSettings
 
         $this->maxLiveQueueSize = $maxLiveQueueSize;
         $this->readBatchSize = $readBatchSize;
+        $this->verboseLogging = $verboseLogging;
         $this->resolveLinkTos = $resolveLinkTos;
         $this->subscriptionName = $subscriptionName;
     }
@@ -58,6 +67,7 @@ class CatchUpSubscriptionSettings
         return new self(
             Consts::CatchUpDefaultMaxPushQueueSize,
             Consts::CatchUpDefaultReadBatchSize,
+            false,
             true,
             ''
         );
@@ -71,6 +81,19 @@ class CatchUpSubscriptionSettings
     public function readBatchSize(): int
     {
         return $this->readBatchSize;
+    }
+
+    public function verboseLogging(): bool
+    {
+        return $this->verboseLogging;
+    }
+
+    public function enableVerboseLogging(): self
+    {
+        $self = clone $this;
+        $self->verboseLogging = true;
+
+        return $self;
     }
 
     public function resolveLinkTos(): bool

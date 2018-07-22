@@ -21,6 +21,7 @@ use Prooph\EventStoreClient\Messages\ClientMessages\ReadAllEventsCompleted;
 use Prooph\EventStoreClient\Messages\ClientMessages\ReadAllEventsCompleted\ReadAllResult;
 use Prooph\EventStoreClient\Messages\ClientMessages\ResolvedIndexedEvent;
 use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
+use Psr\Log\LoggerInterface as Logger;
 
 /** @internal */
 class ReadAllEventsBackwardOperation extends AbstractOperation
@@ -35,6 +36,7 @@ class ReadAllEventsBackwardOperation extends AbstractOperation
     private $resolveLinkTos;
 
     public function __construct(
+        Logger $logger,
         Deferred $deferred,
         bool $requireMaster,
         Position $position,
@@ -48,6 +50,7 @@ class ReadAllEventsBackwardOperation extends AbstractOperation
         $this->resolveLinkTos = $resolveLinkTos;
 
         parent::__construct(
+            $logger,
             $deferred,
             $userCredentials,
             TcpCommand::readAllEventsBackward(),

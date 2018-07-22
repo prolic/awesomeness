@@ -20,6 +20,7 @@ use Prooph\EventStoreClient\Messages\ClientMessages\OperationResult;
 use Prooph\EventStoreClient\Messages\ClientMessages\TransactionCommit;
 use Prooph\EventStoreClient\Messages\ClientMessages\TransactionCommitCompleted;
 use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
+use Psr\Log\LoggerInterface as Logger;
 
 /** @internal */
 class CommitTransactionOperation extends AbstractOperation
@@ -30,6 +31,7 @@ class CommitTransactionOperation extends AbstractOperation
     private $transactionId;
 
     public function __construct(
+        Logger $logger,
         Deferred $deferred,
         bool $requireMaster,
         int $transactionId,
@@ -39,6 +41,7 @@ class CommitTransactionOperation extends AbstractOperation
         $this->transactionId = $transactionId;
 
         parent::__construct(
+            $logger,
             $deferred,
             $userCredentials,
             TcpCommand::transactionCommit(),

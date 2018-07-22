@@ -19,6 +19,7 @@ use Prooph\EventStoreClient\Messages\ClientMessages\ReadEvent;
 use Prooph\EventStoreClient\Messages\ClientMessages\ReadEventCompleted;
 use Prooph\EventStoreClient\Messages\ClientMessages\ReadEventCompleted\ReadEventResult;
 use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
+use Psr\Log\LoggerInterface as Logger;
 
 /** @internal */
 class ReadEventOperation extends AbstractOperation
@@ -33,6 +34,7 @@ class ReadEventOperation extends AbstractOperation
     private $resolveLinkTos;
 
     public function __construct(
+        Logger $logger,
         Deferred $deferred,
         bool $requireMaster,
         string $stream,
@@ -46,6 +48,7 @@ class ReadEventOperation extends AbstractOperation
         $this->resolveLinkTos = $resolveLinkTos;
 
         parent::__construct(
+            $logger,
             $deferred,
             $userCredentials,
             TcpCommand::readEvent(),

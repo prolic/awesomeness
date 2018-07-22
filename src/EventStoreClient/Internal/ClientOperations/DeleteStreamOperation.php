@@ -20,6 +20,7 @@ use Prooph\EventStoreClient\Messages\ClientMessages\DeleteStream;
 use Prooph\EventStoreClient\Messages\ClientMessages\DeleteStreamCompleted;
 use Prooph\EventStoreClient\Messages\ClientMessages\OperationResult;
 use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
+use Psr\Log\LoggerInterface as Logger;
 
 /** @internal */
 class DeleteStreamOperation extends AbstractOperation
@@ -34,6 +35,7 @@ class DeleteStreamOperation extends AbstractOperation
     private $hardDelete;
 
     public function __construct(
+        Logger $logger,
         Deferred $deferred,
         bool $requireMaster,
         string $stream,
@@ -47,6 +49,7 @@ class DeleteStreamOperation extends AbstractOperation
         $this->hardDelete = $hardDelete;
 
         parent::__construct(
+            $logger,
             $deferred,
             $userCredentials,
             TcpCommand::deleteStream(),

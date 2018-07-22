@@ -17,6 +17,7 @@ use Prooph\EventStoreClient\Data\ResolvedEvent;
 use Prooph\EventStoreClient\Data\SubscriptionDropReason;
 use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStoreClient\Exception\TimeoutException;
+use Psr\Log\LoggerInterface as Logger;
 use SplQueue;
 use Throwable;
 use function Amp\call;
@@ -39,8 +40,10 @@ abstract class AbstractEventStorePersistentSubscription
     private $subscriptionDropped;
     /** @var UserCredentials */
     private $userCredentials;
-    //private readonly ILogger _log;
-    //private bool $verbose;
+    /** @var Logger */
+    private $log;
+    /** @var bool */
+    private $verbose;
     /** @var ConnectionSettings */
     private $settings;
     /** @var bool */
@@ -71,6 +74,8 @@ abstract class AbstractEventStorePersistentSubscription
      * @param callable(self $subscription, ResolvedEvent $event, ?int $retryCount): Promise $eventAppeared
      * @param null|callable(self $subscription, SubscriptionDropReason $reason, Throwable $exception): void $subscriptionDropped
      * @param UserCredentials $userCredentials
+     * @param Logger $logger,
+     * @param bool $verboseLogging
      * @param ConnectionSettings $settings
      * @param int $bufferSize
      * @param bool $autoAck
@@ -81,8 +86,8 @@ abstract class AbstractEventStorePersistentSubscription
         callable $eventAppeared,
         ?callable $subscriptionDropped,
         UserCredentials $userCredentials,
-        //ILogger log,
-        //bool verboseLogging,
+        Logger $logger,
+        bool $verboseLogging,
         ConnectionSettings $settings,
         int $bufferSize = 10,
         bool $autoAck = true
@@ -97,8 +102,8 @@ abstract class AbstractEventStorePersistentSubscription
         $this->subscriptionDropped = $subscriptionDropped ?? function (): void {
         };
         $this->userCredentials = $userCredentials;
-        //$this->log = $log;
-        //$this->verbose = $verboseLogging;
+        $this->log = $logger;
+        $this->verbose = $verboseLogging;
         $this->settings = $settings;
         $this->bufferSize = $bufferSize;
         $this->autoAck = $autoAck;
@@ -118,15 +123,15 @@ abstract class AbstractEventStorePersistentSubscription
             EventStoreSubscription $subscription,
             PersistentSubscriptionResolvedEvent $resolvedEvent
         ): Promise {
-            return $this->onEventAppeared($subscription, $resolvedEvent);
+            return $this->onEventAppeared($resolvedEvent);
         };
 
         $onSubscriptionDropped = function (
             EventStoreSubscription $subscription,
             SubscriptionDropReason $reason,
-            Throwable $exception
+            ?Throwable $exception
         ): void {
-            $this->onSubscriptionDropped($subscription, $reason, $exception);
+            $this->onSubscriptionDropped($reason, $exception);
         };
 
         $promise = $this->startSubscription(
@@ -155,7 +160,7 @@ abstract class AbstractEventStorePersistentSubscription
      * @param int $bufferSize
      * @param UserCredentials $userCredentials
      * @param callable(EventStoreSubscription $subscription, PersistentSubscriptionResolvedEvent $resolvedEvent): Promise $onEventAppeared,
-     * @param null|callable(EventStoreSubscription $subscription, SubscriptionDropReason $reason, Throwable $exception): void $onSubscriptionDropped
+     * @param null|callable(EventStoreSubscription $subscription, SubscriptionDropReason $reason, ?Throwable $exception): void $onSubscriptionDropped
      * @param ConnectionSettings $settings
      * @return Promise
      */
@@ -257,7 +262,13 @@ abstract class AbstractEventStorePersistentSubscription
 
     public function stop(int $timeout): void
     {
-        // if (_verbose) _log.Debug("Persistent Subscription to {0}: requesting stop...", _streamId);
+        if ($this->verbose) {
+            $this->log->debug(\sprintf(
+                'Persistent Subscription to %s: requesting stop...',
+                $this->streamId
+            ));
+        }
+
         $this->enqueueSubscriptionDropNotification(SubscriptionDropReason::userInitiated(), null);
 
         Loop::delay($timeout, function (): void {
@@ -280,15 +291,13 @@ abstract class AbstractEventStorePersistentSubscription
     }
 
     private function onSubscriptionDropped(
-        EventStoreSubscription $subscription,
         SubscriptionDropReason $reason,
-        Throwable $exception): void
+        ?Throwable $exception): void
     {
         $this->enqueueSubscriptionDropNotification($reason, $exception);
     }
 
     private function onEventAppeared(
-        EventStoreSubscription $subscription,
         PersistentSubscriptionResolvedEvent $resolvedEvent
     ): Promise {
         $this->enqueue($resolvedEvent);
@@ -339,12 +348,17 @@ abstract class AbstractEventStorePersistentSubscription
                             if ($this->autoAck) {
                                 $this->subscription->notifyEventsProcessed([$e->originalEvent()->eventId()]);
                             }
-                            /*
-                            if (_verbose)
-                                _log.Debug("Persistent Subscription to {0}: processed event ({1}, {2}, {3} @ {4}).",
-                                    _streamId,
-                                    e.Event.OriginalEvent.EventStreamId, e.Event.OriginalEvent.EventNumber, e.Event.OriginalEvent.EventType, e.Event.OriginalEventNumber);
-                            */
+
+                            if ($this->verbose) {
+                                $this->log->debug(\sprintf(
+                                    'Persistent Subscription to %s: processed event (%s, %d, %s @ %d)',
+                                    $this->streamId,
+                                    $e->originalEvent()->eventStreamId(),
+                                    $e->originalEvent()->eventNumber(),
+                                    $e->originalEvent()->eventType(),
+                                    $e->event()->originalEventNumber()
+                                ));
+                            }
                         } catch (Throwable $ex) {
                             //TODO GFY should we autonak here?
                             $this->dropSubscription(SubscriptionDropReason::eventHandlerException(), $ex);
@@ -359,14 +373,17 @@ abstract class AbstractEventStorePersistentSubscription
         });
     }
 
-    private function dropSubscription(SubscriptionDropReason $reason, Throwable $error): void
+    private function dropSubscription(SubscriptionDropReason $reason, ?Throwable $error): void
     {
         if ($this->isDropped) {
-            /*
-             * if (_verbose)
-                _log.Debug("Persistent Subscription to {0}: dropping subscription, reason: {1} {2}.",
-                    _streamId, reason, error == null ? string.Empty : error.ToString());
-             */
+            if ($this->verbose) {
+                $this->log->debug(\sprintf(
+                    'Persistent Subscription to %s: dropping subscription, reason: %s %s',
+                    $this->streamId,
+                    $reason->name(),
+                    null === $error ? '' : $error->getMessage()
+                ));
+            }
 
             if (null !== $this->subscription) {
                 $this->subscription->unsubscribe();

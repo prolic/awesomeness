@@ -7,6 +7,7 @@ namespace Prooph\EventStoreClient;
 use Amp\Promise;
 use Prooph\EventStoreClient\Data\EventData;
 use Prooph\EventStoreClient\Data\UserCredentials;
+use Prooph\EventStoreClient\Internal\EventStoreAsyncTransactionConnection;
 
 class EventStoreAsyncTransaction
 {

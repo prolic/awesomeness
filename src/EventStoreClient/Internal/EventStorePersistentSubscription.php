@@ -9,6 +9,7 @@ use Amp\Promise;
 use Prooph\EventStoreClient\ConnectionSettings;
 use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStoreClient\Internal\Message\StartPersistentSubscriptionMessage;
+use Psr\Log\LoggerInterface as Logger;
 
 class EventStorePersistentSubscription extends AbstractEventStorePersistentSubscription
 {
@@ -22,8 +23,8 @@ class EventStorePersistentSubscription extends AbstractEventStorePersistentSubsc
         callable $eventAppeared,
         ?callable $subscriptionDropped,
         UserCredentials $userCredentials,
-        //Logger $logger, // @todo
-        //bool $verboseLogging,
+        Logger $logger,
+        bool $verboseLogging,
         ConnectionSettings $settings,
         EventStoreConnectionLogicHandler $handler,
         int $bufferSize = 10,
@@ -35,6 +36,8 @@ class EventStorePersistentSubscription extends AbstractEventStorePersistentSubsc
             $eventAppeared,
             $subscriptionDropped,
             $userCredentials,
+            $logger,
+            $verboseLogging,
             $settings,
             $bufferSize, $autoAck
         );

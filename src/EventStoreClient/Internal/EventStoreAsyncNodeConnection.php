@@ -21,9 +21,8 @@ use Prooph\EventStoreClient\Data\StreamMetadata;
 use Prooph\EventStoreClient\Data\StreamMetadataResult;
 use Prooph\EventStoreClient\Data\SystemSettings;
 use Prooph\EventStoreClient\Data\UserCredentials;
-use Prooph\EventStoreClient\EventStoreAsyncConnection as AsyncConnection;
+use Prooph\EventStoreClient\EventStoreAsyncConnection;
 use Prooph\EventStoreClient\EventStoreAsyncTransaction;
-use Prooph\EventStoreClient\EventStoreAsyncTransactionConnection as AsyncTransactionConnection;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 use Prooph\EventStoreClient\Exception\InvalidOperationException;
 use Prooph\EventStoreClient\Exception\MaxQueueSizeLimitReachedException;
@@ -48,7 +47,9 @@ use Prooph\EventStoreClient\Internal\Message\StartConnectionMessage;
 use Prooph\EventStoreClient\Internal\Message\StartOperationMessage;
 use Prooph\EventStoreClient\Internal\Message\StartSubscriptionMessage;
 
-final class EventStoreAsyncNodeConnection implements AsyncConnection, AsyncTransactionConnection
+final class EventStoreAsyncNodeConnection implements
+    EventStoreAsyncConnection,
+    EventStoreAsyncTransactionConnection
 {
     /** @var string */
     private $connectionName;
@@ -114,6 +115,7 @@ final class EventStoreAsyncNodeConnection implements AsyncConnection, AsyncTrans
         $deferred = new Deferred();
 
         $this->enqueueOperation(new DeleteStreamOperation(
+            $this->settings->log(),
             $deferred,
             $this->settings->requireMaster(),
             $stream,
@@ -149,6 +151,7 @@ final class EventStoreAsyncNodeConnection implements AsyncConnection, AsyncTrans
         $deferred = new Deferred();
 
         $this->enqueueOperation(new AppendToStreamOperation(
+            $this->settings->log(),
             $deferred,
             $this->settings->requireMaster(),
             $stream,
@@ -173,6 +176,7 @@ final class EventStoreAsyncNodeConnection implements AsyncConnection, AsyncTrans
         $deferred = new Deferred();
 
         $this->enqueueOperation(new ReadEventOperation(
+            $this->settings->log(),
             $deferred,
             $this->settings->requireMaster(),
             $stream,
@@ -205,6 +209,7 @@ final class EventStoreAsyncNodeConnection implements AsyncConnection, AsyncTrans
         $deferred = new Deferred();
 
         $this->enqueueOperation(new ReadStreamEventsForwardOperation(
+            $this->settings->log(),
             $deferred,
             $this->settings->requireMaster(),
             $stream,
@@ -238,6 +243,7 @@ final class EventStoreAsyncNodeConnection implements AsyncConnection, AsyncTrans
         $deferred = new Deferred();
 
         $this->enqueueOperation(new ReadStreamEventsBackwardOperation(
+            $this->settings->log(),
             $deferred,
             $this->settings->requireMaster(),
             $stream,
@@ -266,6 +272,7 @@ final class EventStoreAsyncNodeConnection implements AsyncConnection, AsyncTrans
         $deferred = new Deferred();
 
         $this->enqueueOperation(new ReadAllEventsForwardOperation(
+            $this->settings->log(),
             $deferred,
             $this->settings->requireMaster(),
             $position,
@@ -293,6 +300,7 @@ final class EventStoreAsyncNodeConnection implements AsyncConnection, AsyncTrans
         $deferred = new Deferred();
 
         $this->enqueueOperation(new ReadAllEventsBackwardOperation(
+            $this->settings->log(),
             $deferred,
             $this->settings->requireMaster(),
             $position,
@@ -331,6 +339,7 @@ final class EventStoreAsyncNodeConnection implements AsyncConnection, AsyncTrans
         );
 
         $this->enqueueOperation(new AppendToStreamOperation(
+            $this->settings->log(),
             $deferred,
             $this->settings->requireMaster(),
             SystemStreams::metastreamOf($stream),
@@ -422,6 +431,7 @@ final class EventStoreAsyncNodeConnection implements AsyncConnection, AsyncTrans
         $deferred = new Deferred();
 
         $this->enqueueOperation(new CreatePersistentSubscriptionOperation(
+            $this->settings->log(),
             $deferred,
             $stream,
             $groupName,
@@ -449,6 +459,7 @@ final class EventStoreAsyncNodeConnection implements AsyncConnection, AsyncTrans
         $deferred = new Deferred();
 
         $this->enqueueOperation(new UpdatePersistentSubscriptionOperation(
+            $this->settings->log(),
             $deferred,
             $stream,
             $groupName,
@@ -475,6 +486,7 @@ final class EventStoreAsyncNodeConnection implements AsyncConnection, AsyncTrans
         $deferred = new Deferred();
 
         $this->enqueueOperation(new DeletePersistentSubscriptionOperation(
+            $this->settings->log(),
             $deferred,
             $stream,
             $groupName,
@@ -516,7 +528,7 @@ final class EventStoreAsyncNodeConnection implements AsyncConnection, AsyncTrans
     public function subscribeToStreamFrom(
         string $stream,
         ?int $lastCheckpoint,
-        CatchUpSubscriptionSettings $settings,
+        CatchUpSubscriptionSettings $settings = null,
         callable $eventAppeared,
         callable $liveProcessingStarted = null,
         callable $subscriptionDropped = null,
@@ -526,9 +538,17 @@ final class EventStoreAsyncNodeConnection implements AsyncConnection, AsyncTrans
             throw new InvalidArgumentException('Stream cannot be empty');
         }
 
+        if (null === $settings) {
+            $settings = CatchUpSubscriptionSettings::default();
+        }
+
+        if ($this->settings->verboseLogging()) {
+            $settings->verboseLogging();
+        }
+
         $catchUpSubscription = new EventStoreStreamCatchUpSubscription(
             $this,
-            //Settings.Log,
+            $this->settings->log(),
             $stream,
             $lastCheckpoint,
             $userCredentials,
@@ -569,15 +589,23 @@ final class EventStoreAsyncNodeConnection implements AsyncConnection, AsyncTrans
     /** {@inheritdoc} */
     public function subscribeToAllFrom(
         ?Position $lastCheckpoint,
-        CatchUpSubscriptionSettings $settings,
+        CatchUpSubscriptionSettings $settings = null,
         callable $eventAppeared,
         callable $liveProcessingStarted = null,
         callable $subscriptionDropped = null,
         UserCredentials $userCredentials = null
     ): EventStoreAllCatchUpSubscription {
+        if (null === $settings) {
+            $settings = CatchUpSubscriptionSettings::default();
+        }
+
+        if ($this->settings->verboseLogging()) {
+            $settings->verboseLogging();
+        }
+
         $catchUpSubscription = new EventStoreAllCatchUpSubscription(
             $this,
-            //Settings.Log,
+            $this->settings->log(),
             $lastCheckpoint,
             $userCredentials,
             $eventAppeared,
@@ -615,8 +643,8 @@ final class EventStoreAsyncNodeConnection implements AsyncConnection, AsyncTrans
             $eventAppeared,
             $subscriptionDropped,
             $userCredentials,
-            //Settings.Log,
-            //Settings.VerboseLogging,
+            $this->settings->log(),
+            $this->settings->verboseLogging(),
             $this->settings,
             $this->handler,
             $bufferSize,
@@ -652,8 +680,8 @@ final class EventStoreAsyncNodeConnection implements AsyncConnection, AsyncTrans
             $eventAppeared,
             $subscriptionDropped,
             $userCredentials,
-            //Settings.Log,
-            //Settings.VerboseLogging,
+            $this->settings->log(),
+            $this->settings->verboseLogging(),
             $this->settings,
             $this->handler,
             $bufferSize,
@@ -675,6 +703,7 @@ final class EventStoreAsyncNodeConnection implements AsyncConnection, AsyncTrans
         $deferred = new Deferred();
 
         $this->enqueueOperation(new StartAsyncTransactionOperation(
+            $this->settings->log(),
             $deferred,
             $this->settings->requireMaster(),
             $stream,
@@ -709,6 +738,7 @@ final class EventStoreAsyncNodeConnection implements AsyncConnection, AsyncTrans
         $deferred = new Deferred();
 
         $this->enqueueOperation(new TransactionalWriteOperation(
+            $this->settings->log(),
             $deferred,
             $this->settings->requireMaster(),
             $transaction->transactionId(),
@@ -726,6 +756,7 @@ final class EventStoreAsyncNodeConnection implements AsyncConnection, AsyncTrans
         $deferred = new Deferred();
 
         $this->enqueueOperation(new CommitTransactionOperation(
+            $this->settings->log(),
             $deferred,
             $this->settings->requireMaster(),
             $transaction->transactionId(),

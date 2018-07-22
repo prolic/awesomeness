@@ -13,6 +13,7 @@ use Prooph\EventStoreClient\Data\ResolvedEvent;
 use Prooph\EventStoreClient\Data\SubscriptionDropReason;
 use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStoreClient\EventStoreAsyncConnection;
+use Psr\Log\LoggerInterface as Logger;
 use function Amp\call;
 
 class EventStoreAllCatchUpSubscription extends EventStoreCatchUpSubscription
@@ -26,6 +27,7 @@ class EventStoreAllCatchUpSubscription extends EventStoreCatchUpSubscription
      * @internal
      *
      * @param EventStoreAsyncConnection $connection
+     * @param Logger $logger
      * @param Position|null $fromPositionExclusive
      * @param null|UserCredentials $userCredentials
      * @param callable(EventStoreCatchUpSubscription $subscription, ResolvedEvent $event): Promise $eventAppeared
@@ -35,7 +37,7 @@ class EventStoreAllCatchUpSubscription extends EventStoreCatchUpSubscription
      */
     public function __construct(
         EventStoreAsyncConnection $connection,
-        // logger
+        Logger $logger,
         ?Position $fromPositionExclusive, // if null from the very beginning
         ?UserCredentials $userCredentials,
         callable $eventAppeared,
@@ -45,6 +47,7 @@ class EventStoreAllCatchUpSubscription extends EventStoreCatchUpSubscription
     ) {
         parent::__construct(
             $connection,
+            $logger,
             '',
             $userCredentials,
             $eventAppeared,
@@ -100,14 +103,13 @@ class EventStoreAllCatchUpSubscription extends EventStoreCatchUpSubscription
         return call(function () use ($slice, $lastCommitPosition): \Generator {
             $shouldStopOrDone = $this->shouldStop || yield $this->processEventsAsync($lastCommitPosition, $slice);
 
-            if ($shouldStopOrDone && $this->verboseLogging) {
-                /*
-                Log.Debug(
-                    "Catch-up Subscription {0} to {1}: finished reading events, nextReadPosition = {2}.",
-                    SubscriptionName,
-                    IsSubscribedToAll ? "<all>" : StreamId,
-                    _nextReadPosition);
-                */
+            if ($shouldStopOrDone && $this->verbose) {
+                $this->log->debug(\sprintf(
+                    'Catch-up Subscription %s to %s: finished reading events, nextReadPosition = %s',
+                    $this->subscriptionName(),
+                    $this->isSubscribedToAll() ? '<all>' : $this->streamId(),
+                    $this->nextReadPosition->toString()
+                ));
             }
 
             return $shouldStopOrDone;
@@ -162,16 +164,19 @@ class EventStoreAllCatchUpSubscription extends EventStoreCatchUpSubscription
                 $this->lastProcessedPosition = $e->originalPosition();
                 $processed = true;
             }
-            /*
-            if ($this->verboseLogging) {
 
-            Log.Debug("Catch-up Subscription {0} to {1}: {2} event ({3}, {4}, {5} @ {6}).",
-                SubscriptionName,
-                IsSubscribedToAll ? "<all>" : StreamId,
-                processed ? "processed" : "skipping",
-                e.OriginalEvent.EventStreamId, e.OriginalEvent.EventNumber, e.OriginalEvent.EventType, e.OriginalPosition);
+            if ($this->verbose) {
+                $this->log->debug(\sprintf(
+                    'Catch-up Subscription %s to %s: %s event (%s, %d, %s @ %s)',
+                    $this->subscriptionName(),
+                    $this->isSubscribedToAll() ? '<all>' : $this->streamId(),
+                    $processed ? 'processed' : 'skipping',
+                    $e->originalEvent()->eventStreamId(),
+                    $e->originalEvent()->eventNumber(),
+                    $e->originalEvent()->eventType(),
+                    $e->originalPosition() ? $e->originalPosition()->toString() : ''
+                ));
             }
-            */
         });
     }
 }

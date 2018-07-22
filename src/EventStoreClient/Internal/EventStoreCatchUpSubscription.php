@@ -18,6 +18,7 @@ use Prooph\EventStoreClient\Internal\Event\ClientConnectionEventArgs;
 use Prooph\EventStoreClient\Internal\Event\ListenerHandler;
 use Psr\Log\LoggerInterface as Logger;
 use SplQueue;
+use Throwable;
 use function Amp\call;
 
 /** @internal  */
@@ -34,7 +35,7 @@ abstract class EventStoreCatchUpSubscription
     private $subscriptionName;
 
     /** @var Logger */
-    protected $logger;
+    protected $log;
 
     /** @var EventStoreAsyncConnection */
     private $connection;
@@ -56,7 +57,7 @@ abstract class EventStoreCatchUpSubscription
     private $subscriptionDropped;
 
     /** @var bool */
-    protected $verboseLogging;
+    protected $verbose;
 
     /** @var SplQueue<ResolvedEvent> */
     private $liveQueue;
@@ -80,6 +81,7 @@ abstract class EventStoreCatchUpSubscription
 
     /**
      * @param EventStoreAsyncConnection $connection
+     * @param Logger $logger,
      * @param string $streamId
      * @param null|UserCredentials $userCredentials
      * @param callable(EventStoreCatchUpSubscription $subscription, ResolvedEvent $event): Promise $eventAppeared
@@ -89,7 +91,7 @@ abstract class EventStoreCatchUpSubscription
      */
     public function __construct(
         EventStoreAsyncConnection $connection,
-        //ILogger log,
+        Logger $logger,
         string $streamId,
         ?UserCredentials $userCredentials,
         callable $eventAppeared,
@@ -101,6 +103,7 @@ abstract class EventStoreCatchUpSubscription
             self::$dropSubscriptionEvent = new ResolvedEvent(null, null, null);
         }
 
+        $this->log = $logger;
         $this->connection = $connection;
         $this->isSubscribedToAll = empty($streamId);
         $this->streamId = $streamId;
@@ -147,14 +150,28 @@ abstract class EventStoreCatchUpSubscription
     /** @internal */
     public function startAsync(): Promise
     {
-        //if (Verbose) Log.Debug("Catch-up Subscription {0} to {1}: starting...", SubscriptionName, IsSubscribedToAll ? "<all>" : StreamId);
+        if ($this->verbose) {
+            $this->log->debug(\sprintf(
+                'Catch-up Subscription %s to %s: starting...',
+                $this->subscriptionName,
+                $this->isSubscribedToAll ? '<all>' : $this->streamId
+            ));
+        }
+
         return $this->runSubscriptionAsync();
     }
 
     public function stopWithTimeout(int $timeout): void
     {
         $this->stop();
-        //if (Verbose) Log.Debug("Waiting on subscription {0} to stop", SubscriptionName);
+
+        if ($this->verbose) {
+            $this->log->debug(\sprintf(
+                'Waiting on subscription %s to stop',
+                $this->subscriptionName
+            ));
+        }
+
         Loop::delay($timeout, function (): void {
             if (! $this->stopped) {
                 throw new TimeoutException('Could not stop in time');
@@ -164,8 +181,18 @@ abstract class EventStoreCatchUpSubscription
 
     public function stop(): void
     {
-        //if (Verbose) Log.Debug("Catch-up Subscription {0} to {1}: requesting stop...", SubscriptionName, IsSubscribedToAll ? "<all>" : StreamId);
-        //if (Verbose) Log.Debug("Catch-up Subscription {0} to {1}: unhooking from connection.Connected.", SubscriptionName, IsSubscribedToAll ? "<all>" : StreamId);
+        if ($this->verbose) {
+            $this->log->debug(\sprintf(
+                'Catch-up Subscription %s to %s: requesting stop...',
+                $this->subscriptionName,
+                $this->isSubscribedToAll ? '<all>' : $this->streamId
+            ));
+            $this->log->debug(\sprintf(
+                'Catch-up Subscription %s to %s: unhooking from connection.Connected',
+                $this->subscriptionName,
+                $this->isSubscribedToAll ? '<all>' : $this->streamId
+            ));
+        }
 
         $this->connection->detach($this->connectListener);
         $this->shouldStop = true;
@@ -174,8 +201,18 @@ abstract class EventStoreCatchUpSubscription
 
     private function onReconnect(ClientConnectionEventArgs $clientConnectionEventArgs): void
     {
-        //if (Verbose) Log.Debug("Catch-up Subscription {0} to {1}: recovering after reconnection.", SubscriptionName, IsSubscribedToAll ? "<all>" : StreamId);
-        //if (Verbose) Log.Debug("Catch-up Subscription {0} to {1}: unhooking from connection.Connected.", SubscriptionName, IsSubscribedToAll ? "<all>" : StreamId);
+        if ($this->verbose) {
+            $this->log->debug(\sprintf(
+                'Catch-up Subscription %s to %s: recovering after reconnection',
+                $this->subscriptionName,
+                $this->isSubscribedToAll ? '<all>' : $this->streamId
+            ));
+            $this->log->debug(\sprintf(
+                'Catch-up Subscription %s to %s: unhooking from connection.Connected',
+                $this->subscriptionName,
+                $this->isSubscribedToAll ? '<all>' : $this->streamId
+            ));
+        }
 
         $this->connection->detach($this->connectListener);
         Loop::defer(function (): Generator {
@@ -190,18 +227,31 @@ abstract class EventStoreCatchUpSubscription
 
     private function loadHistoricalEventsAsync(): Promise
     {
-        //if (Verbose) Log.Debug("Catch-up Subscription {0} to {1}: running...", SubscriptionName, IsSubscribedToAll ? "<all>" : StreamId);
+        if ($this->verbose) {
+            $this->log->debug(
+                'Catch-up Subscription %s to %s: running...',
+                $this->subscriptionName,
+                $this->isSubscribedToAll ? '<all>' : $this->streamId
+            );
+        }
+
         $this->stopped = false;
         $this->allowProcessing = false;
 
         return call(function (): Generator {
             if (! $this->shouldStop) {
-                //if (Verbose) Log.Debug("Catch-up Subscription {0} to {1}: pulling events...", SubscriptionName, IsSubscribedToAll ? "<all>" : StreamId);
+                if ($this->verbose) {
+                    $this->log->debug(\sprintf(
+                        'Catch-up Subscription %s to %s: pulling events...',
+                        $this->subscriptionName,
+                        $this->isSubscribedToAll ? '<all>' : $this->streamId
+                    ));
+                }
 
                 try {
                     yield $this->readEventsTillAsync($this->connection, $this->resolveLinkTos, $this->userCredentials, null, null);
                     yield $this->subscribeToStreamAsync();
-                } catch (\Throwable $ex) {
+                } catch (Throwable $ex) {
                     $this->dropSubscription(SubscriptionDropReason::catchUpError(), $ex);
                     throw $ex;
                 }
@@ -215,7 +265,13 @@ abstract class EventStoreCatchUpSubscription
     {
         return call(function (): Generator {
             if (! $this->shouldStop) {
-                //if (Verbose) Log.Debug("Catch-up Subscription {0} to {1}: subscribing...", SubscriptionName, IsSubscribedToAll ? "<all>" : StreamId);
+                if ($this->verbose) {
+                    $this->log->debug(\sprintf(
+                        'Catch-up Subscription %s to %s: subscribing...',
+                        $this->subscriptionName,
+                        $this->isSubscribedToAll ? '<all>' : $this->streamId
+                    ));
+                }
 
                 $subscription = empty($this->streamId) ?
                     yield $this->connection->subscribeToAllAsync(
@@ -223,8 +279,8 @@ abstract class EventStoreCatchUpSubscription
                         function (EventStoreSubscription $subscription, ResolvedEvent $e): Promise {
                             return $this->enqueuePushedEvent($subscription, $e);
                         },
-                        function (EventStoreSubscription $subscription, SubscriptionDropReason $reason, \Throwable $exception): void {
-                            $this->serverSubscriptionDropped($subscription, $reason, $exception);
+                        function (EventStoreSubscription $subscription, SubscriptionDropReason $reason, Throwable $exception): void {
+                            $this->serverSubscriptionDropped($reason, $exception);
                         },
                         $this->userCredentials
                     )
@@ -234,8 +290,8 @@ abstract class EventStoreCatchUpSubscription
                         function (EventStoreSubscription $subscription, ResolvedEvent $e): Promise {
                             return $this->enqueuePushedEvent($subscription, $e);
                         },
-                        function (EventStoreSubscription $subscription, SubscriptionDropReason $reason, \Throwable $exception): void {
-                            $this->serverSubscriptionDropped($subscription, $reason, $exception);
+                        function (EventStoreSubscription $subscription, SubscriptionDropReason $reason, Throwable $exception): void {
+                            $this->serverSubscriptionDropped($reason, $exception);
                         },
                         $this->userCredentials
                     );
@@ -252,7 +308,13 @@ abstract class EventStoreCatchUpSubscription
     {
         return call(function (): Generator {
             if (! $this->shouldStop) {
-                //if (Verbose) Log.Debug("Catch-up Subscription {0} to {1}: pulling events (if left)...", SubscriptionName, IsSubscribedToAll ? "<all>" : StreamId);
+                if ($this->verbose) {
+                    $this->log->debug(\sprintf(
+                    'Catch-up Subscription %s to %s: pulling events (if left)...',
+                        $this->subscriptionName,
+                        $this->isSubscribedToAll ? '<all>' : $this->streamId
+                    ));
+                }
 
                 yield $this->readEventsTillAsync(
                     $this->connection,
@@ -276,11 +338,24 @@ abstract class EventStoreCatchUpSubscription
             return;
         }
 
-        //if (Verbose) Log . Debug("Catch-up Subscription {0} to {1}: processing live events...", SubscriptionName, IsSubscribedToAll ? "<all>" : StreamId);
+        if ($this->verbose) {
+            $this->log->debug(\sprintf(
+                'Catch-up Subscription %s to %s: processing live events...',
+                $this->subscriptionName,
+                $this->isSubscribedToAll ? '<all>' : $this->streamId
+            ));
+        }
 
         ($this->liveProcessingStarted)($this);
 
-        //if (Verbose) Log . Debug("Catch-up Subscription {0} to {1}: hooking to connection.Connected", SubscriptionName, IsSubscribedToAll ? "<all>" : StreamId);
+        if ($this->verbose) {
+            $this->log->debug(\sprintf(
+                'Catch-up Subscription %s to %s: hooking to connection.Connected',
+                $this->subscriptionName,
+                $this->isSubscribedToAll ? '<all>' : $this->streamId
+            ));
+        }
+
         $this->connectListener = $this->connection->onConnected(function (ClientConnectionEventArgs $args): void {
             $this->onReconnect($args);
         });
@@ -290,14 +365,17 @@ abstract class EventStoreCatchUpSubscription
 
     private function enqueuePushedEvent(EventStoreSubscription $subscription, ResolvedEvent $e): Promise
     {
-        /*
-        if (Verbose) {
-            Log.Debug("Catch-up Subscription {0} to {1}: event appeared ({2}, {3}, {4} @ {5}).",
-            SubscriptionName,
-            IsSubscribedToAll ? "<all>" : StreamId,
-            e.OriginalStreamId, e.OriginalEventNumber, e.OriginalEvent.EventType, e.OriginalPosition);
+        if ($this->verbose) {
+            $this->log->debug(\sprintf(
+                'Catch-up Subscription %s to %s: event appeared (%s, %s, %s, @ %s)',
+                $this->subscriptionName,
+                $this->isSubscribedToAll ? '<all>' : $this->streamId,
+                $e->originalStreamName(),
+                $e->originalEventNumber(),
+                $e->originalEvent()->eventType(),
+                $e->originalPosition()
+            ));
         }
-        */
 
         if ($this->liveQueue->count() >= $this->maxPushQueueSize) {
             $this->enqueueSubscriptionDropNotification(SubscriptionDropReason::processingQueueOverflow(), null);
@@ -316,14 +394,13 @@ abstract class EventStoreCatchUpSubscription
     }
 
     private function serverSubscriptionDropped(
-        EventStoreSubscription $subscription,
         SubscriptionDropReason $reason,
-        \Throwable $exception): void
+        Throwable $exception): void
     {
         $this->enqueueSubscriptionDropNotification($reason, $exception);
     }
 
-    private function enqueueSubscriptionDropNotification(SubscriptionDropReason $reason, \Throwable $error): void
+    private function enqueueSubscriptionDropNotification(SubscriptionDropReason $reason, Throwable $error): void
     {
         // if drop data was already set -- no need to enqueue drop again, somebody did that already
         $dropData = new DropData($reason, $error);
@@ -373,8 +450,14 @@ abstract class EventStoreCatchUpSubscription
 
                 try {
                     yield $this->tryProcessAsync($e);
-                } catch (\Throwable $ex) {
-                    //Log.Debug("Catch-up Subscription {0} to {1} Exception occurred in subscription {1}", SubscriptionName, IsSubscribedToAll ? "<all>" : StreamId, exc);
+                } catch (Throwable $ex) {
+                    $this->log->debug(\sprintf(
+                        'Catch-up Subscription %s to %s: Exception occurred in subscription %s',
+                        $this->subscriptionName,
+                        $this->isSubscribedToAll ? '<all>' : $this->streamId,
+                        $ex->getMessage()
+                    ));
+
                     $this->dropSubscription(SubscriptionDropReason::eventHandlerException(), $ex);
 
                     return null;
@@ -389,18 +472,20 @@ abstract class EventStoreCatchUpSubscription
         });
     }
 
-    public function dropSubscription(SubscriptionDropReason $reason, \Throwable $error): void
+    public function dropSubscription(SubscriptionDropReason $reason, ?Throwable $error): void
     {
         if (! $this->isDropped) {
             $this->isDropped = true;
 
-            /*
-             * if (Verbose)
-            Log.Debug("Catch-up Subscription {0} to {1}: dropping subscription, reason: {2} {3}.",
-            SubscriptionName,
-            IsSubscribedToAll ? "<all>" : StreamId,
-            reason, error == null ? string.Empty : error.ToString());
-             */
+            if ($this->verbose) {
+                $this->log->debug(\sprintf(
+                    'Catch-up Subscription %s to %s: droppen subscription, reason: %s %s',
+                    $this->subscriptionName,
+                    $this->isSubscribedToAll ? '<all>' : $this->streamId,
+                    $reason->name(),
+                    null === $error ? '' : $error->getMessage()
+                ));
+            }
 
             if ($this->subscription) {
                 $this->subscription->unsubscribe();

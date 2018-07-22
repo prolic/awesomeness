@@ -9,7 +9,6 @@ use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 use Prooph\EventStoreClient\Internal\Consts;
 use Psr\Log\LoggerInterface as Logger;
 use Psr\Log\NullLogger;
-use Symfony\Component\Config\Resource\SelfCheckingResourceChecker;
 
 /**
  * All times are milliseconds
@@ -17,7 +16,7 @@ use Symfony\Component\Config\Resource\SelfCheckingResourceChecker;
 class ConnectionSettingsBuilder
 {
     /** @var Logger */
-    private $logger;
+    private $log;
     /** @var bool */
     private $verboseLogging = false;
     /** @var int */
@@ -67,12 +66,12 @@ class ConnectionSettingsBuilder
 
     public function __construct()
     {
-        $this->logger = new NullLogger();
+        $this->log = new NullLogger();
     }
 
     public function useCustomLogger(Logger $logger): self
     {
-        $this->logger = $logger;
+        $this->log = $logger;
 
         return $this;
     }
@@ -350,7 +349,7 @@ class ConnectionSettingsBuilder
     public function build(): ConnectionSettings
     {
         return new ConnectionSettings(
-            $this->logger,
+            $this->log,
             $this->verboseLogging,
             $this->maxQueueSize,
             $this->maxConcurrentItems,

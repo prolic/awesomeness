@@ -18,6 +18,7 @@ use Prooph\EventStoreClient\Messages\ClientMessages\DeletePersistentSubscription
 use Prooph\EventStoreClient\Messages\ClientMessages\DeletePersistentSubscriptionCompleted;
 use Prooph\EventStoreClient\Messages\ClientMessages\DeletePersistentSubscriptionCompleted\DeletePersistentSubscriptionResult;
 use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
+use Psr\Log\LoggerInterface as Logger;
 
 /** @internal */
 class DeletePersistentSubscriptionOperation extends AbstractOperation
@@ -28,6 +29,7 @@ class DeletePersistentSubscriptionOperation extends AbstractOperation
     private $groupName;
 
     public function __construct(
+        Logger $logger,
         Deferred $deferred,
         string $stream,
         string $groupName,
@@ -37,6 +39,7 @@ class DeletePersistentSubscriptionOperation extends AbstractOperation
         $this->groupName = $groupName;
 
         parent::__construct(
+            $logger,
             $deferred,
             $userCredentials,
             TcpCommand::deletePersistentSubscription(),

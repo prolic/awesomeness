@@ -17,6 +17,7 @@ use Prooph\EventStoreClient\Messages\ClientMessages\OperationResult;
 use Prooph\EventStoreClient\Messages\ClientMessages\TransactionWrite;
 use Prooph\EventStoreClient\Messages\ClientMessages\TransactionWriteCompleted;
 use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
+use Psr\Log\LoggerInterface as Logger;
 
 /** @internal */
 class TransactionalWriteOperation extends AbstractOperation
@@ -29,6 +30,7 @@ class TransactionalWriteOperation extends AbstractOperation
     private $events;
 
     public function __construct(
+        Logger $logger,
         Deferred $deferred,
         bool $requireMaster,
         int $transactionId,
@@ -40,6 +42,7 @@ class TransactionalWriteOperation extends AbstractOperation
         $this->events = $events;
 
         parent::__construct(
+            $logger,
             $deferred,
             $userCredentials,
             TcpCommand::transactionWrite(),

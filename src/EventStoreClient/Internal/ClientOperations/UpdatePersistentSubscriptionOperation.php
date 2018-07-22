@@ -20,6 +20,7 @@ use Prooph\EventStoreClient\Messages\ClientMessages\UpdatePersistentSubscription
 use Prooph\EventStoreClient\Messages\ClientMessages\UpdatePersistentSubscriptionCompleted;
 use Prooph\EventStoreClient\Messages\ClientMessages\UpdatePersistentSubscriptionCompleted\UpdatePersistentSubscriptionResult;
 use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
+use Psr\Log\LoggerInterface as Logger;
 
 /** @internal */
 class UpdatePersistentSubscriptionOperation extends AbstractOperation
@@ -32,6 +33,7 @@ class UpdatePersistentSubscriptionOperation extends AbstractOperation
     private $settings;
 
     public function __construct(
+        Logger $logger,
         Deferred $deferred,
         string $stream,
         string $groupNameName,
@@ -43,6 +45,7 @@ class UpdatePersistentSubscriptionOperation extends AbstractOperation
         $this->settings = $settings;
 
         parent::__construct(
+            $logger,
             $deferred,
             $userCredentials,
             TcpCommand::updatePersistentSubscription(),
