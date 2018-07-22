@@ -257,7 +257,7 @@ class EventStoreConnectionLogicHandler
             return;
         }
 
-        $this->logDebug('CloseConnection, reason %s, exception %s', $reason, $exception->getMessage());
+        $this->logDebug('CloseConnection, reason %s, exception %s', $reason, $exception ? $exception->getMessage() : '<none>');
 
         $this->state = ConnectionState::closed();
 
