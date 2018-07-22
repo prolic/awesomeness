@@ -135,7 +135,7 @@ class OperationsManager
 
             foreach ($this->retryPendingOperations as $operation) {
                 $oldCorrId = $operation->correlationId();
-                $operation->setCorrelationId(CorrelationIdGenerator::generate());
+                $operation->setCorrelationId(UuidGenerator::generate());
                 $operation->incRetryCount();
                 $this->logDebug('retrying, old corrId %s, operation %s', $oldCorrId, $operation);
                 $this->scheduleOperation($operation, $connection);

@@ -69,7 +69,7 @@ final class EventStoreAsyncNodeConnection implements
         string $connectionName = null
     ) {
         $this->settings = $settings;
-        $this->connectionName = $connectionName ?? CorrelationIdGenerator::generate();
+        $this->connectionName = $connectionName ?? UuidGenerator::generate();
         $this->endPointDiscoverer = $endPointDiscoverer;
         $this->handler = new EventStoreConnectionLogicHandler($this, $settings);
     }

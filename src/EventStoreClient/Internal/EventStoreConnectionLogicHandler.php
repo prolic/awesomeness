@@ -300,7 +300,7 @@ class EventStoreConnectionLogicHandler
 
         $this->connection = new TcpPackageConnection(
             $endPoint,
-            CorrelationIdGenerator::generate(),
+            UuidGenerator::generate(),
             $this->settings->useSslConnection(),
             $this->settings->targetHost(),
             $this->settings->validateServer(),
@@ -370,7 +370,7 @@ class EventStoreConnectionLogicHandler
         ) {
             $this->logDebug('IGNORED (state: %s, internal conn.ID: {1:B}, conn.ID: %s): TCP connection to [%s] closed',
                 $this->state,
-                null === $this->connection ? CorrelationIdGenerator::empty() : $this->connection->connectionId(),
+                null === $this->connection ? UuidGenerator::empty() : $this->connection->connectionId(),
                 $connection->connectionId(),
                 $connection->remoteEndPoint()
             );
@@ -404,7 +404,7 @@ class EventStoreConnectionLogicHandler
         ) {
             $this->logDebug('IGNORED (state %s, internal conn.Id %s, conn.Id %s, conn.closed %s): TCP connection to [%s] established',
                 $this->state,
-                null === $this->connection ? CorrelationIdGenerator::empty() : $this->connection->connectionId(),
+                null === $this->connection ? UuidGenerator::empty() : $this->connection->connectionId(),
                 $connection->connectionId(),
                 $connection->isClosed() ? 'yes' : 'no',
                 $connection->remoteEndPoint()
@@ -421,7 +421,7 @@ class EventStoreConnectionLogicHandler
         if ($this->settings->defaultUserCredentials() !== null) {
             $this->connectingPhase = ConnectingPhase::authentication();
 
-            $this->authInfo = new AuthInfo(CorrelationIdGenerator::generate(), $elapsed);
+            $this->authInfo = new AuthInfo(UuidGenerator::generate(), $elapsed);
 
             Loop::defer(function (): Generator {
                 yield $this->connection->sendAsync(new TcpPackage(
@@ -440,7 +440,7 @@ class EventStoreConnectionLogicHandler
     private function goToIdentifyState(): void
     {
         $this->connectingPhase = ConnectingPhase::identification();
-        $this->identityInfo = new IdentifyInfo(CorrelationIdGenerator::generate(), $this->stopWatch->elapsed());
+        $this->identityInfo = new IdentifyInfo(UuidGenerator::generate(), $this->stopWatch->elapsed());
 
         $message = new IdentifyClient();
         $message->setVersion(self::ClientVersion);
@@ -559,7 +559,7 @@ class EventStoreConnectionLogicHandler
                 yield $this->connection->sendAsync(new TcpPackage(
                     TcpCommand::heartbeatRequestCommand(),
                     TcpFlags::none(),
-                    CorrelationIdGenerator::generate()
+                    UuidGenerator::generate()
                 ));
             });
             $this->heartbeatInfo = new HeartbeatInfo($this->heartbeatInfo->lastPackageNumber(), false, $elapsed);

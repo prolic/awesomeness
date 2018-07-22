@@ -7,7 +7,7 @@ namespace Prooph\EventStoreClient\Internal;
 use Ramsey\Uuid\Uuid;
 
 /** @internal */
-class CorrelationIdGenerator
+class UuidGenerator
 {
     public static function generate(): string
     {

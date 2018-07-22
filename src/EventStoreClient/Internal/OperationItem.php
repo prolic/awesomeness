@@ -37,7 +37,7 @@ class OperationItem
         $this->maxRetries = $maxRetries;
         $this->timeout = $timeout;
         $this->created = DateTimeUtil::utcNow();
-        $this->correlationId = CorrelationIdGenerator::generate();
+        $this->correlationId = UuidGenerator::generate();
         $this->retryCount = 0;
         $this->lastUpdated = $this->created;
     }
