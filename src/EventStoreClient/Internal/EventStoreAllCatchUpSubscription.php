@@ -30,9 +30,9 @@ class EventStoreAllCatchUpSubscription extends EventStoreCatchUpSubscription
      * @param Logger $logger
      * @param Position|null $fromPositionExclusive
      * @param null|UserCredentials $userCredentials
-     * @param callable(EventStoreCatchUpSubscription $subscription, ResolvedEvent $event): Promise $eventAppeared
-     * @param null|callable(EventStoreCatchUpSubscription $subscription): void $liveProcessingStarted
-     * @param null|callable(EventStoreCatchUpSubscription $subscription, SubscriptionDropReason $reason, Throwable $exception):void $subscriptionDropped
+     * @param callable(\Prooph\EventStoreClient\EventStoreSubscription $subscription, \Prooph\EventStoreClient\Internal\ResolvedEvent $resolvedEvent): Promise $eventAppeared
+     * @param null|callable(\Prooph\EventStoreClient\Internal\EventStoreCatchUpSubscription $subscription): void $liveProcessingStarted
+     * @param null|callable(\Prooph\EventStoreClient\EventStoreSubscription $subscription, \Prooph\EventStoreClient\SubscriptionDropReason $reason, \Throwable $exception): void $subscriptionDropped
      * @param CatchUpSubscriptionSettings $settings
      */
     public function __construct(

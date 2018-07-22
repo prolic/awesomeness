@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient;
 
+use Prooph\EventStoreClient\Internal\ResolvedEvent as InternalResolvedEvent;
+
 /**
  * A structure representing a single event or an resolved link event.
  */
-class ResolvedEvent
+class ResolvedEvent implements InternalResolvedEvent
 {
     /**
      * The event, or the resolved link event if this is a link event

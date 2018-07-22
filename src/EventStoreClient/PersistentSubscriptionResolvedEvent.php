@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient;
 
-class PersistentSubscriptionResolvedEvent
+use Prooph\EventStoreClient\Internal\ResolvedEvent as InternalResolvedEvent;
+
+class PersistentSubscriptionResolvedEvent implements InternalResolvedEvent
 {
     /** @var int|null */
     private $retryCount;
@@ -31,5 +33,20 @@ class PersistentSubscriptionResolvedEvent
     public function originalEvent(): ?EventRecord
     {
         return $this->event->originalEvent();
+    }
+
+    public function originalPosition(): ?Position
+    {
+        return $this->event->originalPosition();
+    }
+
+    public function originalStreamName(): string
+    {
+        return $this->event->originalStreamName();
+    }
+
+    public function originalEventNumber(): int
+    {
+        return $this->event->originalEventNumber();
     }
 }

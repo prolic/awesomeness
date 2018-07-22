@@ -49,13 +49,13 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
     protected $resolveLinkTos;
     /** @var UserCredentials|null */
     protected $userCredentials;
-    /** @var callable(EventStoreSubscription $subscription, object $resolvedEvent): Promise */
+    /** @var callable(\Prooph\EventStoreClient\EventStoreSubscription $subscription, \Prooph\EventStoreClient\Internal\ResolvedEvent $resolvedEvent): Promise */
     protected $eventAppeared;
-    /** @var null|callable(EventStoreSubscription $subscription, SubscriptionDropReason $reason, Throwable $exception): void */
+    /** @var null|callable(\Prooph\EventStoreClient\EventStoreSubscription $subscription, \Prooph\EventStoreClient\SubscriptionDropReason $reason, \Throwable $exception): void */
     private $subscriptionDropped;
     /** @var bool */
     private $verboseLogging;
-    /** @var callable(TcpPackageConnection $connection) */
+    /** @var callable(\Prooph\EventStoreClient\Transport\Tcp\TcpPackageConnection $connection) */
     protected $getConnection;
     /** @var int */
     private $maxQueueSize = 2000;
@@ -76,8 +76,8 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
      * @param string $streamId
      * @param bool $resolveLinkTos
      * @param null|UserCredentials $userCredentials
-     * @param callable(EventStoreSubscription $subscription, object $resolvedEvent): Promise $eventAppeared
-     * @param null|callable(EventStoreSubscription $subscription, SubscriptionDropReason $reason, Throwable $exception): void $subscriptionDropped
+     * @param callable(\Prooph\EventStoreClient\EventStoreSubscription $subscription, \Prooph\EventStoreClient\Internal\ResolvedEvent $resolvedEvent): Promise $eventAppeared
+     * @param null|callable(\Prooph\EventStoreClient\EventStoreSubscription $subscription, \Prooph\EventStoreClient\SubscriptionDropReason $reason, \Throwable $exception): void $subscriptionDropped
      * @param bool $verboseLogging
      * @param callable $getConnection
      */

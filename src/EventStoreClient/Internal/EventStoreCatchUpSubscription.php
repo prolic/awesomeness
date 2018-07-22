@@ -16,7 +16,6 @@ use Prooph\EventStoreClient\UserCredentials;
 use Prooph\EventStoreClient\EventStoreAsyncConnection;
 use Prooph\EventStoreClient\Exception\TimeoutException;
 use Prooph\EventStoreClient\ClientConnectionEventArgs;
-use Prooph\EventStoreClient\ListenerHandler;
 use Psr\Log\LoggerInterface as Logger;
 use SplQueue;
 use Throwable;
@@ -77,7 +76,7 @@ abstract class EventStoreCatchUpSubscription
     /** @var bool */
     private $stopped;
 
-    /** @var ListenerHandler */
+    /** @var \Prooph\EventStoreClient\Internal\ListenerHandler */
     private $connectListener;
 
     /**

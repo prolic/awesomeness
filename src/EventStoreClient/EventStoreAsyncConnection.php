@@ -133,8 +133,8 @@ interface EventStoreAsyncConnection
     /**
      * @param string $stream
      * @param bool $resolveLinkTos
-     * @param callable(EventStoreSubscription $subscription, ResolvedEvent $event): Promise $eventAppeared
-     * @param null|callable(EventStoreSubscription $subscription, SubscriptionDropReason $reason, Exception $exception): void $subscriptionDropped
+     * @param callable(\Prooph\EventStoreClient\EventStoreSubscription $subscription, \Prooph\EventStoreClient\Internal\ResolvedEvent $resolvedEvent): Promise $eventAppeared
+     * @param null|callable(\Prooph\EventStoreClient\EventStoreSubscription $subscription, \Prooph\EventStoreClient\SubscriptionDropReason $reason, \Throwable $exception): void $subscriptionDropped
      * @param UserCredentials|null
      * @return Promise<EventStoreSubscription>
      */
@@ -150,9 +150,9 @@ interface EventStoreAsyncConnection
      * @param string $stream
      * @param int|null $lastCheckpoint
      * @param CatchUpSubscriptionSettings $settings
-     * @param callable(EventStoreCatchUpSubscription $subscription, ResolvedEvent $event): Promise $eventAppeared
-     * @param null|callable(EventStoreCatchUpSubscription $subscription): void $liveProcessingStarted
-     * @param null|callable(EventStoreCatchUpSubscription $subscription, SubscriptionDropReason $reason, Exception $exception): void $subscriptionDropped
+     * @param callable(\Prooph\EventStoreClient\EventStoreSubscription $subscription, \Prooph\EventStoreClient\Internal\ResolvedEvent $resolvedEvent): Promise $eventAppeared
+     * @param null|callable(\Prooph\EventStoreClient\Internal\EventStoreCatchUpSubscription $subscription): void $liveProcessingStarted
+     * @param null|callable(\Prooph\EventStoreClient\EventStoreSubscription $subscription, \Prooph\EventStoreClient\SubscriptionDropReason $reason, \Throwable $exception): void $subscriptionDropped
      * @return EventStoreStreamCatchUpSubscription
      */
     public function subscribeToStreamFrom(
@@ -167,8 +167,8 @@ interface EventStoreAsyncConnection
 
     /**
      * @param bool $resolveLinkTos
-     * @param callable(EventStoreCatchUpSubscription $subscription, ResolvedEvent $event): Promise $eventAppeared
-     * @param null|callable(EventStoreCatchUpSubscription $subscription, SubscriptionDropReason $reason, Exception $exception): void $subscriptionDropped
+     * @param callable(\Prooph\EventStoreClient\EventStoreSubscription $subscription, \Prooph\EventStoreClient\Internal\ResolvedEvent $resolvedEvent): Promise $eventAppeared
+     * @param null|callable(\Prooph\EventStoreClient\EventStoreSubscription $subscription, \Prooph\EventStoreClient\SubscriptionDropReason $reason, \Throwable $exception): void $subscriptionDropped
      * @return Promise<EventStoreSubscription>
      */
     public function subscribeToAllAsync(
@@ -181,9 +181,9 @@ interface EventStoreAsyncConnection
     /**
      * @param Position|null $lastCheckpoint
      * @param CatchUpSubscriptionSettings $settings
-     * @param callable(EventStoreCatchUpSubscription $subscription, ResolvedEvent $event): Promise $eventAppeared
-     * @param null|callable(EventStoreCatchUpSubscription $subscription): void $liveProcessingStarted
-     * @param null|callable(EventStoreCatchUpSubscription $subscription, SubscriptionDropReason $reason, Exception $exception): void $subscriptionDropped
+     * @param callable(\Prooph\EventStoreClient\EventStoreSubscription $subscription, \Prooph\EventStoreClient\Internal\ResolvedEvent $resolvedEvent): Promise $eventAppeared
+     * @param null|callable(\Prooph\EventStoreClient\Internal\EventStoreCatchUpSubscription $subscription): void $liveProcessingStarted
+     * @param null|callable(\Prooph\EventStoreClient\EventStoreSubscription $subscription, \Prooph\EventStoreClient\SubscriptionDropReason $reason, \Throwable $exception): void $subscriptionDropped
      * @return EventStoreAllCatchUpSubscription
      */
     public function subscribeToAllFrom(
@@ -198,8 +198,8 @@ interface EventStoreAsyncConnection
     /**
      * @param string $stream
      * @param string $groupName
-     * @param callable(EventStorePersistentSubscription $subscription, ResolvedEvent $event, int $retry): Promise $eventAppeared
-     * @param null|callable(EventStorePersistentSubscription $subscription, SubscriptionDropReason $reason, \Throwable $exception): void $subscriptionDropped
+     * @param callable(\Prooph\EventStoreClient\EventStoreSubscription $subscription, \Prooph\EventStoreClient\Internal\ResolvedEvent $resolvedEvent): Promise $eventAppeared
+     * @param null|callable(\Prooph\EventStoreClient\EventStoreSubscription $subscription, \Prooph\EventStoreClient\SubscriptionDropReason $reason, \Throwable $exception): void $subscriptionDropped
      * @param int $bufferSize
      * @param bool $autoAck
      * @param UserCredentials|null $userCredentials
@@ -218,8 +218,8 @@ interface EventStoreAsyncConnection
     /**
      * @param string $stream
      * @param string $groupName
-     * @param callable(EventStorePersistentSubscription $subscription, ResolvedEvent $event, int $retry): Promise $eventAppeared
-     * @param null|callable(EventStorePersistentSubscription $subscription, SubscriptionDropReason $reason, \Throwable $exception): void $subscriptionDropped
+     * @param callable(\Prooph\EventStoreClient\EventStoreSubscription $subscription, \Prooph\EventStoreClient\Internal\ResolvedEvent $resolvedEvent, int $retry): Promise $eventAppeared
+     * @param null|callable(\Prooph\EventStoreClient\EventStoreSubscription $subscription, \Prooph\EventStoreClient\SubscriptionDropReason $reason, \Throwable $exception): void $subscriptionDropped
      * @param int $bufferSize
      * @param bool $autoAck
      * @param UserCredentials|null $userCredentials
