@@ -6,12 +6,12 @@ namespace Prooph\EventStoreClient\Internal\ClientOperations;
 
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
-use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStoreClient\Data\ReadDirection;
 use Prooph\EventStoreClient\Data\ResolvedEvent;
 use Prooph\EventStoreClient\Data\SliceReadStatus;
 use Prooph\EventStoreClient\Data\StreamEventsSlice;
 use Prooph\EventStoreClient\Data\UserCredentials;
+use Prooph\EventStoreClient\Exception\AccessDeniedException;
 use Prooph\EventStoreClient\Exception\ServerError;
 use Prooph\EventStoreClient\Internal\EventMessageConverter;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionDecision;
@@ -93,7 +93,7 @@ class ReadStreamEventsForwardOperation extends AbstractOperation
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'Error');
             case ReadStreamResult::AccessDenied:
-                $this->fail(AccessDenied::toStream($this->stream));
+                $this->fail(AccessDeniedException::toStream($this->stream));
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'AccessDenied');
             default:

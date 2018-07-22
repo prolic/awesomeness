@@ -7,7 +7,6 @@ namespace Prooph\EventStoreClient\Internal;
 use Amp\Delayed;
 use Amp\Promise;
 use Generator;
-use Prooph\EventStore\Exception\StreamDeleted;
 use Prooph\EventStoreClient\Data\CatchUpSubscriptionSettings;
 use Prooph\EventStoreClient\Data\ResolvedEvent;
 use Prooph\EventStoreClient\Data\SliceReadStatus;
@@ -15,6 +14,7 @@ use Prooph\EventStoreClient\Data\StreamEventsSlice;
 use Prooph\EventStoreClient\Data\SubscriptionDropReason;
 use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStoreClient\EventStoreAsyncConnection;
+use Prooph\EventStoreClient\Exception\StreamDeletedException;
 use function Amp\call;
 
 class EventStoreStreamCatchUpSubscription extends EventStoreCatchUpSubscription
@@ -143,7 +143,7 @@ class EventStoreStreamCatchUpSubscription extends EventStoreCatchUpSubscription
 
                     break;
                 case SliceReadStatus::StreamDeleted:
-                    throw StreamDeleted::with($this->streamId());
+                    throw StreamDeletedException::with($this->streamId());
             }
 
             if (! $done && $slice->isEndOfStream()) {

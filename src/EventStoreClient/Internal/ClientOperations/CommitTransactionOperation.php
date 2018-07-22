@@ -6,14 +6,14 @@ namespace Prooph\EventStoreClient\Internal\ClientOperations;
 
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
-use Prooph\EventStore\Exception\AccessDenied;
-use Prooph\EventStore\Exception\InvalidTransaction;
-use Prooph\EventStore\Exception\StreamDeleted;
-use Prooph\EventStore\Exception\WrongExpectedVersion;
 use Prooph\EventStoreClient\Data\Position;
 use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStoreClient\Data\WriteResult;
+use Prooph\EventStoreClient\Exception\AccessDeniedException;
+use Prooph\EventStoreClient\Exception\InvalidTransactionException;
+use Prooph\EventStoreClient\Exception\StreamDeletedException;
 use Prooph\EventStoreClient\Exception\UnexpectedOperationResult;
+use Prooph\EventStoreClient\Exception\WrongExpectedVersionException;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionDecision;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionResult;
 use Prooph\EventStoreClient\Messages\ClientMessages\OperationResult;
@@ -71,7 +71,7 @@ class CommitTransactionOperation extends AbstractOperation
             case OperationResult::CommitTimeout:
                 return new InspectionResult(InspectionDecision::retry(), 'CommitTimeout');
             case OperationResult::WrongExpectedVersion:
-                $exception = new WrongExpectedVersion(\sprintf(
+                $exception = new WrongExpectedVersionException(\sprintf(
                     'Commit transaction failed due to WrongExpectedVersion. Transaction id: \'%s\'',
                     $this->transactionId
                 ));
@@ -79,15 +79,15 @@ class CommitTransactionOperation extends AbstractOperation
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'WrongExpectedVersion');
             case OperationResult::StreamDeleted:
-                $this->fail(new StreamDeleted());
+                $this->fail(new StreamDeletedException());
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'StreamDeleted');
             case OperationResult::InvalidTransaction:
-                $this->fail(new InvalidTransaction());
+                $this->fail(new InvalidTransactionException());
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'InvalidTransaction');
             case OperationResult::AccessDenied:
-                $exception = new AccessDenied('Write access denied');
+                $exception = new AccessDeniedException('Write access denied');
                 $this->fail($exception);
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'AccessDenied');

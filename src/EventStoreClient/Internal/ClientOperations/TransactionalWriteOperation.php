@@ -6,9 +6,9 @@ namespace Prooph\EventStoreClient\Internal\ClientOperations;
 
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
-use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStoreClient\Data\EventData;
 use Prooph\EventStoreClient\Data\UserCredentials;
+use Prooph\EventStoreClient\Exception\AccessDeniedException;
 use Prooph\EventStoreClient\Exception\UnexpectedOperationResult;
 use Prooph\EventStoreClient\Internal\NewEventConverter;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionDecision;
@@ -77,7 +77,7 @@ class TransactionalWriteOperation extends AbstractOperation
             case OperationResult::CommitTimeout:
                 return new InspectionResult(InspectionDecision::retry(), 'CommitTimeout');
             case OperationResult::AccessDenied:
-                $exception = new AccessDenied('Write access denied');
+                $exception = new AccessDeniedException('Write access denied');
                 $this->fail($exception);
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'AccessDenied');

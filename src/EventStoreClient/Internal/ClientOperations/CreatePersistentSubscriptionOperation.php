@@ -6,12 +6,12 @@ namespace Prooph\EventStoreClient\Internal\ClientOperations;
 
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
-use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStoreClient\Common\SystemConsumerStrategies;
 use Prooph\EventStoreClient\Data\PersistentSubscriptionCreateResult;
 use Prooph\EventStoreClient\Data\PersistentSubscriptionCreateStatus;
 use Prooph\EventStoreClient\Data\PersistentSubscriptionSettings;
 use Prooph\EventStoreClient\Data\UserCredentials;
+use Prooph\EventStoreClient\Exception\AccessDeniedException;
 use Prooph\EventStoreClient\Exception\InvalidOperationException;
 use Prooph\EventStoreClient\Exception\UnexpectedOperationResult;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionDecision;
@@ -92,7 +92,7 @@ class CreatePersistentSubscriptionOperation extends AbstractOperation
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'Fail');
             case CreatePersistentSubscriptionResult::AccessDenied:
-                $this->fail(AccessDenied::toStream($this->stream));
+                $this->fail(AccessDeniedException::toStream($this->stream));
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'AccessDenied');
             case CreatePersistentSubscriptionResult::AlreadyExists:

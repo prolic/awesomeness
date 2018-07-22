@@ -6,8 +6,6 @@ namespace Prooph\EventStoreClient\Internal;
 
 use Amp\Deferred;
 use Amp\Promise;
-use Prooph\EventStore\Exception\OutOfRangeException;
-use Prooph\EventStore\Exception\UnexpectedValueException;
 use Prooph\EventStoreClient\ClusterSettings;
 use Prooph\EventStoreClient\Common\SystemEventTypes;
 use Prooph\EventStoreClient\Common\SystemStreams;
@@ -29,6 +27,7 @@ use Prooph\EventStoreClient\EventStoreAsyncTransactionConnection as AsyncTransac
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 use Prooph\EventStoreClient\Exception\InvalidOperationException;
 use Prooph\EventStoreClient\Exception\MaxQueueSizeLimitReachedException;
+use Prooph\EventStoreClient\Exception\UnexpectedValueException;
 use Prooph\EventStoreClient\Internal\ClientOperations\AppendToStreamOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\ClientOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\CommitTransactionOperation;
@@ -388,9 +387,6 @@ final class EventStoreAsyncNodeConnection implements AsyncConnection, AsyncTrans
                     break;
                 case EventReadStatus::StreamDeleted:
                     $deferred->resolve(new StreamMetadataResult($stream, true, PHP_INT_MAX, ''));
-                    break;
-                default:
-                    $deferred->fail(new OutOfRangeException('Unexpected ReadEventResult: ' . $eventReadResult->status()->value()));
                     break;
             }
         });

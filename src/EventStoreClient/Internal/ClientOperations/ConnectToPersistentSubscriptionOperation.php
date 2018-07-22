@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Prooph\EventStoreClient\Internal\ClientOperations;
 
 use Amp\Deferred;
-use Prooph\EventStore\Exception\AccessDenied;
 use Prooph\EventStoreClient\Data\EventId;
 use Prooph\EventStoreClient\Data\PersistentSubscriptionNakEventAction;
 use Prooph\EventStoreClient\Data\PersistentSubscriptionResolvedEvent;
 use Prooph\EventStoreClient\Data\SubscriptionDropReason;
 use Prooph\EventStoreClient\Data\UserCredentials;
+use Prooph\EventStoreClient\Exception\AccessDeniedException;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 use Prooph\EventStoreClient\Exception\MaximumSubscribersReachedException;
 use Prooph\EventStoreClient\Exception\PersistentSubscriptionDeletedException;
@@ -108,7 +108,7 @@ class ConnectToPersistentSubscriptionOperation extends AbstractSubscriptionOpera
             $message->mergeFromString($package->data());
 
             if ($message->getReason() === SubscriptionDropReasonMessage::AccessDenied) {
-                $this->dropSubscription(SubscriptionDropReason::accessDenied(), new AccessDenied('You do not have access to the stream'));
+                $this->dropSubscription(SubscriptionDropReason::accessDenied(), new AccessDeniedException('You do not have access to the stream'));
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'SubscriptionDropped');
             }

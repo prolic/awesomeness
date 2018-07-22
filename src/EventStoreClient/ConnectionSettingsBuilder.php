@@ -61,7 +61,7 @@ class ConnectionSettingsBuilder
     public function limitOperationsQueueTo(int $limit): self
     {
         if ($limit < 0) {
-            throw new InvalidArgumentException('limit must be positive');
+            throw new InvalidArgumentException('Limit must be positive');
         }
 
         $this->maxQueueSize = $limit;
@@ -72,7 +72,7 @@ class ConnectionSettingsBuilder
     public function limitConcurrentOperationsTo(int $limit): self
     {
         if ($limit < 0) {
-            throw new InvalidArgumentException('limit must be positive');
+            throw new InvalidArgumentException('Limit must be positive');
         }
 
         $this->maxConcurrentItems = $limit;
@@ -83,7 +83,7 @@ class ConnectionSettingsBuilder
     public function limitAttemptsForOperationTo(int $limit): self
     {
         if ($limit < 0) {
-            throw new InvalidArgumentException('limit must be positive');
+            throw new InvalidArgumentException('Limit must be positive');
         }
 
         $this->maxRetries = $limit - 1;
@@ -94,7 +94,7 @@ class ConnectionSettingsBuilder
     public function limitRetriesForOperationTo(int $limit): self
     {
         if ($limit < 0) {
-            throw new InvalidArgumentException('limit must be positive');
+            throw new InvalidArgumentException('Limit must be positive');
         }
 
         $this->maxRetries = $limit;
@@ -112,7 +112,7 @@ class ConnectionSettingsBuilder
     public function limitReconnectionsTo(int $limit): self
     {
         if ($limit < 0) {
-            throw new InvalidArgumentException('limit must be positive');
+            throw new InvalidArgumentException('Limit must be positive');
         }
 
         $this->maxReconnections = $limit;

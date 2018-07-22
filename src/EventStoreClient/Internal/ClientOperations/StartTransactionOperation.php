@@ -6,14 +6,14 @@ namespace Prooph\EventStoreClient\Internal\ClientOperations;
 
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
-use Prooph\EventStore\Exception\AccessDenied;
-use Prooph\EventStore\Exception\InvalidTransaction;
-use Prooph\EventStore\Exception\StreamDeleted;
-use Prooph\EventStore\Exception\WrongExpectedVersion;
 use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStoreClient\EventStoreSyncTransaction;
 use Prooph\EventStoreClient\EventStoreSyncTransactionConnection;
+use Prooph\EventStoreClient\Exception\AccessDeniedException;
+use Prooph\EventStoreClient\Exception\InvalidTransactionException;
+use Prooph\EventStoreClient\Exception\StreamDeletedException;
 use Prooph\EventStoreClient\Exception\UnexpectedOperationResult;
+use Prooph\EventStoreClient\Exception\WrongExpectedVersionException;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionDecision;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionResult;
 use Prooph\EventStoreClient\Messages\ClientMessages\OperationResult;
@@ -78,7 +78,7 @@ class StartTransactionOperation extends AbstractOperation
             case OperationResult::ForwardTimeout:
                 return new InspectionResult(InspectionDecision::retry(), 'ForwardTimeout');
             case OperationResult::WrongExpectedVersion:
-                $exception = new WrongExpectedVersion(\sprintf(
+                $exception = new WrongExpectedVersionException(\sprintf(
                     'Start transaction failed due to WrongExpectedVersion. Stream: \'%s\', Expected version: \'%s\'',
                     $this->stream,
                     $this->expectedVersion
@@ -87,15 +87,15 @@ class StartTransactionOperation extends AbstractOperation
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'WrongExpectedVersion');
             case OperationResult::StreamDeleted:
-                $this->fail(StreamDeleted::with($this->stream));
+                $this->fail(StreamDeletedException::with($this->stream));
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'StreamDeleted');
             case OperationResult::InvalidTransaction:
-                $this->fail(new InvalidTransaction());
+                $this->fail(new InvalidTransactionException());
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'InvalidTransaction');
             case OperationResult::AccessDenied:
-                $this->fail(AccessDenied::toStream($this->stream));
+                $this->fail(AccessDeniedException::toStream($this->stream));
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'AccessDenied');
             default:

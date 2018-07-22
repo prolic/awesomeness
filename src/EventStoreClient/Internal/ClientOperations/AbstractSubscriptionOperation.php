@@ -9,11 +9,12 @@ use Amp\Loop;
 use Amp\Promise;
 use Amp\Success;
 use Generator;
-use Prooph\EventStore\Exception\AccessDenied;
-use Prooph\EventStore\Exception\ConnectionClosedException;
 use Prooph\EventStoreClient\Data\SubscriptionDropReason;
 use Prooph\EventStoreClient\Data\UserCredentials;
+use Prooph\EventStoreClient\Exception\AccessDeniedException;
+use Prooph\EventStoreClient\Exception\ConnectionClosedException;
 use Prooph\EventStoreClient\Exception\NotAuthenticatedException;
+use Prooph\EventStoreClient\Exception\RuntimeException;
 use Prooph\EventStoreClient\Exception\ServerError;
 use Prooph\EventStoreClient\Exception\UnexpectedCommandException;
 use Prooph\EventStoreClient\Internal\EventStoreSubscription;
@@ -158,13 +159,13 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
                             $this->dropSubscription(SubscriptionDropReason::userInitiated(), null);
                             break;
                         case SubscriptionDropReasonMessage::AccessDenied:
-                            $this->dropSubscription(SubscriptionDropReason::accessDenied(), new AccessDenied(\sprintf(
+                            $this->dropSubscription(SubscriptionDropReason::accessDenied(), new AccessDeniedException(\sprintf(
                                 'Subscription to \'%s\' failed due to access denied',
                                 $this->streamId
                             )));
                             break;
                         case SubscriptionDropReasonMessage::NotFound:
-                            $this->dropSubscription(SubscriptionDropReason::notFound(), new \Exception(\sprintf(
+                            $this->dropSubscription(SubscriptionDropReason::notFound(), new RuntimeException(\sprintf(
                                 'Subscription to \'%s\' failed due to not found',
                                 $this->streamId
                             )));

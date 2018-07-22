@@ -7,9 +7,9 @@ namespace Prooph\EventStoreClient\Internal;
 use Amp\Deferred;
 use Amp\Loop;
 use Generator;
-use Prooph\EventStore\Exception\ConnectionClosedException;
 use Prooph\EventStoreClient\ConnectionSettings;
 use Prooph\EventStoreClient\Exception\CannotEstablishConnectionException;
+use Prooph\EventStoreClient\Exception\ConnectionClosedException;
 use Prooph\EventStoreClient\Exception\EventStoreConnectionException;
 use Prooph\EventStoreClient\Exception\InvalidOperationException;
 use Prooph\EventStoreClient\Internal\ClientOperations\ClientOperation;
@@ -699,7 +699,7 @@ class EventStoreConnectionLogicHandler
         if ($package->command()->equals(TcpCommand::badRequest())
             && $package->correlationId() === ''
         ) {
-            $exception = new EventStoreConnectionException('Base request received from server');
+            $exception = new EventStoreConnectionException('Bad request received from server');
             $this->closeConnection('Connection-wide BadRequest received. Too dangerous to continue', $exception);
 
             return;

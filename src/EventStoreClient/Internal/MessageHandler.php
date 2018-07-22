@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient\Internal;
 
-use Prooph\EventStore\Exception\RuntimeException;
+use Prooph\EventStoreClient\Exception\RuntimeException;
 
 /** @internal */
 class MessageHandler

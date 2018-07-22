@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient\Internal;
 
-use Prooph\EventStore\Exception\ConnectionClosedException;
 use Prooph\EventStoreClient\ConnectionSettings;
 use Prooph\EventStoreClient\Data\SubscriptionDropReason;
+use Prooph\EventStoreClient\Exception\ConnectionClosedException;
 use Prooph\EventStoreClient\Exception\OperationTimedOutException;
 use Prooph\EventStoreClient\Exception\RetriesLimitReachedException;
 use Prooph\EventStoreClient\Transport\Tcp\TcpPackageConnection;
