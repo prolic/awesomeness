@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Prooph\EventStoreClient\Data;
+namespace Prooph\EventStoreClient\Internal;
 
 class PersistentSubscriptionCreateResult
 {

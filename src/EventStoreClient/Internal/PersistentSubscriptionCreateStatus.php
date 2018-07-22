@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Prooph\EventStoreClient\Data;
+namespace Prooph\EventStoreClient\Internal;
 
 /** @internal */
-class PersistentSubscriptionUpdateStatus
+class PersistentSubscriptionCreateStatus
 {
     public const OPTIONS = [
         'Success' => 0,
-        'NotFound' => 1,
+        'AlreadyExists' => 1,
         'Failure' => 2,
     ];
 
     public const Success = 0;
-    public const NotFound = 1;
+    public const AlreadyExists = 1;
     public const Failure = 2;
 
     private $name;
@@ -31,9 +31,9 @@ class PersistentSubscriptionUpdateStatus
         return new self('Success');
     }
 
-    public static function notFound(): self
+    public static function alreadyExists(): self
     {
-        return new self('NotFound');
+        return new self('AlreadyExists');
     }
 
     public static function failure(): self
@@ -61,7 +61,7 @@ class PersistentSubscriptionUpdateStatus
         throw new \InvalidArgumentException('Unknown enum value given');
     }
 
-    public function equals(PersistentSubscriptionUpdateStatus $other): bool
+    public function equals(PersistentSubscriptionCreateStatus $other): bool
     {
         return \get_class($this) === \get_class($other) && $this->name === $other->name;
     }
