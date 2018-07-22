@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient\Internal\Message;
 
-use Prooph\EventStoreClient\Internal\Message;
 use Prooph\EventStoreClient\Transport\Tcp\TcpPackageConnection;
 use Throwable;
 

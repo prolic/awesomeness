@@ -22,6 +22,7 @@ use Prooph\EventStoreClient\Internal\Event\ClientErrorEventArgs;
 use Prooph\EventStoreClient\Internal\Event\ClientReconnectingEventArgs;
 use Prooph\EventStoreClient\Internal\Event\ListenerHandler;
 use Prooph\EventStoreClient\Internal\Message\CloseConnectionMessage;
+use Prooph\EventStoreClient\Internal\Message\Message;
 use Prooph\EventStoreClient\Internal\Message\EstablishTcpConnectionMessage;
 use Prooph\EventStoreClient\Internal\Message\HandleTcpPackageMessage;
 use Prooph\EventStoreClient\Internal\Message\StartConnectionMessage;

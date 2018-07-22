@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Prooph\EventStoreClient\Internal\Message;
 
 use Prooph\EventStoreClient\ClientOperations\ClientOperation;
-use Prooph\EventStoreClient\Internal\Message;
 
 /** @internal  */
 class StartOperationMessage implements Message

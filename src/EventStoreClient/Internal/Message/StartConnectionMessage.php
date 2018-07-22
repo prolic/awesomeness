@@ -6,7 +6,6 @@ namespace Prooph\EventStoreClient\Internal\Message;
 
 use Amp\Deferred;
 use Prooph\EventStoreClient\Internal\EndPointDiscoverer;
-use Prooph\EventStoreClient\Internal\Message;
 
 /** @internal */
 class StartConnectionMessage implements Message
