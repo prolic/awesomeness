@@ -115,4 +115,9 @@ class StartAsyncTransactionOperation extends AbstractOperation
             $this->parentConnection
         );
     }
+
+    public function name(): string
+    {
+        return 'StartAsyncTransaction';
+    }
 }

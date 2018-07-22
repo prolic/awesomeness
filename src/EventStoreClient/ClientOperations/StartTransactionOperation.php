@@ -115,4 +115,9 @@ class StartTransactionOperation extends AbstractOperation
             $this->parentConnection
         );
     }
+
+    public function name(): string
+    {
+        return 'StartTransaction';
+    }
 }

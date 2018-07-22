@@ -92,4 +92,9 @@ class TransactionalWriteOperation extends AbstractOperation
     protected function transformResponse(Message $response)
     {
     }
+
+    public function name(): string
+    {
+        return 'TransactionalWrite';
+    }
 }

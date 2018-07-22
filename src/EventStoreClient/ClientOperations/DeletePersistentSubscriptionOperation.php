@@ -102,4 +102,9 @@ class DeletePersistentSubscriptionOperation extends AbstractOperation
 
         return new PersistentSubscriptionDeleteResult($status);
     }
+
+    public function name(): string
+    {
+        return 'DeletePersistentSubscription';
+    }
 }

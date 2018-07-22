@@ -66,4 +66,9 @@ class VolatileSubscriptionOperation extends AbstractSubscriptionOperation
                 $lastEventNumber
         );
     }
+
+    public function name(): string
+    {
+        return 'VolatileSubscription';
+    }
 }

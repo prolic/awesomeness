@@ -134,4 +134,9 @@ class ReadStreamEventsForwardOperation extends AbstractOperation
             $response->getIsEndOfStream()
         );
     }
+
+    public function name(): string
+    {
+        return 'ReadStreamEventsForward';
+    }
 }

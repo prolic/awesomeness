@@ -110,4 +110,9 @@ class CommitTransactionOperation extends AbstractOperation
             )
         );
     }
+
+    public function name(): string
+    {
+        return 'CommitTransaction';
+    }
 }

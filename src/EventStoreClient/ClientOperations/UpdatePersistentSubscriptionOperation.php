@@ -118,4 +118,9 @@ class UpdatePersistentSubscriptionOperation extends AbstractOperation
             PersistentSubscriptionUpdateStatus::success()
         );
     }
+
+    public function name(): string
+    {
+        return 'UpdatePersistentSubscription';
+    }
 }

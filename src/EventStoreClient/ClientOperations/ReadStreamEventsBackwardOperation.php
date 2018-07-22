@@ -134,4 +134,9 @@ class ReadStreamEventsBackwardOperation extends AbstractOperation
             $response->getIsEndOfStream()
         );
     }
+
+    public function name(): string
+    {
+        return 'ReadStreamEventsBackward';
+    }
 }

@@ -19,4 +19,6 @@ interface ClientOperation
     public function inspectPackage(TcpPackage $package): InspectionResult;
 
     public function fail(Throwable $exception): void;
+
+    public function name(): string;
 }

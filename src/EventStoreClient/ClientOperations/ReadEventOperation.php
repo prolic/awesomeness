@@ -126,4 +126,9 @@ class ReadEventOperation extends AbstractOperation
             $resolvedEvent
         );
     }
+
+    public function name(): string
+    {
+        return 'ReadEvent';
+    }
 }

@@ -18,7 +18,6 @@ use Prooph\EventStoreClient\Internal\SystemData\InspectionDecision;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionResult;
 use Prooph\EventStoreClient\Messages\ClientMessages\ReadAllEvents;
 use Prooph\EventStoreClient\Messages\ClientMessages\ReadAllEventsCompleted;
-use Prooph\EventStoreClient\Messages\ClientMessages\ReadAllEventsCompleted\ReadAllResult;
 use Prooph\EventStoreClient\Messages\ClientMessages\ResolvedIndexedEvent;
 use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
 use Psr\Log\LoggerInterface as Logger;
@@ -117,5 +116,10 @@ class ReadAllEventsForwardOperation extends AbstractOperation
             new Position($response->getNextCommitPosition(), $response->getNextPreparePosition()),
             $resolvedEvents
         );
+    }
+
+    public function name(): string
+    {
+        return 'ReadAllEventsForward';
     }
 }

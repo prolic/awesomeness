@@ -125,4 +125,9 @@ class AppendToStreamOperation extends AbstractOperation
             )
         );
     }
+
+    public function name(): string
+    {
+        return 'AppendToStream';
+    }
 }

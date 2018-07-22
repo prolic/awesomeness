@@ -117,4 +117,9 @@ class DeleteStreamOperation extends AbstractOperation
             $response->getCommitPosition() ?? -1)
         );
     }
+
+    public function name(): string
+    {
+        return 'DeleteStream';
+    }
 }

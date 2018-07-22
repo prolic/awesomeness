@@ -117,4 +117,9 @@ class CreatePersistentSubscriptionOperation extends AbstractOperation
             PersistentSubscriptionCreateStatus::success()
         );
     }
+
+    public function name(): string
+    {
+        return 'CreatePersistentSubscription';
+    }
 }

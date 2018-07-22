@@ -210,4 +210,9 @@ class ConnectToPersistentSubscriptionOperation extends AbstractSubscriptionOpera
 
         $this->enqueueSend($package);
     }
+
+    public function name(): string
+    {
+        return 'ConnectToPersistentSubscription';
+    }
 }

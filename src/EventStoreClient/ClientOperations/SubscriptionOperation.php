@@ -24,4 +24,6 @@ interface SubscriptionOperation
     public function inspectPackage(TcpPackage $package): InspectionResult;
 
     public function subscribe(string $correlationId, TcpPackageConnection $connection): bool;
+
+    public function name(): string;
 }

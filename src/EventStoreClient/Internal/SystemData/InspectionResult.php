@@ -39,7 +39,7 @@ class InspectionResult
         $this->secureTcpEndPoint = $secureTcpEndPoint;
     }
 
-    public function inspectionDecision(): InspectionDecision
+    public function decision(): InspectionDecision
     {
         return $this->inspectionDecision;
     }

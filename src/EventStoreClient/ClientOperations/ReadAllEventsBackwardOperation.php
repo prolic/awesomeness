@@ -119,4 +119,9 @@ class ReadAllEventsBackwardOperation extends AbstractOperation
             $resolvedEvents
         );
     }
+
+    public function name(): string
+    {
+        return 'ReadAllEventsBackward';
+    }
 }
