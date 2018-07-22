@@ -22,6 +22,7 @@ use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStoreClient\Data\WriteResult;
 use Prooph\EventStoreClient\EventStoreAsyncConnection;
 use Prooph\EventStoreClient\EventStoreSyncConnection;
+use Prooph\EventStoreClient\EventStoreSyncTransaction;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 use Prooph\EventStoreClient\Internal\ClientOperations\CommitTransactionOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\StartTransactionOperation;
@@ -268,6 +269,7 @@ final class EventStoreSyncNodeConnection implements
         $reflectionMethod->setAccessible(true);
 
         $reflectionMethod->invoke($this->asyncConnection, new StartTransactionOperation(
+            $this->connectionSettings()->log(),
             $deferred,
             $this->asyncConnection->connectionSettings()->requireMaster(),
             $stream,
@@ -306,6 +308,7 @@ final class EventStoreSyncNodeConnection implements
         $reflectionMethod->setAccessible(true);
 
         $reflectionMethod->invoke($this->asyncConnection, new TransactionalWriteOperation(
+            $this->connectionSettings()->log(),
             $deferred,
             $this->asyncConnection->connectionSettings()->requireMaster(),
             $transaction->transactionId(),
@@ -326,6 +329,7 @@ final class EventStoreSyncNodeConnection implements
         $reflectionMethod->setAccessible(true);
 
         $reflectionMethod->invoke($this->asyncConnection, new CommitTransactionOperation(
+            $this->connectionSettings()->log(),
             $deferred,
             $this->asyncConnection->connectionSettings()->requireMaster(),
             $transaction->transactionId(),

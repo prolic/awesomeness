@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient;
 
+use Amp\ByteStream\ResourceOutputStream;
+use Amp\File\Handle;
+use Amp\Log\ConsoleFormatter;
+use Amp\Log\StreamHandler;
+use Monolog\Formatter\LineFormatter;
+use Monolog\Logger as MonoLog;
 use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 use Prooph\EventStoreClient\Internal\Consts;
@@ -67,6 +73,28 @@ class ConnectionSettingsBuilder
     public function __construct()
     {
         $this->log = new NullLogger();
+    }
+
+    public function useConsoleLogger(): self
+    {
+        $logHandler = new StreamHandler(new ResourceOutputStream(\STDOUT));
+        $logHandler->setFormatter(new ConsoleFormatter());
+
+        $this->log = new MonoLog('event-store-client');
+        $this->log->pushHandler($logHandler);
+
+        return $this;
+    }
+
+    public function useFileLogger(Handle $handle): self
+    {
+        $logHandler = new StreamHandler($handle);
+        $logHandler->setFormatter(new LineFormatter());
+
+        $this->log = new MonoLog('event-store-client');
+        $this->log->pushHandler($logHandler);
+
+        return $this;
     }
 
     public function useCustomLogger(Logger $logger): self

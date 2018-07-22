@@ -8,18 +8,19 @@ use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
 use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStoreClient\EventStoreSyncTransaction;
-use Prooph\EventStoreClient\EventStoreSyncTransactionConnection;
 use Prooph\EventStoreClient\Exception\AccessDeniedException;
 use Prooph\EventStoreClient\Exception\InvalidTransactionException;
 use Prooph\EventStoreClient\Exception\StreamDeletedException;
 use Prooph\EventStoreClient\Exception\UnexpectedOperationResult;
 use Prooph\EventStoreClient\Exception\WrongExpectedVersionException;
+use Prooph\EventStoreClient\Internal\EventStoreSyncTransactionConnection;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionDecision;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionResult;
 use Prooph\EventStoreClient\Messages\ClientMessages\OperationResult;
 use Prooph\EventStoreClient\Messages\ClientMessages\TransactionStart;
 use Prooph\EventStoreClient\Messages\ClientMessages\TransactionStartCompleted;
 use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
+use Psr\Log\LoggerInterface as Logger;
 
 /** @internal */
 class StartTransactionOperation extends AbstractOperation
@@ -34,6 +35,7 @@ class StartTransactionOperation extends AbstractOperation
     private $parentConnection;
 
     public function __construct(
+        Logger $logger,
         Deferred $deferred,
         bool $requireMaster,
         string $stream,
@@ -47,6 +49,7 @@ class StartTransactionOperation extends AbstractOperation
         $this->parentConnection = $parentConnection;
 
         parent::__construct(
+            $logger,
             $deferred,
             $userCredentials,
             TcpCommand::transactionStart(),
