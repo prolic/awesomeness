@@ -20,7 +20,7 @@ use Prooph\EventStoreClient\Messages\ClientMessages\ReadStreamEvents;
 use Prooph\EventStoreClient\Messages\ClientMessages\ReadStreamEventsCompleted;
 use Prooph\EventStoreClient\Messages\ClientMessages\ReadStreamEventsCompleted\ReadStreamResult;
 use Prooph\EventStoreClient\Messages\ClientMessages\ResolvedIndexedEvent;
-use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
+use Prooph\EventStoreClient\SystemData\TcpCommand;
 use Psr\Log\LoggerInterface as Logger;
 
 /** @internal */

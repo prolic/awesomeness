@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Prooph\EventStoreClient\Transport\Tcp;
+namespace Prooph\EventStoreClient\SystemData;
 
 final class TcpCommand
 {

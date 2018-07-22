@@ -6,7 +6,7 @@ namespace Prooph\EventStoreClient\ClientOperations;
 
 use Prooph\EventStoreClient\Data\SubscriptionDropReason;
 use Prooph\EventStoreClient\SystemData\InspectionResult;
-use Prooph\EventStoreClient\Transport\Tcp\TcpPackage;
+use Prooph\EventStoreClient\SystemData\TcpPackage;
 use Prooph\EventStoreClient\Transport\Tcp\TcpPackageConnection;
 use Throwable;
 

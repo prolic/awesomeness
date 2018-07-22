@@ -12,9 +12,9 @@ use Prooph\EventStoreClient\Internal\VolatileEventStoreSubscription;
 use Prooph\EventStoreClient\Messages\ClientMessages\StreamEventAppeared;
 use Prooph\EventStoreClient\Messages\ClientMessages\SubscribeToStream;
 use Prooph\EventStoreClient\Messages\ClientMessages\SubscriptionConfirmation;
-use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
-use Prooph\EventStoreClient\Transport\Tcp\TcpFlags;
-use Prooph\EventStoreClient\Transport\Tcp\TcpPackage;
+use Prooph\EventStoreClient\SystemData\TcpCommand;
+use Prooph\EventStoreClient\SystemData\TcpFlags;
+use Prooph\EventStoreClient\SystemData\TcpPackage;
 
 /** @internal  */
 class VolatileSubscriptionOperation extends AbstractSubscriptionOperation

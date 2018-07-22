@@ -17,9 +17,9 @@ use Prooph\EventStoreClient\IpEndPoint;
 use Prooph\EventStoreClient\Messages\ClientMessages\NotHandled;
 use Prooph\EventStoreClient\Messages\ClientMessages\NotHandled\MasterInfo;
 use Prooph\EventStoreClient\Messages\ClientMessages\NotHandled\NotHandledReason;
-use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
-use Prooph\EventStoreClient\Transport\Tcp\TcpFlags;
-use Prooph\EventStoreClient\Transport\Tcp\TcpPackage;
+use Prooph\EventStoreClient\SystemData\TcpCommand;
+use Prooph\EventStoreClient\SystemData\TcpFlags;
+use Prooph\EventStoreClient\SystemData\TcpPackage;
 use Psr\Log\LoggerInterface as Logger;
 use Throwable;
 

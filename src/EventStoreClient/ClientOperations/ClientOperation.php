@@ -6,7 +6,7 @@ namespace Prooph\EventStoreClient\ClientOperations;
 
 use Amp\Promise;
 use Prooph\EventStoreClient\SystemData\InspectionResult;
-use Prooph\EventStoreClient\Transport\Tcp\TcpPackage;
+use Prooph\EventStoreClient\SystemData\TcpPackage;
 use Throwable;
 
 /** @internal */

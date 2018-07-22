@@ -9,9 +9,9 @@ use Amp\Socket\ClientSocket;
 use Generator;
 use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStoreClient\Internal\ByteBuffer\Buffer;
-use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
-use Prooph\EventStoreClient\Transport\Tcp\TcpFlags;
-use Prooph\EventStoreClient\Transport\Tcp\TcpPackage;
+use Prooph\EventStoreClient\SystemData\TcpCommand;
+use Prooph\EventStoreClient\SystemData\TcpFlags;
+use Prooph\EventStoreClient\SystemData\TcpPackage;
 
 /** @internal */
 class ReadBuffer

@@ -35,9 +35,9 @@ use Prooph\EventStoreClient\Internal\Message\TcpConnectionEstablishedMessage;
 use Prooph\EventStoreClient\SystemData\InspectionDecision;
 use Prooph\EventStoreClient\IpEndPoint;
 use Prooph\EventStoreClient\Messages\ClientMessages\IdentifyClient;
-use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
-use Prooph\EventStoreClient\Transport\Tcp\TcpFlags;
-use Prooph\EventStoreClient\Transport\Tcp\TcpPackage;
+use Prooph\EventStoreClient\SystemData\TcpCommand;
+use Prooph\EventStoreClient\SystemData\TcpFlags;
+use Prooph\EventStoreClient\SystemData\TcpPackage;
 use Prooph\EventStoreClient\Transport\Tcp\TcpPackageConnection;
 use Throwable;
 

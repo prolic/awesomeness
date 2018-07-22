@@ -17,7 +17,7 @@ use Prooph\EventStoreClient\SystemData\InspectionResult;
 use Prooph\EventStoreClient\Messages\ClientMessages\DeletePersistentSubscription;
 use Prooph\EventStoreClient\Messages\ClientMessages\DeletePersistentSubscriptionCompleted;
 use Prooph\EventStoreClient\Messages\ClientMessages\DeletePersistentSubscriptionCompleted\DeletePersistentSubscriptionResult;
-use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
+use Prooph\EventStoreClient\SystemData\TcpCommand;
 use Psr\Log\LoggerInterface as Logger;
 
 /** @internal */

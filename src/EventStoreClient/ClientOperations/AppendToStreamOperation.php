@@ -21,7 +21,7 @@ use Prooph\EventStoreClient\SystemData\InspectionResult;
 use Prooph\EventStoreClient\Messages\ClientMessages\OperationResult;
 use Prooph\EventStoreClient\Messages\ClientMessages\WriteEvents;
 use Prooph\EventStoreClient\Messages\ClientMessages\WriteEventsCompleted;
-use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
+use Prooph\EventStoreClient\SystemData\TcpCommand;
 use Psr\Log\LoggerInterface as Logger;
 
 /** @internal */

@@ -19,7 +19,7 @@ use Prooph\EventStoreClient\SystemData\InspectionResult;
 use Prooph\EventStoreClient\Messages\ClientMessages\CreatePersistentSubscription;
 use Prooph\EventStoreClient\Messages\ClientMessages\CreatePersistentSubscriptionCompleted;
 use Prooph\EventStoreClient\Messages\ClientMessages\CreatePersistentSubscriptionCompleted\CreatePersistentSubscriptionResult;
-use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
+use Prooph\EventStoreClient\SystemData\TcpCommand;
 use Psr\Log\LoggerInterface as Logger;
 
 /** @internal */

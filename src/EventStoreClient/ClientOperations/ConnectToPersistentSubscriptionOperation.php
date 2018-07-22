@@ -27,9 +27,9 @@ use Prooph\EventStoreClient\Messages\ClientMessages\PersistentSubscriptionNakEve
 use Prooph\EventStoreClient\Messages\ClientMessages\PersistentSubscriptionStreamEventAppeared;
 use Prooph\EventStoreClient\Messages\ClientMessages\SubscriptionDropped;
 use Prooph\EventStoreClient\Messages\ClientMessages\SubscriptionDropped\SubscriptionDropReason as SubscriptionDropReasonMessage;
-use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
-use Prooph\EventStoreClient\Transport\Tcp\TcpFlags;
-use Prooph\EventStoreClient\Transport\Tcp\TcpPackage;
+use Prooph\EventStoreClient\SystemData\TcpCommand;
+use Prooph\EventStoreClient\SystemData\TcpFlags;
+use Prooph\EventStoreClient\SystemData\TcpPackage;
 use Psr\Log\LoggerInterface as Logger;
 
 /** @internal */

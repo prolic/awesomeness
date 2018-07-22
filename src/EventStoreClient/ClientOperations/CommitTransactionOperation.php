@@ -19,7 +19,7 @@ use Prooph\EventStoreClient\SystemData\InspectionResult;
 use Prooph\EventStoreClient\Messages\ClientMessages\OperationResult;
 use Prooph\EventStoreClient\Messages\ClientMessages\TransactionCommit;
 use Prooph\EventStoreClient\Messages\ClientMessages\TransactionCommitCompleted;
-use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
+use Prooph\EventStoreClient\SystemData\TcpCommand;
 use Psr\Log\LoggerInterface as Logger;
 
 /** @internal */
