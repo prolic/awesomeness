@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient;
 
-use Prooph\EventStoreClient\Data\UserCredentials;
+use Prooph\EventStoreClient\UserCredentials;
 use Prooph\EventStoreClient\EventStoreAsyncConnection as AsyncConnection;
 use Prooph\EventStoreClient\EventStoreSyncConnection as SyncConnection;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;

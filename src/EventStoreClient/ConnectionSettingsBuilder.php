@@ -10,7 +10,7 @@ use Amp\Log\ConsoleFormatter;
 use Amp\Log\StreamHandler;
 use Monolog\Formatter\LineFormatter;
 use Monolog\Logger as MonoLog;
-use Prooph\EventStoreClient\Data\UserCredentials;
+use Prooph\EventStoreClient\UserCredentials;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 use Prooph\EventStoreClient\Internal\Consts;
 use Psr\Log\LoggerInterface as Logger;

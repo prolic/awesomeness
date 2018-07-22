@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient;
 
-use Prooph\EventStoreClient\Data\EventData;
-use Prooph\EventStoreClient\Data\UserCredentials;
-use Prooph\EventStoreClient\Data\WriteResult;
+use Prooph\EventStoreClient\EventData;
+use Prooph\EventStoreClient\UserCredentials;
+use Prooph\EventStoreClient\WriteResult;
 use Prooph\EventStoreClient\Internal\EventStoreSyncTransactionConnection;
 
 class EventStoreSyncTransaction

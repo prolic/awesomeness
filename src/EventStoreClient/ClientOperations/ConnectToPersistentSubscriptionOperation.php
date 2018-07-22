@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Prooph\EventStoreClient\ClientOperations;
 
 use Amp\Deferred;
-use Prooph\EventStoreClient\Data\EventId;
-use Prooph\EventStoreClient\Data\PersistentSubscriptionNakEventAction;
-use Prooph\EventStoreClient\Data\PersistentSubscriptionResolvedEvent;
-use Prooph\EventStoreClient\Data\SubscriptionDropReason;
-use Prooph\EventStoreClient\Data\UserCredentials;
+use Prooph\EventStoreClient\EventId;
+use Prooph\EventStoreClient\PersistentSubscriptionNakEventAction;
+use Prooph\EventStoreClient\PersistentSubscriptionResolvedEvent;
+use Prooph\EventStoreClient\SubscriptionDropReason;
+use Prooph\EventStoreClient\UserCredentials;
 use Prooph\EventStoreClient\Exception\AccessDeniedException;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 use Prooph\EventStoreClient\Exception\MaximumSubscribersReachedException;

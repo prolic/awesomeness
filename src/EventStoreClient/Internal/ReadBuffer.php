@@ -7,7 +7,7 @@ namespace Prooph\EventStoreClient\Internal;
 use Amp\Loop;
 use Amp\Socket\ClientSocket;
 use Generator;
-use Prooph\EventStoreClient\Data\UserCredentials;
+use Prooph\EventStoreClient\UserCredentials;
 use Prooph\EventStoreClient\Internal\ByteBuffer\Buffer;
 use Prooph\EventStoreClient\SystemData\TcpCommand;
 use Prooph\EventStoreClient\SystemData\TcpFlags;

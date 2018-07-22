@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Prooph\EventStoreClient;
 
 use Amp\Loop;
-use Prooph\EventStoreClient\Data\EventData;
-use Prooph\EventStoreClient\Data\EventId;
-use Prooph\EventStoreClient\Data\ExpectedVersion;
-use Prooph\EventStoreClient\Data\Position;
-use Prooph\EventStoreClient\Data\StreamMetadata;
-use Prooph\EventStoreClient\Data\UserCredentials;
+use Prooph\EventStoreClient\EventData;
+use Prooph\EventStoreClient\EventId;
+use Prooph\EventStoreClient\ExpectedVersion;
+use Prooph\EventStoreClient\Position;
+use Prooph\EventStoreClient\StreamMetadata;
+use Prooph\EventStoreClient\UserCredentials;
 
 require __DIR__ . '/../../vendor/autoload.php';
 

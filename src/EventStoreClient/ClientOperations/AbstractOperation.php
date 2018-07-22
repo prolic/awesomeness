@@ -7,7 +7,7 @@ namespace Prooph\EventStoreClient\ClientOperations;
 use Amp\Deferred;
 use Amp\Promise;
 use Google\Protobuf\Internal\Message;
-use Prooph\EventStoreClient\Data\UserCredentials;
+use Prooph\EventStoreClient\UserCredentials;
 use Prooph\EventStoreClient\Exception\NotAuthenticatedException;
 use Prooph\EventStoreClient\Exception\ServerError;
 use Prooph\EventStoreClient\Exception\UnexpectedCommandException;

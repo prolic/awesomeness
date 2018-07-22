@@ -6,12 +6,12 @@ namespace Prooph\EventStoreClient\Internal;
 
 use Amp\Delayed;
 use Amp\Promise;
-use Prooph\EventStoreClient\Data\AllEventsSlice;
-use Prooph\EventStoreClient\Data\CatchUpSubscriptionSettings;
-use Prooph\EventStoreClient\Data\Position;
-use Prooph\EventStoreClient\Data\ResolvedEvent;
-use Prooph\EventStoreClient\Data\SubscriptionDropReason;
-use Prooph\EventStoreClient\Data\UserCredentials;
+use Prooph\EventStoreClient\AllEventsSlice;
+use Prooph\EventStoreClient\CatchUpSubscriptionSettings;
+use Prooph\EventStoreClient\Position;
+use Prooph\EventStoreClient\ResolvedEvent;
+use Prooph\EventStoreClient\SubscriptionDropReason;
+use Prooph\EventStoreClient\UserCredentials;
 use Prooph\EventStoreClient\EventStoreAsyncConnection;
 use Psr\Log\LoggerInterface as Logger;
 use function Amp\call;

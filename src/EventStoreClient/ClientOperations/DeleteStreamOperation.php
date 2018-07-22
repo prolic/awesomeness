@@ -6,9 +6,9 @@ namespace Prooph\EventStoreClient\ClientOperations;
 
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
-use Prooph\EventStoreClient\Data\DeleteResult;
-use Prooph\EventStoreClient\Data\Position;
-use Prooph\EventStoreClient\Data\UserCredentials;
+use Prooph\EventStoreClient\DeleteResult;
+use Prooph\EventStoreClient\Position;
+use Prooph\EventStoreClient\UserCredentials;
 use Prooph\EventStoreClient\Exception\AccessDeniedException;
 use Prooph\EventStoreClient\Exception\InvalidTransactionException;
 use Prooph\EventStoreClient\Exception\StreamDeletedException;

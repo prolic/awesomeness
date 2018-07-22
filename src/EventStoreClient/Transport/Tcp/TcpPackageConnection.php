@@ -11,7 +11,7 @@ use Amp\Socket\ClientSocket;
 use Amp\Socket\ClientTlsContext;
 use Amp\Socket\ConnectException;
 use Generator;
-use Prooph\EventStoreClient\Data\UserCredentials;
+use Prooph\EventStoreClient\UserCredentials;
 use Prooph\EventStoreClient\Internal\ByteBuffer\Buffer;
 use Prooph\EventStoreClient\Internal\ReadBuffer;
 use Prooph\EventStoreClient\IpEndPoint;

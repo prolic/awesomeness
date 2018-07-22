@@ -7,9 +7,9 @@ namespace Prooph\EventStoreClient;
 use Amp\Loop;
 use Amp\Promise;
 use Amp\Success;
-use Prooph\EventStoreClient\Data\CatchUpSubscriptionSettings;
-use Prooph\EventStoreClient\Data\ResolvedEvent;
-use Prooph\EventStoreClient\Data\SubscriptionDropReason;
+use Prooph\EventStoreClient\CatchUpSubscriptionSettings;
+use Prooph\EventStoreClient\ResolvedEvent;
+use Prooph\EventStoreClient\SubscriptionDropReason;
 use Prooph\EventStoreClient\Internal\EventStoreCatchUpSubscription;
 use Prooph\EventStoreClient\Internal\StopWatch;
 
