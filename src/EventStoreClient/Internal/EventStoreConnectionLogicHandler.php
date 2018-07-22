@@ -782,6 +782,44 @@ class EventStoreConnectionLogicHandler
         $this->establishTcpConnection($endPoints);
     }
 
+    /**
+     * @param string $message
+     * @param \object[] $objects
+     */
+    private function logDebug(string $message, array $objects = []): void
+    {
+        if ($this->settings->verboseLogging()) {
+            foreach ($objects as $object) {
+                $message .= ' ' . (string) $object;
+            }
+
+            $this->settings->log()->debug(\sprintf(
+                'EventStoreNodeConnection \'%s\': %s',
+                $this->esConnection->connectionName(),
+                $message
+            ));
+        }
+    }
+
+    /**
+     * @param string $messsage
+     * @param \object[] $objects
+     */
+    private function logInfo(string $message, array $objects = []): void
+    {
+        if ($this->settings->verboseLogging()) {
+            foreach ($objects as $object) {
+                $message .= ' ' . (string) $object;
+            }
+
+            $this->settings->log()->debug(\sprintf(
+                'EventStoreNodeConnection \'%s\': %s',
+                $this->esConnection->connectionName(),
+                $message
+            ));
+        }
+    }
+
     private function raiseConnectedEvent(IpEndPoint $remoteEndPoint): void
     {
         $this->eventHandler->connected(new ClientConnectionEventArgs($this->esConnection, $remoteEndPoint));

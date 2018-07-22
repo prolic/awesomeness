@@ -29,4 +29,9 @@ class IpEndPoint
     {
         return $this->host === $endPoint->host && $this->port === $endPoint->port;
     }
+
+    public function __toString(): string
+    {
+        return $this->host . ':' . $this->port;
+    }
 }

@@ -18,7 +18,7 @@ use Prooph\EventStoreClient\Internal\SystemData\InspectionDecision;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionResult;
 use Prooph\EventStoreClient\Messages\ClientMessages\ReadAllEvents;
 use Prooph\EventStoreClient\Messages\ClientMessages\ReadAllEventsCompleted;
-use Prooph\EventStoreClient\Messages\ClientMessages\ReadAllEventsCompleted_ReadAllResult;
+use Prooph\EventStoreClient\Messages\ClientMessages\ReadAllEventsCompleted\ReadAllResult;
 use Prooph\EventStoreClient\Messages\ClientMessages\ResolvedIndexedEvent;
 use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
 use Psr\Log\LoggerInterface as Logger;
@@ -75,15 +75,15 @@ class ReadAllEventsForwardOperation extends AbstractOperation
     {
         /** @var ReadAllEventsCompleted $response */
         switch ($response->getResult()) {
-            case ReadAllEventsCompleted_ReadAllResult::Success:
+            case ReadAllEventsCompleted\ReadAllResult::Success:
                 $this->succeed($response);
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'Success');
-            case ReadAllEventsCompleted_ReadAllResult::Error:
+            case ReadAllEventsCompleted\ReadAllResult::Error:
                 $this->fail(new ServerError($response->getError()));
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'Error');
-            case ReadAllEventsCompleted_ReadAllResult::AccessDenied:
+            case ReadAllEventsCompleted\ReadAllResult::AccessDenied:
                 $this->fail(AccessDeniedException::toAllStream());
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'AccessDenied');
