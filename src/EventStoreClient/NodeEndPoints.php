@@ -32,4 +32,12 @@ class NodeEndPoints
     {
         return $this->secureTcpEndPoint;
     }
+
+    public function __toString(): string
+    {
+        return \sprintf('[%s, %s]',
+            null === $this->tcpEndPoint ? 'n/a' : $this->tcpEndPoint->__toString(),
+            null === $this->secureTcpEndPoint ? 'n/a' : $this->secureTcpEndPoint->__toString()
+        );
+    }
 }

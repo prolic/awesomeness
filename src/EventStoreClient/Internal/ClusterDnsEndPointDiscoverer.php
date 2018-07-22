@@ -27,7 +27,7 @@ use function Amp\call;
 final class ClusterDnsEndPointDiscoverer implements EndPointDiscoverer
 {
     /** @var Logger */
-    private $logger;
+    private $log;
     /** @var string */
     private $clusterDns;
     /** @var int */
@@ -47,6 +47,7 @@ final class ClusterDnsEndPointDiscoverer implements EndPointDiscoverer
     private $preferRandomNode;
 
     /**
+     * @param Logger $logger
      * @param string $clusterDns
      * @param int $maxDiscoverAttempts
      * @param int $managerExternalHttpPort
@@ -55,7 +56,7 @@ final class ClusterDnsEndPointDiscoverer implements EndPointDiscoverer
      * @param bool $preferRandomNode
      */
     public function __construct(
-        //Logger $logger, // @todo
+        Logger $logger,
         string $clusterDns,
         int $maxDiscoverAttempts,
         int $managerExternalHttpPort,
@@ -63,6 +64,7 @@ final class ClusterDnsEndPointDiscoverer implements EndPointDiscoverer
         int $gossipTimeout,
         bool $preferRandomNode
     ) {
+        $this->logger = $logger;
         $this->clusterDns = $clusterDns;
         $this->maxDiscoverAttempts = $maxDiscoverAttempts;
         $this->managerExternalHttpPort = $managerExternalHttpPort;
@@ -91,12 +93,22 @@ final class ClusterDnsEndPointDiscoverer implements EndPointDiscoverer
                     $endPoints = yield $this->discoverEndPoint($failedTcpEndPoint);
 
                     if (null !== $endPoints) {
-                        // _log.Info("Discovering attempt {0}/{1} successful: best candidate is {2}.", attempt, _maxDiscoverAttempts, endPoints);
+                        $this->log->info(\sprintf(
+                            'Discovering attempt %d/%d successful: best candidate is %s',
+                            $attempt,
+                            $this->maxDiscoverAttempts,
+                            $endPoints
+                        ));
 
                         return new Success($endPoints);
                     }
                 } catch (\Throwable $e) {
-                    //_log.Info("Discovering attempt {0}/{1} failed with error: {2}.", attempt, _maxDiscoverAttempts, exc);
+                    $this->log->info(\sprintf(
+                        'Discovering attempt %d/%d failed with error: %s',
+                        $attempt,
+                        $this->maxDiscoverAttempts,
+                        $e->getMessage()
+                    ));
                 }
 
                 yield new Delayed(100);
@@ -281,7 +293,12 @@ final class ClusterDnsEndPointDiscoverer implements EndPointDiscoverer
             ? new IpEndPoint($node->externalTcpIp(), $node->externalSecureTcpPort())
             : null;
 
-        // _log.Info("Discovering: found best choice [{0},{1}] ({2}).", normTcp, secTcp == null ? "n/a" : secTcp.ToString(), node.State);
+        $this->log->info(\sprintf(
+            'Discovering: found best choice [%s, %s] (%s)',
+            $normTcp,
+            null === $secTcp ? 'n/a' : $secTcp,
+            $node->state()
+        ));
 
         return new NodeEndPoints($normTcp, $secTcp);
     }

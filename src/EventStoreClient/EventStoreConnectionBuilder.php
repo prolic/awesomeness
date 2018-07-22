@@ -178,6 +178,7 @@ class EventStoreConnectionBuilder
         );
 
         $endPointDiscoverer = new ClusterDnsEndPointDiscoverer(
+            $settings->log(),
             $settings->clusterDns(),
             $settings->maxDiscoverAttempts(),
             $settings->externalGossipPort(),
