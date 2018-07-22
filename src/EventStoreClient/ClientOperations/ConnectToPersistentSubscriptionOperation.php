@@ -231,6 +231,5 @@ class ConnectToPersistentSubscriptionOperation extends AbstractSubscriptionOpera
             $this->bufferSize,
             $this->subscriptionId
         );
-
     }
 }
