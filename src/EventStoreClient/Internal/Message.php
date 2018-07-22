@@ -6,4 +6,5 @@ namespace Prooph\EventStoreClient\Internal;
 
 interface Message
 {
+    public function __toString(): string;
 }

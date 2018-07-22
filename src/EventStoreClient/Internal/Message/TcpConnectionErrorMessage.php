@@ -31,4 +31,9 @@ class TcpConnectionErrorMessage implements Message
     {
         return $this->exception;
     }
+
+    public function __toString(): string
+    {
+        return 'TcpConnectionErrorMessage';
+    }
 }

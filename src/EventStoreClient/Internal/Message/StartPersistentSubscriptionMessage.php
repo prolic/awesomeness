@@ -97,4 +97,9 @@ class StartPersistentSubscriptionMessage implements Message
     {
         return $this->timeout;
     }
+
+    public function __toString(): string
+    {
+        return 'StartPersistentSubscriptionMessage';
+    }
 }

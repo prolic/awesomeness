@@ -22,4 +22,9 @@ class EstablishTcpConnectionMessage implements Message
     {
         return $this->nodeEndPoints;
     }
+
+    public function __toString(): string
+    {
+        return 'EstablishTcpConnectionMessage';
+    }
 }

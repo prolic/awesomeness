@@ -31,4 +31,9 @@ class HandleTcpPackageMessage implements Message
     {
         return $this->tcpPackage;
     }
+
+    public function __toString(): string
+    {
+        return 'HandleTcpPackageMessage';
+    }
 }

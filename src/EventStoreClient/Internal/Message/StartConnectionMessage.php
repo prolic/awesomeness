@@ -31,4 +31,9 @@ class StartConnectionMessage implements Message
     {
         return $this->endPointDiscoverer;
     }
+
+    public function __toString(): string
+    {
+        return 'StartConnectionMessage';
+    }
 }

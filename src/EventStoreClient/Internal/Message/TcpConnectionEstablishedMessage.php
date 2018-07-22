@@ -22,4 +22,9 @@ class TcpConnectionEstablishedMessage implements Message
     {
         return $this->tcpPackageConnection;
     }
+
+    public function __toString(): string
+    {
+        return 'TcpConnectionEstablishedMessage';
+    }
 }

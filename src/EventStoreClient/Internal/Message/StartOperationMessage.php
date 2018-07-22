@@ -38,4 +38,9 @@ class StartOperationMessage implements Message
     {
         return $this->timeout;
     }
+
+    public function __toString(): string
+    {
+        return 'StartOperationMessage';
+    }
 }
