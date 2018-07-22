@@ -602,7 +602,7 @@ class EventStoreConnectionLogicHandler
                 $this->logDebug(
                     'StartOperation schedule %s, %s, %s, %s',
                     $operation->name(),
-                    //$operation,
+                    $operation,
                     $maxRetries,
                     $timeout
                 );
@@ -633,17 +633,17 @@ class EventStoreConnectionLogicHandler
                     $message->userCredentials(),
                     $message->eventAppeared(),
                     $message->subscriptionDropped(),
+                    $this->settings->verboseLogging(),
                     function (): TcpPackageConnection {
                         return $this->connection;
                     }
                 );
 
                 $this->logDebug(
-                    'StartSubscription %s, %s, %s, %s',
-                    //'StartSubscription %s %s, %s, %s, %s',
+                    'StartSubscription %s %s, %s, %s, %s',
                     $this->state->equals(ConnectionState::connected()) ? 'fire' : 'enqueue',
                     $operation->name(),
-                    //$operation,
+                    $operation,
                     $message->maxRetries(),
                     $message->timeout()
                 );

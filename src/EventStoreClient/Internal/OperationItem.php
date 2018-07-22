@@ -109,4 +109,17 @@ class OperationItem
     {
         $this->lastUpdated = $lastUpdated;
     }
+
+    public function __toString(): string
+    {
+        return \sprintf(
+            'Operation %s (%s): %s, retry count: %d, created: %s, last updated: %s',
+            $this->operation->name(),
+            $this->correlationId,
+            $this->operation,
+            $this->retryCount,
+            DateTimeUtil::format($this->created),
+            DateTimeUtil::format($this->lastUpdated)
+        );
+    }
 }

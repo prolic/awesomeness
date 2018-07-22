@@ -78,7 +78,7 @@ class ConnectionSettingsBuilder
     public function useConsoleLogger(): self
     {
         $logHandler = new StreamHandler(new ResourceOutputStream(\STDOUT));
-        $logHandler->setFormatter(new ConsoleFormatter());
+        $logHandler->setFormatter(new ConsoleFormatter("[%datetime%] %channel%.%level_name%: %message%\r\n"));
 
         $this->log = new MonoLog('event-store-client');
         $this->log->pushHandler($logHandler);

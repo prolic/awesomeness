@@ -17,7 +17,7 @@ class SubscriptionItem
     /** @var int */
     private $timeout;
     /** @var DateTimeImmutable */
-    private $createdTime;
+    private $created;
 
     /** @var string */
     private $connectionId;
@@ -35,10 +35,10 @@ class SubscriptionItem
         $this->operation = $operation;
         $this->maxRetries = $maxRetries;
         $this->timeout = $timeout;
-        $this->createdTime = DateTimeUtil::utcNow();
+        $this->created = DateTimeUtil::utcNow();
         $this->correlationId = CorrelationIdGenerator::generate();
         $this->retryCount = 0;
-        $this->lastUpdated = $this->createdTime;
+        $this->lastUpdated = $this->created;
         $this->isSubscribed = false;
     }
 
@@ -57,9 +57,9 @@ class SubscriptionItem
         return $this->timeout;
     }
 
-    public function createdTime(): DateTimeImmutable
+    public function created(): DateTimeImmutable
     {
-        return $this->createdTime;
+        return $this->created;
     }
 
     public function connectionId(): string
@@ -122,7 +122,7 @@ class SubscriptionItem
             'op placeholder', // @todo
             $this->isSubscribed ? 'yes' : 'no',
             $this->retryCount,
-            DateTimeUtil::format($this->createdTime),
+            DateTimeUtil::format($this->created),
             DateTimeUtil::format($this->lastUpdated)
         );
     }

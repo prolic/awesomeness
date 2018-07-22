@@ -21,4 +21,6 @@ interface ClientOperation
     public function fail(Throwable $exception): void;
 
     public function name(): string;
+
+    public function __toString(): string;
 }
