@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Prooph\EventStoreClient;
+namespace Prooph\EventStoreClient\Internal;
 
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
+use Prooph\EventStoreClient\IpEndPoint;
 
+/** @internal */
 class NodeEndPoints
 {
     /** @var IpEndPoint|null */

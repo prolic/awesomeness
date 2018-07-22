@@ -19,7 +19,6 @@ use Prooph\EventStoreClient\IpEndPoint;
 use Prooph\EventStoreClient\Messages\ClusterMessages\ClusterInfoDto;
 use Prooph\EventStoreClient\Messages\ClusterMessages\MemberInfoDto;
 use Prooph\EventStoreClient\Messages\ClusterMessages\VNodeState;
-use Prooph\EventStoreClient\NodeEndPoints;
 use Psr\Log\LoggerInterface as Logger;
 use function Amp\call;
 

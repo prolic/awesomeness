@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient\Internal\Message;
 
-use Prooph\EventStoreClient\NodeEndPoints;
+use Prooph\EventStoreClient\Internal\NodeEndPoints;
 
 /** @internal */
 class EstablishTcpConnectionMessage implements Message

@@ -35,7 +35,6 @@ use Prooph\EventStoreClient\Internal\Message\TcpConnectionEstablishedMessage;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionDecision;
 use Prooph\EventStoreClient\IpEndPoint;
 use Prooph\EventStoreClient\Messages\ClientMessages\IdentifyClient;
-use Prooph\EventStoreClient\NodeEndPoints;
 use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
 use Prooph\EventStoreClient\Transport\Tcp\TcpFlags;
 use Prooph\EventStoreClient\Transport\Tcp\TcpPackage;
