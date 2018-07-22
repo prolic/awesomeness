@@ -22,7 +22,7 @@ Loop::run(function () {
         new IpEndPoint('localhost', 2133),
     ]);
 
-    $connection = EventStoreConnection::createAsyncFromSettings(
+    $connection = EventStoreConnectionBuilder::createAsyncFromSettings(
         null,
         $builder->build(),
         'cluster-connection'

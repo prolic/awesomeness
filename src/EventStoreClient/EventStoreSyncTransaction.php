@@ -7,6 +7,7 @@ namespace Prooph\EventStoreClient;
 use Prooph\EventStoreClient\Data\EventData;
 use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStoreClient\Data\WriteResult;
+use Prooph\EventStoreClient\Internal\EventStoreSyncTransactionConnection;
 
 class EventStoreSyncTransaction
 {
@@ -21,6 +22,7 @@ class EventStoreSyncTransaction
     /** @var bool */
     private $isCommitted;
 
+    /** @internal */
     public function __construct(
         int $transactionId,
         ?UserCredentials $userCredentials,

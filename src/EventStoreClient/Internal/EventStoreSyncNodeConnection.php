@@ -20,9 +20,8 @@ use Prooph\EventStoreClient\Data\StreamMetadataResult;
 use Prooph\EventStoreClient\Data\SystemSettings;
 use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStoreClient\Data\WriteResult;
-use Prooph\EventStoreClient\EventStoreSyncConnection as Connection;
-use Prooph\EventStoreClient\EventStoreSyncTransaction;
-use Prooph\EventStoreClient\EventStoreSyncTransactionConnection as TransactionConnection;
+use Prooph\EventStoreClient\EventStoreAsyncConnection;
+use Prooph\EventStoreClient\EventStoreSyncConnection;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 use Prooph\EventStoreClient\Internal\ClientOperations\CommitTransactionOperation;
 use Prooph\EventStoreClient\Internal\ClientOperations\StartTransactionOperation;
@@ -31,13 +30,13 @@ use Prooph\EventStoreClient\Internal\Event\ListenerHandler;
 
 /** @internal */
 final class EventStoreSyncNodeConnection implements
-    Connection,
-    TransactionConnection
+    EventStoreSyncConnection,
+    EventStoreSyncTransactionConnection
 {
-    /** @var EventStoreAsyncNodeConnection */
+    /** @var EventStoreAsyncConnection */
     private $asyncConnection;
 
-    public function __construct(EventStoreAsyncNodeConnection $asyncConnection)
+    public function __construct(EventStoreAsyncConnection $asyncConnection)
     {
         $this->asyncConnection = $asyncConnection;
     }

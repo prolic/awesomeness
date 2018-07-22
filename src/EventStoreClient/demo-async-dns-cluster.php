@@ -19,7 +19,7 @@ Loop::run(function () {
     $builder->setClusterDns('escluster.net');
     $builder->setClusterGossipPort(2113);
 
-    $connection = EventStoreConnection::createAsyncFromSettings(
+    $connection = EventStoreConnectionBuilder::createAsyncFromSettings(
         null,
         $builder->build(),
         'dns-cluster-connection'

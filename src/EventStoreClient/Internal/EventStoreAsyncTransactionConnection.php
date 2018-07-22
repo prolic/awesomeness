@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Prooph\EventStoreClient;
+namespace Prooph\EventStoreClient\Internal;
 
 use Amp\Promise;
 use Prooph\EventStoreClient\Data\UserCredentials;
+use Prooph\EventStoreClient\EventStoreAsyncTransaction;
 
 /** @internal */
 interface EventStoreAsyncTransactionConnection

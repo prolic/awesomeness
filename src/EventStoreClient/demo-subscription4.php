@@ -16,7 +16,7 @@ use Prooph\EventStoreClient\Internal\VolatileEventStoreSubscription;
 require __DIR__ . '/../../vendor/autoload.php';
 
 Loop::run(function () {
-    $connection = EventStoreConnection::createAsyncFromIpEndPoint(
+    $connection = EventStoreConnectionBuilder::createAsyncFromIpEndPoint(
         new IpEndPoint('localhost', 1113)
     );
 

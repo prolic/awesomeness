@@ -10,7 +10,7 @@ use Prooph\EventStoreClient\Data\ExpectedVersion;
 
 require __DIR__ . '/../../vendor/autoload.php';
 
-$connection = EventStoreConnection::createFromIpEndPoint(
+$connection = EventStoreConnectionBuilder::createFromIpEndPoint(
     new IpEndPoint('localhost', 1113)
 );
 

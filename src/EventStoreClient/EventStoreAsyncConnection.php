@@ -21,6 +21,10 @@ interface EventStoreAsyncConnection
 {
     public function connectionName(): string;
 
+    public function connectionSettings(): ConnectionSettings;
+
+    public function clusterSettings(): ?ClusterSettings;
+
     public function connectAsync(): Promise;
 
     public function close(): void;

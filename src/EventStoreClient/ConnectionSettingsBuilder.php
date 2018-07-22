@@ -7,12 +7,19 @@ namespace Prooph\EventStoreClient;
 use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 use Prooph\EventStoreClient\Internal\Consts;
+use Psr\Log\LoggerInterface as Logger;
+use Psr\Log\NullLogger;
+use Symfony\Component\Config\Resource\SelfCheckingResourceChecker;
 
 /**
  * All times are milliseconds
  */
 class ConnectionSettingsBuilder
 {
+    /** @var Logger */
+    private $logger;
+    /** @var bool */
+    private $verboseLogging = false;
     /** @var int */
     private $maxQueueSize = Consts::DefaultMaxQueueSize;
     /** @var int */
@@ -57,6 +64,25 @@ class ConnectionSettingsBuilder
     private $gossipSeeds = [];
     /** @var bool */
     private $preferRandomNode = false;
+
+    public function __construct()
+    {
+        $this->logger = new NullLogger();
+    }
+
+    public function useCustomLogger(Logger $logger): self
+    {
+        $this->logger = $logger;
+
+        return $this;
+    }
+
+    public function enableVerboseLogging(): self
+    {
+        $this->verboseLogging = true;
+
+        return $this;
+    }
 
     public function limitOperationsQueueTo(int $limit): self
     {
@@ -324,6 +350,8 @@ class ConnectionSettingsBuilder
     public function build(): ConnectionSettings
     {
         return new ConnectionSettings(
+            $this->logger,
+            $this->verboseLogging,
             $this->maxQueueSize,
             $this->maxConcurrentItems,
             $this->maxRetries,

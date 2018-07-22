@@ -15,7 +15,7 @@ use Prooph\EventStoreClient\Internal\EventStoreSyncNodeConnection;
 use Prooph\EventStoreClient\Internal\SingleEndpointDiscoverer;
 use Prooph\EventStoreClient\Internal\StaticEndPointDiscoverer;
 
-class EventStoreConnection
+class EventStoreConnectionBuilder
 {
     /**
      * Sub-delimiters used in user info, query strings and fragments.
