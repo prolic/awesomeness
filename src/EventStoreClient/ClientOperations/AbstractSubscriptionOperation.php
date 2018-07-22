@@ -17,7 +17,7 @@ use Prooph\EventStoreClient\Exception\NotAuthenticatedException;
 use Prooph\EventStoreClient\Exception\RuntimeException;
 use Prooph\EventStoreClient\Exception\ServerError;
 use Prooph\EventStoreClient\Exception\UnexpectedCommandException;
-use Prooph\EventStoreClient\Internal\EventStoreSubscription;
+use Prooph\EventStoreClient\EventStoreSubscription;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionDecision;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionResult;
 use Prooph\EventStoreClient\IpEndPoint;

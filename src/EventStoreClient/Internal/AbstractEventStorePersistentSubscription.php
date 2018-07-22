@@ -9,6 +9,7 @@ use Amp\Loop;
 use Amp\Promise;
 use Amp\Success;
 use Generator;
+use Prooph\EventStoreClient\EventStoreSubscription;
 use Prooph\EventStoreClient\ConnectionSettings;
 use Prooph\EventStoreClient\Data\EventId;
 use Prooph\EventStoreClient\Data\PersistentSubscriptionNakEventAction;

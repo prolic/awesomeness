@@ -16,7 +16,7 @@ use Prooph\EventStoreClient\Exception\MaximumSubscribersReachedException;
 use Prooph\EventStoreClient\Exception\PersistentSubscriptionDeletedException;
 use Prooph\EventStoreClient\Internal\ConnectToPersistentSubscriptions;
 use Prooph\EventStoreClient\Internal\EventMessageConverter;
-use Prooph\EventStoreClient\Internal\EventStoreSubscription;
+use Prooph\EventStoreClient\EventStoreSubscription;
 use Prooph\EventStoreClient\Internal\PersistentEventStoreSubscription;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionDecision;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionResult;

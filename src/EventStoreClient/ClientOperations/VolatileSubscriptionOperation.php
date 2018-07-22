@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Prooph\EventStoreClient\ClientOperations;
 
 use Prooph\EventStoreClient\Internal\EventMessageConverter;
-use Prooph\EventStoreClient\Internal\EventStoreSubscription;
+use Prooph\EventStoreClient\EventStoreSubscription;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionDecision;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionResult;
 use Prooph\EventStoreClient\Internal\VolatileEventStoreSubscription;

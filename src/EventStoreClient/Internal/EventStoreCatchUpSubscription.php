@@ -8,6 +8,7 @@ use Amp\Loop;
 use Amp\Promise;
 use Amp\Success;
 use Generator;
+use Prooph\EventStoreClient\EventStoreSubscription;
 use Prooph\EventStoreClient\Data\CatchUpSubscriptionSettings;
 use Prooph\EventStoreClient\Data\ResolvedEvent;
 use Prooph\EventStoreClient\Data\SubscriptionDropReason;

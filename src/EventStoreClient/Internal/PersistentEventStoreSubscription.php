@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient\Internal;
 
+use Prooph\EventStoreClient\EventStoreSubscription;
 use Prooph\EventStoreClient\Data\EventId;
 use Prooph\EventStoreClient\Data\PersistentSubscriptionNakEventAction;
 
