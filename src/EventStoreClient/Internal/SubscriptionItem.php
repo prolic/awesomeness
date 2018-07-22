@@ -115,9 +115,10 @@ class SubscriptionItem
     public function __toString(): string
     {
         return \sprintf(
-            'Subscription %s (%s): is subscribed: %s, retry count: %d, created: %s, last updated: %s',
+            'Subscription %s (%s): %s, is subscribed: %s, retry count: %d, created: %s, last updated: %s',
             $this->operation->name(),
             $this->correlationId,
+            $this->operation,
             $this->isSubscribed ? 'yes' : 'no',
             $this->retryCount,
             DateTimeUtil::format($this->created),

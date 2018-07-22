@@ -143,7 +143,7 @@ class ReadStreamEventsBackwardOperation extends AbstractOperation
     public function __toString(): string
     {
         return \sprintf(
-            'Stream: %s, FromEventNumber: %d, MaxCount: %d, ResolveLinkTos: $s, RequireMaster: %s',
+            'Stream: %s, FromEventNumber: %d, MaxCount: %d, ResolveLinkTos: %s, RequireMaster: %s',
             $this->stream,
             $this->fromEventNumber,
             $this->maxCount,

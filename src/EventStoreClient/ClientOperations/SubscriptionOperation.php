@@ -26,4 +26,6 @@ interface SubscriptionOperation
     public function subscribe(string $correlationId, TcpPackageConnection $connection): bool;
 
     public function name(): string;
+
+    public function __toString(): string;
 }

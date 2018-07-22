@@ -220,4 +220,17 @@ class ConnectToPersistentSubscriptionOperation extends AbstractSubscriptionOpera
     {
         return 'ConnectToPersistentSubscription';
     }
+
+    public function __toString(): string
+    {
+        return \sprintf(
+            'StreamId: %s, ResolveLinkTos : %s, GroupName: %s, BufferSize: %d, SubscriptionId: %s',
+            $this->streamId,
+            $this->resolveLinkTos ? 'yes' : 'no',
+            $this->groupName,
+            $this->bufferSize,
+            $this->subscriptionId
+        );
+
+    }
 }

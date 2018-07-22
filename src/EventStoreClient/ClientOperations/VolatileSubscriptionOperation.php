@@ -71,4 +71,13 @@ class VolatileSubscriptionOperation extends AbstractSubscriptionOperation
     {
         return 'VolatileSubscription';
     }
+
+    public function __toString(): string
+    {
+        return \sprintf(
+            'StreamId: %s, ResolveLinkTos : %s',
+            $this->streamId,
+            $this->resolveLinkTos ? 'yes' : 'no'
+        );
+    }
 }
