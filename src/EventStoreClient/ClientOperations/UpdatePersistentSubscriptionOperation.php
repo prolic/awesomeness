@@ -123,4 +123,9 @@ class UpdatePersistentSubscriptionOperation extends AbstractOperation
     {
         return 'UpdatePersistentSubscription';
     }
+
+    public function __toString(): string
+    {
+        return \sprintf('Stream: %s, Group Name: %s', $this->stream, $this->groupName);
+    }
 }

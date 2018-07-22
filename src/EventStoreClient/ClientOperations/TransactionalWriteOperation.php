@@ -97,4 +97,12 @@ class TransactionalWriteOperation extends AbstractOperation
     {
         return 'TransactionalWrite';
     }
+
+    public function __toString(): string
+    {
+        return \sprintf('TransactionId: %s, RequireMaster: %s',
+            $this->transactionId,
+            $this->requireMaster ? 'yes' : 'no'
+        );
+    }
 }

@@ -107,4 +107,9 @@ class DeletePersistentSubscriptionOperation extends AbstractOperation
     {
         return 'DeletePersistentSubscription';
     }
+
+    public function __toString(): string
+    {
+        return \sprintf('Stream: %s, Group Name: %s', $this->stream, $this->groupName);
+    }
 }

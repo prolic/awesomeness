@@ -120,4 +120,14 @@ class StartTransactionOperation extends AbstractOperation
     {
         return 'StartTransaction';
     }
+
+    public function __toString(): string
+    {
+        return \sprintf(
+            'Stream: %s, ExpectedVersion: %d, RequireMaster: %s',
+            $this->stream,
+            $this->expectedVersion,
+            $this->requireMaster ? 'yes' : 'no'
+        );
+    }
 }

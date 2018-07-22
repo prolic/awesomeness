@@ -183,9 +183,4 @@ abstract class AbstractOperation implements ClientOperation
 
         return new InspectionResult(InspectionDecision::endOperation(), $exception->getMessage());
     }
-
-    public function __toString(): string
-    {
-        return 'op dummy';
-    }
 }

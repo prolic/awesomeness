@@ -31,9 +31,9 @@ class ReadStreamEventsForwardOperation extends AbstractOperation
     /** @var string */
     private $stream;
     /** @var int */
-    private $start;
+    private $fromEventNumber;
     /** @var int */
-    private $count;
+    private $maxCount;
     /** @var bool */
     private $resolveLinkTos;
 
@@ -42,15 +42,15 @@ class ReadStreamEventsForwardOperation extends AbstractOperation
         Deferred $deferred,
         bool $requireMaster,
         string $stream,
-        int $start,
-        int $count,
+        int $fromEventNumber,
+        int $maxCount,
         bool $resolveLinkTos,
         ?UserCredentials $userCredentials
     ) {
         $this->requireMaster = $requireMaster;
         $this->stream = $stream;
-        $this->start = $start;
-        $this->count = $count;
+        $this->fromEventNumber = $fromEventNumber;
+        $this->maxCount = $maxCount;
         $this->resolveLinkTos = $resolveLinkTos;
 
         parent::__construct(
@@ -68,8 +68,8 @@ class ReadStreamEventsForwardOperation extends AbstractOperation
         $message = new ReadStreamEvents();
         $message->setRequireMaster($this->requireMaster);
         $message->setEventStreamId($this->stream);
-        $message->setFromEventNumber($this->start);
-        $message->setMaxCount($this->count);
+        $message->setFromEventNumber($this->fromEventNumber);
+        $message->setMaxCount($this->maxCount);
         $message->setResolveLinkTos($this->resolveLinkTos);
 
         return $message;
@@ -126,7 +126,7 @@ class ReadStreamEventsForwardOperation extends AbstractOperation
         return new StreamEventsSlice(
             SliceReadStatus::byValue($response->getResult()),
             $this->stream,
-            $this->start,
+            $this->fromEventNumber,
             ReadDirection::forward(),
             $resolvedEvents,
             $response->getNextEventNumber(),
@@ -138,5 +138,17 @@ class ReadStreamEventsForwardOperation extends AbstractOperation
     public function name(): string
     {
         return 'ReadStreamEventsForward';
+    }
+
+    public function __toString(): string
+    {
+        return \sprintf(
+            'Stream: %s, FromEventNumber: %d, MaxCount: %d, ResolveLinkTos: $s, RequireMaster: %s',
+            $this->stream,
+            $this->fromEventNumber,
+            $this->maxCount,
+            $this->resolveLinkTos ? 'yes' : 'no',
+            $this->requireMaster ? 'yes' : 'no'
+        );
     }
 }

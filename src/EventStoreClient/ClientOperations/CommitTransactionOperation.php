@@ -115,4 +115,12 @@ class CommitTransactionOperation extends AbstractOperation
     {
         return 'CommitTransaction';
     }
+
+    public function __toString(): string
+    {
+        return \sprintf('TransactionId: %s, RequireMaster: %s',
+            $this->transactionId,
+            $this->requireMaster ? 'yes' : 'no'
+        );
+    }
 }

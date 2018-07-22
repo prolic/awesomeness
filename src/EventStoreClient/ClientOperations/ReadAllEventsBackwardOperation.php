@@ -124,4 +124,14 @@ class ReadAllEventsBackwardOperation extends AbstractOperation
     {
         return 'ReadAllEventsBackward';
     }
+
+    public function __toString(): string
+    {
+        return \sprintf('Position: %s, MaxCount: %d, ResolveLinkTos: %s, RequireMaster: %s',
+            $this->position,
+            $this->maxCount,
+            $this->resolveLinkTos ? 'yes' : 'no',
+            $this->requireMaster ? 'yes' : 'no'
+        );
+    }
 }

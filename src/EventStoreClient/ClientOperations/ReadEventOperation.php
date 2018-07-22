@@ -131,4 +131,14 @@ class ReadEventOperation extends AbstractOperation
     {
         return 'ReadEvent';
     }
+
+    public function __toString(): string
+    {
+        return \sprintf('Stream: %s, EventNumber: %d, ResolveLinkTo: %s, RequireMaster: %s',
+            $this->stream,
+            $this->eventNumber,
+            $this->resolveLinkTos ? 'yes' : 'no',
+            $this->requireMaster ? 'yes' : 'no'
+        );
+    }
 }

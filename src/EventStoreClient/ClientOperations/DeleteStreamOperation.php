@@ -122,4 +122,14 @@ class DeleteStreamOperation extends AbstractOperation
     {
         return 'DeleteStream';
     }
+
+    public function __toString(): string
+    {
+        return \sprintf('Stream: %s, ExpectedVersion: %d, RequireMaster: %s, HardDelete: %s',
+            $this->stream,
+            $this->expectedVersion,
+            $this->requireMaster ? 'yes' : 'no',
+            $this->hardDelete ? 'yes' : 'no'
+        );
+    }
 }
