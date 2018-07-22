@@ -134,8 +134,10 @@ class OperationsManager
             \usort($this->retryPendingOperations, $this->operationItemSeqNoComparer);
 
             foreach ($this->retryPendingOperations as $operation) {
+                $oldCorrId = $operation->correlationId();
                 $operation->setCorrelationId(CorrelationIdGenerator::generate());
                 $operation->incRetryCount();
+                $this->logDebug('retrying, old corrId %s, operation %s', $oldCorrId, $operation);
                 $this->scheduleOperation($operation, $connection);
             }
         }
@@ -149,6 +151,7 @@ class OperationsManager
             return;
         }
 
+        $this->logDebug('ScheduleOperationRetry for %s', $operation);
         if ($operation->maxRetries() >= 0 && $operation->retryCount() >= $operation->maxRetries()) {
             $operation->operation()->fail(
                 RetriesLimitReachedException::with($operation->retryCount())
@@ -163,12 +166,13 @@ class OperationsManager
     public function removeOperation(OperationItem $operation): bool
     {
         if (! isset($this->activeOperations[$operation->correlationId()])) {
-            //LogDebug("RemoveOperation FAILED for {0}", operation);
+            $this->logDebug('RemoveOperation FAILED for %s', $operation);
+
             return false;
         }
 
         unset($this->activeOperations[$operation->correlationId()]);
-        //LogDebug("RemoveOperation SUCCEEDED for {0}", operation);
+        $this->logDebug('RemoveOperation SUCCEEDED for %s', $operation);
 
         return true;
     }
@@ -196,6 +200,11 @@ class OperationsManager
             $package = $operation->operation()->createNetworkPackage($correlationId);
 
             try {
+                $this->logDebug('ExecuteOperation package %s, %s, %s',
+                    $package->command(),
+                    $package->correlationId(),
+                    $operation
+                );
                 yield $connection->sendAsync($package);
             } catch (ClosedException $e) {
                 $operation->operation()->fail(ConnectionClosedException::withName($this->connectionName));
@@ -203,9 +212,10 @@ class OperationsManager
         });
     }
 
-    public function enqueueOperation(OperationItem $operationItem): void
+    public function enqueueOperation(OperationItem $operation): void
     {
-        $this->waitingOperations->enqueue($operationItem);
+        $this->logDebug('EnqueueOperation WAITING for %s', $operation);
+        $this->waitingOperations->enqueue($operation);
     }
 
     public function scheduleOperation(OperationItem $operation, TcpPackageConnection $connection): void

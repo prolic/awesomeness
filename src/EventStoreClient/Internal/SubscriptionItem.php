@@ -111,4 +111,19 @@ class SubscriptionItem
     {
         $this->lastUpdated = $lastUpdated;
     }
+
+    public function __toString(): string
+    {
+        return \sprintf(
+            'Subscription %s (%s): %s, is subscribed: %s, retry count: %d, created: %s, last updated: %s',
+            $this->operation->name(),
+            $this->correlationId,
+            //$this->operation,
+            'op placeholder', // @todo
+            $this->isSubscribed ? 'yes' : 'no',
+            $this->retryCount,
+            DateTimeUtil::format($this->createdTime),
+            DateTimeUtil::format($this->lastUpdated)
+        );
+    }
 }
