@@ -13,7 +13,7 @@ use Prooph\EventStoreClient\Data\StreamMetadataResult;
 use Prooph\EventStoreClient\Data\SystemSettings;
 use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStoreClient\Data\WriteResult;
-use Prooph\EventStoreClient\Internal\Event\ListenerHandler;
+use Prooph\EventStoreClient\Internal\ListenerHandler;
 
 interface EventStoreSyncConnection
 {

@@ -12,7 +12,7 @@ use Prooph\EventStoreClient\Data\Position;
 use Prooph\EventStoreClient\Data\StreamMetadata;
 use Prooph\EventStoreClient\Data\SystemSettings;
 use Prooph\EventStoreClient\Data\UserCredentials;
-use Prooph\EventStoreClient\Internal\Event\ListenerHandler;
+use Prooph\EventStoreClient\Internal\ListenerHandler;
 use Prooph\EventStoreClient\Internal\EventStoreAllCatchUpSubscription;
 use Prooph\EventStoreClient\Internal\EventStorePersistentSubscription;
 use Prooph\EventStoreClient\Internal\EventStoreStreamCatchUpSubscription;

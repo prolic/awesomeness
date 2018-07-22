@@ -41,7 +41,7 @@ use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 use Prooph\EventStoreClient\Exception\InvalidOperationException;
 use Prooph\EventStoreClient\Exception\MaxQueueSizeLimitReachedException;
 use Prooph\EventStoreClient\Exception\UnexpectedValueException;
-use Prooph\EventStoreClient\Internal\Event\ListenerHandler;
+use Prooph\EventStoreClient\Internal\ListenerHandler;
 use Prooph\EventStoreClient\Internal\Message\CloseConnectionMessage;
 use Prooph\EventStoreClient\Internal\Message\StartConnectionMessage;
 use Prooph\EventStoreClient\Internal\Message\StartOperationMessage;

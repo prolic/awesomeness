@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Prooph\EventStoreClient\Internal\Event;
+namespace Prooph\EventStoreClient;
 
 use Prooph\EventStoreClient\Internal\EventStoreAsyncNodeConnection;
 

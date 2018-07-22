@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Prooph\EventStoreClient\Internal\Event;
+namespace Prooph\EventStoreClient;
 
 use Prooph\EventStoreClient\Internal\EventStoreAsyncNodeConnection;
 
-class ClientClosedEventArgs implements EventArgs
+class ClientAuthenticationFailedEventArgs implements EventArgs
 {
     /** @var EventStoreAsyncNodeConnection */
     private $connection;

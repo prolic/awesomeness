@@ -27,7 +27,7 @@ use Prooph\EventStoreClient\EventStoreAsyncConnection;
 use Prooph\EventStoreClient\EventStoreSyncConnection;
 use Prooph\EventStoreClient\EventStoreSyncTransaction;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
-use Prooph\EventStoreClient\Internal\Event\ListenerHandler;
+use Prooph\EventStoreClient\Internal\ListenerHandler;
 
 /** @internal */
 final class EventStoreSyncNodeConnection implements
