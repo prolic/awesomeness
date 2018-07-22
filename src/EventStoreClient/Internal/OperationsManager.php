@@ -109,7 +109,7 @@ class OperationsManager
                     $connection->connectionId()
                 );
 
-                // _settings.Log.Error(err);
+                $this->settings->log()->error($err);
 
                 if ($this->settings->failOnNoServerResponse()) {
                     $operation->operation()->fail(new OperationTimedOutException($err));
@@ -214,9 +214,13 @@ class OperationsManager
         $this->tryScheduleWaitingOperations($connection);
     }
 
-    private function logDebug(string $message): void
+    private function logDebug(string $message, ...$parameters): void
     {
         if ($this->settings->verboseLogging()) {
+            $message = empty($parameters)
+                ? $message
+                : \sprintf($message, ...$parameters);
+
             $this->settings->log()->debug(\sprintf(
                 'EventStoreNodeConnection \'%s\': %s',
                 $this->connectionName,

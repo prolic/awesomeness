@@ -110,7 +110,7 @@ class SubscriptionsManager
                     $connection->connectionId()
                 );
 
-                // _settings.Log.Error(err);
+                $this->settings->log()->error($err);
 
                 if ($this->settings->failOnNoServerResponse()) {
                     $subscription->operation()->dropSubscription(
@@ -204,9 +204,13 @@ class SubscriptionsManager
         //LogDebug("StartSubscription SUBSCRIBING {0}.", subscription);
     }
 
-    private function logDebug(string $message): void
+    private function logDebug(string $message, ...$parameters): void
     {
         if ($this->settings->verboseLogging()) {
+            $message = empty($parameters)
+                ? $message
+                : \sprintf($message, ...$parameters);
+
             $this->settings->log()->debug(\sprintf(
                 'EventStoreNodeConnection \'%s\': %s',
                 $this->connectionName,
