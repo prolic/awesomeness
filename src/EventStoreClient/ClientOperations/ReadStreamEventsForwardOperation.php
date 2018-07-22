@@ -2,36 +2,38 @@
 
 declare(strict_types=1);
 
-namespace Prooph\EventStoreClient\Internal\ClientOperations;
+namespace Prooph\EventStoreClient\ClientOperations;
 
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
-use Prooph\EventStoreClient\Data\AllEventsSlice;
-use Prooph\EventStoreClient\Data\Position;
 use Prooph\EventStoreClient\Data\ReadDirection;
 use Prooph\EventStoreClient\Data\ResolvedEvent;
+use Prooph\EventStoreClient\Data\SliceReadStatus;
+use Prooph\EventStoreClient\Data\StreamEventsSlice;
 use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStoreClient\Exception\AccessDeniedException;
 use Prooph\EventStoreClient\Exception\ServerError;
 use Prooph\EventStoreClient\Internal\EventMessageConverter;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionDecision;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionResult;
-use Prooph\EventStoreClient\Messages\ClientMessages\ReadAllEvents;
-use Prooph\EventStoreClient\Messages\ClientMessages\ReadAllEventsCompleted;
-use Prooph\EventStoreClient\Messages\ClientMessages\ReadAllEventsCompleted\ReadAllResult;
+use Prooph\EventStoreClient\Messages\ClientMessages\ReadStreamEvents;
+use Prooph\EventStoreClient\Messages\ClientMessages\ReadStreamEventsCompleted;
+use Prooph\EventStoreClient\Messages\ClientMessages\ReadStreamEventsCompleted\ReadStreamResult;
 use Prooph\EventStoreClient\Messages\ClientMessages\ResolvedIndexedEvent;
 use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
 use Psr\Log\LoggerInterface as Logger;
 
 /** @internal */
-class ReadAllEventsBackwardOperation extends AbstractOperation
+class ReadStreamEventsForwardOperation extends AbstractOperation
 {
     /** @var bool */
     private $requireMaster;
-    /** @var Position */
-    private $position;
+    /** @var string */
+    private $stream;
     /** @var int */
-    private $maxCount;
+    private $start;
+    /** @var int */
+    private $count;
     /** @var bool */
     private $resolveLinkTos;
 
@@ -39,33 +41,35 @@ class ReadAllEventsBackwardOperation extends AbstractOperation
         Logger $logger,
         Deferred $deferred,
         bool $requireMaster,
-        Position $position,
-        int $maxCount,
+        string $stream,
+        int $start,
+        int $count,
         bool $resolveLinkTos,
         ?UserCredentials $userCredentials
     ) {
         $this->requireMaster = $requireMaster;
-        $this->position = $position;
-        $this->maxCount = $maxCount;
+        $this->stream = $stream;
+        $this->start = $start;
+        $this->count = $count;
         $this->resolveLinkTos = $resolveLinkTos;
 
         parent::__construct(
             $logger,
             $deferred,
             $userCredentials,
-            TcpCommand::readAllEventsBackward(),
-            TcpCommand::readAllEventsBackwardCompleted(),
-            ReadAllEventsCompleted::class
+            TcpCommand::readStreamEventsForward(),
+            TcpCommand::readStreamEventsForwardCompleted(),
+            ReadStreamEventsCompleted::class
         );
     }
 
     protected function createRequestDto(): Message
     {
-        $message = new ReadAllEvents();
+        $message = new ReadStreamEvents();
         $message->setRequireMaster($this->requireMaster);
-        $message->setCommitPosition($this->position->commitPosition());
-        $message->setPreparePosition($this->position->preparePosition());
-        $message->setMaxCount($this->maxCount);
+        $message->setEventStreamId($this->stream);
+        $message->setFromEventNumber($this->start);
+        $message->setMaxCount($this->count);
         $message->setResolveLinkTos($this->resolveLinkTos);
 
         return $message;
@@ -73,29 +77,36 @@ class ReadAllEventsBackwardOperation extends AbstractOperation
 
     protected function inspectResponse(Message $response): InspectionResult
     {
-        /** @var ReadAllEventsCompleted $response */
+        /** @var ReadStreamEventsCompleted $response */
         switch ($response->getResult()) {
-            case ReadAllResult::Success:
+            case ReadStreamResult::Success:
                 $this->succeed($response);
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'Success');
-            case ReadAllResult::Error:
+            case ReadStreamResult::StreamDeleted:
+                $this->succeed($response);
+
+                return new InspectionResult(InspectionDecision::endOperation(), 'StreamDeleted');
+            case ReadStreamResult::NoStream:
+                $this->succeed($response);
+
+                return new InspectionResult(InspectionDecision::endOperation(), 'NoStream');
+            case ReadStreamResult::Error:
                 $this->fail(new ServerError($response->getError()));
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'Error');
-            case
-            ReadAllResult::AccessDenied:
-                $this->fail(AccessDeniedException::toAllStream());
+            case ReadStreamResult::AccessDenied:
+                $this->fail(AccessDeniedException::toStream($this->stream));
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'AccessDenied');
             default:
-                throw new ServerError('Unexpected ReadAllResult');
+                throw new ServerError('Unexpected ReadStreamResult');
         }
     }
 
     protected function transformResponse(Message $response)
     {
-        /* @var ReadAllEventsCompleted $response */
+        /* @var ReadStreamEventsCompleted $response */
         $records = $response->getEvents();
 
         $resolvedEvents = [];
@@ -112,11 +123,15 @@ class ReadAllEventsBackwardOperation extends AbstractOperation
             $resolvedEvents[] = new ResolvedEvent($event, $link, null);
         }
 
-        return new AllEventsSlice(
-            ReadDirection::backward(),
-            new Position($response->getCommitPosition(), $response->getPreparePosition()),
-            new Position($response->getNextCommitPosition(), $response->getNextPreparePosition()),
-            $resolvedEvents
+        return new StreamEventsSlice(
+            SliceReadStatus::byValue($response->getResult()),
+            $this->stream,
+            $this->start,
+            ReadDirection::forward(),
+            $resolvedEvents,
+            $response->getNextEventNumber(),
+            $response->getLastEventNumber(),
+            $response->getIsEndOfStream()
         );
     }
 }

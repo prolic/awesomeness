@@ -2,28 +2,28 @@
 
 declare(strict_types=1);
 
-namespace Prooph\EventStoreClient\Internal\ClientOperations;
+namespace Prooph\EventStoreClient\ClientOperations;
 
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
-use Prooph\EventStoreClient\Data\DeleteResult;
-use Prooph\EventStoreClient\Data\Position;
 use Prooph\EventStoreClient\Data\UserCredentials;
+use Prooph\EventStoreClient\EventStoreAsyncTransaction;
 use Prooph\EventStoreClient\Exception\AccessDeniedException;
 use Prooph\EventStoreClient\Exception\InvalidTransactionException;
 use Prooph\EventStoreClient\Exception\StreamDeletedException;
 use Prooph\EventStoreClient\Exception\UnexpectedOperationResult;
 use Prooph\EventStoreClient\Exception\WrongExpectedVersionException;
+use Prooph\EventStoreClient\Internal\EventStoreAsyncTransactionConnection;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionDecision;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionResult;
-use Prooph\EventStoreClient\Messages\ClientMessages\DeleteStream;
-use Prooph\EventStoreClient\Messages\ClientMessages\DeleteStreamCompleted;
 use Prooph\EventStoreClient\Messages\ClientMessages\OperationResult;
+use Prooph\EventStoreClient\Messages\ClientMessages\TransactionStart;
+use Prooph\EventStoreClient\Messages\ClientMessages\TransactionStartCompleted;
 use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
 use Psr\Log\LoggerInterface as Logger;
 
 /** @internal */
-class DeleteStreamOperation extends AbstractOperation
+class StartAsyncTransactionOperation extends AbstractOperation
 {
     /** @var bool */
     private $requireMaster;
@@ -31,8 +31,8 @@ class DeleteStreamOperation extends AbstractOperation
     private $stream;
     /** @var int */
     private $expectedVersion;
-    /** @var bool */
-    private $hardDelete;
+    /** @var EventStoreAsyncTransactionConnection */
+    protected $parentConnection;
 
     public function __construct(
         Logger $logger,
@@ -40,39 +40,35 @@ class DeleteStreamOperation extends AbstractOperation
         bool $requireMaster,
         string $stream,
         int $expectedVersion,
-        bool $hardDelete,
+        EventStoreAsyncTransactionConnection $parentConnection,
         ?UserCredentials $userCredentials
     ) {
         $this->requireMaster = $requireMaster;
         $this->stream = $stream;
         $this->expectedVersion = $expectedVersion;
-        $this->hardDelete = $hardDelete;
+        $this->parentConnection = $parentConnection;
 
         parent::__construct(
             $logger,
             $deferred,
             $userCredentials,
-            TcpCommand::deleteStream(),
-            TcpCommand::deleteStreamCompleted(),
-            DeleteStreamCompleted::class
+            TcpCommand::transactionStart(),
+            TcpCommand::transactionStartCompleted(),
+            TransactionStartCompleted::class
         );
     }
 
     protected function createRequestDto(): Message
     {
-        $message = new DeleteStream();
+        $message = new TransactionStart();
+        $message->setRequireMaster($this->requireMaster);
         $message->setEventStreamId($this->stream);
         $message->setExpectedVersion($this->expectedVersion);
-        $message->setHardDelete($this->hardDelete);
-        $message->setRequireMaster($this->requireMaster);
-
-        return $message;
     }
 
-    public function inspectResponse(Message $response): InspectionResult
+    protected function inspectResponse(Message $response): InspectionResult
     {
-        /** @var DeleteStreamCompleted $response */
-
+        /** @var TransactionStartCompleted $response */
         switch ($response->getResult()) {
             case OperationResult::Success:
                 $this->succeed($response);
@@ -85,23 +81,24 @@ class DeleteStreamOperation extends AbstractOperation
             case OperationResult::ForwardTimeout:
                 return new InspectionResult(InspectionDecision::retry(), 'ForwardTimeout');
             case OperationResult::WrongExpectedVersion:
-                $exception = WrongExpectedVersionException::withExpectedVersion($this->stream, $this->expectedVersion);
+                $exception = new WrongExpectedVersionException(\sprintf(
+                    'Start transaction failed due to WrongExpectedVersion. Stream: \'%s\', Expected version: \'%s\'',
+                    $this->stream,
+                    $this->expectedVersion
+                ));
                 $this->fail($exception);
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'WrongExpectedVersion');
             case OperationResult::StreamDeleted:
-                $exception = StreamDeletedException::with($this->stream);
-                $this->fail($exception);
+                $this->fail(StreamDeletedException::with($this->stream));
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'StreamDeleted');
             case OperationResult::InvalidTransaction:
-                $exception = new InvalidTransactionException();
-                $this->fail($exception);
+                $this->fail(new InvalidTransactionException());
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'InvalidTransaction');
             case OperationResult::AccessDenied:
-                $exception = AccessDeniedException::toStream($this->stream);
-                $this->fail($exception);
+                $this->fail(AccessDeniedException::toStream($this->stream));
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'AccessDenied');
             default:
@@ -111,10 +108,11 @@ class DeleteStreamOperation extends AbstractOperation
 
     protected function transformResponse(Message $response)
     {
-        /** @var DeleteStreamCompleted $response */
-        return new DeleteResult(new Position(
-            $response->getCommitPosition() ?? -1,
-            $response->getCommitPosition() ?? -1)
+        /** @var TransactionStartCompleted $response */
+        return new EventStoreAsyncTransaction(
+            $response->getTransactionId(),
+            $this->credentials,
+            $this->parentConnection
         );
     }
 }

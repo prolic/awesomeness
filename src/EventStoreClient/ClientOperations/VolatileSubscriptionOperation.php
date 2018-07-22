@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Prooph\EventStoreClient\Internal\ClientOperations;
+namespace Prooph\EventStoreClient\ClientOperations;
 
 use Prooph\EventStoreClient\Internal\EventMessageConverter;
 use Prooph\EventStoreClient\Internal\EventStoreSubscription;

@@ -2,28 +2,28 @@
 
 declare(strict_types=1);
 
-namespace Prooph\EventStoreClient\Internal\ClientOperations;
+namespace Prooph\EventStoreClient\ClientOperations;
 
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
+use Prooph\EventStoreClient\Data\DeleteResult;
+use Prooph\EventStoreClient\Data\Position;
 use Prooph\EventStoreClient\Data\UserCredentials;
-use Prooph\EventStoreClient\EventStoreSyncTransaction;
 use Prooph\EventStoreClient\Exception\AccessDeniedException;
 use Prooph\EventStoreClient\Exception\InvalidTransactionException;
 use Prooph\EventStoreClient\Exception\StreamDeletedException;
 use Prooph\EventStoreClient\Exception\UnexpectedOperationResult;
 use Prooph\EventStoreClient\Exception\WrongExpectedVersionException;
-use Prooph\EventStoreClient\Internal\EventStoreSyncTransactionConnection;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionDecision;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionResult;
+use Prooph\EventStoreClient\Messages\ClientMessages\DeleteStream;
+use Prooph\EventStoreClient\Messages\ClientMessages\DeleteStreamCompleted;
 use Prooph\EventStoreClient\Messages\ClientMessages\OperationResult;
-use Prooph\EventStoreClient\Messages\ClientMessages\TransactionStart;
-use Prooph\EventStoreClient\Messages\ClientMessages\TransactionStartCompleted;
 use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
 use Psr\Log\LoggerInterface as Logger;
 
 /** @internal */
-class StartTransactionOperation extends AbstractOperation
+class DeleteStreamOperation extends AbstractOperation
 {
     /** @var bool */
     private $requireMaster;
@@ -31,8 +31,8 @@ class StartTransactionOperation extends AbstractOperation
     private $stream;
     /** @var int */
     private $expectedVersion;
-    /** @var EventStoreSyncTransactionConnection */
-    private $parentConnection;
+    /** @var bool */
+    private $hardDelete;
 
     public function __construct(
         Logger $logger,
@@ -40,35 +40,39 @@ class StartTransactionOperation extends AbstractOperation
         bool $requireMaster,
         string $stream,
         int $expectedVersion,
-        EventStoreSyncTransactionConnection $parentConnection,
+        bool $hardDelete,
         ?UserCredentials $userCredentials
     ) {
         $this->requireMaster = $requireMaster;
         $this->stream = $stream;
         $this->expectedVersion = $expectedVersion;
-        $this->parentConnection = $parentConnection;
+        $this->hardDelete = $hardDelete;
 
         parent::__construct(
             $logger,
             $deferred,
             $userCredentials,
-            TcpCommand::transactionStart(),
-            TcpCommand::transactionStartCompleted(),
-            TransactionStartCompleted::class
+            TcpCommand::deleteStream(),
+            TcpCommand::deleteStreamCompleted(),
+            DeleteStreamCompleted::class
         );
     }
 
     protected function createRequestDto(): Message
     {
-        $message = new TransactionStart();
-        $message->setRequireMaster($this->requireMaster);
+        $message = new DeleteStream();
         $message->setEventStreamId($this->stream);
         $message->setExpectedVersion($this->expectedVersion);
+        $message->setHardDelete($this->hardDelete);
+        $message->setRequireMaster($this->requireMaster);
+
+        return $message;
     }
 
-    protected function inspectResponse(Message $response): InspectionResult
+    public function inspectResponse(Message $response): InspectionResult
     {
-        /** @var TransactionStartCompleted $response */
+        /** @var DeleteStreamCompleted $response */
+
         switch ($response->getResult()) {
             case OperationResult::Success:
                 $this->succeed($response);
@@ -81,24 +85,23 @@ class StartTransactionOperation extends AbstractOperation
             case OperationResult::ForwardTimeout:
                 return new InspectionResult(InspectionDecision::retry(), 'ForwardTimeout');
             case OperationResult::WrongExpectedVersion:
-                $exception = new WrongExpectedVersionException(\sprintf(
-                    'Start transaction failed due to WrongExpectedVersion. Stream: \'%s\', Expected version: \'%s\'',
-                    $this->stream,
-                    $this->expectedVersion
-                ));
+                $exception = WrongExpectedVersionException::withExpectedVersion($this->stream, $this->expectedVersion);
                 $this->fail($exception);
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'WrongExpectedVersion');
             case OperationResult::StreamDeleted:
-                $this->fail(StreamDeletedException::with($this->stream));
+                $exception = StreamDeletedException::with($this->stream);
+                $this->fail($exception);
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'StreamDeleted');
             case OperationResult::InvalidTransaction:
-                $this->fail(new InvalidTransactionException());
+                $exception = new InvalidTransactionException();
+                $this->fail($exception);
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'InvalidTransaction');
             case OperationResult::AccessDenied:
-                $this->fail(AccessDeniedException::toStream($this->stream));
+                $exception = AccessDeniedException::toStream($this->stream);
+                $this->fail($exception);
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'AccessDenied');
             default:
@@ -108,11 +111,10 @@ class StartTransactionOperation extends AbstractOperation
 
     protected function transformResponse(Message $response)
     {
-        /** @var TransactionStartCompleted $response */
-        return new EventStoreSyncTransaction(
-            $response->getTransactionId(),
-            $this->credentials,
-            $this->parentConnection
+        /** @var DeleteStreamCompleted $response */
+        return new DeleteResult(new Position(
+            $response->getCommitPosition() ?? -1,
+            $response->getCommitPosition() ?? -1)
         );
     }
 }

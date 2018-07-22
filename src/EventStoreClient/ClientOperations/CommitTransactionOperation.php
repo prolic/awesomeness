@@ -2,73 +2,66 @@
 
 declare(strict_types=1);
 
-namespace Prooph\EventStoreClient\Internal\ClientOperations;
+namespace Prooph\EventStoreClient\ClientOperations;
 
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
+use Prooph\EventStoreClient\Data\Position;
 use Prooph\EventStoreClient\Data\UserCredentials;
-use Prooph\EventStoreClient\EventStoreAsyncTransaction;
+use Prooph\EventStoreClient\Data\WriteResult;
 use Prooph\EventStoreClient\Exception\AccessDeniedException;
 use Prooph\EventStoreClient\Exception\InvalidTransactionException;
 use Prooph\EventStoreClient\Exception\StreamDeletedException;
 use Prooph\EventStoreClient\Exception\UnexpectedOperationResult;
 use Prooph\EventStoreClient\Exception\WrongExpectedVersionException;
-use Prooph\EventStoreClient\Internal\EventStoreAsyncTransactionConnection;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionDecision;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionResult;
 use Prooph\EventStoreClient\Messages\ClientMessages\OperationResult;
-use Prooph\EventStoreClient\Messages\ClientMessages\TransactionStart;
-use Prooph\EventStoreClient\Messages\ClientMessages\TransactionStartCompleted;
+use Prooph\EventStoreClient\Messages\ClientMessages\TransactionCommit;
+use Prooph\EventStoreClient\Messages\ClientMessages\TransactionCommitCompleted;
 use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
 use Psr\Log\LoggerInterface as Logger;
 
 /** @internal */
-class StartAsyncTransactionOperation extends AbstractOperation
+class CommitTransactionOperation extends AbstractOperation
 {
     /** @var bool */
     private $requireMaster;
-    /** @var string */
-    private $stream;
     /** @var int */
-    private $expectedVersion;
-    /** @var EventStoreAsyncTransactionConnection */
-    protected $parentConnection;
+    private $transactionId;
 
     public function __construct(
         Logger $logger,
         Deferred $deferred,
         bool $requireMaster,
-        string $stream,
-        int $expectedVersion,
-        EventStoreAsyncTransactionConnection $parentConnection,
+        int $transactionId,
         ?UserCredentials $userCredentials
     ) {
         $this->requireMaster = $requireMaster;
-        $this->stream = $stream;
-        $this->expectedVersion = $expectedVersion;
-        $this->parentConnection = $parentConnection;
+        $this->transactionId = $transactionId;
 
         parent::__construct(
             $logger,
             $deferred,
             $userCredentials,
-            TcpCommand::transactionStart(),
-            TcpCommand::transactionStartCompleted(),
-            TransactionStartCompleted::class
+            TcpCommand::transactionCommit(),
+            TcpCommand::transactionCommitCompleted(),
+            TransactionCommitCompleted::class
         );
     }
 
     protected function createRequestDto(): Message
     {
-        $message = new TransactionStart();
+        $message = new TransactionCommit();
         $message->setRequireMaster($this->requireMaster);
-        $message->setEventStreamId($this->stream);
-        $message->setExpectedVersion($this->expectedVersion);
+        $message->setTransactionId($this->transactionId);
+
+        return $message;
     }
 
     protected function inspectResponse(Message $response): InspectionResult
     {
-        /** @var TransactionStartCompleted $response */
+        /** @var TransactionCommitCompleted $response */
         switch ($response->getResult()) {
             case OperationResult::Success:
                 $this->succeed($response);
@@ -76,21 +69,20 @@ class StartAsyncTransactionOperation extends AbstractOperation
                 return new InspectionResult(InspectionDecision::endOperation(), 'Success');
             case OperationResult::PrepareTimeout:
                 return new InspectionResult(InspectionDecision::retry(), 'PrepareTimeout');
-            case OperationResult::CommitTimeout:
-                return new InspectionResult(InspectionDecision::retry(), 'CommitTimeout');
             case OperationResult::ForwardTimeout:
                 return new InspectionResult(InspectionDecision::retry(), 'ForwardTimeout');
+            case OperationResult::CommitTimeout:
+                return new InspectionResult(InspectionDecision::retry(), 'CommitTimeout');
             case OperationResult::WrongExpectedVersion:
                 $exception = new WrongExpectedVersionException(\sprintf(
-                    'Start transaction failed due to WrongExpectedVersion. Stream: \'%s\', Expected version: \'%s\'',
-                    $this->stream,
-                    $this->expectedVersion
+                    'Commit transaction failed due to WrongExpectedVersion. Transaction id: \'%s\'',
+                    $this->transactionId
                 ));
                 $this->fail($exception);
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'WrongExpectedVersion');
             case OperationResult::StreamDeleted:
-                $this->fail(StreamDeletedException::with($this->stream));
+                $this->fail(new StreamDeletedException());
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'StreamDeleted');
             case OperationResult::InvalidTransaction:
@@ -98,7 +90,8 @@ class StartAsyncTransactionOperation extends AbstractOperation
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'InvalidTransaction');
             case OperationResult::AccessDenied:
-                $this->fail(AccessDeniedException::toStream($this->stream));
+                $exception = new AccessDeniedException('Write access denied');
+                $this->fail($exception);
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'AccessDenied');
             default:
@@ -108,11 +101,13 @@ class StartAsyncTransactionOperation extends AbstractOperation
 
     protected function transformResponse(Message $response)
     {
-        /** @var TransactionStartCompleted $response */
-        return new EventStoreAsyncTransaction(
-            $response->getTransactionId(),
-            $this->credentials,
-            $this->parentConnection
+        /** @var TransactionCommitCompleted $response */
+        return new WriteResult(
+            $response->getLastEventNumber(),
+            new Position(
+                $response->getCommitPosition() ?? -1,
+                $response->getPreparePosition() ?? -1
+            )
         );
     }
 }

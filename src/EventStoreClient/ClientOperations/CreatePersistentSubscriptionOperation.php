@@ -2,28 +2,28 @@
 
 declare(strict_types=1);
 
-namespace Prooph\EventStoreClient\Internal\ClientOperations;
+namespace Prooph\EventStoreClient\ClientOperations;
 
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
 use Prooph\EventStoreClient\Common\SystemConsumerStrategies;
+use Prooph\EventStoreClient\Data\PersistentSubscriptionCreateResult;
+use Prooph\EventStoreClient\Data\PersistentSubscriptionCreateStatus;
 use Prooph\EventStoreClient\Data\PersistentSubscriptionSettings;
-use Prooph\EventStoreClient\Data\PersistentSubscriptionUpdateResult;
-use Prooph\EventStoreClient\Data\PersistentSubscriptionUpdateStatus;
 use Prooph\EventStoreClient\Data\UserCredentials;
 use Prooph\EventStoreClient\Exception\AccessDeniedException;
 use Prooph\EventStoreClient\Exception\InvalidOperationException;
 use Prooph\EventStoreClient\Exception\UnexpectedOperationResult;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionDecision;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionResult;
-use Prooph\EventStoreClient\Messages\ClientMessages\UpdatePersistentSubscription;
-use Prooph\EventStoreClient\Messages\ClientMessages\UpdatePersistentSubscriptionCompleted;
-use Prooph\EventStoreClient\Messages\ClientMessages\UpdatePersistentSubscriptionCompleted\UpdatePersistentSubscriptionResult;
+use Prooph\EventStoreClient\Messages\ClientMessages\CreatePersistentSubscription;
+use Prooph\EventStoreClient\Messages\ClientMessages\CreatePersistentSubscriptionCompleted;
+use Prooph\EventStoreClient\Messages\ClientMessages\CreatePersistentSubscriptionCompleted\CreatePersistentSubscriptionResult;
 use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
 use Psr\Log\LoggerInterface as Logger;
 
 /** @internal */
-class UpdatePersistentSubscriptionOperation extends AbstractOperation
+class CreatePersistentSubscriptionOperation extends AbstractOperation
 {
     /** @var string */
     private $stream;
@@ -48,15 +48,15 @@ class UpdatePersistentSubscriptionOperation extends AbstractOperation
             $logger,
             $deferred,
             $userCredentials,
-            TcpCommand::updatePersistentSubscription(),
-            TcpCommand::updatePersistentSubscriptionCompleted(),
-            UpdatePersistentSubscriptionCompleted::class
+            TcpCommand::createPersistentSubscription(),
+            TcpCommand::createPersistentSubscriptionCompleted(),
+            CreatePersistentSubscriptionCompleted::class
         );
     }
 
     protected function createRequestDto(): Message
     {
-        $message = new UpdatePersistentSubscription();
+        $message = new CreatePersistentSubscription();
         $message->setSubscriptionGroupName($this->groupName);
         $message->setEventStreamId($this->stream);
         $message->setResolveLinkTos($this->settings->resolveLinkTos());
@@ -79,13 +79,13 @@ class UpdatePersistentSubscriptionOperation extends AbstractOperation
 
     protected function inspectResponse(Message $response): InspectionResult
     {
-        /** @var UpdatePersistentSubscriptionCompleted $response */
+        /** @var CreatePersistentSubscriptionCompleted $response */
         switch ($response->getResult()) {
-            case UpdatePersistentSubscriptionResult::Success:
+            case CreatePersistentSubscriptionResult::Success:
                 $this->succeed($response);
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'Success');
-            case UpdatePersistentSubscriptionResult::Fail:
+            case CreatePersistentSubscriptionResult::Fail:
                 $this->fail(new InvalidOperationException(\sprintf(
                     'Subscription group \'%s\' on stream \'%s\' failed \'%s\'',
                     $this->groupName,
@@ -94,18 +94,18 @@ class UpdatePersistentSubscriptionOperation extends AbstractOperation
                 )));
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'Fail');
-            case UpdatePersistentSubscriptionResult::AccessDenied:
+            case CreatePersistentSubscriptionResult::AccessDenied:
                 $this->fail(AccessDeniedException::toStream($this->stream));
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'AccessDenied');
-            case UpdatePersistentSubscriptionResult::DoesNotExist:
+            case CreatePersistentSubscriptionResult::AlreadyExists:
                 $this->fail(new InvalidOperationException(\sprintf(
-                    'Subscription group \'%s\' on stream \'%s\' does not exist',
+                    'Subscription group \'%s\' on stream \'%s\' already exists',
                     $this->groupName,
                     $this->stream
                 )));
 
-                return new InspectionResult(InspectionDecision::endOperation(), 'DoesNotExist');
+                return new InspectionResult(InspectionDecision::endOperation(), 'AlreadyExists');
             default:
                 throw new UnexpectedOperationResult();
         }
@@ -113,9 +113,8 @@ class UpdatePersistentSubscriptionOperation extends AbstractOperation
 
     protected function transformResponse(Message $response)
     {
-        /** @var UpdatePersistentSubscriptionCompleted $response */
-        return new PersistentSubscriptionUpdateResult(
-            PersistentSubscriptionUpdateStatus::success()
+        return new PersistentSubscriptionCreateResult(
+            PersistentSubscriptionCreateStatus::success()
         );
     }
 }

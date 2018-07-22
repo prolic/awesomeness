@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Prooph\EventStoreClient\Internal\ClientOperations;
+namespace Prooph\EventStoreClient\ClientOperations;
 
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
@@ -18,13 +18,13 @@ use Prooph\EventStoreClient\Internal\SystemData\InspectionDecision;
 use Prooph\EventStoreClient\Internal\SystemData\InspectionResult;
 use Prooph\EventStoreClient\Messages\ClientMessages\ReadAllEvents;
 use Prooph\EventStoreClient\Messages\ClientMessages\ReadAllEventsCompleted;
-use Prooph\EventStoreClient\Messages\ClientMessages\ReadAllEventsCompleted_ReadAllResult;
+use Prooph\EventStoreClient\Messages\ClientMessages\ReadAllEventsCompleted\ReadAllResult;
 use Prooph\EventStoreClient\Messages\ClientMessages\ResolvedIndexedEvent;
 use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
 use Psr\Log\LoggerInterface as Logger;
 
 /** @internal */
-class ReadAllEventsForwardOperation extends AbstractOperation
+class ReadAllEventsBackwardOperation extends AbstractOperation
 {
     /** @var bool */
     private $requireMaster;
@@ -53,8 +53,8 @@ class ReadAllEventsForwardOperation extends AbstractOperation
             $logger,
             $deferred,
             $userCredentials,
-            TcpCommand::readAllEventsForward(),
-            TcpCommand::readAllEventsForwardCompleted(),
+            TcpCommand::readAllEventsBackward(),
+            TcpCommand::readAllEventsBackwardCompleted(),
             ReadAllEventsCompleted::class
         );
     }
@@ -75,15 +75,16 @@ class ReadAllEventsForwardOperation extends AbstractOperation
     {
         /** @var ReadAllEventsCompleted $response */
         switch ($response->getResult()) {
-            case ReadAllEventsCompleted_ReadAllResult::Success:
+            case ReadAllResult::Success:
                 $this->succeed($response);
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'Success');
-            case ReadAllEventsCompleted_ReadAllResult::Error:
+            case ReadAllResult::Error:
                 $this->fail(new ServerError($response->getError()));
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'Error');
-            case ReadAllEventsCompleted_ReadAllResult::AccessDenied:
+            case
+            ReadAllResult::AccessDenied:
                 $this->fail(AccessDeniedException::toAllStream());
 
                 return new InspectionResult(InspectionDecision::endOperation(), 'AccessDenied');
@@ -108,11 +109,11 @@ class ReadAllEventsForwardOperation extends AbstractOperation
                 $link = EventMessageConverter::convertEventRecordMessageToEventRecord($link);
             }
 
-            $resolvedEvents[] = new ResolvedEvent($event, $link, new Position($response->getCommitPosition(), $response->getPreparePosition()));
+            $resolvedEvents[] = new ResolvedEvent($event, $link, null);
         }
 
         return new AllEventsSlice(
-            ReadDirection::forward(),
+            ReadDirection::backward(),
             new Position($response->getCommitPosition(), $response->getPreparePosition()),
             new Position($response->getNextCommitPosition(), $response->getNextPreparePosition()),
             $resolvedEvents

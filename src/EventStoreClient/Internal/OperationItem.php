@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Prooph\EventStoreClient\Internal;
 
 use DateTimeImmutable;
-use Prooph\EventStoreClient\Internal\ClientOperations\ClientOperation;
+use Prooph\EventStoreClient\ClientOperations\ClientOperation;
 
 /** @internal */
 class OperationItem
