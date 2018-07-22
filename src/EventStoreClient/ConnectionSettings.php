@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient;
 
-use Prooph\EventStoreClient\UserCredentials;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 use Psr\Log\LoggerInterface as Log;
 

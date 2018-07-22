@@ -9,17 +9,14 @@ use Amp\Loop;
 use Amp\Promise;
 use Amp\Success;
 use Generator;
-use Prooph\EventStoreClient\SubscriptionDropReason;
-use Prooph\EventStoreClient\UserCredentials;
+use Prooph\EventStoreClient\EventStoreSubscription;
 use Prooph\EventStoreClient\Exception\AccessDeniedException;
 use Prooph\EventStoreClient\Exception\ConnectionClosedException;
 use Prooph\EventStoreClient\Exception\NotAuthenticatedException;
 use Prooph\EventStoreClient\Exception\RuntimeException;
 use Prooph\EventStoreClient\Exception\ServerError;
 use Prooph\EventStoreClient\Exception\UnexpectedCommandException;
-use Prooph\EventStoreClient\EventStoreSubscription;
-use Prooph\EventStoreClient\SystemData\InspectionDecision;
-use Prooph\EventStoreClient\SystemData\InspectionResult;
+use Prooph\EventStoreClient\Internal\ResolvedEvent;
 use Prooph\EventStoreClient\IpEndPoint;
 use Prooph\EventStoreClient\Messages\ClientMessages\NotHandled;
 use Prooph\EventStoreClient\Messages\ClientMessages\NotHandled\MasterInfo;
@@ -27,10 +24,14 @@ use Prooph\EventStoreClient\Messages\ClientMessages\NotHandled\NotHandledReason;
 use Prooph\EventStoreClient\Messages\ClientMessages\SubscriptionDropped;
 use Prooph\EventStoreClient\Messages\ClientMessages\SubscriptionDropped\SubscriptionDropReason as SubscriptionDropReasonMessage;
 use Prooph\EventStoreClient\Messages\ClientMessages\UnsubscribeFromStream;
+use Prooph\EventStoreClient\SubscriptionDropReason;
+use Prooph\EventStoreClient\SystemData\InspectionDecision;
+use Prooph\EventStoreClient\SystemData\InspectionResult;
 use Prooph\EventStoreClient\SystemData\TcpCommand;
 use Prooph\EventStoreClient\SystemData\TcpFlags;
 use Prooph\EventStoreClient\SystemData\TcpPackage;
 use Prooph\EventStoreClient\Transport\Tcp\TcpPackageConnection;
+use Prooph\EventStoreClient\UserCredentials;
 use Psr\Log\LoggerInterface as Logger;
 use SplQueue;
 use Throwable;
@@ -344,9 +345,7 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
 
     abstract protected function createSubscriptionObject(int $lastCommitPosition, ?int $lastEventNumber): EventStoreSubscription;
 
-    // we need generics for type hints !!!
-    // it's either a ResolvedEvent or a PersistentSubscriptionResolvedEvent
-    protected function eventAppeared(object $e): void
+    protected function eventAppeared(ResolvedEvent $e): void
     {
         if ($this->unsubscribed) {
             return;

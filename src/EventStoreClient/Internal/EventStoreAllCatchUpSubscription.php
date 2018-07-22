@@ -8,11 +8,11 @@ use Amp\Delayed;
 use Amp\Promise;
 use Prooph\EventStoreClient\AllEventsSlice;
 use Prooph\EventStoreClient\CatchUpSubscriptionSettings;
+use Prooph\EventStoreClient\EventStoreAsyncConnection;
 use Prooph\EventStoreClient\Position;
 use Prooph\EventStoreClient\ResolvedEvent;
 use Prooph\EventStoreClient\SubscriptionDropReason;
 use Prooph\EventStoreClient\UserCredentials;
-use Prooph\EventStoreClient\EventStoreAsyncConnection;
 use Psr\Log\LoggerInterface as Logger;
 use function Amp\call;
 

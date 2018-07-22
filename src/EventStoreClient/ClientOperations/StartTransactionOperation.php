@@ -6,7 +6,6 @@ namespace Prooph\EventStoreClient\ClientOperations;
 
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
-use Prooph\EventStoreClient\UserCredentials;
 use Prooph\EventStoreClient\EventStoreSyncTransaction;
 use Prooph\EventStoreClient\Exception\AccessDeniedException;
 use Prooph\EventStoreClient\Exception\InvalidTransactionException;
@@ -14,12 +13,13 @@ use Prooph\EventStoreClient\Exception\StreamDeletedException;
 use Prooph\EventStoreClient\Exception\UnexpectedOperationResult;
 use Prooph\EventStoreClient\Exception\WrongExpectedVersionException;
 use Prooph\EventStoreClient\Internal\EventStoreSyncTransactionConnection;
-use Prooph\EventStoreClient\SystemData\InspectionDecision;
-use Prooph\EventStoreClient\SystemData\InspectionResult;
 use Prooph\EventStoreClient\Messages\ClientMessages\OperationResult;
 use Prooph\EventStoreClient\Messages\ClientMessages\TransactionStart;
 use Prooph\EventStoreClient\Messages\ClientMessages\TransactionStartCompleted;
+use Prooph\EventStoreClient\SystemData\InspectionDecision;
+use Prooph\EventStoreClient\SystemData\InspectionResult;
 use Prooph\EventStoreClient\SystemData\TcpCommand;
+use Prooph\EventStoreClient\UserCredentials;
 use Psr\Log\LoggerInterface as Logger;
 
 /** @internal */

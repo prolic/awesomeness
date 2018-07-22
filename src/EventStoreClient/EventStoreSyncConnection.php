@@ -4,15 +4,6 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient;
 
-use Prooph\EventStoreClient\EventData;
-use Prooph\EventStoreClient\EventReadResult;
-use Prooph\EventStoreClient\Position;
-use Prooph\EventStoreClient\StreamEventsSlice;
-use Prooph\EventStoreClient\StreamMetadata;
-use Prooph\EventStoreClient\StreamMetadataResult;
-use Prooph\EventStoreClient\SystemSettings;
-use Prooph\EventStoreClient\UserCredentials;
-use Prooph\EventStoreClient\WriteResult;
 use Prooph\EventStoreClient\Internal\ListenerHandler;
 
 interface EventStoreSyncConnection

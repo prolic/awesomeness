@@ -8,13 +8,13 @@ use Amp\Delayed;
 use Amp\Promise;
 use Generator;
 use Prooph\EventStoreClient\CatchUpSubscriptionSettings;
+use Prooph\EventStoreClient\EventStoreAsyncConnection;
+use Prooph\EventStoreClient\Exception\StreamDeletedException;
 use Prooph\EventStoreClient\ResolvedEvent;
 use Prooph\EventStoreClient\SliceReadStatus;
 use Prooph\EventStoreClient\StreamEventsSlice;
 use Prooph\EventStoreClient\SubscriptionDropReason;
 use Prooph\EventStoreClient\UserCredentials;
-use Prooph\EventStoreClient\EventStoreAsyncConnection;
-use Prooph\EventStoreClient\Exception\StreamDeletedException;
 use Psr\Log\LoggerInterface as Logger;
 use function Amp\call;
 

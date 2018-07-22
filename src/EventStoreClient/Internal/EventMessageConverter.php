@@ -8,11 +8,11 @@ use DateTimeImmutable;
 use DateTimeZone;
 use Prooph\EventStoreClient\EventId;
 use Prooph\EventStoreClient\EventRecord;
-use Prooph\EventStoreClient\Position;
-use Prooph\EventStoreClient\ResolvedEvent;
 use Prooph\EventStoreClient\Messages\ClientMessages\EventRecord as EventRecordMessage;
 use Prooph\EventStoreClient\Messages\ClientMessages\ResolvedEvent as ResolvedEventMessage;
 use Prooph\EventStoreClient\Messages\ClientMessages\ResolvedIndexedEvent as ResolvedIndexedEventMessage;
+use Prooph\EventStoreClient\Position;
+use Prooph\EventStoreClient\ResolvedEvent;
 
 /** @internal */
 class EventMessageConverter

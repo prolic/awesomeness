@@ -8,17 +8,17 @@ use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
 use Prooph\EventStoreClient\EventReadResult;
 use Prooph\EventStoreClient\EventReadStatus;
-use Prooph\EventStoreClient\ResolvedEvent;
-use Prooph\EventStoreClient\UserCredentials;
 use Prooph\EventStoreClient\Exception\AccessDeniedException;
 use Prooph\EventStoreClient\Exception\ServerError;
 use Prooph\EventStoreClient\Internal\EventMessageConverter;
-use Prooph\EventStoreClient\SystemData\InspectionDecision;
-use Prooph\EventStoreClient\SystemData\InspectionResult;
 use Prooph\EventStoreClient\Messages\ClientMessages\ReadEvent;
 use Prooph\EventStoreClient\Messages\ClientMessages\ReadEventCompleted;
 use Prooph\EventStoreClient\Messages\ClientMessages\ReadEventCompleted\ReadEventResult;
+use Prooph\EventStoreClient\ResolvedEvent;
+use Prooph\EventStoreClient\SystemData\InspectionDecision;
+use Prooph\EventStoreClient\SystemData\InspectionResult;
 use Prooph\EventStoreClient\SystemData\TcpCommand;
+use Prooph\EventStoreClient\UserCredentials;
 use Psr\Log\LoggerInterface as Logger;
 
 /** @internal */

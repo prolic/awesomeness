@@ -7,9 +7,6 @@ namespace Prooph\EventStoreClient;
 use Amp\Loop;
 use Amp\Promise;
 use Amp\Success;
-use Prooph\EventStoreClient\ResolvedEvent;
-use Prooph\EventStoreClient\SubscriptionDropReason;
-use Prooph\EventStoreClient\UserCredentials;
 use Prooph\EventStoreClient\Internal\StopWatch;
 use Prooph\EventStoreClient\Internal\VolatileEventStoreSubscription;
 

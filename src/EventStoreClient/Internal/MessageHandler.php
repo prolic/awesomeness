@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient\Internal;
 
-use Prooph\EventStoreClient\Internal\Message\Message;
 use Prooph\EventStoreClient\Exception\RuntimeException;
+use Prooph\EventStoreClient\Internal\Message\Message;
 
 /** @internal */
 class MessageHandler

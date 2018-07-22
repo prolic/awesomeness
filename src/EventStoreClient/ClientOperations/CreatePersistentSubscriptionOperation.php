@@ -7,19 +7,19 @@ namespace Prooph\EventStoreClient\ClientOperations;
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
 use Prooph\EventStoreClient\Common\SystemConsumerStrategies;
-use Prooph\EventStoreClient\Internal\PersistentSubscriptionCreateResult;
-use Prooph\EventStoreClient\Internal\PersistentSubscriptionCreateStatus;
-use Prooph\EventStoreClient\PersistentSubscriptionSettings;
-use Prooph\EventStoreClient\UserCredentials;
 use Prooph\EventStoreClient\Exception\AccessDeniedException;
 use Prooph\EventStoreClient\Exception\InvalidOperationException;
 use Prooph\EventStoreClient\Exception\UnexpectedOperationResult;
-use Prooph\EventStoreClient\SystemData\InspectionDecision;
-use Prooph\EventStoreClient\SystemData\InspectionResult;
+use Prooph\EventStoreClient\Internal\PersistentSubscriptionCreateResult;
+use Prooph\EventStoreClient\Internal\PersistentSubscriptionCreateStatus;
 use Prooph\EventStoreClient\Messages\ClientMessages\CreatePersistentSubscription;
 use Prooph\EventStoreClient\Messages\ClientMessages\CreatePersistentSubscriptionCompleted;
 use Prooph\EventStoreClient\Messages\ClientMessages\CreatePersistentSubscriptionCompleted\CreatePersistentSubscriptionResult;
+use Prooph\EventStoreClient\PersistentSubscriptionSettings;
+use Prooph\EventStoreClient\SystemData\InspectionDecision;
+use Prooph\EventStoreClient\SystemData\InspectionResult;
 use Prooph\EventStoreClient\SystemData\TcpCommand;
+use Prooph\EventStoreClient\UserCredentials;
 use Psr\Log\LoggerInterface as Logger;
 
 /** @internal */

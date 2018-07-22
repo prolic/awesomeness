@@ -7,8 +7,8 @@ namespace Prooph\EventStoreClient\Internal;
 use Amp\Deferred;
 use Amp\Promise;
 use Prooph\EventStoreClient\ConnectionSettings;
-use Prooph\EventStoreClient\UserCredentials;
 use Prooph\EventStoreClient\Internal\Message\StartPersistentSubscriptionMessage;
+use Prooph\EventStoreClient\UserCredentials;
 use Psr\Log\LoggerInterface as Logger;
 
 class EventStorePersistentSubscription extends AbstractEventStorePersistentSubscription

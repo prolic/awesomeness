@@ -5,17 +5,10 @@ declare(strict_types=1);
 namespace Prooph\EventStoreClient;
 
 use Amp\Promise;
-use Prooph\EventStoreClient\CatchUpSubscriptionSettings;
-use Prooph\EventStoreClient\EventData;
-use Prooph\EventStoreClient\PersistentSubscriptionSettings;
-use Prooph\EventStoreClient\Position;
-use Prooph\EventStoreClient\StreamMetadata;
-use Prooph\EventStoreClient\SystemSettings;
-use Prooph\EventStoreClient\UserCredentials;
-use Prooph\EventStoreClient\Internal\ListenerHandler;
 use Prooph\EventStoreClient\Internal\EventStoreAllCatchUpSubscription;
 use Prooph\EventStoreClient\Internal\EventStorePersistentSubscription;
 use Prooph\EventStoreClient\Internal\EventStoreStreamCatchUpSubscription;
+use Prooph\EventStoreClient\Internal\ListenerHandler;
 
 interface EventStoreAsyncConnection
 {

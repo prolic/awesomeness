@@ -6,18 +6,18 @@ namespace Prooph\EventStoreClient\ClientOperations;
 
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
-use Prooph\EventStoreClient\Internal\PersistentSubscriptionDeleteResult;
-use Prooph\EventStoreClient\Internal\PersistentSubscriptionDeleteStatus;
-use Prooph\EventStoreClient\UserCredentials;
 use Prooph\EventStoreClient\Exception\AccessDeniedException;
 use Prooph\EventStoreClient\Exception\InvalidOperationException;
 use Prooph\EventStoreClient\Exception\UnexpectedOperationResult;
-use Prooph\EventStoreClient\SystemData\InspectionDecision;
-use Prooph\EventStoreClient\SystemData\InspectionResult;
+use Prooph\EventStoreClient\Internal\PersistentSubscriptionDeleteResult;
+use Prooph\EventStoreClient\Internal\PersistentSubscriptionDeleteStatus;
 use Prooph\EventStoreClient\Messages\ClientMessages\DeletePersistentSubscription;
 use Prooph\EventStoreClient\Messages\ClientMessages\DeletePersistentSubscriptionCompleted;
 use Prooph\EventStoreClient\Messages\ClientMessages\DeletePersistentSubscriptionCompleted\DeletePersistentSubscriptionResult;
+use Prooph\EventStoreClient\SystemData\InspectionDecision;
+use Prooph\EventStoreClient\SystemData\InspectionResult;
 use Prooph\EventStoreClient\SystemData\TcpCommand;
+use Prooph\EventStoreClient\UserCredentials;
 use Psr\Log\LoggerInterface as Logger;
 
 /** @internal */

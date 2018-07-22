@@ -7,19 +7,19 @@ namespace Prooph\EventStoreClient\ClientOperations;
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
 use Prooph\EventStoreClient\DeleteResult;
-use Prooph\EventStoreClient\Position;
-use Prooph\EventStoreClient\UserCredentials;
 use Prooph\EventStoreClient\Exception\AccessDeniedException;
 use Prooph\EventStoreClient\Exception\InvalidTransactionException;
 use Prooph\EventStoreClient\Exception\StreamDeletedException;
 use Prooph\EventStoreClient\Exception\UnexpectedOperationResult;
 use Prooph\EventStoreClient\Exception\WrongExpectedVersionException;
-use Prooph\EventStoreClient\SystemData\InspectionDecision;
-use Prooph\EventStoreClient\SystemData\InspectionResult;
 use Prooph\EventStoreClient\Messages\ClientMessages\DeleteStream;
 use Prooph\EventStoreClient\Messages\ClientMessages\DeleteStreamCompleted;
 use Prooph\EventStoreClient\Messages\ClientMessages\OperationResult;
+use Prooph\EventStoreClient\Position;
+use Prooph\EventStoreClient\SystemData\InspectionDecision;
+use Prooph\EventStoreClient\SystemData\InspectionResult;
 use Prooph\EventStoreClient\SystemData\TcpCommand;
+use Prooph\EventStoreClient\UserCredentials;
 use Psr\Log\LoggerInterface as Logger;
 
 /** @internal */

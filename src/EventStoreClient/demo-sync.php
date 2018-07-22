@@ -4,10 +4,6 @@ declare(strict_types=1);
 
 namespace Prooph\EventStoreClient;
 
-use Prooph\EventStoreClient\EventData;
-use Prooph\EventStoreClient\EventId;
-use Prooph\EventStoreClient\ExpectedVersion;
-
 require __DIR__ . '/../../vendor/autoload.php';
 
 $connection = EventStoreConnectionBuilder::createFromIpEndPoint(

@@ -7,20 +7,20 @@ namespace Prooph\EventStoreClient\ClientOperations;
 use Amp\Deferred;
 use Google\Protobuf\Internal\Message;
 use Prooph\EventStoreClient\AllEventsSlice;
-use Prooph\EventStoreClient\Position;
-use Prooph\EventStoreClient\ReadDirection;
-use Prooph\EventStoreClient\ResolvedEvent;
-use Prooph\EventStoreClient\UserCredentials;
 use Prooph\EventStoreClient\Exception\AccessDeniedException;
 use Prooph\EventStoreClient\Exception\ServerError;
 use Prooph\EventStoreClient\Internal\EventMessageConverter;
-use Prooph\EventStoreClient\SystemData\InspectionDecision;
-use Prooph\EventStoreClient\SystemData\InspectionResult;
 use Prooph\EventStoreClient\Messages\ClientMessages\ReadAllEvents;
 use Prooph\EventStoreClient\Messages\ClientMessages\ReadAllEventsCompleted;
 use Prooph\EventStoreClient\Messages\ClientMessages\ReadAllEventsCompleted\ReadAllResult;
 use Prooph\EventStoreClient\Messages\ClientMessages\ResolvedIndexedEvent;
+use Prooph\EventStoreClient\Position;
+use Prooph\EventStoreClient\ReadDirection;
+use Prooph\EventStoreClient\ResolvedEvent;
+use Prooph\EventStoreClient\SystemData\InspectionDecision;
+use Prooph\EventStoreClient\SystemData\InspectionResult;
 use Prooph\EventStoreClient\SystemData\TcpCommand;
+use Prooph\EventStoreClient\UserCredentials;
 use Psr\Log\LoggerInterface as Logger;
 
 /** @internal */

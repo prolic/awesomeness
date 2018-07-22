@@ -6,6 +6,7 @@ namespace Prooph\EventStoreClient\Internal;
 
 use Amp\Deferred;
 use Amp\Promise;
+use Prooph\EventStoreClient\CatchUpSubscriptionSettings;
 use Prooph\EventStoreClient\ClientOperations\AppendToStreamOperation;
 use Prooph\EventStoreClient\ClientOperations\ClientOperation;
 use Prooph\EventStoreClient\ClientOperations\CommitTransactionOperation;
@@ -24,28 +25,26 @@ use Prooph\EventStoreClient\ClusterSettings;
 use Prooph\EventStoreClient\Common\SystemEventTypes;
 use Prooph\EventStoreClient\Common\SystemStreams;
 use Prooph\EventStoreClient\ConnectionSettings;
-use Prooph\EventStoreClient\CatchUpSubscriptionSettings;
 use Prooph\EventStoreClient\EventData;
 use Prooph\EventStoreClient\EventReadResult;
 use Prooph\EventStoreClient\EventReadStatus;
-use Prooph\EventStoreClient\ExpectedVersion;
-use Prooph\EventStoreClient\PersistentSubscriptionSettings;
-use Prooph\EventStoreClient\Position;
-use Prooph\EventStoreClient\StreamMetadata;
-use Prooph\EventStoreClient\StreamMetadataResult;
-use Prooph\EventStoreClient\SystemSettings;
-use Prooph\EventStoreClient\UserCredentials;
 use Prooph\EventStoreClient\EventStoreAsyncConnection;
 use Prooph\EventStoreClient\EventStoreAsyncTransaction;
 use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 use Prooph\EventStoreClient\Exception\InvalidOperationException;
 use Prooph\EventStoreClient\Exception\MaxQueueSizeLimitReachedException;
 use Prooph\EventStoreClient\Exception\UnexpectedValueException;
-use Prooph\EventStoreClient\Internal\ListenerHandler;
+use Prooph\EventStoreClient\ExpectedVersion;
 use Prooph\EventStoreClient\Internal\Message\CloseConnectionMessage;
 use Prooph\EventStoreClient\Internal\Message\StartConnectionMessage;
 use Prooph\EventStoreClient\Internal\Message\StartOperationMessage;
 use Prooph\EventStoreClient\Internal\Message\StartSubscriptionMessage;
+use Prooph\EventStoreClient\PersistentSubscriptionSettings;
+use Prooph\EventStoreClient\Position;
+use Prooph\EventStoreClient\StreamMetadata;
+use Prooph\EventStoreClient\StreamMetadataResult;
+use Prooph\EventStoreClient\SystemSettings;
+use Prooph\EventStoreClient\UserCredentials;
 
 final class EventStoreAsyncNodeConnection implements
     EventStoreAsyncConnection,

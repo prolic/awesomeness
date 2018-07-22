@@ -12,10 +12,11 @@ use Prooph\EventStoreClient\ClientOperations\TransactionalWriteOperation;
 use Prooph\EventStoreClient\ClusterSettings;
 use Prooph\EventStoreClient\ConnectionSettings;
 use Prooph\EventStoreClient\EventReadResult;
-use Prooph\EventStoreClient\Internal\PersistentSubscriptionCreateResult;
-use Prooph\EventStoreClient\Internal\PersistentSubscriptionDeleteResult;
+use Prooph\EventStoreClient\EventStoreAsyncConnection;
+use Prooph\EventStoreClient\EventStoreSyncConnection;
+use Prooph\EventStoreClient\EventStoreSyncTransaction;
+use Prooph\EventStoreClient\Exception\InvalidArgumentException;
 use Prooph\EventStoreClient\PersistentSubscriptionSettings;
-use Prooph\EventStoreClient\Internal\PersistentSubscriptionUpdateResult;
 use Prooph\EventStoreClient\Position;
 use Prooph\EventStoreClient\StreamEventsSlice;
 use Prooph\EventStoreClient\StreamMetadata;
@@ -23,11 +24,6 @@ use Prooph\EventStoreClient\StreamMetadataResult;
 use Prooph\EventStoreClient\SystemSettings;
 use Prooph\EventStoreClient\UserCredentials;
 use Prooph\EventStoreClient\WriteResult;
-use Prooph\EventStoreClient\EventStoreAsyncConnection;
-use Prooph\EventStoreClient\EventStoreSyncConnection;
-use Prooph\EventStoreClient\EventStoreSyncTransaction;
-use Prooph\EventStoreClient\Exception\InvalidArgumentException;
-use Prooph\EventStoreClient\Internal\ListenerHandler;
 
 /** @internal */
 final class EventStoreSyncNodeConnection implements
