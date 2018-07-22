@@ -31,6 +31,7 @@ use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
 use Prooph\EventStoreClient\Transport\Tcp\TcpFlags;
 use Prooph\EventStoreClient\Transport\Tcp\TcpPackage;
 use Prooph\EventStoreClient\Transport\Tcp\TcpPackageConnection;
+use Psr\Log\LoggerInterface as Logger;
 use SplQueue;
 use Throwable;
 use function Amp\call;
@@ -38,7 +39,8 @@ use function Amp\call;
 /** @internal  */
 abstract class AbstractSubscriptionOperation implements SubscriptionOperation
 {
-    //private readonly ILogger _log;
+    /** @var Logger */
+    private $log;
     /** @var Deferred */
     private $deferred;
     /** @var string */
@@ -52,7 +54,7 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
     /** @var null|callable(EventStoreSubscription $subscription, SubscriptionDropReason $reason, Throwable $exception): void */
     private $subscriptionDropped;
     /** @var bool */
-    //private $verboseLogging;
+    private $verboseLogging;
     /** @var callable(TcpPackageConnection $connection) */
     protected $getConnection;
     /** @var int */
@@ -69,26 +71,28 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
     protected $correlationId;
 
     /**
+     * @param Logger $logger
      * @param Deferred $deferred
      * @param string $streamId
      * @param bool $resolveLinkTos
      * @param null|UserCredentials $userCredentials
      * @param callable(EventStoreSubscription $subscription, object $resolvedEvent): Promise $eventAppeared
      * @param null|callable(EventStoreSubscription $subscription, SubscriptionDropReason $reason, Throwable $exception): void $subscriptionDropped
+     * @param bool $verboseLogging
      * @param callable $getConnection
      */
     public function __construct(
-        //ILogger log,
+        Logger $logger,
         Deferred $deferred,
         string $streamId,
         bool $resolveLinkTos,
         ?UserCredentials $userCredentials,
         callable $eventAppeared,
         ?callable $subscriptionDropped,
-        //bool $verboseLogging,
+        bool $verboseLogging,
         callable $getConnection
     ) {
-        //_log = log;
+        $this->log = $logger;
         $this->deferred = $deferred;
         $this->streamId = $streamId;
         $this->resolveLinkTos = $resolveLinkTos;
@@ -96,7 +100,7 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
         $this->eventAppeared = $eventAppeared;
         $this->subscriptionDropped = $subscriptionDropped ?? function (): void {
         };
-        //$this->verboseLogging = verboseLogging;
+        $this->verboseLogging = $verboseLogging;
         $this->getConnection = $getConnection;
         $this->actionQueue = new SplQueue();
     }
@@ -171,7 +175,12 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
                             )));
                             break;
                         default:
-                            // if (_verboseLogging) _log.Debug("Subscription dropped by server. Reason: {0}.", dto.Reason);
+                            if ($this->verboseLogging) {
+                                $this->log->debug(\sprintf(
+                                        'Subscription dropped by server. Reason: %s',
+                                        $message->getReason()
+                                ));
+                            }
                             $this->dropSubscription(SubscriptionDropReason::unknown(), new UnexpectedCommandException(
                                 'Unsubscribe reason: ' . $message->getReason()
                             ));
@@ -217,7 +226,8 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
                                 )
                             );
                         default:
-                            // _log.Error("Unknown NotHandledReason: {0}.", message.Reason);
+                            $this->log->error('Unknown NotHandledReason: %s', $message->getReason());
+
                             return new InspectionResult(InspectionDecision::retry(), 'NotHandledException - <unknown>');
                     }
 
@@ -265,11 +275,16 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
     ): void {
         if (! $this->unsubscribed) {
             $this->unsubscribed = true;
-            /*
-             * if (_verboseLogging)
-                   _log.Debug("Subscription {0:B} to {1}: closing subscription, reason: {2}, exception: {3}...",
-                       _correlationId, _streamId == string.Empty ? "<all>" : _streamId, reason, exc);
-             */
+
+            if ($this->verboseLogging) {
+                $this->log->debug(\sprintf(
+                    'Subscription %s to %s: closing subscription, reason: %s, exception: %s...',
+                    $this->correlationId,
+                    $this->streamId ? $this->streamId : '<all>',
+                    $reason,
+                    $exception ? $exception->getMessage() : '<none>'
+                ));
+            }
 
             if (! $reason->equals(SubscriptionDropReason::userInitiated())) {
                 $exception = $exception ?? new \Exception('Subscription dropped for ' . $reason);
@@ -313,12 +328,15 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
             throw new \Exception('Double confirmation of subscription');
         }
 
-        /*
-         * if (_verboseLogging)
-        _log.Debug("Subscription {0:B} to {1}: subscribed at CommitPosition: {2}, EventNumber: {3}.",
-        _correlationId, _streamId == string.Empty ? "<all>" : _streamId, lastCommitPosition, lastEventNumber);
-
-         */
+        if ($this->verboseLogging) {
+            $this->log->debug(\sprintf(
+                'Subscription %s to %s: subscribed at CommitPosition: %d, EventNumber: %d',
+                $this->correlationId,
+                $this->streamId ? $this->streamId : '<all>',
+                $lastCommitPosition,
+                $lastEventNumber ?? '<null>'
+            ));
+        }
 
         $this->subscription = $this->createSubscriptionObject($lastCommitPosition, $lastEventNumber);
         $this->deferred->resolve($this->subscription);
@@ -326,6 +344,8 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
 
     abstract protected function createSubscriptionObject(int $lastCommitPosition, ?int $lastEventNumber): EventStoreSubscription;
 
+    // we need generics for type hints !!!
+    // it's either a ResolvedEvent or a PersistentSubscriptionResolvedEvent
     protected function eventAppeared(object $e): void
     {
         if ($this->unsubscribed) {
@@ -336,11 +356,17 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
             throw new \Exception('Subscription not confirmed, but event appeared!');
         }
 
-        /*if (_verboseLogging)
-                _log.Debug("Subscription {0:B} to {1}: event appeared ({2}, {3}, {4} @ {5}).",
-                    _correlationId, _streamId == string.Empty ? "<all>" : _streamId,
-                    e.OriginalStreamId, e.OriginalEventNumber, e.OriginalEvent.EventType, e.OriginalPosition);
-        */
+        if ($this->verboseLogging) {
+            $this->log->debug(\sprintf(
+                'Subscription %s to %s: event appeared (%s, %d, %s @ %d)',
+                $this->correlationId,
+                $this->streamId ? $this->streamId : '<all>',
+                $e->originalStreamName(),
+                $e->originalEventNumber(),
+                $e->originalEvent()->eventType(),
+                $e->originalPosition() ?? '<null>'
+            ));
+        }
 
         $this->executeActionAsync(function () use ($e): Promise {
             return ($this->eventAppeared)($this->subscription, $e);
@@ -375,7 +401,9 @@ abstract class AbstractSubscriptionOperation implements SubscriptionOperation
                 try {
                     yield $action();
                 } catch (Throwable $exception) {
-                    //_log.Error(exc, "Exception during executing user callback: {0}.", exc.Message);
+                    $this->log->error(\sprintf(
+                        'Exception during executing user callback: %s', $exception->getMessage()
+                    ));
                 }
 
                 $this->actionExecuting = false;

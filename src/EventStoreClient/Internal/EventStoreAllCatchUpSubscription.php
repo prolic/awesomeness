@@ -108,7 +108,7 @@ class EventStoreAllCatchUpSubscription extends EventStoreCatchUpSubscription
                     'Catch-up Subscription %s to %s: finished reading events, nextReadPosition = %s',
                     $this->subscriptionName(),
                     $this->isSubscribedToAll() ? '<all>' : $this->streamId(),
-                    $this->nextReadPosition->toString()
+                    $this->nextReadPosition ?? '<null>'
                 ));
             }
 
@@ -174,7 +174,7 @@ class EventStoreAllCatchUpSubscription extends EventStoreCatchUpSubscription
                     $e->originalEvent()->eventStreamId(),
                     $e->originalEvent()->eventNumber(),
                     $e->originalEvent()->eventType(),
-                    $e->originalPosition() ? $e->originalPosition()->toString() : ''
+                    $e->originalPosition() ?? '<null>'
                 ));
             }
         });

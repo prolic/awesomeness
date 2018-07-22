@@ -71,7 +71,7 @@ class Position
             . \substr('000000000000000' . \dechex($this->preparePosition), -16);
     }
 
-    public function toString(): string
+    public function __toString(): string
     {
         return 'C:' . $this->commitPosition . '/P:' . $this->preparePosition;
     }

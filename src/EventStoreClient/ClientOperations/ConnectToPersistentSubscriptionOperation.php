@@ -30,6 +30,7 @@ use Prooph\EventStoreClient\Messages\ClientMessages\SubscriptionDropped\Subscrip
 use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;
 use Prooph\EventStoreClient\Transport\Tcp\TcpFlags;
 use Prooph\EventStoreClient\Transport\Tcp\TcpPackage;
+use Psr\Log\LoggerInterface as Logger;
 
 /** @internal */
 class ConnectToPersistentSubscriptionOperation extends AbstractSubscriptionOperation implements ConnectToPersistentSubscriptions
@@ -42,6 +43,7 @@ class ConnectToPersistentSubscriptionOperation extends AbstractSubscriptionOpera
     private $subscriptionId;
 
     public function __construct(
+        Logger $logger,
         Deferred $deferred,
         string $groupName,
         int $bufferSize,
@@ -49,15 +51,18 @@ class ConnectToPersistentSubscriptionOperation extends AbstractSubscriptionOpera
         ?UserCredentials $userCredentials,
         callable $eventAppeared,
         ?callable $subscriptionDropped,
+        bool $verboseLogging,
         callable $getConnection
     ) {
         parent::__construct(
+            $logger,
             $deferred,
             $streamId,
             false,
             $userCredentials,
             $eventAppeared,
             $subscriptionDropped,
+            $verboseLogging,
             $getConnection
         );
 
