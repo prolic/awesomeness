@@ -32,7 +32,7 @@ use Prooph\EventStoreClient\Internal\Message\StartSubscriptionMessage;
 use Prooph\EventStoreClient\Internal\Message\TcpConnectionClosedMessage;
 use Prooph\EventStoreClient\Internal\Message\TcpConnectionErrorMessage;
 use Prooph\EventStoreClient\Internal\Message\TcpConnectionEstablishedMessage;
-use Prooph\EventStoreClient\Internal\SystemData\InspectionDecision;
+use Prooph\EventStoreClient\SystemData\InspectionDecision;
 use Prooph\EventStoreClient\IpEndPoint;
 use Prooph\EventStoreClient\Messages\ClientMessages\IdentifyClient;
 use Prooph\EventStoreClient\Transport\Tcp\TcpCommand;

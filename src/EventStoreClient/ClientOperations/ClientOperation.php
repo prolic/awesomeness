@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Prooph\EventStoreClient\ClientOperations;
 
 use Amp\Promise;
-use Prooph\EventStoreClient\Internal\SystemData\InspectionResult;
+use Prooph\EventStoreClient\SystemData\InspectionResult;
 use Prooph\EventStoreClient\Transport\Tcp\TcpPackage;
 use Throwable;
 

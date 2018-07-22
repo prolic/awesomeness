@@ -6,8 +6,8 @@ namespace Prooph\EventStoreClient\ClientOperations;
 
 use Prooph\EventStoreClient\Internal\EventMessageConverter;
 use Prooph\EventStoreClient\EventStoreSubscription;
-use Prooph\EventStoreClient\Internal\SystemData\InspectionDecision;
-use Prooph\EventStoreClient\Internal\SystemData\InspectionResult;
+use Prooph\EventStoreClient\SystemData\InspectionDecision;
+use Prooph\EventStoreClient\SystemData\InspectionResult;
 use Prooph\EventStoreClient\Internal\VolatileEventStoreSubscription;
 use Prooph\EventStoreClient\Messages\ClientMessages\StreamEventAppeared;
 use Prooph\EventStoreClient\Messages\ClientMessages\SubscribeToStream;
