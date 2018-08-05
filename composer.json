@@ -49,7 +49,6 @@
     "psr-4": {
       "GPBMetadata\\": "src/EventStoreClient/GPBMetadata/",
       "Prooph\\EventStore\\": "src/EventStore/",
-      "Prooph\\EventStoreClient\\": "src/EventStoreClient/",
       "Prooph\\HttpEventStore\\": "src/HttpEventStore/",
       "Prooph\\PdoEventStore\\": "src/PdoEventStore/",
       "Prooph\\PostgresProjectionManager\\": "src/PostgresProjectionManager/",
@@ -59,7 +58,6 @@
   "autoload-dev": {
     "psr-4": {
       "ProophTest\\EventStore\\": "tests/EventStore/",
-      "ProophTest\\EventStoreClient\\": "tests/EventStoreClient/",
       "ProophTest\\HttpEventStore\\": "tests/HttpEventStore/",
       "ProophTest\\PdoEventStore\\": "tests/PdoEventStore/",
       "ProophTest\\PostgresProjectionManager\\": "tests/PostgresProjectionManager/"
